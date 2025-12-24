@@ -1,0 +1,23 @@
+{
+  "name": "spessa-midiplayer-cli",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "midi",
+    "midiplayer",
+    "cli",
+    "node",
+    "wav",
+    "stdout"
+  ],
+  "license": "ISC",
+  "author": "unixatch",
+  "type": "ES6",
+  "main": "main.js",
+  "scripts": {
+    "test": "node main.js"
+  },
+  "dependencies": {
+    "spessasynth_core": "^4.0.24"
+  }
+}

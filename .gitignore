@@ -1,0 +1,4 @@
+node_modules/
+*.sf2
+*.mid
+*.wav
