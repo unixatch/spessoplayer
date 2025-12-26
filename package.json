@@ -1,7 +1,7 @@
 {
-  "name": "spessa-midiplayer-cli",
+  "name": "spessoplayer",
   "version": "1.0.0",
-  "description": "",
+  "description": "A midi converter that uses spessasynth_core to generate the data",
   "keywords": [
     "midi",
     "midiplayer",
@@ -10,10 +10,17 @@
     "wav",
     "stdout"
   ],
-  "license": "ISC",
+  "license": "GPL-2.0-or-later",
   "author": "unixatch",
-  "type": "ES6",
+  "type": "module",
   "main": "main.js",
+  "preferGlobal": true,
+  "engines": {
+    "node": ">=18.19.0"
+  },
+  "bin": {
+    "spessoplayer": "main.mjs"
+  },
   "scripts": {
     "test": "node main.js"
   },
