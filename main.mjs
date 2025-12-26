@@ -24,76 +24,95 @@ import {
     SpessaSynthProcessor,
     SpessaSynthSequencer
 } from "spessasynth_core";
-const { 
-  getWavHeader,
-  getWavData
-} = await import("./audioBuffer.mjs")
 
-// Process arguments
-const args = process.argv.slice(2);
-/* if (args.length !== 3) {
-    console.info(
-        "Usage: tsx index.ts <soundbank path> <midi path> <wav output path>"
-    );
-    process.exit();
-} */
-const mid = fs.readFileSync(args[0]);
-const sf = fs.readFileSync(args[1]);
-const midi = BasicMIDI.fromArrayBuffer(mid);
-const sampleRate = 48000;
-const loop = 1;
-const sampleCount = Math.ceil(sampleRate * (midi.duration* loop));
-const synth = new SpessaSynthProcessor(sampleRate, {
+// In case the user passes some arguments
+if (process.argv.slice(2).length > 0) {
+  const { actUpOnPassedArgs } = await import("./cli.mjs");
+  await actUpOnPassedArgs(process.argv)
+}
+
+
+if (global?.toStdout) await toStdout(global?.loopN)
+
+async function toStdout(loopAmount) {
+  if (!global?.midiFile || !global?.soundfontFile) {
+    throw new ReferenceError("Missing some required files")
+    process.exit(1)
+  }
+  const mid = fs.readFileSync(global.midiFile);
+  const sf = fs.readFileSync(global.soundfontFile);
+  const midi = BasicMIDI.fromArrayBuffer(mid);
+  const sampleRate = global?.sampleRate ?? 48000;
+  const sampleCount = Math.ceil(
+    sampleRate * 
+    midi.duration * (loopAmount ?? 1)
+  );
+  const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
     enableEffects: false
-});
-synth.soundBankManager.addSoundBank(
+  });
+  synth.soundBankManager.addSoundBank(
     SoundBankLoader.fromArrayBuffer(sf),
     "main"
-);
-await synth.processorInitialized;
-const seq = new SpessaSynthSequencer(synth);
-seq.loadNewSongList([midi]);
-seq.loopCount = (loop === 0 || loop === 1) 
-  ? (loop === 0) ? 0 : (loop === 1) ? 1 : loop-1
-  : loop-1;
-seq.play();
-
-let outLeft = new Float32Array(sampleCount);
-let outRight = new Float32Array(sampleCount);
-let outputArray = [outLeft, outRight]
-
-
-// Note: buffer size is recommended to be very small, as this is the interval between modulator updates and LFO updates
-const BUFFER_SIZE = 128;
-let filledSamples = 0,
-    oldFilledSamples = 0;
-let lastBytes = false;
-
-const { Readable } = await import("node:stream");
-const audioStream = new Readable({
-  read() {
-    const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-    const left = new Float32Array(bufferSize);
-    const right = new Float32Array(bufferSize);
-    const arr = [left, right]
-    seq.processTick();
-    synth.renderAudio(
-      arr, [], [], 
-      0,
-      bufferSize
-    );
-    filledSamples += bufferSize;
-    if (filledSamples <= sampleCount && !lastBytes) {
-      if (filledSamples === sampleCount) lastBytes = true;
-      if (filledSamples !== BUFFER_SIZE) {
+  );
+  await synth.processorInitialized;
+  const seq = new SpessaSynthSequencer(synth);
+  seq.loadNewSongList([midi]);
+  seq.loopCount = loopAmount ?? 0;
+  seq.play();
+  
+  let outLeft = new Float32Array(sampleCount);
+  let outRight = new Float32Array(sampleCount);
+  let outputArray = [outLeft, outRight]
+  
+  
+  process.on("exit", () => {
+    // Necessary for programs like mpv
+    if (doneStreaming) process.kill(process.pid, "SIGKILL")
+  })
+  const { 
+    getWavHeader,
+    getWavData
+  } = await import("./audioBuffer.mjs")
+  const { Readable } = await import("node:stream");
+  
+  const BUFFER_SIZE = 128;
+  let filledSamples = 0;
+  let lastBytes = false;
+  let doneStreaming = false;
+  /**
+   * Reads the generated samples from SpessaSynth
+   * and spits them out to stdout
+   */
+  let readStream = new Readable({
+    read() {
+      const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+      const left = new Float32Array(bufferSize);
+      const right = new Float32Array(bufferSize);
+      const arr = [left, right]
+      seq.processTick();
+      synth.renderAudio(
+        arr, [], [], 
+        0,
+        bufferSize
+      );
+      filledSamples += bufferSize;
+      if (filledSamples <= sampleCount && !lastBytes) {
+        if (filledSamples === sampleCount) lastBytes = true;
         let data = getWavData(arr, sampleRate);
-        this.push(data)
-      } else this.push("")
+        return this.push(data)
+      }
+      this.push(null)
     }
-  }
-})
-let header = getWavHeader(outputArray, sampleRate)
-process.stdout.write(header)
-audioStream.pipe(process.stdout)
-process.on("SIGPIPE", () => process.exit())
+  })
+  let header = getWavHeader(outputArray, sampleRate)
+  process.stdout.write(header)
+  readStream.pipe(process.stdout)
+  await new Promise((resolve, reject) => {
+    readStream.on("error", () => reject())
+    readStream.on("end", () => {
+      doneStreaming = true;
+      resolve()
+    })
+  })
+}
