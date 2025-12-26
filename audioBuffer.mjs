@@ -2,6 +2,7 @@ import {
   IndexedByteArray,
   DEFAULT_WAV_WRITE_OPTIONS
 } from "spessasynth_core"
+// This section is identical to what's inside spessasynth_core but not being exported, that's why it's here
 function fillWithDefaults(obj, defObj) {
   return {
     ...defObj,
@@ -85,6 +86,12 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
   return outArray;
 }
 
+/**
+ * WAV Header Generator
+ * @param {Array} audioData - An array that contains the audio buffers
+ * @param {Number} sampleRate - Sample rate of the audio
+ * @param {Object} options - Optional, adds loop timestamps and more
+ */
 function getWavHeader(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
   const length = audioData[0].length;
   const numChannels = audioData.length;
@@ -203,6 +210,12 @@ function getWavHeader(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS
   );
   return header;
 }
+/**
+ * Translates to PCM data
+ * @param {Array} audioData - An array that contains the audio buffers
+ * @param {Number} sampleRate - Sample rate of the audio
+ * @param {Object} options - Optional, adds loop timestamps and more
+ */
 function getWavData(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
   const length = audioData[0].length;
   const numChannels = audioData.length;
