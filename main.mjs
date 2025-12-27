@@ -16,15 +16,6 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import * as fs from "node:fs";
-import {
-    audioToWav,
-    BasicMIDI,
-    SoundBankLoader,
-    SpessaSynthProcessor,
-    SpessaSynthSequencer
-} from "spessasynth_core";
-
 // In case the user passes some arguments
 if (process.argv.slice(2).length > 0) {
   const { actUpOnPassedArgs } = await import("./cli.mjs");
@@ -32,21 +23,61 @@ if (process.argv.slice(2).length > 0) {
 }
 
 
-if (global?.toStdout) await toStdout(global?.loopN)
+if (global?.toStdout) {
+  await toStdout(global?.loopN)
+  process.exit()
+}
+if (global?.waveFile) await toWavFile(global?.loopN)
 
+/**
+ * Calculates the sample count to use
+ * @param {class} midi - The BasicMIDI class to use
+ */
+function getSampleCount(midi, sampleRate, loopAmount) {
+  let loopStart = global?.loopStart ?? 1;
+  let loopEnd = global?.loopEnd ?? 2;
+  if (midi.loop.start > 0) {
+    loopStart = midi.midiTicksToSeconds(midi.loop.start);
+    loopEnd = midi.midiTicksToSeconds(midi.loop.end);
+  }
+  const possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
+  let sampleCount;
+  if ((loopAmount ?? 0) === 0) {
+    sampleCount = Math.ceil(sampleRate * midi.duration);
+  } else {
+    sampleCount = Math.ceil(
+      sampleRate * 
+      (
+        midi.duration +
+        ((loopEnd - loopStart) * possibleLoopAmount)
+      )
+    );
+  }
+  return sampleCount;
+}
+/**
+ * Reads the generated samples from spessasynth_core
+ * and spits them out to stdout
+ * @param {Number} loopAmount - the number of loops to do
+ */
 async function toStdout(loopAmount) {
   if (!global?.midiFile || !global?.soundfontFile) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
+  const fs = await import("node:fs");
+  const {
+    BasicMIDI,
+    SoundBankLoader,
+    SpessaSynthProcessor,
+    SpessaSynthSequencer
+  } = await import("spessasynth_core")
   const mid = fs.readFileSync(global.midiFile);
   const sf = fs.readFileSync(global.soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const sampleRate = global?.sampleRate ?? 48000;
-  const sampleCount = Math.ceil(
-    sampleRate * 
-    midi.duration * (loopAmount ?? 1)
-  );
+  const sampleCount = getSampleCount(midi, sampleRate, loopAmount);
+  
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
     enableEffects: false
@@ -80,10 +111,7 @@ async function toStdout(loopAmount) {
   let filledSamples = 0;
   let lastBytes = false;
   let doneStreaming = false;
-  /**
-   * Reads the generated samples from SpessaSynth
-   * and spits them out to stdout
-   */
+
   let readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
@@ -115,4 +143,64 @@ async function toStdout(loopAmount) {
       resolve()
     })
   })
+}
+
+/**
+ * Reads the generated samples from spessasynth_core
+ * and renders them to a wav file
+ * @param {Number} loopAmount - the number of loops to do
+ */
+async function toWavFile(loopAmount) {
+  if (!global?.midiFile || !global?.soundfontFile || !global?.waveFile) {
+    throw new ReferenceError("Missing some required files")
+    process.exit(1)
+  }
+  const fs = await import("node:fs");
+  const {
+    audioToWav,
+    BasicMIDI,
+    SoundBankLoader,
+    SpessaSynthProcessor,
+    SpessaSynthSequencer
+  } = await import("spessasynth_core")
+  const mid = fs.readFileSync(global.midiFile);
+  const sf = fs.readFileSync(global.soundfontFile);
+  const midi = BasicMIDI.fromArrayBuffer(mid);
+  const sampleRate = global?.sampleRate ?? 48000;
+  const sampleCount = getSampleCount(midi, sampleRate, loopAmount);
+  
+  const synth = new SpessaSynthProcessor(sampleRate, {
+    enableEventSystem: false,
+    enableEffects: false
+  });
+  synth.soundBankManager.addSoundBank(
+    SoundBankLoader.fromArrayBuffer(sf),
+    "main"
+  );
+  await synth.processorInitialized;
+  const seq = new SpessaSynthSequencer(synth);
+  seq.loadNewSongList([midi]);
+  seq.loopCount = loopAmount ?? 0;
+  seq.play();
+  
+  let outLeft = new Float32Array(sampleCount);
+  let outRight = new Float32Array(sampleCount);
+  let outputArray = [outLeft, outRight]
+  
+  const BUFFER_SIZE = 128;
+  let filledSamples = 0;
+  let lastBytes = false;
+  let doneStreaming = false;
+
+  while (filledSamples < sampleCount) {
+    // Process sequencer
+    seq.processTick();
+    // Render
+    const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+    synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
+    filledSamples += bufferSize;
+  }
+  const translatedToWave = audioToWav(outputArray, sampleRate)
+  fs.writeFileSync(global.waveFile, new Uint8Array(translatedToWave))
+  console.log(`Written to ${global.waveFile}`);
 }
