@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  Copyright (C) 2024  unixatch
+  Copyright (C) 2025  unixatch
 
     it under the terms of the GNU General Public License as published by
     This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with fix-retroarch-image-playlist.  If not, see <https://www.gnu.org/licenses/>.
+    along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 import * as fs from "node:fs";
