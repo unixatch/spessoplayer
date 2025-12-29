@@ -22,6 +22,14 @@ const actUpOnPassedArgs = async (args) => {
   let lastParam;
   const newArguments = args.slice(2);
   if (newArguments.length !== 0) {
+    if (/(?:--help|\/help|-h|\/h|\/\?)/.test(newArguments.join(" "))) {
+      help()
+      process.exit()
+    }
+    if (/(?:--version|\/version|-v|\/v)/.test(newArguments.join(" "))) {
+      await version()
+      process.exit()
+    }
     for (const arg of newArguments) {
       switch (arg) {
         case /^.*\.mid$/.test(arg) && arg: {
@@ -72,13 +80,33 @@ const actUpOnPassedArgs = async (args) => {
           lastParam = "loop"
           break;
         }
-        case /^(?:--help|\/help|-h|\/h|\/\?)$/.test(arg) && arg: {
-          help()
-          process.exit()
-        }
-        case /^(?:--version|\/version|-v|\/v)$/.test(arg) && arg: {
-          version()
-          process.exit()
+        case /^(?!-|\/)(?:\w|\W)*$/.test(arg) && arg: {
+          if (lastParam === undefined) {
+            const fs = await import("node:fs");
+            global["fs"] = fs;
+            let fileMagicNumber;
+            await new Promise((resolve, reject) => {
+              const readStream = fs.createReadStream(arg, { start: 0, end: 20 });
+              readStream.on("data", (data) => {
+                fileMagicNumber = data.toString();
+                resolve()
+              })
+              readStream.on("error", (e) => {
+                if (e.code === "ENOENT") console.error(`${red}Can't open '${arg}' because it doesn't exist${normal}`)
+                process.exit(1)
+              })
+            })
+            // MIDI files
+            if (fileMagicNumber.includes("MThd")) {
+              global.midiFile = arg;
+              break;
+            }
+            if (fileMagicNumber.includes("sfbk")) {
+              // Soundfont files
+              global.soundfontFile = arg;
+              break;
+            }
+          }
         }
         
         default:
@@ -108,14 +136,20 @@ const actUpOnPassedArgs = async (args) => {
           process.exit()
       }
     }
-    if (global?.waveFile === undefined) global.waveFile = "out.wav"
+    if (global?.midiFile === undefined) {
+      console.error(`${red}Missing a required midi file${normal}`);
+      process.exit(1)
+    }
+    if (global?.soundfontFile === undefined) {
+      console.error(`${red}Missing a required soundfont file${normal}`);
+      process.exit(1)
+    }
   }
 }
 
 const setLoop = arg => {
   if (typeof Number(arg) === "number"
       && !/^(?:Infinity|infinity)$/.test(arg)) {
-    global.parameter = "--loop";
     global.loopN = Number(arg);
     return;
   }
@@ -129,11 +163,9 @@ const setLoopStart = arg => {
       || Date.parse(`1970T${arg}Z`) !== NaN) {
     if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      global.parameter = "--loop-start";
       global.loopStart = seconds;
       return;
     }
-    global.parameter = "--loop-start";
     global.loopStart = Number(arg);
     return;
   }
@@ -144,11 +176,9 @@ const setLoopEnd = arg => {
       || Date.parse(`1970T${arg}Z`) !== NaN) {
     if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      global.parameter = "--loop-end";
       global.loopStart = seconds;
       return;
     }
-    global.parameter = "--loop-end";
     global.loopStart = Number(arg);
     return;
   }
@@ -156,7 +186,6 @@ const setLoopEnd = arg => {
 }
 const setSampleRate = arg => {
   if (typeof Number(arg) === "number") {
-    global.parameter = "--sample-rate";
     global.sampleRate = Number(arg);
     return;
   }
@@ -167,12 +196,12 @@ const help = () => {
   ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
   
   Usage:
-    ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont>
+    ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
   
   Available parameters:
     ${green}--loop${normal}, ${green}/loop${normal}, ${green}-l${normal}, ${green}/l${normal}:
-      ${dimGray+italics}Loop x amount of times${normal}
-      ${dimGray+italics}(It might be slow with bigger numbers)${normal}
+      ${dimGray+italics}Loop x amount of times (default: 0)${normal}
+        ${dimGray+italics}(It might be slow with bigger numbers)${normal}
       
     ${green}--loop-start${normal}, ${green}/loop-start${normal}, ${green}-ls${normal}, ${green}/ls${normal}:
       ${dimGray+italics}When the loop starts${normal}
@@ -181,9 +210,9 @@ const help = () => {
       ${dimGray+italics}When the loop ends${normal}
       
     ${green}--sample-rate${normal}, ${green}/sample-rate${normal}, ${green}-r${normal}, ${green}/r${normal}:
-      ${dimGray+italics}Sample rate to use${normal}
-      ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
-      ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
+      ${dimGray+italics}Sample rate to use (default: 48000)${normal}
+        ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
+        ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
