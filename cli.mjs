@@ -16,7 +16,7 @@
 */
 
 import { join } from "path"
-import "./utils.mjs"
+import { _dirname_ } from "./utils.mjs"
 
 const actUpOnPassedArgs = async (args) => {
   let lastParam;
@@ -193,9 +193,10 @@ const help = () => {
   `
   console.log(helpText)
 }
-const version = () => {
-  const packageJSONPath = join(__dirname, "package.json");
-  const { version } = JSON.parse(readFileSync(packageJSONPath).toString());
+const version = async () => {
+  const fs = await import("node:fs");
+  const packageJSONPath = join(_dirname_, "package.json");
+  const { version } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
   
   console.log(`${green + version + normal}`)
 }

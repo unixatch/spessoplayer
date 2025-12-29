@@ -15,7 +15,6 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { dirname } from "path"
 import { fileURLToPath } from "url"
 
 function declareColors() {
@@ -38,10 +37,6 @@ function declareColors() {
   global.dimGrayBold= "\x1b[37;2;1m"
 }
 declareColors()
-let __filename2 = fileURLToPath(import.meta.url);
-//                      Removes "utils" in the name
-const __dirname = dirname(__filename2).slice(0, -6);
 
-export { 
-  __dirname
-}
+const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
+export { _dirname_ }
