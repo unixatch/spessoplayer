@@ -27,7 +27,7 @@ if (global?.toStdout) {
   await toStdout(global?.loopN)
   process.exit()
 }
-if (global?.waveFile) await toWavFile(global?.loopN)
+if (global?.fileOutputs?.length > 0) await toFile(global?.loopN)
 
 /**
  * Calculates the sample count to use
@@ -103,7 +103,7 @@ async function toStdout(loopAmount) {
   })
   const { 
     getWavHeader,
-    getWavData
+    getData
   } = await import("./audioBuffer.mjs")
   const { Readable } = await import("node:stream");
   
@@ -127,7 +127,7 @@ async function toStdout(loopAmount) {
       filledSamples += bufferSize;
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        let data = getWavData(arr, sampleRate);
+        let data = getData(arr, sampleRate);
         return this.push(data)
       }
       this.push(null)
@@ -150,8 +150,8 @@ async function toStdout(loopAmount) {
  * and renders them to a wav file
  * @param {Number} loopAmount - the number of loops to do
  */
-async function toWavFile(loopAmount) {
-  if (!global?.midiFile || !global?.soundfontFile || !global?.waveFile) {
+async function toFile(loopAmount) {
+  if (!global?.midiFile || !global?.soundfontFile || global.fileOutputs.length === 0 ) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
