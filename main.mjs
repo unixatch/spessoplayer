@@ -34,8 +34,8 @@ if (global?.fileOutputs?.length > 0) await toFile(global?.loopN)
  * @param {class} midi - The BasicMIDI class to use
  */
 function getSampleCount(midi, sampleRate, loopAmount) {
-  let loopStart = global?.loopStart ?? 1;
-  let loopEnd = global?.loopEnd ?? 2;
+  let loopStart = global?.loopStart ?? midi.loop.start;
+  let loopEnd = global?.loopEnd ?? midi.loop.end;
   if (midi.loop.start > 0) {
     loopStart = midi.midiTicksToSeconds(midi.loop.start);
     loopEnd = midi.midiTicksToSeconds(midi.loop.end);
@@ -65,7 +65,6 @@ async function toStdout(loopAmount) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
-  const fs = await import("node:fs");
   const {
     BasicMIDI,
     SoundBankLoader,
@@ -133,9 +132,29 @@ async function toStdout(loopAmount) {
       this.push(null)
     }
   })
-  let header = getWavHeader(outputArray, sampleRate)
-  process.stdout.write(header)
-  readStream.pipe(process.stdout)
+  let stdoutHeader = getWavHeader(outputArray, sampleRate);
+  switch (global?.format) {
+    case "wave": {
+      process.stdout.write(stdoutHeader)
+      readStream.pipe(process.stdout)
+      break;
+    }
+    case "flac": {
+      const { spawn } = await import("child_process");
+      const ffmpeg = spawn("ffmpeg", [
+                       "-i", "-",
+                       "-f", "flac",
+                       "pipe:1"
+                     ], {stdio: [ "pipe", process.stdout, "pipe" ]});
+      ffmpeg.stdin.write(stdoutHeader)
+      readStream.pipe(ffmpeg.stdin)
+      break;
+    }
+    
+    default:
+      process.stdout.write(stdoutHeader)
+      readStream.pipe(process.stdout)
+  }
   await new Promise((resolve, reject) => {
     readStream.on("error", () => reject())
     readStream.on("end", () => {
@@ -155,7 +174,6 @@ async function toFile(loopAmount) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
-  const fs = await import("node:fs");
   const {
     audioToWav,
     BasicMIDI,
@@ -200,7 +218,31 @@ async function toFile(loopAmount) {
     synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
     filledSamples += bufferSize;
   }
-  const translatedToWave = audioToWav(outputArray, sampleRate)
-  fs.writeFileSync(global.waveFile, new Uint8Array(translatedToWave))
-  console.log(`Written to ${global.waveFile}`);
+  
+  let translatedFilePath;
+  for (let outFile of global.fileOutputs) {
+    switch (outFile) {
+      case /^.*(?:\.wav|\.wave)$/.test(outFile) && outFile: {
+        const translatedFile = audioToWav(outputArray, sampleRate);
+        translatedFilePath = outFile;
+        fs.writeFileSync(translatedFilePath, new Uint8Array(translatedFile))
+        break;
+      }
+      case /^.*\.flac$/.test(outFile) && outFile: {
+        const translatedFile = audioToWav(outputArray, sampleRate);
+        const { spawnSync } = await import("child_process");
+        translatedFilePath = outFile;
+        spawnSync("ffmpeg", [
+          "-i", "-",
+          "-f", "flac",
+          translatedFilePath
+        ], { 
+          input: new Uint8Array(translatedFile), 
+          maxBuffer: 30000000 // 30 MB in bytes
+        });
+        break;
+      }
+    }
+  }
+  console.log(`Written to ${translatedFilePath}`);
 }

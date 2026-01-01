@@ -15,37 +15,42 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { join } from "path"
+import { join, basename } from "path"
 import { _dirname_ } from "./utils.mjs"
 
 const actUpOnPassedArgs = async (args) => {
   let lastParam;
   const newArguments = args.slice(2);
   if (newArguments.length !== 0) {
-    if (/(?:--help|\/help|-h|\/h|\/\?)/.test(newArguments.join(" "))) {
+    if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(newArguments)).length > 0) {
       help()
       process.exit()
     }
-    if (/(?:--version|\/version|-v|\/v)/.test(newArguments.join(" "))) {
+    if (newArguments.filter(i => /^(?:--version|\/version|-v|\/v)$/.test(newArguments)).length > 0) {
       await version()
       process.exit()
     }
+    global.fileOutputs = [];
     for (const arg of newArguments) {
       switch (arg) {
-        case /^.*\.mid$/.test(arg) && arg: {
-          global.midiFile = arg;
-          break;
-        }
-        case /^.*\.sf2$/.test(arg) && arg: {
-          global.soundfontFile = arg;
-          break;
-        }
         case /^.*(?:\.wav|\.wave)$/.test(arg) && arg: {
-          global.waveFile = arg;
+          global.fileOutputs[0] = arg;
+          break;
+        }
+        case /^.*\.flac$/.test(arg) && arg: {
+          global.fileOutputs[1] = arg;
           break;
         }
         case /^-$/.test(arg) && arg: {
           global.toStdout = true;
+          break;
+        }
+        case /^(?:--format|\/format|-f|\/f)$/.test(arg) && arg: {
+          // In case there's no other argument
+          const indexOfArg = newArguments.indexOf(arg);
+          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+          
+          lastParam = "format"
           break;
         }
         case /^(?:--sample-rate|\/sample-rate|-r|\/r)$/.test(arg) && arg: {
@@ -80,7 +85,7 @@ const actUpOnPassedArgs = async (args) => {
           lastParam = "loop"
           break;
         }
-        case /^(?!-|\/)(?:\w|\W)*$/.test(arg) && arg: {
+        case /^(?!-|\/)(?:\w|\W)*$/.test(basename(arg)) && arg: {
           if (lastParam === undefined) {
             const fs = await import("node:fs");
             global["fs"] = fs;
@@ -124,6 +129,10 @@ const actUpOnPassedArgs = async (args) => {
           }
           if (lastParam === "sample-rate") {
             setSampleRate(arg)
+            break;
+          }
+          if (lastParam === "format") {
+            setFormat(arg)
             break;
           }
           // Invalid param
@@ -191,6 +200,19 @@ const setSampleRate = arg => {
   }
   throw new TypeError("Passed something that wasn't a number")
 }
+const setFormat = arg => {
+  switch (arg) {
+    case /^(?:wav|wave)$/.test(arg) && arg: {
+      global.format = "wave";
+      return;
+    }
+    case "flac": {
+      global.format = "flac";
+      return;
+    }
+  }
+  throw new TypeError("Passed something that wasn't an available format")
+}
 const help = () => {
   const helpText = `${underline}spessoplayer${normal}
   ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
@@ -213,6 +235,9 @@ const help = () => {
       ${dimGray+italics}Sample rate to use (default: 48000)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
         ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
+      
+    ${green}--format${normal}, ${green}/format${normal}, ${green}-f${normal}, ${green}/f${normal}:
+      ${dimGray+italics}Format to use for stdout (default: wav)${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
