@@ -185,10 +185,10 @@ const setLoopEnd = arg => {
       || Date.parse(`1970T${arg}Z`) !== NaN) {
     if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      global.loopStart = seconds;
+      global.loopEnd = seconds;
       return;
     }
-    global.loopStart = Number(arg);
+    global.loopEnd = Number(arg);
     return;
   }
   throw new TypeError("Passed something that wasn't a number or in ISO string format")
