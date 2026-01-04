@@ -86,7 +86,7 @@ async function toStdout(loopAmount) {
   } = getSampleCount(midi, sampleRate, loopAmount);
   
   if (global.loopStart > 0 && !loopDetectedInMidi) {
-    midi.loop.start = midi.timeDivision * (global.loopStart*2);
+    midi.loop.start = ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
@@ -202,7 +202,7 @@ async function toFile(loopAmount) {
   } = getSampleCount(midi, sampleRate, loopAmount);
   
   if (global.loopStart > 0 && !loopDetectedInMidi) {
-    midi.loop.start = midi.timeDivision * (global.loopStart*2);
+    midi.loop.start = ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
