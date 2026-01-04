@@ -41,6 +41,14 @@ const actUpOnPassedArgs = async (args) => {
           global.fileOutputs[1] = arg;
           break;
         }
+        case /^.*\.mp3$/.test(arg) && arg: {
+          global.fileOutputs[2] = arg;
+          break;
+        }
+        case /^.*\.(?:s16le|pcm)$/.test(arg) && arg: {
+          global.fileOutputs[3] = arg;
+          break;
+        }
         case /^-$/.test(arg) && arg: {
           global.toStdout = true;
           break;
@@ -208,6 +216,14 @@ const setFormat = arg => {
     }
     case "flac": {
       global.format = "flac";
+      return;
+    }
+    case "mp3": {
+      global.format = "mp3";
+      return;
+    }
+    case /^(?:s16le|pcm)$/.test(arg) && arg: {
+      global.format = "pcm";
       return;
     }
   }

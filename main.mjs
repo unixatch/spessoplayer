@@ -155,10 +155,27 @@ async function toStdout(loopAmount) {
       const ffmpeg = spawn("ffmpeg", [
                        "-i", "-",
                        "-f", "flac",
+                       "-compression_level", "12",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ]});
       ffmpeg.stdin.write(stdoutHeader)
       readStream.pipe(ffmpeg.stdin)
+      break;
+    }
+    case "mp3": {
+      const { spawn } = await import("child_process");
+      const ffmpeg = spawn("ffmpeg", [
+                       "-i", "-",
+                       "-f", "mp3",
+                       "-b:a", "320k",
+                       "pipe:1"
+                     ], {stdio: [ "pipe", process.stdout, "pipe" ]});
+      ffmpeg.stdin.write(stdoutHeader)
+      readStream.pipe(ffmpeg.stdin)
+      break;
+    }
+    case "pcm": {
+      readStream.pipe(process.stdout)
       break;
     }
     
@@ -238,25 +255,48 @@ async function toFile(loopAmount) {
   
   let translatedFilePath;
   for (let outFile of global.fileOutputs) {
-    switch (outFile) {
-      case /^.*(?:\.wav|\.wave)$/.test(outFile) && outFile: {
+    switch (true) {
+      case /^.*(?:\.wav|\.wave)$/.test(outFile): {
         const translatedFile = audioToWav(outputArray, sampleRate);
         translatedFilePath = outFile;
         fs.writeFileSync(translatedFilePath, new Uint8Array(translatedFile))
         break;
       }
-      case /^.*\.flac$/.test(outFile) && outFile: {
+      case /^.*\.flac$/.test(outFile): {
         const translatedFile = audioToWav(outputArray, sampleRate);
         const { spawnSync } = await import("child_process");
         translatedFilePath = outFile;
         spawnSync("ffmpeg", [
           "-i", "-",
           "-f", "flac",
+          "-compression_level", "12",
           translatedFilePath
-        ], { 
-          input: new Uint8Array(translatedFile), 
+        ], {
+          input: new Uint8Array(translatedFile),
           maxBuffer: 30000000 // 30 MB in bytes
         });
+        break;
+      }
+      case /^.*\.mp3$/.test(outFile): {
+        const translatedFile = audioToWav(outputArray, sampleRate);
+        const { spawnSync } = await import("child_process");
+        translatedFilePath = outFile;
+        spawnSync("ffmpeg", [
+          "-i", "-",
+          "-f", "mp3",
+          "-b:a", "320k",
+          translatedFilePath
+        ], {
+          input: new Uint8Array(translatedFile),
+          maxBuffer: 30000000 // 30 MB in bytes
+        });
+        break;
+      }
+      case /^.*\.(?:s16le|pcm)$/.test(outFile): {
+        translatedFilePath = outFile;
+        const { getData } = await import("./audioBuffer.mjs")
+        let data = getData(outputArray, sampleRate);
+        fs.writeFileSync(translatedFilePath, data)
         break;
       }
     }
