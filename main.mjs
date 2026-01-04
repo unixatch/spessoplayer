@@ -34,11 +34,13 @@ if (global?.fileOutputs?.length > 0) await toFile(global?.loopN)
  * @param {class} midi - The BasicMIDI class to use
  */
 function getSampleCount(midi, sampleRate, loopAmount) {
-  let loopStart = global?.loopStart ?? midi.loop.start;
-  let loopEnd = global?.loopEnd ?? midi.loop.end;
+  global.loopStart = global?.loopStart ?? midi.midiTicksToSeconds(midi.loop.start);
+  global.loopEnd = global?.loopEnd ?? midi.midiTicksToSeconds(midi.loop.end);
+  let loopDetectedInMidi = false;
   if (midi.loop.start > 0) {
-    loopStart = midi.midiTicksToSeconds(midi.loop.start);
-    loopEnd = midi.midiTicksToSeconds(midi.loop.end);
+    loopDetectedInMidi = true;
+    global.loopStart = midi.midiTicksToSeconds(midi.loop.start);
+    global.loopEnd = midi.midiTicksToSeconds(midi.loop.end);
   }
   const possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
   let sampleCount;
@@ -49,11 +51,14 @@ function getSampleCount(midi, sampleRate, loopAmount) {
       sampleRate * 
       (
         midi.duration +
-        ((loopEnd - loopStart) * possibleLoopAmount)
+        ((global.loopEnd - global.loopStart) * possibleLoopAmount)
       )
     );
   }
-  return sampleCount;
+  return {
+    loopDetectedInMidi: loopDetectedInMidi,
+    sampleCount: sampleCount
+  };
 }
 /**
  * Reads the generated samples from spessasynth_core
@@ -75,8 +80,14 @@ async function toStdout(loopAmount) {
   const sf = fs.readFileSync(global.soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const sampleRate = global?.sampleRate ?? 48000;
-  const sampleCount = getSampleCount(midi, sampleRate, loopAmount);
+  const {
+    sampleCount,
+    loopDetectedInMidi
+  } = getSampleCount(midi, sampleRate, loopAmount);
   
+  if (global.loopStart > 0 && !loopDetectedInMidi) {
+    midi.loop.start = midi.timeDivision * (global.loopStart*2);
+  }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
     enableEffects: false
@@ -185,8 +196,14 @@ async function toFile(loopAmount) {
   const sf = fs.readFileSync(global.soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const sampleRate = global?.sampleRate ?? 48000;
-  const sampleCount = getSampleCount(midi, sampleRate, loopAmount);
+  const {
+    sampleCount,
+    loopDetectedInMidi
+  } = getSampleCount(midi, sampleRate, loopAmount);
   
+  if (global.loopStart > 0 && !loopDetectedInMidi) {
+    midi.loop.start = midi.timeDivision * (global.loopStart*2);
+  }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
     enableEffects: false
