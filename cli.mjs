@@ -119,6 +119,11 @@ const actUpOnPassedArgs = async (args) => {
               global.soundfontFile = arg;
               break;
             }
+            if (fileMagicNumber.includes("DLS")) {
+              // Downloadable sounds files
+              global.soundfontFile = arg;
+              break;
+            }
           }
         }
         
