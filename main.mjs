@@ -35,7 +35,6 @@ if (global?.fileOutputs?.length > 0) await toFile(global?.loopN)
  */
 function getSampleCount(midi, sampleRate, loopAmount) {
   global.loopStart = global?.loopStart ?? midi.midiTicksToSeconds(midi.loop.start);
-  global.loopEnd = global?.loopEnd ?? midi.midiTicksToSeconds(midi.loop.end);
   let loopDetectedInMidi = false;
   if (midi.loop.start > 0) {
     loopDetectedInMidi = true;
@@ -47,11 +46,18 @@ function getSampleCount(midi, sampleRate, loopAmount) {
   if ((loopAmount ?? 0) === 0) {
     sampleCount = Math.ceil(sampleRate * midi.duration);
   } else {
+    let end;
+    if (global?.loopEnd === undefined && !loopDetectedInMidi) {
+      end = midi.duration;
+    } else if (global.loopEnd !== undefined && !loopDetectedInMidi) {
+      end = midi.duration - global.loopEnd;
+    } else end = global.loopEnd;
+
     sampleCount = Math.ceil(
       sampleRate * 
       (
         midi.duration +
-        ((global.loopEnd - global.loopStart) * possibleLoopAmount)
+        ((end - global.loopStart) * possibleLoopAmount)
       )
     );
   }
@@ -88,8 +94,8 @@ async function toStdout(loopAmount) {
   if (global.loopStart > 0 && !loopDetectedInMidi) {
     midi.loop.start = ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
   }
-  if (global.loopEnd !== midi.duration && !loopDetectedInMidi) {
-    midi.loop.end = midi.loop.end - 1;
+  if (global?.loopEnd && global.loopEnd !== midi.duration && !loopDetectedInMidi) {
+    midi.loop.end = (midi.duration - global.loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
@@ -223,6 +229,9 @@ async function toFile(loopAmount) {
   
   if (global.loopStart > 0 && !loopDetectedInMidi) {
     midi.loop.start = ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
+  }
+  if (global?.loopEnd && global.loopEnd !== midi.duration && !loopDetectedInMidi) {
+    midi.loop.end = (midi.duration - global.loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
