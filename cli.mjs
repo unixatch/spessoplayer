@@ -250,8 +250,8 @@ const setFormat = arg => {
   throw new TypeError("Passed something that wasn't an available format")
 }
 const setVolume = arg => {
-  if (/^(?:\-|\+)[\d.]+dB/.test(arg)) {
-    const dBNumber = Number(arg.match(/^((?:\-|\+)[\d.]+)dB/)[1]);
+  if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
+    const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
     const toPercentage = 10**(dBNumber/10);
     global.volume = toPercentage;
     return;
