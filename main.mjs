@@ -102,19 +102,20 @@ async function toStdout(loopAmount, volume = 100/100) {
     enableEventSystem: false,
     enableEffects: false
   });
+  synth.setMasterParameter("masterGain", volume)
   synth.soundBankManager.addSoundBank(
     SoundBankLoader.fromArrayBuffer(sf),
     "main"
-  );
-  await synth.processorInitialized;
+  )
+  await synth.processorInitialized
   const seq = new SpessaSynthSequencer(synth);
-  seq.loadNewSongList([midi]);
+  seq.loadNewSongList([midi])
   seq.loopCount = loopAmount ?? 0;
   seq.play();
   
   let outLeft = new Float32Array(sampleCount);
   let outRight = new Float32Array(sampleCount);
-  let outputArray = [outLeft, outRight]
+  let outputArray = [outLeft, outRight];
   
   
   process.on("exit", () => {
@@ -147,7 +148,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       filledSamples += bufferSize;
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        let data = getData(arr, sampleRate, { volume: volume });
+        let data = getData(arr, sampleRate);
         return this.push(data)
       }
       this.push(null)
@@ -214,6 +215,7 @@ async function toFile(loopAmount, volume = 100/100) {
     process.exit(1)
   }
   const {
+    audioToWav,
     BasicMIDI,
     SoundBankLoader,
     SpessaSynthProcessor,
@@ -238,19 +240,20 @@ async function toFile(loopAmount, volume = 100/100) {
     enableEventSystem: false,
     enableEffects: false
   });
+  synth.setMasterParameter("masterGain", volume)
   synth.soundBankManager.addSoundBank(
     SoundBankLoader.fromArrayBuffer(sf),
     "main"
-  );
-  await synth.processorInitialized;
+  )
+  await synth.processorInitialized
   const seq = new SpessaSynthSequencer(synth);
-  seq.loadNewSongList([midi]);
+  seq.loadNewSongList([midi])
   seq.loopCount = loopAmount ?? 0;
   seq.play();
   
   let outLeft = new Float32Array(sampleCount);
   let outRight = new Float32Array(sampleCount);
-  let outputArray = [outLeft, outRight]
+  let outputArray = [outLeft, outRight];
   
   const BUFFER_SIZE = 128;
   let filledSamples = 0;
@@ -283,25 +286,17 @@ async function toFile(loopAmount, volume = 100/100) {
     getWavHeader,
     getData
   } = await import("./audioBuffer.mjs");
-  function createWavTypedArray(outA, sampleR, volume) {
-    const header = getWavHeader(outA, sampleR);
-    const data = getData(outA, sampleR, { volume: volume });
-    const translatedFile = new Uint8Array(header.length + data.length);
-    translatedFile.set(header, 0)
-    translatedFile.set(data, header.length)
-    return translatedFile;
-  }
   let translatedFilePath;
   for (let outFile of global.fileOutputs) {
     switch (true) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
-        const translatedFile = createWavTypedArray(outputArray, sampleRate, volume);
+        const translatedFile = audioToWav(outputArray, sampleRate);
         translatedFilePath = outFile;
         fs.writeFileSync(translatedFilePath, translatedFile)
         break;
       }
       case /^.*\.flac$/.test(outFile): {
-        const translatedFile = createWavTypedArray(outputArray, sampleRate, volume);
+        const translatedFile = audioToWav(outputArray, sampleRate);
         const { spawnSync } = await import("child_process");
         translatedFilePath = outFile;
         spawnSync("ffmpeg", [
@@ -316,7 +311,7 @@ async function toFile(loopAmount, volume = 100/100) {
         break;
       }
       case /^.*\.mp3$/.test(outFile): {
-        const translatedFile = createWavTypedArray(outputArray, sampleRate, volume);
+        const translatedFile = audioToWav(outputArray, sampleRate);
         const { spawnSync } = await import("child_process");
         translatedFilePath = outFile;
         spawnSync("ffmpeg", [
@@ -333,7 +328,7 @@ async function toFile(loopAmount, volume = 100/100) {
       case /^.*\.(?:s16le|pcm)$/.test(outFile): {
         translatedFilePath = outFile;
         const { getData } = await import("./audioBuffer.mjs")
-        let data = getData(outputArray, sampleRate, volume);
+        let data = getData(outputArray, sampleRate);
         fs.writeFileSync(translatedFilePath, data)
         break;
       }

@@ -247,7 +247,7 @@ function getData(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
   let Data = new Uint8Array(fileSize);
   let offset = 0;
   // Volume
-  let multiplier = 32767 * fullOptions.volume;
+  let multiplier = 32767;
   /*if (fullOptions.normalizeAudio) {
     const numSamples = audioData[0].length;
     let maxAbsValue = 0;
