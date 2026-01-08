@@ -17,10 +17,8 @@
 */
 
 // In case the user passes some arguments
-if (process.argv.slice(2).length > 0) {
-  const { actUpOnPassedArgs } = await import("./cli.mjs");
-  await actUpOnPassedArgs(process.argv)
-}
+const { actUpOnPassedArgs } = await import("./cli.mjs");
+await actUpOnPassedArgs(process.argv)
 
 
 if (global?.toStdout) {

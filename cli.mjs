@@ -166,6 +166,9 @@ const actUpOnPassedArgs = async (args) => {
       console.error(`${red}Missing a required soundfont file${normal}`);
       process.exit(1)
     }
+  } else {
+    help()
+    process.exit()
   }
 }
 
@@ -259,6 +262,12 @@ const help = () => {
       
     ${green}--format${normal}, ${green}/format${normal}, ${green}-f${normal}, ${green}/f${normal}:
       ${dimGray+italics}Format to use for stdout (default: wav)${normal}
+      
+      ${dimGray+italics}Available formats:${normal}
+      ${dimGray+italics}- wav${normal}
+      ${dimGray+italics}- mp3${normal}
+      ${dimGray+italics}- flac${normal}
+      ${dimGray+italics}- pcm (s16le)${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
