@@ -22,11 +22,11 @@ const actUpOnPassedArgs = async (args) => {
   let lastParam;
   const newArguments = args.slice(2);
   if (newArguments.length !== 0) {
-    if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(newArguments)).length > 0) {
+    if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(i)).length > 0) {
       help()
       process.exit()
     }
-    if (newArguments.filter(i => /^(?:--version|\/version|-v|\/v)$/.test(newArguments)).length > 0) {
+    if (newArguments.filter(i => /^(?:--version|\/version)$/.test(i)).length > 0) {
       await version()
       process.exit()
     }
@@ -222,11 +222,11 @@ const setLoopEnd = arg => {
   throw new TypeError("Passed something that wasn't a number or in ISO string format")
 }
 const setSampleRate = arg => {
-  if (typeof Number(arg) === "number") {
+  if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     global.sampleRate = Number(arg);
     return;
   }
-  throw new TypeError("Passed something that wasn't a number")
+  throw new TypeError("Passed something that wasn't a valid number")
 }
 const setFormat = arg => {
   switch (arg) {
@@ -310,7 +310,7 @@ const help = () => {
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
     
-    ${green}--version${normal}, ${green}/version${normal}, ${green}-v${normal}, ${green}/v${normal}:
+    ${green}--version${normal}, ${green}/version${normal}:
       ${dimGray+italics}Shows the installed version${normal}
   `
   console.log(helpText)

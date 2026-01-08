@@ -38,5 +38,26 @@ function declareColors() {
 }
 declareColors()
 
+const clearLastLines = lines => {
+  if (!Array.isArray(lines)) throw new TypeError("Didn't give an array");
+  let lineX, lineY;
+  lines
+    .forEach((line, i) => {
+      if (typeof line === "string") throw new TypeError(`Gave string "${line}", numbers only allowed`)
+      const int = parseInt(line);
+      if (isNaN(int)) throw new TypeError("Didn't give a number")
+      if (i === 0) {
+        lineX = line;
+      } else lineY = line;
+    })
+  process.stdout
+    .moveCursor(lineX, lineY);
+  process.stdout
+    .clearScreenDown();
+}
+
 const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
-export { _dirname_ }
+export {
+  _dirname_,
+  clearLastLines
+}

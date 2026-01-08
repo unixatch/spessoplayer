@@ -257,13 +257,26 @@ async function toFile(loopAmount, volume = 100/100) {
   let lastBytes = false;
   let doneStreaming = false;
 
+  let i = 0;
+  const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
+  const { clearLastLines } = await import("./utils.mjs");
   while (filledSamples < sampleCount) {
-    // Process sequencer
     seq.processTick();
-    // Render
+    
     const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
     synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
     filledSamples += bufferSize;
+    
+    i++;
+    if (i % 100 === 0) {
+      if (i > 0) clearLastLines([0, -1])
+      console.info(
+        "Rendered",
+        Math.floor(seq.currentTime * 100) / 100,
+        "/",
+        durationRounded
+      );
+    }
   }
   
   const {
