@@ -90,10 +90,12 @@ async function toStdout(loopAmount) {
   } = getSampleCount(midi, sampleRate, loopAmount);
   
   if (global.loopStart > 0 && !loopDetectedInMidi) {
-    midi.loop.start = ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
+    // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
+    midi.loop.start = midi.secondsToMIDITicks(global.loopStart);
   }
   if (global?.loopEnd && global.loopEnd !== midi.duration && !loopDetectedInMidi) {
-    midi.loop.end = (midi.duration - global.loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
+    // (midi.duration - global.loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
+    midi.loop.end = midi.secondsToMIDITicks(midi.duration - global.loopEnd);
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
