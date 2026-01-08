@@ -22,10 +22,10 @@ await actUpOnPassedArgs(process.argv)
 
 
 if (global?.toStdout) {
-  await toStdout(global?.loopN)
+  await toStdout(global?.loopN, global?.volume)
   process.exit()
 }
-if (global?.fileOutputs?.length > 0) await toFile(global?.loopN)
+if (global?.fileOutputs?.length > 0) await toFile(global?.loopN, global?.volume)
 
 /**
  * Calculates the sample count to use
@@ -68,8 +68,9 @@ function getSampleCount(midi, sampleRate, loopAmount) {
  * Reads the generated samples from spessasynth_core
  * and spits them out to stdout
  * @param {Number} loopAmount - the number of loops to do
+ * @param {Number} volume - the volume of the song
  */
-async function toStdout(loopAmount) {
+async function toStdout(loopAmount, volume = 100/100) {
   if (!global?.midiFile || !global?.soundfontFile) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
@@ -146,7 +147,7 @@ async function toStdout(loopAmount) {
       filledSamples += bufferSize;
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        let data = getData(arr, sampleRate);
+        let data = getData(arr, sampleRate, { volume: volume });
         return this.push(data)
       }
       this.push(null)
@@ -205,14 +206,14 @@ async function toStdout(loopAmount) {
  * Reads the generated samples from spessasynth_core
  * and renders them to a wav file
  * @param {Number} loopAmount - the number of loops to do
+ * @param {Number} volume - the volume of the song
  */
-async function toFile(loopAmount) {
+async function toFile(loopAmount, volume = 100/100) {
   if (!global?.midiFile || !global?.soundfontFile || global.fileOutputs.length === 0 ) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
   const {
-    audioToWav,
     BasicMIDI,
     SoundBankLoader,
     SpessaSynthProcessor,
@@ -265,17 +266,29 @@ async function toFile(loopAmount) {
     filledSamples += bufferSize;
   }
   
+  const {
+    getWavHeader,
+    getData
+  } = await import("./audioBuffer.mjs");
+  function createWavTypedArray(outA, sampleR, volume) {
+    const header = getWavHeader(outA, sampleR);
+    const data = getData(outA, sampleR, { volume: volume });
+    const translatedFile = new Uint8Array(header.length + data.length);
+    translatedFile.set(header, 0)
+    translatedFile.set(data, header.length)
+    return translatedFile;
+  }
   let translatedFilePath;
   for (let outFile of global.fileOutputs) {
     switch (true) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
-        const translatedFile = audioToWav(outputArray, sampleRate);
+        const translatedFile = createWavTypedArray(outputArray, sampleRate, volume);
         translatedFilePath = outFile;
-        fs.writeFileSync(translatedFilePath, new Uint8Array(translatedFile))
+        fs.writeFileSync(translatedFilePath, translatedFile)
         break;
       }
       case /^.*\.flac$/.test(outFile): {
-        const translatedFile = audioToWav(outputArray, sampleRate);
+        const translatedFile = createWavTypedArray(outputArray, sampleRate, volume);
         const { spawnSync } = await import("child_process");
         translatedFilePath = outFile;
         spawnSync("ffmpeg", [
@@ -284,13 +297,13 @@ async function toFile(loopAmount) {
           "-compression_level", "12",
           translatedFilePath
         ], {
-          input: new Uint8Array(translatedFile),
+          input: translatedFile,
           maxBuffer: 30000000 // 30 MB in bytes
         });
         break;
       }
       case /^.*\.mp3$/.test(outFile): {
-        const translatedFile = audioToWav(outputArray, sampleRate);
+        const translatedFile = createWavTypedArray(outputArray, sampleRate, volume);
         const { spawnSync } = await import("child_process");
         translatedFilePath = outFile;
         spawnSync("ffmpeg", [
@@ -299,7 +312,7 @@ async function toFile(loopAmount) {
           "-b:a", "320k",
           translatedFilePath
         ], {
-          input: new Uint8Array(translatedFile),
+          input: translatedFile,
           maxBuffer: 30000000 // 30 MB in bytes
         });
         break;
@@ -307,7 +320,7 @@ async function toFile(loopAmount) {
       case /^.*\.(?:s16le|pcm)$/.test(outFile): {
         translatedFilePath = outFile;
         const { getData } = await import("./audioBuffer.mjs")
-        let data = getData(outputArray, sampleRate);
+        let data = getData(outputArray, sampleRate, volume);
         fs.writeFileSync(translatedFilePath, data)
         break;
       }

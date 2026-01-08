@@ -53,6 +53,14 @@ const actUpOnPassedArgs = async (args) => {
           global.toStdout = true;
           break;
         }
+        case /^(?:--volume|\/volume|-v|\/v)$/.test(arg) && arg: {
+          // In case there's no other argument
+          const indexOfArg = newArguments.indexOf(arg);
+          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+          
+          lastParam = "volume"
+          break;
+        }
         case /^(?:--format|\/format|-f|\/f)$/.test(arg) && arg: {
           // In case there's no other argument
           const indexOfArg = newArguments.indexOf(arg);
@@ -148,6 +156,10 @@ const actUpOnPassedArgs = async (args) => {
             setFormat(arg)
             break;
           }
+          if (lastParam === "volume") {
+            setVolume(arg)
+            break;
+          }
           // Invalid param
           console.log(red+`'${
             underline+dimRed +
@@ -237,6 +249,24 @@ const setFormat = arg => {
   }
   throw new TypeError("Passed something that wasn't an available format")
 }
+const setVolume = arg => {
+  if (/^(?:\-|\+)[\d.]+dB/.test(arg)) {
+    const dBNumber = Number(arg.match(/^((?:\-|\+)[\d.]+)dB/)[1]);
+    const toPercentage = 10**(dBNumber/10);
+    global.volume = toPercentage;
+    return;
+  }
+  if (/^[\d.]+%$/.test(arg)) {
+    const percentage = Number(arg.match(/^([\d.]+)%$/)[1]);
+    global.volume = percentage / 100;
+    return;
+  }
+  if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
+    global.volume = Number(arg);
+    return;
+  }
+  throw new TypeError("Passed something that wasn't a valid number/dB/percentage")
+}
 const help = () => {
   const helpText = `${underline}spessoplayer${normal}
   ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
@@ -245,6 +275,14 @@ const help = () => {
     ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
   
   Available parameters:
+    ${green}--volume${normal}, ${green}/volume${normal}, ${green}-v${normal}, ${green}/v${normal}:
+      ${dimGray+italics}Volume to set (default: 100%)${normal}
+      
+      ${dimGray+italics}Available formats:${normal}
+      ${dimGray+italics}- dB (example -10dB)${normal}
+      ${dimGray+italics}- percentages (example 70%)${normal}
+      ${dimGray+italics}- decimals (example 0.9)${normal}
+      
     ${green}--loop${normal}, ${green}/loop${normal}, ${green}-l${normal}, ${green}/l${normal}:
       ${dimGray+italics}Loop x amount of times (default: 0)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers)${normal}
