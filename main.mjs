@@ -292,7 +292,7 @@ async function toFile(loopAmount, volume = 100/100) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
         const translatedFile = audioToWav(outputArray, sampleRate);
         translatedFilePath = outFile;
-        fs.writeFileSync(translatedFilePath, translatedFile)
+        fs.writeFileSync(translatedFilePath, new Uint8Array(translatedFile))
         break;
       }
       case /^.*\.flac$/.test(outFile): {
@@ -305,7 +305,7 @@ async function toFile(loopAmount, volume = 100/100) {
           "-compression_level", "12",
           translatedFilePath
         ], {
-          input: translatedFile,
+          input: new Uint8Array(translatedFile),
           maxBuffer: 30000000 // 30 MB in bytes
         });
         break;
@@ -320,7 +320,7 @@ async function toFile(loopAmount, volume = 100/100) {
           "-b:a", "320k",
           translatedFilePath
         ], {
-          input: translatedFile,
+          input: new Uint8Array(translatedFile),
           maxBuffer: 30000000 // 30 MB in bytes
         });
         break;
