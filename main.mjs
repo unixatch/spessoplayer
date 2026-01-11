@@ -65,22 +65,30 @@ function getSampleCount(midi, sampleRate, loopAmount) {
   };
 }
 /**
- * Reads the generated samples from spessasynth_core
- * and spits them out to stdout
- * @param {Number} loopAmount - the number of loops to do
- * @param {Number} volume - the volume of the song
+ * Initializes all the required variables for spessasynth_core usage
  */
-async function toStdout(loopAmount, volume = 100/100) {
-  if (!global?.midiFile || !global?.soundfontFile) {
-    throw new ReferenceError("Missing some required files")
-    process.exit(1)
+async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
+  let audioToWav,
+      BasicMIDI,
+      SoundBankLoader,
+      SpessaSynthProcessor,
+      SpessaSynthSequencer;
+  if (isToFile) {
+    ({
+      audioToWav,
+      BasicMIDI,
+      SoundBankLoader,
+      SpessaSynthProcessor,
+      SpessaSynthSequencer
+    } = await import("spessasynth_core"))
+  } else {
+    ({
+      BasicMIDI,
+      SoundBankLoader,
+      SpessaSynthProcessor,
+      SpessaSynthSequencer
+    } = await import("spessasynth_core"))
   }
-  const {
-    BasicMIDI,
-    SoundBankLoader,
-    SpessaSynthProcessor,
-    SpessaSynthSequencer
-  } = await import("spessasynth_core")
   const mid = fs.readFileSync(global.midiFile);
   const sf = fs.readFileSync(global.soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
@@ -112,6 +120,33 @@ async function toStdout(loopAmount, volume = 100/100) {
   seq.loadNewSongList([midi])
   seq.loopCount = loopAmount ?? 0;
   seq.play();
+  
+  return {
+    audioToWav: audioToWav,
+    seq: seq,
+    synth: synth,
+    midi: midi,
+    sampleCount: sampleCount,
+    sampleRate: sampleRate
+  }
+}
+/**
+ * Reads the generated samples from spessasynth_core
+ * and spits them out to stdout
+ * @param {Number} loopAmount - the number of loops to do
+ * @param {Number} volume - the volume of the song
+ */
+async function toStdout(loopAmount, volume = 100/100) {
+  if (!global?.midiFile || !global?.soundfontFile) {
+    throw new ReferenceError("Missing some required files")
+    process.exit(1)
+  }
+  const {
+    seq,
+    synth,
+    sampleCount,
+    sampleRate
+  } = await initSpessaSynth(loopAmount, volume);
   
   let outLeft = new Float32Array(sampleCount);
   let outRight = new Float32Array(sampleCount);
@@ -216,42 +251,11 @@ async function toFile(loopAmount, volume = 100/100) {
   }
   const {
     audioToWav,
-    BasicMIDI,
-    SoundBankLoader,
-    SpessaSynthProcessor,
-    SpessaSynthSequencer
-  } = await import("spessasynth_core")
-  const mid = fs.readFileSync(global.midiFile);
-  const sf = fs.readFileSync(global.soundfontFile);
-  const midi = BasicMIDI.fromArrayBuffer(mid);
-  const sampleRate = global?.sampleRate ?? 48000;
-  const {
+    seq,
+    synth,
     sampleCount,
-    loopDetectedInMidi
-  } = getSampleCount(midi, sampleRate, loopAmount);
-  
-  if (global.loopStart > 0 && !loopDetectedInMidi) {
-    // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
-    midi.loop.start = midi.secondsToMIDITicks(global.loopStart);
-  }
-  if (global?.loopEnd && global.loopEnd !== midi.duration && !loopDetectedInMidi) {
-    // (midi.duration - global.loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
-    midi.loop.end = midi.secondsToMIDITicks(midi.duration - global.loopEnd);
-  }
-  const synth = new SpessaSynthProcessor(sampleRate, {
-    enableEventSystem: false,
-    enableEffects: false
-  });
-  synth.setMasterParameter("masterGain", volume)
-  synth.soundBankManager.addSoundBank(
-    SoundBankLoader.fromArrayBuffer(sf),
-    "main"
-  )
-  await synth.processorInitialized
-  const seq = new SpessaSynthSequencer(synth);
-  seq.loadNewSongList([midi])
-  seq.loopCount = loopAmount ?? 0;
-  seq.play();
+    sampleRate
+  } = await initSpessaSynth(loopAmount, volume, true);
   
   let outLeft = new Float32Array(sampleCount);
   let outRight = new Float32Array(sampleCount);
