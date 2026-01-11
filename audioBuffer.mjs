@@ -108,6 +108,7 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
  * @param {Array} audioData - An array that contains the audio buffers
  * @param {Number} sampleRate - Sample rate of the audio
  * @param {Object} options - Optional, adds loop timestamps and more
+ * @returns {Uint8Array} the wav header
  */
 function getWavHeader(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
   const length = audioData[0].length;
@@ -233,6 +234,7 @@ function getWavHeader(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS
  * @param {Array} audioData - An array that contains the audio buffers
  * @param {Number} sampleRate - Sample rate of the audio
  * @param {Object} options - Optional, adds loop timestamps and more
+ * @returns {Uint8Array} the translated data
  */
 function getData(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
   const length = audioData[0].length;

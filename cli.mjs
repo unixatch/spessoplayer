@@ -18,6 +18,10 @@
 import { join, basename } from "path"
 import { _dirname_ } from "./utils.mjs"
 
+/**
+ * Sets necessary variables in global object for main.mjs
+ * @param {Array} args - The process.argv to analyse
+ */
 const actUpOnPassedArgs = async (args) => {
   let lastParam;
   const newArguments = args.slice(2);
@@ -184,6 +188,10 @@ const actUpOnPassedArgs = async (args) => {
   }
 }
 
+/**
+ * Sets the global.loopN variable
+ * @param {string} arg - the loop amount
+ */
 const setLoop = arg => {
   if (typeof Number(arg) === "number"
       && !/^(?:Infinity|infinity)$/.test(arg)) {
@@ -195,6 +203,10 @@ const setLoop = arg => {
   }
   throw new TypeError("Passed something that wasn't a number")
 }
+/**
+ * Sets the global.loopStart variable
+ * @param {string} arg - the start of the loop in seconds or in HH:MM:SS:ms format
+ */
 const setLoopStart = arg => {
   if (typeof Number(arg) === "number"
       || Date.parse(`1970T${arg}Z`) !== NaN) {
@@ -208,6 +220,10 @@ const setLoopStart = arg => {
   }
   throw new TypeError("Passed something that wasn't a number or in ISO string format")
 }
+/**
+ * Sets the global.loopEnd variable
+ * @param {string} arg - the end of the loop in seconds or in HH:MM:SS:ms format
+ */
 const setLoopEnd = arg => {
   if (typeof Number(arg) === "number"
       || Date.parse(`1970T${arg}Z`) !== NaN) {
@@ -221,6 +237,10 @@ const setLoopEnd = arg => {
   }
   throw new TypeError("Passed something that wasn't a number or in ISO string format")
 }
+/**
+ * Sets the global.sampleRate variable
+ * @param {string} arg - the sample rate to set
+ */
 const setSampleRate = arg => {
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     global.sampleRate = Number(arg);
@@ -228,6 +248,10 @@ const setSampleRate = arg => {
   }
   throw new TypeError("Passed something that wasn't a valid number")
 }
+/**
+ * Sets the global.format variable for use in stdout mode
+ * @param {string} arg - the format to use (similar to ffmpeg's -f)
+ */
 const setFormat = arg => {
   switch (arg) {
     case /^(?:wav|wave)$/.test(arg) && arg: {
@@ -249,6 +273,10 @@ const setFormat = arg => {
   }
   throw new TypeError("Passed something that wasn't an available format")
 }
+/**
+ * Sets the global.volume variable for the masterGain
+ * @param {string} arg - the volume in either percentage, decibels or decimals
+ */
 const setVolume = arg => {
   if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
     const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
@@ -267,6 +295,9 @@ const setVolume = arg => {
   }
   throw new TypeError("Passed something that wasn't a valid number/dB/percentage")
 }
+/**
+ * Shows the help text
+ */
 const help = () => {
   const helpText = `${underline}spessoplayer${normal}
   ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
@@ -315,6 +346,9 @@ const help = () => {
   `
   console.log(helpText)
 }
+/**
+ * Shows the version number taken from package.json
+ */
 const version = async () => {
   const fs = await import("node:fs");
   const packageJSONPath = join(_dirname_, "package.json");
