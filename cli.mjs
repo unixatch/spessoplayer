@@ -15,7 +15,7 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { join, basename } from "path"
+import { join, basename, parse } from "path"
 import { _dirname_ } from "./utils.mjs"
 
 /**
@@ -358,5 +358,7 @@ const version = async () => {
 }
 
 export {
-  actUpOnPassedArgs
+  actUpOnPassedArgs,
+  join,
+  parse
 }

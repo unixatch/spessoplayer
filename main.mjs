@@ -17,7 +17,11 @@
 */
 
 // In case the user passes some arguments
-const { actUpOnPassedArgs } = await import("./cli.mjs");
+const {
+  actUpOnPassedArgs,
+  join,
+  parse
+} = await import("./cli.mjs");
 await actUpOnPassedArgs(process.argv)
 
 
@@ -250,12 +254,21 @@ async function toFile(loopAmount, volume = 100/100) {
     process.exit(1)
   }
   const {
-    audioToWav,
     seq,
     synth,
     sampleCount,
     sampleRate
   } = await initSpessaSynth(loopAmount, volume, true);
+
+  const {
+    getWavHeader,
+    getData
+  } = await import("./audioBuffer.mjs");
+  const { Readable } = await import("node:stream");
+  const { clearLastLines } = await import("./utils.mjs");
+  
+  let i = 0;
+  const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
   
   let outLeft = new Float32Array(sampleCount);
   let outRight = new Float32Array(sampleCount);
@@ -264,81 +277,143 @@ async function toFile(loopAmount, volume = 100/100) {
   const BUFFER_SIZE = 128;
   let filledSamples = 0;
   let lastBytes = false;
-  let doneStreaming = false;
-
-  let i = 0;
-  const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
-  const { clearLastLines } = await import("./utils.mjs");
-  while (filledSamples < sampleCount) {
-    seq.processTick();
-    
-    const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-    synth.renderAudio(outputArray, [], [], filledSamples, bufferSize);
-    filledSamples += bufferSize;
-    
-    i++;
-    if (i % 100 === 0) {
-      if (i > 0) clearLastLines([0, -1])
-      console.info(
-        "Rendered",
-        Math.floor(seq.currentTime * 100) / 100,
-        "/",
-        durationRounded
+  let stdoutHeader = getWavHeader(outputArray, sampleRate);
+  let readStream = new Readable({
+    read() {
+      const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+      const left = new Float32Array(bufferSize);
+      const right = new Float32Array(bufferSize);
+      const arr = [left, right]
+      seq.processTick();
+      synth.renderAudio(
+        arr, [], [],
+        0,
+        bufferSize
       );
+      filledSamples += bufferSize;
+      i++;
+      if (i % 100 === 0) {
+        if (i > 0) clearLastLines([0, -1])
+        console.info(
+          "Rendered",
+          Math.floor(seq.currentTime * 100) / 100,
+          "/",
+          durationRounded
+        );
+      }
+      
+      if (filledSamples <= sampleCount && !lastBytes) {
+        if (filledSamples === sampleCount) lastBytes = true;
+        let data = getData(arr, sampleRate);
+        return this.push(data)
+      }
+      this.push(null)
     }
+  });
+  /**
+   * Returns a new path with a new number (adds 1) at the end of the filename
+   * if necessary otherwise it returns the given path
+   * @param {string} path - The path to parse and modify if needed
+   * @example
+   * // It'll return out1.wav
+   *    newFileName("out.wav")
+   * @example
+   * // It'll return out2.wav
+   *    newFileName("out1.wav")
+   * @returns {string} The path, modified or not
+   */
+  function newFileName(path) {
+    if (fs.existsSync(path)) {
+      const pathDir = parse(path).dir;
+      const pathFileName = (parse(path).name.match(/[0-9]+$/g)?.length > 0)
+        ? parse(path).name.replace(/[0-9]+$/, "")
+        + (Number(parse(path).name.match(/[0-9]+$/g)[0]) + 1)
+        : parse(path).name.replace(/[0-9]+$/, "") + 1;
+      const pathExt = parse(path).ext;
+      path = join(pathDir, pathFileName + pathExt);
+      
+      if (fs.existsSync(path)) return newFileName(path);
+      return path;
+    }
+    return path;
   }
-  
-  const {
-    getWavHeader,
-    getData
-  } = await import("./audioBuffer.mjs");
-  let translatedFilePath;
+  let spawn,
+      ffmpegPromises = [];
   for (let outFile of global.fileOutputs) {
     switch (true) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
-        const translatedFile = audioToWav(outputArray, sampleRate);
-        translatedFilePath = outFile;
-        fs.writeFileSync(translatedFilePath, new Uint8Array(translatedFile))
+        const newName = newFileName(outFile);
+        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
+        outFile = newName;
+        
+        const wav = fs.createWriteStream(outFile);
+        wav.write(stdoutHeader)
+        readStream.pipe(wav)
         break;
       }
       case /^.*\.flac$/.test(outFile): {
-        const translatedFile = audioToWav(outputArray, sampleRate);
-        const { spawnSync } = await import("child_process");
-        translatedFilePath = outFile;
-        spawnSync("ffmpeg", [
+        if (!spawn) {
+          ({ spawn } = await import("child_process"));
+        }
+        const newName = newFileName(outFile);
+        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile);
+        const ffmpeg = spawn("ffmpeg", [
           "-i", "-",
           "-f", "flac",
           "-compression_level", "12",
-          translatedFilePath
-        ], {
-          input: new Uint8Array(translatedFile),
-          maxBuffer: 30000000 // 30 MB in bytes
-        });
+          outFile
+        ]);
+        ffmpegPromises.push(
+          new Promise((resolve, reject) => {
+            ffmpeg.on("error", () => reject())
+            ffmpeg.on("exit", () => resolve())
+          })
+        )
+        ffmpeg.stdin.write(stdoutHeader)
+        readStream.pipe(ffmpeg.stdin)
         break;
       }
       case /^.*\.mp3$/.test(outFile): {
-        const translatedFile = audioToWav(outputArray, sampleRate);
-        const { spawnSync } = await import("child_process");
-        translatedFilePath = outFile;
-        spawnSync("ffmpeg", [
+        if (!spawn) {
+          ({ spawn } = await import("child_process"));
+        }
+        const newName = newFileName(outFile);
+        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile);
+        const ffmpeg = spawn("ffmpeg", [
           "-i", "-",
           "-f", "mp3",
           "-b:a", "320k",
-          translatedFilePath
-        ], {
-          input: new Uint8Array(translatedFile),
-          maxBuffer: 30000000 // 30 MB in bytes
-        });
+          outFile
+        ]);
+        ffmpegPromises.push(
+          new Promise((resolve, reject) => {
+            ffmpeg.on("error", () => reject())
+            ffmpeg.on("exit", () => resolve())
+          })
+        )
+        ffmpeg.stdin.write(stdoutHeader)
+        readStream.pipe(ffmpeg.stdin)
         break;
       }
       case /^.*\.(?:s16le|pcm)$/.test(outFile): {
-        translatedFilePath = outFile;
-        const { getData } = await import("./audioBuffer.mjs")
-        let data = getData(outputArray, sampleRate);
-        fs.writeFileSync(translatedFilePath, data)
+        const newName = newFileName(outFile);
+        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile);
+        
+        const pcm = fs.createWriteStream(outFile);
+        readStream.pipe(pcm)
         break;
       }
     }
   }
-  console.log(`Written to ${translatedFilePath}`);
+  await Promise.all([
+    new Promise((resolve, reject) => {
+      readStream.on("error", () => reject())
+      readStream.on("end", () => resolve())
+    }),
+    ...ffmpegPromises // if there are any
+  ])
+  console.log("Written", global.fileOutputs.filter(i => i));
 }
