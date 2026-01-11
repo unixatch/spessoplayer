@@ -194,6 +194,8 @@ async function toStdout(loopAmount, volume = 100/100) {
     }
   })
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
+  // Frees up memory
+  [outLeft, outRight, outputArray] = [null, null, null];
   switch (global?.format) {
     case "wave": {
       process.stdout.write(stdoutHeader)
@@ -278,6 +280,8 @@ async function toFile(loopAmount, volume = 100/100) {
   let filledSamples = 0;
   let lastBytes = false;
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
+  // Frees up memory
+  [outLeft, outRight, outputArray] = [null, null, null];
   let readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
