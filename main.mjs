@@ -219,7 +219,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       const ffmpeg = spawn("ffmpeg", [
                        "-i", "-",
                        "-f", "mp3",
-                       "-b:a", "320k",
+                       "-aq", "0",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ]});
       ffmpeg.stdin.write(stdoutHeader)
@@ -388,7 +388,7 @@ async function toFile(loopAmount, volume = 100/100) {
         const ffmpeg = spawn("ffmpeg", [
           "-i", "-",
           "-f", "mp3",
-          "-b:a", "320k",
+          "-aq", "0",
           outFile
         ]);
         ffmpegPromises.push(
