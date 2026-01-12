@@ -26,6 +26,8 @@ function declareColors() {
   // Actual colors
   global.yellow= "\x1b[33;1m"
   global.normalYellow= "\x1b[33m"
+  global.magenta= "\x1b[35m"
+  global.brightMagenta= "\x1b[95m"
   global.dimYellow = "\x1b[2;33m"
   global.green= "\x1b[32m"
   global.dimGreen= "\x1b[32;2m"

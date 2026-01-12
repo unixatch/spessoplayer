@@ -299,10 +299,21 @@ async function toFile(loopAmount, volume = 100/100) {
       if (i % 100 === 0) {
         if (i > 0) clearLastLines([0, -1])
         console.info(
-          "Rendered",
-          Math.floor(seq.currentTime * 100) / 100,
+          `Rendered ${magenta}` +
+            // Gets the ISO format and then gets mm:ss.sss
+            new Date(
+              (Math.floor(seq.currentTime * 100) / 100) * 1000
+            )
+              .toISOString()
+              .replace(/.*T...(.*)Z/, "$1") +
+          `${normal}`,
           "/",
-          durationRounded
+          `${brightMagenta}` +
+            // Same down here
+            new Date(durationRounded * 1000)
+              .toISOString()
+              .replace(/.*T...(.*)Z/, "$1"),
+          `${normal}`
         );
       }
       
