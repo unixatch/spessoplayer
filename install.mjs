@@ -17,7 +17,7 @@
 */
 
 const { spawnSync } = await import("child_process");
-const { programExists, tryToInstall } = await import("./utils.mjs");
+const { runProgramSync, tryToInstall } = await import("./utils.mjs");
 
 let readline,
     stdin,
@@ -25,7 +25,7 @@ let readline,
     stderr;
 // ffmpeg check
 try {
-  programExists({ spawnSync, program: "ffmpeg" })
+  runProgramSync({ spawnSync, program: "ffmpeg" })
 } catch (e) {
   console.log("\x1b[33;4m"+"ffmpeg"+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
   if (!readline) {
@@ -45,7 +45,7 @@ try {
 }
 // SoX check
 try {
-  programExists({ spawnSync, program: "sox" })
+  runProgramSync({ spawnSync, program: "sox" })
 } catch (e) {
   console.log("\x1b[33;4m"+"sox"+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
   if (!readline) {

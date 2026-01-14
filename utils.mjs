@@ -57,10 +57,10 @@ const clearLastLines = lines => {
   process.stdout
     .clearScreenDown();
 }
-function programExists({ spawnSync, program, args = [], stdioArray = "pipe" }) {
+function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) {
   const code = spawnSync(
-    program, 
-    args, 
+    program,
+    args,
     { stdio: stdioArray }
   )?.error?.code
 
@@ -92,7 +92,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
       case "winget":
       case "brew":
         try {
-          return programExists({
+          return runProgramSync({
             spawnSync,
             program: packageManager,
             args: ["install", packageToUse],
@@ -101,7 +101,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
       case "pacman":
         try {
-          return programExists({
+          return runProgramSync({
             spawnSync,
             program: packageManager,
             args: ["-S", packageToUse],
@@ -110,7 +110,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
       case "emerge":
         try {
-          return programExists({
+          return runProgramSync({
             spawnSync,
             program: packageManager,
             args: ["--ask", "--verbose", packageToUse],
@@ -119,7 +119,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
       case "apk":
         try {
-          return programExists({
+          return runProgramSync({
             spawnSync,
             program: packageManager,
             args: ["add", packageToUse],
@@ -136,6 +136,6 @@ const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
 export {
   _dirname_,
   clearLastLines,
-  programExists,
+  runProgramSync,
   tryToInstall
 }
