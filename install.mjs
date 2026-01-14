@@ -17,7 +17,7 @@
 */
 
 const { spawnSync } = await import("child_process");
-const { tryToInstall } = await import("./utils.mjs");
+const { programExists, tryToInstall } = await import("./utils.mjs");
 
 let readline,
     stdin,
@@ -25,7 +25,7 @@ let readline,
     stderr;
 // ffmpeg check
 try {
-  spawnSync("ffmpeg")
+  programExists({ spawnSync, program: "ffmpeg" })
 } catch (e) {
   console.log("\x1b[33;4m"+"ffmpeg"+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
   if (!readline) {
@@ -34,7 +34,7 @@ try {
   }
   
   const rl = readline.createInterface({ input: stdin, output: stdout });
-  const answer = await rl.question("Do you want to install it? [Y|n]");
+  const answer = await rl.question("Do you want to install it [Y|n]? ");
   rl.close()
   //                               ↓ In case it's neither y or n
   if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
@@ -45,7 +45,7 @@ try {
 }
 // SoX check
 try {
-  spawnSync("sox")
+  programExists({ spawnSync, program: "sox" })
 } catch (e) {
   console.log("\x1b[33;4m"+"sox"+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
   if (!readline) {

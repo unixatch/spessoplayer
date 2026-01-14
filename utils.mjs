@@ -57,6 +57,17 @@ const clearLastLines = lines => {
   process.stdout
     .clearScreenDown();
 }
+function programExists({ spawnSync, program, args = [], stdioArray = "pipe" }) {
+  const code = spawnSync(
+    program, 
+    args, 
+    { stdio: stdioArray }
+  )?.error?.code
+
+  if (code === "ENOENT") {
+    throw new ReferenceError("Program doesn't exist")
+  } else return true
+}
 function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   const packageManagers = [
     "apt",
@@ -80,46 +91,41 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
       case "pkg":
       case "winget":
       case "brew":
-        // Try...catch didn't work so i had to do this abomination
-        if (
-          spawnSync(
-            packageManager,
-            ["install", packageToUse],
-            { stdio: ["pipe", stdout, stderr] }
-          ).error?.code === "ENOENT"
-        ) {
-          break;
-        } else return;
+        try {
+          return programExists({
+            spawnSync,
+            program: packageManager,
+            args: ["install", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
       case "pacman":
-        if (
-          spawnSync(
-            packageManager,
-            ["-S", packageToUse],
-            { stdio: ["pipe", stdout, stderr] }
-          ).error?.code === "ENOENT"
-        ) {
-          break;
-        } else return;
+        try {
+          return programExists({
+            spawnSync,
+            program: packageManager,
+            args: ["-S", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
       case "emerge":
-        if (
-          spawnSync(
-            packageManager,
-            ["--ask", "--verbose", packageToUse],
-            { stdio: ["pipe", stdout, stderr] }
-          ).error?.code === "ENOENT"
-        ) {
-          break;
-        } else return;
+        try {
+          return programExists({
+            spawnSync,
+            program: packageManager,
+            args: ["--ask", "--verbose", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
       case "apk":
-        if (
-          spawnSync(
-            packageManager,
-            ["add", packageToUse],
-            { stdio: ["pipe", stdout, stderr] }
-          ).error?.code === "ENOENT"
-        ) {
-          break;
-        } else return;
+        try {
+          return programExists({
+            spawnSync,
+            program: packageManager,
+            args: ["add", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
     }
   }
   console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
@@ -130,5 +136,6 @@ const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
 export {
   _dirname_,
   clearLastLines,
+  programExists,
   tryToInstall
 }
