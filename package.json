@@ -22,7 +22,9 @@
     "spessoplayer": "main.mjs"
   },
   "scripts": {
-    "test": "node main.js"
+    "test": "node main.js",
+    "prepare": "node install.mjs",
+    "postinstall": "node install.mjs"
   },
   "dependencies": {
     "spessasynth_core": "^4.0.24"

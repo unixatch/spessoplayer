@@ -57,9 +57,78 @@ const clearLastLines = lines => {
   process.stdout
     .clearScreenDown();
 }
+function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
+  const packageManagers = [
+    "apt",
+    "dnf",
+    "yum",
+    "zypper",
+    "pacman",
+    "emerge",
+    "pkg",
+    "winget",
+    "brew",
+    "rpm",
+    "apk"
+  ];
+  for (let packageManager of packageManagers) {
+    switch (packageManager) {
+      case "apt":
+      case "dnf":
+      case "yum":
+      case "zypper":
+      case "pkg":
+      case "winget":
+      case "brew":
+        // Try...catch didn't work so i had to do this abomination
+        if (
+          spawnSync(
+            packageManager,
+            ["install", packageToUse],
+            { stdio: ["pipe", stdout, stderr] }
+          ).error?.code === "ENOENT"
+        ) {
+          break;
+        } else return;
+      case "pacman":
+        if (
+          spawnSync(
+            packageManager,
+            ["-S", packageToUse],
+            { stdio: ["pipe", stdout, stderr] }
+          ).error?.code === "ENOENT"
+        ) {
+          break;
+        } else return;
+      case "emerge":
+        if (
+          spawnSync(
+            packageManager,
+            ["--ask", "--verbose", packageToUse],
+            { stdio: ["pipe", stdout, stderr] }
+          ).error?.code === "ENOENT"
+        ) {
+          break;
+        } else return;
+      case "apk":
+        if (
+          spawnSync(
+            packageManager,
+            ["add", packageToUse],
+            { stdio: ["pipe", stdout, stderr] }
+          ).error?.code === "ENOENT"
+        ) {
+          break;
+        } else return;
+    }
+  }
+  console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
+  console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
+}
 
 const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
 export {
   _dirname_,
-  clearLastLines
+  clearLastLines,
+  tryToInstall
 }
