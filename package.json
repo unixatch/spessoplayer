@@ -27,6 +27,6 @@
     "postinstall": "node install.mjs"
   },
   "dependencies": {
-    "spessasynth_core": "^4.0.24"
+    "spessasynth_core": "^4.0.25"
   }
 }

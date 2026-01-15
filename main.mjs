@@ -25,6 +25,7 @@ const {
 await actUpOnPassedArgs(process.argv)
 
 
+let spawn;
 if (global?.toStdout) {
   await toStdout(global?.loopN, global?.volume)
   process.exit()
@@ -70,6 +71,9 @@ function getSampleCount(midi, sampleRate, loopAmount) {
 }
 /**
  * Initializes all the required variables for spessasynth_core usage
+ * @param {any} loopAmount - the loop amount
+ * @param {Number} volume - the volume to set
+ * @param {Boolean} isToFile - defines or not audioToWav
  */
 async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
   let audioToWav,
@@ -125,6 +129,7 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
   seq.loopCount = loopAmount ?? 0;
   seq.play();
   
+  addEvent({ eventType: "uncaughtException" })
   return {
     audioToWav: audioToWav,
     seq: seq,
@@ -133,6 +138,105 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
     sampleCount: sampleCount,
     sampleRate: sampleRate
   }
+}
+/**
+ * Adds events to process
+ * @param {string} eventType - the type of event to add
+ * @param {Function} func - optional function for eventType "exit"
+ * @param {Boolean} isStdout - if it's the function toStdout calling
+ * 
+ * @example
+ * addEvent({ eventType: "SIGINT" })
+ */
+function addEvent({ eventType, func, isStdout = false }) {
+  if (eventType === "uncaughtException") {
+    // Adds on top of spessasynth_core's uncaughtException
+    const oldUncaughtException = process.rawListeners("uncaughtException")[0];
+    process.removeListener("uncaughtException", oldUncaughtException)
+    process.on("uncaughtException", (error) => {
+      if (global.SIGINT) return process.exit();
+      if (error?.code === "EPIPE") {
+        console.error(`${gray}Closed the program before finishing the rendering${normal}`);
+        return process.exit();
+      }
+      oldUncaughtException(error)
+    })
+    return true;
+  }
+  if (isStdout && eventType === "exit") {
+    process.on("exit", func)
+    return true;
+  }
+  if (eventType === "SIGINT") {
+    process.on("SIGINT", () => {
+      console.error(`${gray}Closed with Ctrl+c${normal}`);
+      global.SIGINT = true;
+    })
+  }
+}
+/**
+ * Creates a Readable stream given the variables needed
+ * @param {Readable} Readable - a copy of the readable stream function
+ * @param {Boolean} isStdout - whether or not it's for the toStdout function
+ * @param {Object} Object - the object deconstructed to get all necessary variables
+ */
+function createReadable(Readable, isStdout = false, {
+  BUFFER_SIZE,
+  sampleCount,
+  filledSamples,
+  lastBytes,
+  sampleRate, i,
+  durationRounded,
+  clearLastLines,
+  seq, synth,
+  getData
+}) {
+  const readStream = new Readable({
+    read() {
+      const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+      const left = new Float32Array(bufferSize);
+      const right = new Float32Array(bufferSize);
+      const arr = [left, right]
+      seq.processTick();
+      synth.renderAudio(
+        arr, [], [],
+        0,
+        bufferSize
+      );
+      filledSamples += bufferSize;
+      if (!isStdout) {
+        i++;
+        if (i % 100 === 0) {
+          if (i > 0) clearLastLines([0, -1])
+          console.info(
+            `Rendered ${magenta}` +
+              // Gets the ISO format and then gets mm:ss.sss
+              new Date(
+                (Math.floor(seq.currentTime * 100) / 100) * 1000
+              )
+                .toISOString()
+                .replace(/.*T...(.*)Z/, "$1") +
+            `${normal}`,
+            "/",
+            `${brightMagenta}` +
+              // Same down here
+              new Date(durationRounded * 1000)
+                .toISOString()
+                .replace(/.*T...(.*)Z/, "$1"),
+            `${normal}`
+          );
+        }
+      }
+      
+      if (filledSamples <= sampleCount && !lastBytes) {
+        if (filledSamples === sampleCount) lastBytes = true;
+        let data = getData(arr, sampleRate);
+        return this.push(data)
+      }
+      this.push(null)
+    }
+  });
+  return readStream;
 }
 /**
  * Reads the generated samples from spessasynth_core
@@ -157,10 +261,13 @@ async function toStdout(loopAmount, volume = 100/100) {
   let outputArray = [outLeft, outRight];
   
   
-  process.on("exit", () => {
-    // Necessary for programs like mpv
-    if (doneStreaming) process.kill(process.pid, "SIGKILL")
+  addEvent({ eventType: "exit", isStdout: true, 
+    func: () => {
+      // Necessary for programs like mpv
+      if (doneStreaming) process.kill(process.pid, "SIGKILL")
+    }
   })
+  addEvent({ eventType: "SIGINT" })
   const { 
     getWavHeader,
     getData
@@ -172,30 +279,19 @@ async function toStdout(loopAmount, volume = 100/100) {
   let lastBytes = false;
   let doneStreaming = false;
 
-  let readStream = new Readable({
-    read() {
-      const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-      const left = new Float32Array(bufferSize);
-      const right = new Float32Array(bufferSize);
-      const arr = [left, right]
-      seq.processTick();
-      synth.renderAudio(
-        arr, [], [], 
-        0,
-        bufferSize
-      );
-      filledSamples += bufferSize;
-      if (filledSamples <= sampleCount && !lastBytes) {
-        if (filledSamples === sampleCount) lastBytes = true;
-        let data = getData(arr, sampleRate);
-        return this.push(data)
-      }
-      this.push(null)
-    }
-  })
+  let readStream = createReadable(Readable, true, {
+    BUFFER_SIZE,
+    filledSamples,
+    lastBytes,
+    sampleCount,
+    sampleRate,
+    seq, synth,
+    getData
+  });
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
   // Frees up memory
   [outLeft, outRight, outputArray] = [null, null, null];
+  let promisesOfPrograms = [];
   switch (global?.format) {
     case "wave": {
       process.stdout.write(stdoutHeader)
@@ -203,25 +299,37 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "flac": {
-      const { spawn } = await import("child_process");
+      ({ spawn } = await import("child_process"));
       const ffmpeg = spawn("ffmpeg", [
                        "-i", "-",
                        "-f", "flac",
                        "-compression_level", "12",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ]});
+      promisesOfPrograms.push(
+        new Promise((resolve, reject) => {
+          ffmpeg.on("error", () => reject())
+          ffmpeg.on("exit", () => resolve())
+        })
+      )
       ffmpeg.stdin.write(stdoutHeader)
       readStream.pipe(ffmpeg.stdin)
       break;
     }
     case "mp3": {
-      const { spawn } = await import("child_process");
+      ({ spawn } = await import("child_process"));
       const ffmpeg = spawn("ffmpeg", [
                        "-i", "-",
                        "-f", "mp3",
                        "-aq", "0",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ]});
+      promisesOfPrograms.push(
+        new Promise((resolve, reject) => {
+          ffmpeg.on("error", () => reject())
+          ffmpeg.on("exit", () => resolve())
+        })
+      )
       ffmpeg.stdin.write(stdoutHeader)
       readStream.pipe(ffmpeg.stdin)
       break;
@@ -235,13 +343,16 @@ async function toStdout(loopAmount, volume = 100/100) {
       process.stdout.write(stdoutHeader)
       readStream.pipe(process.stdout)
   }
-  await new Promise((resolve, reject) => {
-    readStream.on("error", () => reject())
-    readStream.on("end", () => {
-      doneStreaming = true;
-      resolve()
-    })
-  })
+  await Promise.all([
+    new Promise((resolve, reject) => {
+      readStream.on("error", () => reject())
+      readStream.on("end", () => {
+        doneStreaming = true;
+        resolve()
+      })
+    }),
+    ...promisesOfPrograms // If there are any
+  ])
 }
 
 /**
@@ -269,6 +380,7 @@ async function toFile(loopAmount, volume = 100/100) {
   const { Readable } = await import("node:stream");
   const { clearLastLines } = await import("./utils.mjs");
   
+  addEvent({ eventType: "SIGINT" })
   let i = 0;
   const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
   
@@ -282,48 +394,15 @@ async function toFile(loopAmount, volume = 100/100) {
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
   // Frees up memory
   [outLeft, outRight, outputArray] = [null, null, null];
-  let readStream = new Readable({
-    read() {
-      const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-      const left = new Float32Array(bufferSize);
-      const right = new Float32Array(bufferSize);
-      const arr = [left, right]
-      seq.processTick();
-      synth.renderAudio(
-        arr, [], [],
-        0,
-        bufferSize
-      );
-      filledSamples += bufferSize;
-      i++;
-      if (i % 100 === 0) {
-        if (i > 0) clearLastLines([0, -1])
-        console.info(
-          `Rendered ${magenta}` +
-            // Gets the ISO format and then gets mm:ss.sss
-            new Date(
-              (Math.floor(seq.currentTime * 100) / 100) * 1000
-            )
-              .toISOString()
-              .replace(/.*T...(.*)Z/, "$1") +
-          `${normal}`,
-          "/",
-          `${brightMagenta}` +
-            // Same down here
-            new Date(durationRounded * 1000)
-              .toISOString()
-              .replace(/.*T...(.*)Z/, "$1"),
-          `${normal}`
-        );
-      }
-      
-      if (filledSamples <= sampleCount && !lastBytes) {
-        if (filledSamples === sampleCount) lastBytes = true;
-        let data = getData(arr, sampleRate);
-        return this.push(data)
-      }
-      this.push(null)
-    }
+  let readStream = createReadable(Readable, false, {
+    BUFFER_SIZE,
+    filledSamples,
+    lastBytes,
+    sampleCount,
+    sampleRate,
+    seq, synth,
+    getData, i, durationRounded,
+    clearLastLines
   });
   /**
    * Returns a new path with a new number (adds 1) at the end of the filename
@@ -352,8 +431,7 @@ async function toFile(loopAmount, volume = 100/100) {
     }
     return path;
   }
-  let spawn,
-      ffmpegPromises = [];
+  let promisesOfPrograms = [];
   for (let outFile of global.fileOutputs) {
     switch (true) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
@@ -367,19 +445,18 @@ async function toFile(loopAmount, volume = 100/100) {
         break;
       }
       case /^.*\.flac$/.test(outFile): {
-        if (!spawn) {
-          ({ spawn } = await import("child_process"));
-        }
+        if (!spawn) ({ spawn } = await import("child_process"));
         const newName = newFileName(outFile);
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile);
+        
         const ffmpeg = spawn("ffmpeg", [
           "-i", "-",
           "-f", "flac",
           "-compression_level", "12",
           outFile
         ]);
-        ffmpegPromises.push(
+        promisesOfPrograms.push(
           new Promise((resolve, reject) => {
             ffmpeg.on("error", () => reject())
             ffmpeg.on("exit", () => resolve())
@@ -390,19 +467,18 @@ async function toFile(loopAmount, volume = 100/100) {
         break;
       }
       case /^.*\.mp3$/.test(outFile): {
-        if (!spawn) {
-          ({ spawn } = await import("child_process"));
-        }
+        if (!spawn) ({ spawn } = await import("child_process"));
         const newName = newFileName(outFile);
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile);
+        
         const ffmpeg = spawn("ffmpeg", [
           "-i", "-",
           "-f", "mp3",
           "-aq", "0",
           outFile
         ]);
-        ffmpegPromises.push(
+        promisesOfPrograms.push(
           new Promise((resolve, reject) => {
             ffmpeg.on("error", () => reject())
             ffmpeg.on("exit", () => resolve())
@@ -428,7 +504,7 @@ async function toFile(loopAmount, volume = 100/100) {
       readStream.on("error", () => reject())
       readStream.on("end", () => resolve())
     }),
-    ...ffmpegPromises // if there are any
+    ...promisesOfPrograms // if there are any
   ])
   console.log("Written", global.fileOutputs.filter(i => i));
 }
