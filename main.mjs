@@ -140,6 +140,51 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
   }
 }
 /**
+ * Applies effects using SoX
+ * @param {Stream} program - the process to spawn, sox usually
+ * @param {Stream} stdoutHeader - the header to process
+ * @param {Stream} readStream - the data to process
+ * @param {Stream} stdout - the destination
+ * 
+ * @example
+ * applyEffects({ program: "sox", stdoutHeader, readStream })
+ */
+async function applyEffects({
+  program,
+  stdoutHeader,
+  readStream,
+  promisesOfPrograms,
+  stdout = process.stdout,
+  destination = "-",
+  effects = ["reverb", (global?.reverbVolume) ? global.reverbVolume : "0", "36", "100", "100", "10", "10"]
+}) {
+  /*
+    ffmpeg 
+      -i - 
+      -i parking-garage-response.wav 
+      -lavfi "afir,volume=70" 
+      -f wav 
+        pipe:1
+  */
+  if (!spawn) ({ spawn } = await import("child_process"));
+  const sox = spawn(program, [
+    "-t", "wav", "-",
+    "-t", "wav", destination,
+    ...effects
+  ], {stdio: ["pipe", stdout, "pipe"], detached: true})
+  //  For SIGINT event to work, sometimes... ↑
+  
+  promisesOfPrograms.push(
+    new Promise((resolve, reject) => {
+      sox.on("error", () => reject())
+      sox.on("exit", () => resolve())
+    })
+  )
+  sox.stdin.write(stdoutHeader)
+  readStream.pipe(sox.stdin)
+  return promisesOfPrograms;
+}
+/**
  * Adds events to process
  * @param {string} eventType - the type of event to add
  * @param {Function} func - optional function for eventType "exit"
@@ -294,6 +339,10 @@ async function toStdout(loopAmount, volume = 100/100) {
   let promisesOfPrograms = [];
   switch (global?.format) {
     case "wave": {
+      if (global?.effects) {
+        await applyEffects({ program: "sox", stdoutHeader, readStream, promisesOfPrograms })
+        break;
+      }
       process.stdout.write(stdoutHeader)
       readStream.pipe(process.stdout)
       break;
@@ -305,7 +354,17 @@ async function toStdout(loopAmount, volume = 100/100) {
                        "-f", "flac",
                        "-compression_level", "12",
                        "pipe:1"
-                     ], {stdio: [ "pipe", process.stdout, "pipe" ]});
+                     ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
+      if (global?.effects) {
+        await applyEffects({
+          program: "sox",
+          stdoutHeader,
+          readStream,
+          promisesOfPrograms,
+          stdout: ffmpeg.stdin
+        })
+        break;
+      }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
           ffmpeg.on("error", () => reject())
@@ -323,7 +382,17 @@ async function toStdout(loopAmount, volume = 100/100) {
                        "-f", "mp3",
                        "-aq", "0",
                        "pipe:1"
-                     ], {stdio: [ "pipe", process.stdout, "pipe" ]});
+                     ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
+      if (global?.effects) {
+        await applyEffects({
+          program: "sox",
+          stdoutHeader,
+          readStream,
+          promisesOfPrograms,
+          stdout: ffmpeg.stdin
+        })
+        break;
+      }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
           ffmpeg.on("error", () => reject())
@@ -340,6 +409,10 @@ async function toStdout(loopAmount, volume = 100/100) {
     }
     
     default:
+      if (global?.effects) {
+        await applyEffects({ program: "sox", stdoutHeader, readStream, promisesOfPrograms })
+        break;
+      }
       process.stdout.write(stdoutHeader)
       readStream.pipe(process.stdout)
   }
@@ -439,6 +512,16 @@ async function toFile(loopAmount, volume = 100/100) {
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newName;
         
+        if (global?.effects) {
+            await applyEffects({
+              program: "sox",
+              stdoutHeader,
+              readStream,
+              promisesOfPrograms,
+              destination: outFile
+            })
+          break;
+        }
         const wav = fs.createWriteStream(outFile);
         wav.write(stdoutHeader)
         readStream.pipe(wav)
@@ -456,6 +539,16 @@ async function toFile(loopAmount, volume = 100/100) {
           "-compression_level", "12",
           outFile
         ]);
+        if (global?.effects) {
+          await applyEffects({
+            program: "sox",
+            stdoutHeader,
+            readStream,
+            promisesOfPrograms,
+            stdout: ffmpeg.stdin
+          })
+          break;
+        }
         promisesOfPrograms.push(
           new Promise((resolve, reject) => {
             ffmpeg.on("error", () => reject())
@@ -478,6 +571,16 @@ async function toFile(loopAmount, volume = 100/100) {
           "-aq", "0",
           outFile
         ]);
+        if (global?.effects) {
+          await applyEffects({
+            program: "sox",
+            stdoutHeader,
+            readStream,
+            promisesOfPrograms,
+            stdout: ffmpeg.stdin
+          })
+          break;
+        }
         promisesOfPrograms.push(
           new Promise((resolve, reject) => {
             ffmpeg.on("error", () => reject())
@@ -507,4 +610,6 @@ async function toFile(loopAmount, volume = 100/100) {
     ...promisesOfPrograms // if there are any
   ])
   console.log("Written", global.fileOutputs.filter(i => i));
+  // Required because ffmpeg's child_process sometimes blocks node from exiting
+  process.exit()
 }

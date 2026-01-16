@@ -57,6 +57,14 @@ const actUpOnPassedArgs = async (args) => {
           global.toStdout = true;
           break;
         }
+        case /^(?:--reverb|\/reverb|-rvb|\/rvb)$/.test(arg) && arg: {
+          // In case there's no other argument
+          const indexOfArg = newArguments.indexOf(arg);
+          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+          
+          lastParam = "reverb"
+          break;
+        }
         case /^(?:--volume|\/volume|-v|\/v)$/.test(arg) && arg: {
           // In case there's no other argument
           const indexOfArg = newArguments.indexOf(arg);
@@ -162,6 +170,10 @@ const actUpOnPassedArgs = async (args) => {
           }
           if (lastParam === "volume") {
             setVolume(arg)
+            break;
+          }
+          if (lastParam === "reverb") {
+            setReverb(arg)
             break;
           }
           // Invalid param
@@ -291,6 +303,31 @@ const setVolume = arg => {
   }
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     global.volume = Number(arg);
+    return;
+  }
+  throw new TypeError("Passed something that wasn't a valid number/dB/percentage")
+}
+/**
+ * Sets the global.reverb variable
+ * @param {string} arg - the volume in either percentage, decibels or decimals
+ */
+const setReverb = arg => {
+  if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
+    const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
+    global.reverbVolume = dBNumber;
+    global.effects = true;
+    return;
+  }
+  if (/^[\d.]+%$/.test(arg)) {
+    const percentage = Number(arg.match(/^([\d.]+)%$/)[1]);
+    const toDB = 10 * 10**(percentage/100);
+    global.reverbVolume = toDB;
+    global.effects = true;
+    return;
+  }
+  if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
+    global.reverbVolume = Number(arg);
+    global.effects = true;
     return;
   }
   throw new TypeError("Passed something that wasn't a valid number/dB/percentage")
