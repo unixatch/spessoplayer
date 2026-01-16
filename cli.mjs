@@ -49,7 +49,7 @@ const actUpOnPassedArgs = async (args) => {
           global.fileOutputs[2] = arg;
           break;
         }
-        case /^.*\.(?:s16le|pcm)$/.test(arg) && arg: {
+        case /^.*\.(?:s32le|pcm)$/.test(arg) && arg: {
           global.fileOutputs[3] = arg;
           break;
         }
@@ -278,7 +278,7 @@ const setFormat = arg => {
       global.format = "mp3";
       return;
     }
-    case /^(?:s16le|pcm)$/.test(arg) && arg: {
+    case /^(?:s32le|pcm)$/.test(arg) && arg: {
       global.format = "pcm";
       return;
     }
@@ -373,7 +373,7 @@ const help = () => {
       ${dimGray+italics}- wav${normal}
       ${dimGray+italics}- mp3${normal}
       ${dimGray+italics}- flac${normal}
-      ${dimGray+italics}- pcm (s16le)${normal}
+      ${dimGray+italics}- pcm (s32le)${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}

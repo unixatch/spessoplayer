@@ -591,7 +591,7 @@ async function toFile(loopAmount, volume = 100/100) {
         readStream.pipe(ffmpeg.stdin)
         break;
       }
-      case /^.*\.(?:s16le|pcm)$/.test(outFile): {
+      case /^.*\.(?:s32le|pcm)$/.test(outFile): {
         const newName = newFileName(outFile);
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile);
