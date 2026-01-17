@@ -33,6 +33,7 @@ function declareColors() {
   global.dimGreen= "\x1b[32;2m"
   global.normalRed= "\x1b[31m"
   global.red= "\x1b[31;1m"
+  global.normalRed= "\x1b[31m"
   global.dimRed= "\x1b[31;2m"
   global.gray= "\x1b[90;1m"
   global.dimGray= "\x1b[37;2m"

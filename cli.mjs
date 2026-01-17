@@ -57,7 +57,7 @@ const actUpOnPassedArgs = async (args) => {
           global.toStdout = true;
           break;
         }
-        case /^(?:--reverb|\/reverb|-rvb|\/rvb)$/.test(arg) && arg: {
+        case /^(?:--reverb-volume|\/reverb-volume|-rvb|\/rvb)$/.test(arg) && arg: {
           // In case there's no other argument
           const indexOfArg = newArguments.indexOf(arg);
           if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -186,6 +186,11 @@ const actUpOnPassedArgs = async (args) => {
           process.exit()
       }
     }
+    if (!global?.toStdout
+        || global.fileOutputs.length === 0) {
+      console.error(`${normalYellow}Action not specified${normal}`);
+      process.exit(2)
+    }
     if (global?.midiFile === undefined) {
       console.error(`${red}Missing a required midi file${normal}`);
       process.exit(1)
@@ -211,9 +216,11 @@ const setLoop = arg => {
     return;
   }
   if (/^(?:Infinity|infinity)$/.test(arg)) {
-    throw new Error("Can't use infinity, sorry")
+    console.error(`${normalRed}Can't use infinity, sorry${normal}`)
+    process.exit(1);
   }
-  throw new TypeError("Passed something that wasn't a number")
+  console.error(`${normalRed}Passed something that wasn't a number${normal}`)
+  process.exit(1);
 }
 /**
  * Sets the global.loopStart variable
@@ -230,7 +237,8 @@ const setLoopStart = arg => {
     global.loopStart = Number(arg);
     return;
   }
-  throw new TypeError("Passed something that wasn't a number or in ISO string format")
+  console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
+  process.exit(1);
 }
 /**
  * Sets the global.loopEnd variable
@@ -247,7 +255,8 @@ const setLoopEnd = arg => {
     global.loopEnd = Number(arg);
     return;
   }
-  throw new TypeError("Passed something that wasn't a number or in ISO string format")
+  console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
+  process.exit(1);
 }
 /**
  * Sets the global.sampleRate variable
@@ -258,7 +267,8 @@ const setSampleRate = arg => {
     global.sampleRate = Number(arg);
     return;
   }
-  throw new TypeError("Passed something that wasn't a valid number")
+  console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
+  process.exit(1);
 }
 /**
  * Sets the global.format variable for use in stdout mode
@@ -283,7 +293,8 @@ const setFormat = arg => {
       return;
     }
   }
-  throw new TypeError("Passed something that wasn't an available format")
+  console.error(`${normalRed}Passed something that wasn't an available format${normal}`)
+  process.exit(1);
 }
 /**
  * Sets the global.volume variable for the masterGain
@@ -305,7 +316,8 @@ const setVolume = arg => {
     global.volume = Number(arg);
     return;
   }
-  throw new TypeError("Passed something that wasn't a valid number/dB/percentage")
+  console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
+  process.exit(1);
 }
 /**
  * Sets the global.reverb variable
@@ -330,7 +342,8 @@ const setReverb = arg => {
     global.effects = true;
     return;
   }
-  throw new TypeError("Passed something that wasn't a valid number/dB/percentage")
+  console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
+  process.exit(1);
 }
 /**
  * Shows the help text
@@ -350,6 +363,10 @@ const help = () => {
       ${dimGray+italics}- dB (example -10dB)${normal}
       ${dimGray+italics}- percentages (example 70%)${normal}
       ${dimGray+italics}- decimals (example 0.9)${normal}
+      
+    ${green}--reverb-volume${normal}, ${green}/reverb-volume${normal}, ${green}-rvb${normal}, ${green}/rvb${normal}:
+      ${dimGray+italics}Volume to set for reverb (default: none)${normal}
+      ${dimGray+italics}Same formats as volume${normal}
       
     ${green}--loop${normal}, ${green}/loop${normal}, ${green}-l${normal}, ${green}/l${normal}:
       ${dimGray+italics}Loop x amount of times (default: 0)${normal}
