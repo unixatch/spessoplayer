@@ -186,9 +186,10 @@ const actUpOnPassedArgs = async (args) => {
           process.exit()
       }
     }
-    if (!global?.toStdout
-        || global.fileOutputs.length === 0) {
+    if (global.fileOutputs.length === 0
+        && !global?.toStdout) {
       console.error(`${normalYellow}Action not specified${normal}`);
+      help()
       process.exit(2)
     }
     if (global?.midiFile === undefined) {
@@ -413,6 +414,5 @@ const version = async () => {
 
 export {
   actUpOnPassedArgs,
-  join,
-  parse
+  join, parse
 }

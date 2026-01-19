@@ -19,8 +19,7 @@
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
-  join,
-  parse
+  join, parse
 } = await import("./cli.mjs");
 await actUpOnPassedArgs(process.argv)
 
@@ -176,7 +175,40 @@ async function applyEffects({
   
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
-      sox.on("error", () => reject())
+      sox.stderr.on("data", (data) => {
+        const stringOfError = data.toString();
+        const modifiedString = stringOfError
+          .replace( // Adds yellow to numbers
+            /(-*[0-9]+(?:ms|dB|%|q)*)/g, 
+            `${normalYellow}$1${normal}`
+          )
+          .replace( // Adds bold gray to the default parameters that can be overriden
+            /(\] |\) )(\[)([\w-]*)/g,
+            `$1$2${dimGrayBold}$3${normal}`
+          )
+          .replace( // Adds green to the parameter that has wrong values
+            /(parameter )(`\w*')/g,
+            `$1${green}$2${normal}`
+          )
+          .replace( // Adds red to the sox FAIL... text
+            /(sox FAIL \w*)/g,
+            `${red}$1${normal}`
+          )
+          // Removes warnings about headers
+          .replace(/\n*sox WARN \w*:.*can't seek.*\n*/g, "")
+          .replace( // Adds yellow and a new line to the warn text for programs like mpv
+            /(sox WARN \w*)/g,
+            `\n${yellow}$1${normal}`
+          )
+          .replace( // Adds gray to the optional parameters for the effects
+            /(\[[ \w|-]*\])/g,
+            `${gray}$1${normal}`
+          )
+          // Patch for the regex above
+          .replace(/m\[0m/g, "\x1b[0m");
+        
+        console.error(modifiedString);
+      })
       sox.on("exit", () => resolve())
     })
   )
@@ -198,11 +230,15 @@ function addEvent({ eventType, func, isStdout = false }) {
     // Adds on top of spessasynth_core's uncaughtException
     const oldUncaughtException = process.rawListeners("uncaughtException")[0];
     process.removeListener("uncaughtException", oldUncaughtException)
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", async (error) => {
       if (global.SIGINT) return process.exit();
       if (error?.code === "EPIPE") {
-        console.error(`${gray}Closed the program before finishing the rendering${normal}`);
-        return process.exit();
+        // Needed so that SoX can show its stderr
+        await new Promise(resolve => {
+          setTimeout(() => resolve(), 4);
+        })
+        console.error(`${gray}Closed the program before finishing to render${normal}`);
+        return process.exit(2);
       }
       oldUncaughtException(error)
     })
