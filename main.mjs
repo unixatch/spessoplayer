@@ -177,6 +177,10 @@ async function applyEffects({
     new Promise((resolve, reject) => {
       sox.stderr.on("data", (data) => {
         const stringOfError = data.toString();
+        // Do not print if these match stringOfError
+        if (stringOfError.match(/sox FAIL sox: \`-\' error writing output file: Connection reset by peer\n/g)
+            || stringOfError.match(/\n*sox WARN \w*:.*can't seek.*\n*/g)) return;
+        
         const modifiedString = stringOfError
           .replace( // Adds yellow to numbers
             /(-*[0-9]+(?:ms|dB|%|q)*)/g, 
@@ -194,8 +198,6 @@ async function applyEffects({
             /(sox FAIL \w*)/g,
             `${red}$1${normal}`
           )
-          // Removes warnings about headers
-          .replace(/\n*sox WARN \w*:.*can't seek.*\n*/g, "")
           .replace( // Adds yellow and a new line to the warn text for programs like mpv
             /(sox WARN \w*)/g,
             `\n${yellow}$1${normal}`
