@@ -386,8 +386,11 @@ async function toStdout(loopAmount, volume = 100/100) {
     getData
   });
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
-  // Frees up memory
-  [outLeft, outRight, outputArray] = [null, null, null];
+  // Needed this scope because otherwise it crashes
+  {
+    // Frees up memory
+    [outLeft, outRight, outputArray] = [null, null, null];
+  }
   let promisesOfPrograms = [];
   switch (global?.format) {
     case "wave": {
@@ -531,8 +534,11 @@ async function toFile(loopAmount, volume = 100/100) {
   let filledSamples = 0;
   let lastBytes = false;
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
-  // Frees up memory
-  [outLeft, outRight, outputArray] = [null, null, null];
+  // Needed this scope because otherwise it crashes
+  {
+    // Frees up memory
+    [outLeft, outRight, outputArray] = [null, null, null];
+  }
   let readStream = createReadable(Readable, false, {
     BUFFER_SIZE,
     filledSamples,
@@ -579,14 +585,14 @@ async function toFile(loopAmount, volume = 100/100) {
         outFile = newName;
         
         if (global?.effects) {
-            await applyEffects({
-              program: "sox",
-              stdoutHeader,
-              readStream,
-              promisesOfPrograms,
-              destination: outFile,
-              effects: (Array.isArray(global?.effects)) ? global.effects : undefined
-            })
+          await applyEffects({
+            program: "sox",
+            stdoutHeader,
+            readStream,
+            promisesOfPrograms,
+            destination: outFile,
+            effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+          })
           break;
         }
         const wav = fs.createWriteStream(outFile);
