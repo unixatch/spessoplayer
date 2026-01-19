@@ -166,6 +166,20 @@ async function applyEffects({
         pipe:1
   */
   if (!spawn) ({ spawn } = await import("child_process"));
+  // In case it's custom
+  if (effects[0]?.effect) {
+    // cloning the effects array so that it can be unpacked
+    const oldEffectsArray = [...effects];
+    effects.length = 0;
+    oldEffectsArray
+      .forEach((i) => {
+        if (i.values) {
+          effects.push(i.effect, ...i.values)
+          return;
+        }
+        effects.push(i.effect)
+      })
+  }
   const sox = spawn(program, [
     "-t", "wav", "-",
     "-t", "wav", destination,
@@ -378,7 +392,13 @@ async function toStdout(loopAmount, volume = 100/100) {
   switch (global?.format) {
     case "wave": {
       if (global?.effects) {
-        await applyEffects({ program: "sox", stdoutHeader, readStream, promisesOfPrograms })
+        await applyEffects({
+          program: "sox",
+          stdoutHeader,
+          readStream,
+          promisesOfPrograms,
+          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+        })
         break;
       }
       process.stdout.write(stdoutHeader)
@@ -399,7 +419,8 @@ async function toStdout(loopAmount, volume = 100/100) {
           stdoutHeader,
           readStream,
           promisesOfPrograms,
-          stdout: ffmpeg.stdin
+          stdout: ffmpeg.stdin,
+          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
         break;
       }
@@ -427,7 +448,8 @@ async function toStdout(loopAmount, volume = 100/100) {
           stdoutHeader,
           readStream,
           promisesOfPrograms,
-          stdout: ffmpeg.stdin
+          stdout: ffmpeg.stdin,
+          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
         break;
       }
@@ -448,7 +470,13 @@ async function toStdout(loopAmount, volume = 100/100) {
     
     default:
       if (global?.effects) {
-        await applyEffects({ program: "sox", stdoutHeader, readStream, promisesOfPrograms })
+        await applyEffects({
+          program: "sox",
+          stdoutHeader,
+          readStream,
+          promisesOfPrograms,
+          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+        })
         break;
       }
       process.stdout.write(stdoutHeader)
@@ -556,7 +584,8 @@ async function toFile(loopAmount, volume = 100/100) {
               stdoutHeader,
               readStream,
               promisesOfPrograms,
-              destination: outFile
+              destination: outFile,
+              effects: (Array.isArray(global?.effects)) ? global.effects : undefined
             })
           break;
         }
@@ -583,7 +612,8 @@ async function toFile(loopAmount, volume = 100/100) {
             stdoutHeader,
             readStream,
             promisesOfPrograms,
-            stdout: ffmpeg.stdin
+            stdout: ffmpeg.stdin,
+            effects: (Array.isArray(global?.effects)) ? global.effects : undefined
           })
           break;
         }
@@ -615,7 +645,8 @@ async function toFile(loopAmount, volume = 100/100) {
             stdoutHeader,
             readStream,
             promisesOfPrograms,
-            stdout: ffmpeg.stdin
+            stdout: ffmpeg.stdin,
+            effects: (Array.isArray(global?.effects)) ? global.effects : undefined
           })
           break;
         }

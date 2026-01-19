@@ -73,6 +73,14 @@ const actUpOnPassedArgs = async (args) => {
           lastParam = "volume"
           break;
         }
+        case /^(?:--effects|\/effects|-e|\/e)$/.test(arg) && arg: {
+          // In case there's no other argument
+          const indexOfArg = newArguments.indexOf(arg);
+          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+          
+          lastParam = "effects"
+          break;
+        }
         case /^(?:--format|\/format|-f|\/f)$/.test(arg) && arg: {
           // In case there's no other argument
           const indexOfArg = newArguments.indexOf(arg);
@@ -174,6 +182,10 @@ const actUpOnPassedArgs = async (args) => {
           }
           if (lastParam === "reverb") {
             setReverb(arg)
+            break;
+          }
+          if (lastParam === "effects") {
+            setEffects(arg)
             break;
           }
           // Invalid param
@@ -298,6 +310,57 @@ const setFormat = arg => {
   process.exit(1);
 }
 /**
+ * Applies effects from the user's string passed through --effects
+ * @param {string} arg - the comma-separeted string to parse
+ */
+const setEffects = arg => {
+  const regexListOfEffects =
+    "allpass|band|bandpass|bandreject|bass|bend|biquad" +
+    "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
+    "|dither|divide|downsample|earwax|echo|echos|equalizer" +
+    "|fade|fir|firfit|flanger|gain|highpass|hilbert|input" +
+    "|ladspa|loudness|lowpass|mcompand|noiseprof|noisered" +
+    "|norm|oops|output|overdrive|pad|phaser|pitch|rate|remix" +
+    "|repeat|reverb|reverse|riaa|silence|sinc|spectrogram" +
+    "|speed|splice|stat|stats|stretch|swap|synth|tempo" +
+    "|treble|tremolo|trim|upsample|vad|vol";
+  const regexGroupListGetter = /([a-z]+) ?([-a-z\d ]+)?/gm;
+  const regexTests = {
+    // is it a list structured like
+    //   <effect1>[values1],<effect2>[values2]?
+    normalList: new RegExp(`${regexGroupListGetter.source},${regexGroupListGetter.source}`).test(arg),
+    // is it a single effect like
+    //   <effect>[values]?
+    isIncorrect: new RegExp(`^${regexGroupListGetter.source}[^,](?:${regexListOfEffects}).*$`).test(arg)
+  }
+  if (regexTests.normalList || !regexTests.isIncorrect) {
+    const list = [
+      ...arg
+        .matchAll(regexGroupListGetter)
+        .map(i => ({
+          effect: i[1],
+          values: (i[2])
+            ? i[2].split(
+              (i[2].includes(",")) ? "," : " "
+            )
+            : undefined
+        }) )
+    ];
+    
+    if (!list
+          .every(i => new RegExp(regexListOfEffects).test(i.effect))
+    ) {
+      console.error(`${normalRed}One effect that you passed doesn't exist in SoX${normal}`);
+      process.exit(1);
+    }
+    
+    global.effects = list;
+    return;
+  }
+  console.error(`${normalRed}The string for SoX effects you passed is not usable${normal}`);
+  process.exit(1);
+}
+/**
  * Sets the global.volume variable for the masterGain
  * @param {string} arg - the volume in either percentage, decibels or decimals
  */
@@ -369,6 +432,9 @@ const help = () => {
       ${dimGray+italics}Volume to set for reverb (default: none)${normal}
       ${dimGray+italics}Same formats as volume${normal}
       
+    ${green}--effects${normal}, ${green}/effects${normal}, ${green}-e${normal}, ${green}/e${normal}:
+      ${dimGray+italics}Adds any effects that SoX provides (e.g "reverb,fade 1")${normal}
+    
     ${green}--loop${normal}, ${green}/loop${normal}, ${green}-l${normal}, ${green}/l${normal}:
       ${dimGray+italics}Loop x amount of times (default: 0)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers)${normal}
