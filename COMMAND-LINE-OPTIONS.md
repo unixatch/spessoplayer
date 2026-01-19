@@ -21,7 +21,7 @@ Adds any effects that SoX provides (*e.g "reverb,fade 1"*)
 ### --loop, /loop, -l, /l:
   Loop x amount of times (*default: 0*)
   
-    (It might be slow with bigger numbers)
+  <sub>(It might be slow with bigger numbers)</sub>
 
 ### --loop-start, /loop-start, -ls, /ls:
 When the loop starts
@@ -32,9 +32,9 @@ When the loop ends
 ### --sample-rate, /sample-rate, -r, /r:
 Sample rate to use (*default: 48000*)
   
-    (It might be slow with bigger numbers for players like mpv)
+  <sub>(It might be slow with bigger numbers for players like mpv)</sub>
   
-    (Some players might downsize it to a smaller frequency)
+  <sub>(Some players might downsize it to a smaller frequency)</sub>
 
 ### --format, /format, -f, /f:
 Format to use for stdout (*default: wav*)

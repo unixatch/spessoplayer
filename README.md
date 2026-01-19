@@ -7,14 +7,12 @@ This is a midi player/converter that uses the spessasynth_core package for maxim
 ## Installation
 
 ```bash
-$ npm instal --global spessoplayer
+$ npm install --global spessoplayer
 ```
 
 You'll be prompted if you want to install ffmpeg (convertion of files) and SoX (effects) using your current package manager,
 
 it is recommended to install both (they weigh *~10.2* MB combined)
-
-or you can use an available binary
 
 ## Basic usage
 
