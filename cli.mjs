@@ -45,9 +45,9 @@ const actUpOnPassedArgs = async (args) => {
           return;
         }
       })
-    // Delete verbose-level from newArguments
     if (verboseOptionPosition) {
       if (!verboseOptionNumber) verboseOptionNumber = "1";
+      // Delete verbose-level from newArguments
       newArguments.splice(verboseOptionPosition, 1)
     }
     setVerboseLevel(verboseOptionNumber)
