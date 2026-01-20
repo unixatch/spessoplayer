@@ -16,7 +16,7 @@
 */
 
 import { join, basename, parse } from "path"
-import { _dirname_ } from "./utils.mjs"
+import { _dirname_, log } from "./utils.mjs"
 
 /**
  * Sets necessary variables in global object for main.mjs
@@ -24,7 +24,7 @@ import { _dirname_ } from "./utils.mjs"
  */
 const actUpOnPassedArgs = async (args) => {
   let lastParam;
-  const newArguments = args.slice(2);
+  let newArguments = args.slice(2);
   if (newArguments.length !== 0) {
     if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(i)).length > 0) {
       help()
@@ -34,23 +34,45 @@ const actUpOnPassedArgs = async (args) => {
       await version()
       process.exit()
     }
+    let verboseOptionPosition,
+        verboseOptionNumber;
+    const regexOfVerboseLevel = /^(?:--verbose-level(?:=(?<number>\d))*|\/verbose-level(?:=(?<number>\d))*|-vl(?:=(?<number>\d))*|\/vl(?:=(?<number>\d))*)$/;
+    newArguments
+      .forEach((e, i) => {
+        if (regexOfVerboseLevel.test(e)) {
+          verboseOptionNumber = e.match(regexOfVerboseLevel).groups.number;
+          verboseOptionPosition = newArguments.indexOf(e);
+          return;
+        }
+      })
+    // Delete verbose-level from newArguments
+    if (verboseOptionPosition) {
+      if (!verboseOptionNumber) verboseOptionNumber = "1";
+      newArguments.splice(verboseOptionPosition, 1)
+    }
+    setVerboseLevel(verboseOptionNumber)
+
     global.fileOutputs = [];
     for (const arg of newArguments) {
       switch (arg) {
         case /^.*(?:\.wav|\.wave)$/.test(arg) && arg: {
           global.fileOutputs[0] = arg;
+          log(1, "Set file output to wav")
           break;
         }
         case /^.*\.flac$/.test(arg) && arg: {
           global.fileOutputs[1] = arg;
+          log(1, "Set file output to flac")
           break;
         }
         case /^.*\.mp3$/.test(arg) && arg: {
           global.fileOutputs[2] = arg;
+          log(1, "Set file output to mp3")
           break;
         }
         case /^.*\.(?:s32le|pcm)$/.test(arg) && arg: {
           global.fileOutputs[3] = arg;
+          log(1, "Set file output to pcm")
           break;
         }
         case /^-$/.test(arg) && arg: {
@@ -140,16 +162,19 @@ const actUpOnPassedArgs = async (args) => {
             // MIDI files
             if (fileMagicNumber.includes("MThd")) {
               global.midiFile = arg;
+              log(1, `Set midi file to "${global.midiFile}"`)
               break;
             }
             if (fileMagicNumber.includes("sfbk")) {
               // Soundfont files
               global.soundfontFile = arg;
+              log(1, `Set soundfont file to "${global.soundfontFile}"`)
               break;
             }
             if (fileMagicNumber.includes("DLS")) {
               // Downloadable sounds files
               global.soundfontFile = arg;
+              log(1, `Set downloadable sounds file to "${global.soundfontFile}"`)
               break;
             }
           }
@@ -158,34 +183,42 @@ const actUpOnPassedArgs = async (args) => {
         default:
           if (lastParam === "loop") {
             setLoop(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "loop-start") {
             setLoopStart(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "loop-end") {
             setLoopEnd(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "sample-rate") {
             setSampleRate(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "format") {
             setFormat(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "volume") {
             setVolume(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "reverb") {
             setReverb(arg)
+            lastParam = undefined;
             break;
           }
           if (lastParam === "effects") {
             setEffects(arg)
+            lastParam = undefined;
             break;
           }
           // Invalid param
@@ -226,6 +259,7 @@ const setLoop = arg => {
   if (typeof Number(arg) === "number"
       && !/^(?:Infinity|infinity)$/.test(arg)) {
     global.loopN = Number(arg);
+    log(1, `Set loop amount to ${global.loopN}`)
     return;
   }
   if (/^(?:Infinity|infinity)$/.test(arg)) {
@@ -245,8 +279,10 @@ const setLoopStart = arg => {
     if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       global.loopStart = seconds;
+      log(1, `Set loop-start to ${global.loopStart}`)
       return;
     }
+    log(1, `Set loop-start to ${global.loopStart}`)
     global.loopStart = Number(arg);
     return;
   }
@@ -263,8 +299,10 @@ const setLoopEnd = arg => {
     if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       global.loopEnd = seconds;
+      log(1, `Set loop-end to ${global.loopEnd}`)
       return;
     }
+    log(1, `Set loop-end to ${global.loopEnd}`)
     global.loopEnd = Number(arg);
     return;
   }
@@ -277,7 +315,27 @@ const setLoopEnd = arg => {
  */
 const setSampleRate = arg => {
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
+    log(1, `Set sample rate to ${global.sampleRate}`)
     global.sampleRate = Number(arg);
+    return;
+  }
+  console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
+  process.exit(1);
+}
+/**
+ * Simply changes how the program should log
+ * @param {Number} arg - the level of how much it should log
+ */
+const setVerboseLevel = (arg) => {
+  const isFromUser = arg !== undefined;
+  if (!arg) arg = "2";
+  if (typeof Number(arg) === "number"
+      && !(Number(arg) < 0 && Number(arg) > 2)
+      && !arg.startsWith("-")) {
+    global.verboseLevel = Number(arg);
+    if (isFromUser) {
+      log(1, `Set verbose level asked by the user to ${global.verboseLevel}`)
+    } else log(1, `Set verbose level to ${global.verboseLevel}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
@@ -291,18 +349,22 @@ const setFormat = arg => {
   switch (arg) {
     case /^(?:wav|wave)$/.test(arg) && arg: {
       global.format = "wave";
+      log(1, `Set stdout format to ${global.format}`)
       return;
     }
     case "flac": {
       global.format = "flac";
+      log(1, `Set stdout format to ${global.format}`)
       return;
     }
     case "mp3": {
       global.format = "mp3";
+      log(1, `Set stdout format to ${global.format}`)
       return;
     }
     case /^(?:s32le|pcm)$/.test(arg) && arg: {
       global.format = "pcm";
+      log(1, `Set stdout format to ${global.format}`)
       return;
     }
   }
@@ -355,6 +417,7 @@ const setEffects = arg => {
     }
     
     global.effects = list;
+    log(1, `Set list of SoX effects as ${global.effects}`)
     return;
   }
   console.error(`${normalRed}The string for SoX effects you passed is not usable${normal}`);
@@ -369,15 +432,18 @@ const setVolume = arg => {
     const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
     const toPercentage = 10**(dBNumber/10);
     global.volume = toPercentage;
+    log(1, `Set volume to ${global.volume}`)
     return;
   }
   if (/^[\d.]+%$/.test(arg)) {
     const percentage = Number(arg.match(/^([\d.]+)%$/)[1]);
     global.volume = percentage / 100;
+    log(1, `Set volume to ${global.volume}`)
     return;
   }
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     global.volume = Number(arg);
+    log(1, `Set volume to ${global.volume}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
@@ -392,6 +458,7 @@ const setReverb = arg => {
     const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
     global.reverbVolume = dBNumber;
     global.effects = true;
+    log(1, `Set reverb volume to ${global.reverbVolume} and effects variable to ${global.effects}`)
     return;
   }
   if (/^[\d.]+%$/.test(arg)) {
@@ -399,11 +466,13 @@ const setReverb = arg => {
     const toDB = 10 * 10**(percentage/100);
     global.reverbVolume = toDB;
     global.effects = true;
+    log(1, `Set reverb volume to ${global.reverbVolume} and effects variable to ${global.effects}`)
     return;
   }
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     global.reverbVolume = Number(arg);
     global.effects = true;
+    log(1, `Set reverb volume to ${global.reverbVolume} and effects variable to ${global.effects}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
@@ -475,10 +544,12 @@ const version = async () => {
   const packageJSONPath = join(_dirname_, "package.json");
   const { version } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
   
+  log(1, `Taken version number from ${packageJSONPath}`)
   console.log(`${green + version + normal}`)
 }
 
 export {
   actUpOnPassedArgs,
-  join, parse
+  join, parse,
+  log
 }

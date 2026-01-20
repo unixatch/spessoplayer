@@ -132,11 +132,31 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
   console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
 }
+function log(level, ...messages) {
+  const debugLevelSpesso = process.env["DEBUG_LEVEL_SPESSO"];
+  if (debugLevelSpesso
+      && debugLevelSpesso <= level
+      || global.verboseLevel <= level) {
+    console.error(
+      messages
+        .join("")
+        // Place the header data on a new line with padding
+        .replace(/header file (\d+)+/, "header file:\n  $1")
+        // Place the SoX arguments on a new line with padding
+        .replace(/with (sox,.*)/, "with:\n  \"$1\"")
+        // Place the ffmpeg arguments on a new line with padding
+        .replace(/with (ffmpeg,.*)/, "with:\n  \"$1\"")
+        // Add dimmed gray to the output
+        .replace(/(.*)/s, `${dimGray}$1${normal}`)
+    );
+  }
+}
 
 const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
 export {
   _dirname_,
   clearLastLines,
   runProgramSync,
-  tryToInstall
+  tryToInstall,
+  log
 }
