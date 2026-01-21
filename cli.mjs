@@ -53,9 +53,11 @@ const actUpOnPassedArgs = async (args) => {
       log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
     }
     const isPathOfLogFileSet = newArguments.find(i => regexOfLogFile.test(i));
-    if (isPathOfLogFileSet) {
+    if (isPathOfLogFileSet
+        && !isVerboseLevelSet
+        && !process.env["DEBUG_LEVEL_SPESSO"]) {
       await setVerboseLevel("1")
-    } else await setVerboseLevel("2")
+    }
     
     if (isPathOfLogFileSet) {
       let pathOfLogFile = isPathOfLogFileSet.match(regexOfLogFile).groups.path;
