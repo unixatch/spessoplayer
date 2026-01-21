@@ -30,40 +30,46 @@ const actUpOnPassedArgs = async (args) => {
       help()
       process.exit()
     }
-    if (newArguments.filter(i => /^(?:--version|\/version)$/.test(i)).length > 0) {
+    if (newArguments.filter(i => /^(?:--version|\/version|-V|\/V)$/.test(i)).length > 0) {
       await version()
       process.exit()
     }
-    const regexOfVerboseLevel = /^(?:--verbose-level(?:=(?<number>\d))*|\/verbose-level(?:=(?<number>\d))*|-vl(?:=(?<number>\d))*|\/vl(?:=(?<number>\d))*)$/;
+    
+    const regexOfVerboseLevel = /^(?:--verbose(?:=(?<number>\d))*|\/verbose(?:=(?<number>\d))*|-v(?:=(?<number>\d))*|\/v(?:=(?<number>\d))*)$/;
     const regexOfLogFile = /^(?:--log-file(?:=(?<path>\w+))*|\/log-file(?:=(?<path>\w+))*|-lf(?:=(?<path>\w+))*|\/lf(?:=(?<path>\w+))*)$/;
-    newArguments
-      .forEach((e, i) => {
-        if (regexOfVerboseLevel.test(e)) {
-          let verboseOptionNumber = e.match(regexOfVerboseLevel).groups.number;
-          let verboseOptionPosition = newArguments.indexOf(e);
-          
-          if (!verboseOptionNumber) verboseOptionNumber = "1";
-          // Delete verbose-level from newArguments
-          newArguments.splice(verboseOptionPosition, 1)
-          
-          if (!process.env["DEBUG_LEVEL_SPESSO"]) {
-            setVerboseLevel(verboseOptionNumber)
-          } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
-          return;
-        }
-        if (regexOfLogFile.test(e)) {
-          let pathOfLogFile = e.match(regexOfLogFile).groups.path;
-          let pathOfLogFilePosition = newArguments.indexOf(e);
-          
-          // Delete verbose-level from newArguments
-          newArguments.splice(pathOfLogFilePosition, 1)
-          
-          if (!process.env["DEBUG_FILE_SPESSO"]) {
-            setLogFilePath(pathOfLogFile)
-          } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
-          return;
-        }
-      })
+    const isVerboseLevelSet = newArguments.find(i => regexOfVerboseLevel.test(i));
+    if (isVerboseLevelSet) {
+      let verboseOptionNumber = isVerboseLevelSet.match(regexOfVerboseLevel).groups.number;
+      let verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
+      
+      if (!verboseOptionNumber) verboseOptionNumber = "1";
+      // Delete verbose-level from newArguments
+      newArguments.splice(verboseOptionPosition, 1)
+      
+      if (!process.env["DEBUG_LEVEL_SPESSO"]) {
+        await setVerboseLevel(verboseOptionNumber)
+      } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+    } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
+      log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+    }
+    const isPathOfLogFileSet = newArguments.find(i => regexOfLogFile.test(i));
+    if (isPathOfLogFileSet) {
+      await setVerboseLevel("1")
+    } else await setVerboseLevel("2")
+    
+    if (isPathOfLogFileSet) {
+      let pathOfLogFile = isPathOfLogFileSet.match(regexOfLogFile).groups.path;
+      let pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
+      
+      // Delete verbose-level from newArguments
+      newArguments.splice(pathOfLogFilePosition, 1)
+      
+      if (!process.env["DEBUG_FILE_SPESSO"]) {
+        setLogFilePath(pathOfLogFile)
+      } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+    } else if (process.env["DEBUG_FILE_SPESSO"]) {
+      log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+    }
 
     global.fileOutputs = [];
     for (const arg of newArguments) {
@@ -100,7 +106,7 @@ const actUpOnPassedArgs = async (args) => {
           lastParam = "reverb"
           break;
         }
-        case /^(?:--volume|\/volume|-v|\/v)$/.test(arg) && arg: {
+        case /^(?:--volume|\/volume|-vol|\/vol)$/.test(arg) && arg: {
           // In case there's no other argument
           const indexOfArg = newArguments.indexOf(arg);
           if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -339,9 +345,10 @@ const setSampleRate = arg => {
  * Simply changes how the program should log
  * @param {Number} arg - the level of how much it should log
  */
-const setVerboseLevel = (arg) => {
+const setVerboseLevel = async (arg) => {
   const isFromUser = arg !== undefined;
   if (!arg) arg = "2";
+  if (!global.fs) global.fs = await import("fs");
   if (typeof Number(arg) === "number"
       && !(Number(arg) < 0 && Number(arg) > 2)
       && !arg.startsWith("-")) {
@@ -495,11 +502,8 @@ const setReverb = arg => {
  * Sets the file path to the log file
  * @param {string} arg - Path to the log file
  */
-const setLogFilePath = async arg => {
-  if (!arg) return;
-  if (!global.fs) global.fs = await import("fs");
-
-  global.logFilePath = arg;
+const setLogFilePath = arg => {
+  global.logFilePath = arg ?? "./spesso.log";
   log(1, performance.now().toFixed(2), `Set log file path to ${global.logFilePath}`)
 }
 /**
@@ -513,7 +517,7 @@ const help = () => {
     ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
   
   Available parameters:
-    ${green}--volume${normal}, ${green}/volume${normal}, ${green}-v${normal}, ${green}/v${normal}:
+    ${green}--volume${normal}, ${green}/volume${normal}, ${green}-vol${normal}, ${green}/vol${normal}:
       ${dimGray+italics}Volume to set (default: 100%)${normal}
       
       ${dimGray+italics}Available formats:${normal}
@@ -551,6 +555,13 @@ const help = () => {
       ${dimGray+italics}- mp3${normal}
       ${dimGray+italics}- flac${normal}
       ${dimGray+italics}- pcm (s32le)${normal}
+      
+    ${green}--verbose${normal}, ${green}/verbose${normal}, ${green}-v${normal}, ${green}/v${normal}:
+      ${dimGray+italics}Sets the verbosity (default: 2)${normal}
+      
+    ${green}--log-file${normal}, ${green}/log-file${normal}, ${green}-lf${normal}, ${green}/lf${normal}:
+      ${dimGray+italics}Sets path to the log file (default: ./spesso.log)${normal}
+        ${dimGray+italics}(Meanwhile it writes to file, it also prints to stderr)${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
