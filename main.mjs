@@ -247,7 +247,7 @@ async function applyEffects({
  * @example
  * addEvent({ eventType: "SIGINT" })
  */
-function addEvent({ eventType, func, isStdout = false }) {
+function addEvent({ eventType, func }) {
   if (eventType === "uncaughtException") {
     // Adds on top of spessasynth_core's uncaughtException
     const oldUncaughtException = process.rawListeners("uncaughtException")[0];
@@ -266,7 +266,7 @@ function addEvent({ eventType, func, isStdout = false }) {
     })
     return true;
   }
-  if (isStdout && eventType === "exit") {
+  if (eventType === "exit") {
     process.on("exit", func)
     return true;
   }
