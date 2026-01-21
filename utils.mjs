@@ -132,23 +132,26 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
   console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
 }
-function log(level, ...messages) {
+function log(level, time, ...messages) {
   const debugLevelSpesso = process.env["DEBUG_LEVEL_SPESSO"];
   if (debugLevelSpesso
       && debugLevelSpesso <= level
       || global.verboseLevel <= level) {
-    console.error(
+    const message = [
+      new Date(),
+      "["+time+" ms]",
       messages
         .join("")
         // Place the header data on a new line with padding
-        .replace(/header file (\d+)+/, "header file:\n  $1")
+        .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(36)+"$1")
         // Place the SoX arguments on a new line with padding
-        .replace(/with (sox,.*)/, "with:\n  \"$1\"")
+        .replace(/with (sox,.*)/, "with:\n"+" ".repeat(36)+"\"$1\"")
         // Place the ffmpeg arguments on a new line with padding
-        .replace(/with (ffmpeg,.*)/, "with:\n  \"$1\"")
+        .replace(/with (ffmpeg,.*)/, "with:\n"+" ".repeat(36)+"\"$1\"")
         // Add dimmed gray to the output
         .replace(/(.*)/s, `${dimGray}$1${normal}`)
-    );
+    ];
+    console.error(...message);
   }
 }
 

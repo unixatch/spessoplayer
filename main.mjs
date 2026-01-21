@@ -22,7 +22,7 @@ const {
   join, parse,
   log
 } = await import("./cli.mjs");
-log(1, "Checking passed args...")
+log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
 
 
@@ -65,7 +65,7 @@ function getSampleCount(midi, sampleRate, loopAmount) {
       )
     );
   }
-  log(1, "Sample count set to " + sampleCount)
+  log(1, performance.now().toFixed(2), "Sample count set to " + sampleCount)
   return {
     loopDetectedInMidi: loopDetectedInMidi,
     sampleCount: sampleCount
@@ -132,7 +132,7 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
   seq.play();
   
   addEvent({ eventType: "uncaughtException" })
-  log(1, "Finished setting up SpessaSynth")
+  log(1, performance.now().toFixed(2), "Finished setting up SpessaSynth")
   return {
     audioToWav: audioToWav,
     seq: seq,
@@ -190,7 +190,7 @@ async function applyEffects({
     ...effects
   ], {stdio: ["pipe", stdout, "pipe"], detached: true})
   //  For SIGINT event to work, sometimes... ↑
-  log(1, "Spawned SoX with " + sox.spawnargs)
+  log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs)
   
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
@@ -235,7 +235,7 @@ async function applyEffects({
   )
   sox.stdin.write(stdoutHeader)
   readStream.pipe(sox.stdin)
-  log(1, "Finished setting up SoX")
+  log(1, performance.now().toFixed(2), "Finished setting up SoX")
   return promisesOfPrograms;
 }
 /**
@@ -339,7 +339,7 @@ function createReadable(Readable, isStdout = false, {
       this.push(null)
     }
   });
-  log(1, `Created Readable for ${(isStdout) ? "toStdout" : "toFile"}`)
+  log(1, performance.now().toFixed(2), `Created Readable for ${(isStdout) ? "toStdout" : "toFile"}`)
   return readStream;
 }
 /**
@@ -353,7 +353,7 @@ async function toStdout(loopAmount, volume = 100/100) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
-  log(1, "Started toStdout")
+  log(1, performance.now().toFixed(2), "Started toStdout")
   const {
     seq,
     synth,
@@ -373,7 +373,7 @@ async function toStdout(loopAmount, volume = 100/100) {
     }
   })
   addEvent({ eventType: "SIGINT" })
-  log(1, "Added events exit and SIGINT")
+  log(1, performance.now().toFixed(2), "Added events exit and SIGINT")
   const { 
     getWavHeader,
     getData
@@ -395,7 +395,7 @@ async function toStdout(loopAmount, volume = 100/100) {
     getData
   });
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
-  log(1, "Created header file ", stdoutHeader)
+  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
   // Needed this scope because otherwise it crashes
   {
     // Frees up memory
@@ -412,7 +412,7 @@ async function toStdout(loopAmount, volume = 100/100) {
           promisesOfPrograms,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
-        log(1, "Done setting up")
+        log(1, performance.now().toFixed(2), "Done setting up")
         break;
       }
       process.stdout.write(stdoutHeader)
@@ -427,7 +427,7 @@ async function toStdout(loopAmount, volume = 100/100) {
                        "-compression_level", "12",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
-      log(1, "Spawned ffmpeg with " + ffmpeg.spawnargs)
+      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
       if (global?.effects) {
         await applyEffects({
           program: "sox",
@@ -437,7 +437,7 @@ async function toStdout(loopAmount, volume = 100/100) {
           stdout: ffmpeg.stdin,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
-        log(1, "Done setting up")
+        log(1, performance.now().toFixed(2), "Done setting up")
         break;
       }
       promisesOfPrograms.push(
@@ -446,10 +446,10 @@ async function toStdout(loopAmount, volume = 100/100) {
           ffmpeg.on("exit", () => resolve())
         })
       )
-      log(1, "Added promise")
+      log(1, performance.now().toFixed(2), "Added promise")
       ffmpeg.stdin.write(stdoutHeader)
       readStream.pipe(ffmpeg.stdin)
-      log(1, "Done setting up")
+      log(1, performance.now().toFixed(2), "Done setting up")
       break;
     }
     case "mp3": {
@@ -460,7 +460,7 @@ async function toStdout(loopAmount, volume = 100/100) {
                        "-aq", "0",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
-      log(1, "Spawned ffmpeg with " + ffmpeg.spawnargs)
+      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
       if (global?.effects) {
         await applyEffects({
           program: "sox",
@@ -470,7 +470,7 @@ async function toStdout(loopAmount, volume = 100/100) {
           stdout: ffmpeg.stdin,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
-        log(1, "Done setting up")
+        log(1, performance.now().toFixed(2), "Done setting up")
         break;
       }
       promisesOfPrograms.push(
@@ -479,15 +479,15 @@ async function toStdout(loopAmount, volume = 100/100) {
           ffmpeg.on("exit", () => resolve())
         })
       )
-      log(1, "Added promise")
+      log(1, performance.now().toFixed(2), "Added promise")
       ffmpeg.stdin.write(stdoutHeader)
       readStream.pipe(ffmpeg.stdin)
-      log(1, "Done setting up")
+      log(1, performance.now().toFixed(2), "Done setting up")
       break;
     }
     case "pcm": {
       readStream.pipe(process.stdout)
-      log(1, "Done setting up")
+      log(1, performance.now().toFixed(2), "Done setting up")
       break;
     }
     
@@ -500,12 +500,12 @@ async function toStdout(loopAmount, volume = 100/100) {
           promisesOfPrograms,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
-        log(1, "Done setting up")
+        log(1, performance.now().toFixed(2), "Done setting up")
         break;
       }
       process.stdout.write(stdoutHeader)
       readStream.pipe(process.stdout)
-      log(1, "Done setting up")
+      log(1, performance.now().toFixed(2), "Done setting up")
   }
   await Promise.all([
     new Promise((resolve, reject) => {
@@ -517,7 +517,7 @@ async function toStdout(loopAmount, volume = 100/100) {
     }),
     ...promisesOfPrograms // If there are any
   ])
-  log(1, "\nFinished printing to stdout")
+  log(1, performance.now().toFixed(2), "Finished printing to stdout")
 }
 
 /**
@@ -531,7 +531,7 @@ async function toFile(loopAmount, volume = 100/100) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
-  log(1, "Started toFile")
+  log(1, performance.now().toFixed(2), "Started toFile")
   const {
     seq,
     synth,
@@ -547,7 +547,7 @@ async function toFile(loopAmount, volume = 100/100) {
   const { clearLastLines } = await import("./utils.mjs");
   
   addEvent({ eventType: "SIGINT" })
-  log(1, "Added event SIGINT")
+  log(1, performance.now().toFixed(2), "Added event SIGINT")
   let i = 0;
   const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
   
@@ -559,7 +559,7 @@ async function toFile(loopAmount, volume = 100/100) {
   let filledSamples = 0;
   let lastBytes = false;
   let stdoutHeader = getWavHeader(outputArray, sampleRate);
-  log(1, "Created header file ", stdoutHeader)
+  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
   // Needed this scope because otherwise it crashes
   {
     // Frees up memory
@@ -619,13 +619,13 @@ async function toFile(loopAmount, volume = 100/100) {
             destination: outFile,
             effects: (Array.isArray(global?.effects)) ? global.effects : undefined
           })
-          log(1, "Done setting up wav outFile")
+          log(1, performance.now().toFixed(2), "Done setting up wav outFile")
           break;
         }
         const wav = fs.createWriteStream(outFile);
         wav.write(stdoutHeader)
         readStream.pipe(wav)
-        log(1, "Done setting up wav outFile")
+        log(1, performance.now().toFixed(2), "Done setting up wav outFile")
         break;
       }
       case /^.*\.flac$/.test(outFile): {
@@ -640,7 +640,7 @@ async function toFile(loopAmount, volume = 100/100) {
           "-compression_level", "12",
           outFile
         ]);
-        log(1, "Spawned ffmpeg with " + ffmpeg.spawnargs)
+        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
         if (global?.effects) {
           await applyEffects({
             program: "sox",
@@ -650,7 +650,7 @@ async function toFile(loopAmount, volume = 100/100) {
             stdout: ffmpeg.stdin,
             effects: (Array.isArray(global?.effects)) ? global.effects : undefined
           })
-          log(1, "Done setting up flac outFile")
+          log(1, performance.now().toFixed(2), "Done setting up flac outFile")
           break;
         }
         promisesOfPrograms.push(
@@ -659,10 +659,10 @@ async function toFile(loopAmount, volume = 100/100) {
             ffmpeg.on("exit", () => resolve())
           })
         )
-        log(1, "Added promise")
+        log(1, performance.now().toFixed(2), "Added promise")
         ffmpeg.stdin.write(stdoutHeader)
         readStream.pipe(ffmpeg.stdin)
-        log(1, "Done setting up flac outFile")
+        log(1, performance.now().toFixed(2), "Done setting up flac outFile")
         break;
       }
       case /^.*\.mp3$/.test(outFile): {
@@ -677,7 +677,7 @@ async function toFile(loopAmount, volume = 100/100) {
           "-aq", "0",
           outFile
         ]);
-        log(1, "Spawned ffmpeg with " + ffmpeg.spawnargs)
+        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
         if (global?.effects) {
           await applyEffects({
             program: "sox",
@@ -687,7 +687,7 @@ async function toFile(loopAmount, volume = 100/100) {
             stdout: ffmpeg.stdin,
             effects: (Array.isArray(global?.effects)) ? global.effects : undefined
           })
-          log(1, "Done setting up mp3 outFile")
+          log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
           break;
         }
         promisesOfPrograms.push(
@@ -696,10 +696,10 @@ async function toFile(loopAmount, volume = 100/100) {
             ffmpeg.on("exit", () => resolve())
           })
         )
-        log(1, "Added promise")
+        log(1, performance.now().toFixed(2), "Added promise")
         ffmpeg.stdin.write(stdoutHeader)
         readStream.pipe(ffmpeg.stdin)
-        log(1, "Done setting up mp3 outFile")
+        log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
         break;
       }
       case /^.*\.(?:s32le|pcm)$/.test(outFile): {
@@ -709,7 +709,7 @@ async function toFile(loopAmount, volume = 100/100) {
         
         const pcm = fs.createWriteStream(outFile);
         readStream.pipe(pcm)
-        log(1, "Done setting up pcm outFile")
+        log(1, performance.now().toFixed(2), "Done setting up pcm outFile")
         break;
       }
     }
