@@ -133,6 +133,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
 }
 function log(level, time, ...messages) {
+  const spacesAmount = new Date().toISOString().length + ((time+"").length + 7) + 2;
   const debugLevelSpesso = process.env["DEBUG_LEVEL_SPESSO"];
   const debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
   if (debugLevelSpesso
@@ -144,14 +145,15 @@ function log(level, time, ...messages) {
       messages
         .join("")
         // Place the header data on a new line with padding
-        .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(36)+"$1")
+        .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(spacesAmount)+"$1")
         // Place the SoX arguments on a new line with padding
-        .replace(/with (sox,.*)/, "with:\n"+" ".repeat(36)+"\"$1\"")
+        .replace(/with (sox -t.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
         // Place the ffmpeg arguments on a new line with padding
-        .replace(/with (ffmpeg,.*)/, "with:\n"+" ".repeat(36)+"\"$1\"")
+        .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
         // Add dimmed gray to the output
         .replace(/(.*)/s, `${dimGray}$1${normal}`)
     ];
+    if (messages[0] === "Finished printing to stdout") message.unshift("\n")
     console.error(...message);
     const path = debugFileSpesso || global.logFilePath;
     if (path) {

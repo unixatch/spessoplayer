@@ -190,7 +190,7 @@ async function applyEffects({
     ...effects
   ], {stdio: ["pipe", stdout, "pipe"], detached: true})
   //  For SIGINT event to work, sometimes... ↑
-  log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs)
+  log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs.join(" "))
   
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
@@ -427,7 +427,7 @@ async function toStdout(loopAmount, volume = 100/100) {
                        "-compression_level", "12",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
+      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (global?.effects) {
         await applyEffects({
           program: "sox",
@@ -460,7 +460,7 @@ async function toStdout(loopAmount, volume = 100/100) {
                        "-aq", "0",
                        "pipe:1"
                      ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
+      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (global?.effects) {
         await applyEffects({
           program: "sox",
@@ -640,7 +640,7 @@ async function toFile(loopAmount, volume = 100/100) {
           "-compression_level", "12",
           outFile
         ]);
-        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
+        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
         if (global?.effects) {
           await applyEffects({
             program: "sox",
@@ -677,7 +677,7 @@ async function toFile(loopAmount, volume = 100/100) {
           "-aq", "0",
           outFile
         ]);
-        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs)
+        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
         if (global?.effects) {
           await applyEffects({
             program: "sox",
