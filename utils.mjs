@@ -134,6 +134,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
 }
 function log(level, time, ...messages) {
   const debugLevelSpesso = process.env["DEBUG_LEVEL_SPESSO"];
+  const debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
   if (debugLevelSpesso
       && debugLevelSpesso <= level
       || global.verboseLevel <= level) {
@@ -152,6 +153,13 @@ function log(level, time, ...messages) {
         .replace(/(.*)/s, `${dimGray}$1${normal}`)
     ];
     console.error(...message);
+    const path = debugFileSpesso || global.logFilePath;
+    if (path) {
+      message[0] = message[0].toISOString();
+      message[message.length-1] = message[message.length-1].replace(/\x1b\[.{1,10}m/, "")
+      message.push("\n")
+      fs.appendFileSync(path, message.join(" "))
+    }
   }
 }
 

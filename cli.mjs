@@ -34,23 +34,36 @@ const actUpOnPassedArgs = async (args) => {
       await version()
       process.exit()
     }
-    let verboseOptionPosition,
-        verboseOptionNumber;
     const regexOfVerboseLevel = /^(?:--verbose-level(?:=(?<number>\d))*|\/verbose-level(?:=(?<number>\d))*|-vl(?:=(?<number>\d))*|\/vl(?:=(?<number>\d))*)$/;
+    const regexOfLogFile = /^(?:--log-file(?:=(?<path>\w+))*|\/log-file(?:=(?<path>\w+))*|-lf(?:=(?<path>\w+))*|\/lf(?:=(?<path>\w+))*)$/;
     newArguments
       .forEach((e, i) => {
         if (regexOfVerboseLevel.test(e)) {
-          verboseOptionNumber = e.match(regexOfVerboseLevel).groups.number;
-          verboseOptionPosition = newArguments.indexOf(e);
+          let verboseOptionNumber = e.match(regexOfVerboseLevel).groups.number;
+          let verboseOptionPosition = newArguments.indexOf(e);
+          
+          if (!verboseOptionNumber) verboseOptionNumber = "1";
+          // Delete verbose-level from newArguments
+          newArguments.splice(verboseOptionPosition, 1)
+          
+          if (!process.env["DEBUG_LEVEL_SPESSO"]) {
+            setVerboseLevel(verboseOptionNumber)
+          } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+          return;
+        }
+        if (regexOfLogFile.test(e)) {
+          let pathOfLogFile = e.match(regexOfLogFile).groups.path;
+          let pathOfLogFilePosition = newArguments.indexOf(e);
+          
+          // Delete verbose-level from newArguments
+          newArguments.splice(pathOfLogFilePosition, 1)
+          
+          if (!process.env["DEBUG_FILE_SPESSO"]) {
+            setLogFilePath(pathOfLogFile)
+          } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
           return;
         }
       })
-    if (verboseOptionPosition) {
-      if (!verboseOptionNumber) verboseOptionNumber = "1";
-      // Delete verbose-level from newArguments
-      newArguments.splice(verboseOptionPosition, 1)
-    }
-    setVerboseLevel(verboseOptionNumber)
 
     global.fileOutputs = [];
     for (const arg of newArguments) {
@@ -477,6 +490,17 @@ const setReverb = arg => {
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
   process.exit(1);
+}
+/**
+ * Sets the file path to the log file
+ * @param {string} arg - Path to the log file
+ */
+const setLogFilePath = async arg => {
+  if (!arg) return;
+  if (!global.fs) global.fs = await import("fs");
+
+  global.logFilePath = arg;
+  log(1, performance.now().toFixed(2), `Set log file path to ${global.logFilePath}`)
 }
 /**
  * Shows the help text
