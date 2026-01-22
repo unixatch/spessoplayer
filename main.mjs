@@ -37,6 +37,8 @@ if (global?.fileOutputs?.length > 0) await toFile(global?.loopN, global?.volume)
 /**
  * Calculates the sample count to use
  * @param {class} midi - The BasicMIDI class to use
+ * @param {Number} sampleRate - The sample rate to use
+ * @param {Number} loopAmount - The amount of loops to do
  */
 function getSampleCount(midi, sampleRate, loopAmount) {
   global.loopStart = global?.loopStart ?? midi.midiTicksToSeconds(midi.loop.start);
@@ -75,8 +77,8 @@ function getSampleCount(midi, sampleRate, loopAmount) {
 /**
  * Initializes all the required variables for spessasynth_core usage
  * @param {any} loopAmount - the loop amount
- * @param {Number} volume - the volume to set
- * @param {Boolean} isToFile - defines or not audioToWav
+ * @param {Number} [volume=100/100] - the volume to set
+ * @param {Boolean} [isToFile=false] - defines or not audioToWav
  */
 async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
   let audioToWav,
@@ -145,10 +147,13 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
 }
 /**
  * Applies effects using SoX
- * @param {Stream} program - the process to spawn, sox usually
- * @param {Stream} stdoutHeader - the header to process
- * @param {Stream} readStream - the data to process
- * @param {Stream} stdout - the destination
+ * @param {Object} obj - the object passed
+ * @param {Stream} obj.program - the process to spawn, sox usually
+ * @param {Stream} obj.stdoutHeader - the header to process
+ * @param {Stream} obj.readStream - the data to process
+ * @param {Stream} obj.stdout - the destination
+ * @param {String} obj.destination - the destination path
+ * @param {string[]} obj.effects - all effects to pass to SoX
  * 
  * @example
  * applyEffects({ program: "sox", stdoutHeader, readStream })
@@ -241,10 +246,9 @@ async function applyEffects({
 }
 /**
  * Adds events to process
- * @param {string} eventType - the type of event to add
- * @param {Function} func - optional function for eventType "exit"
- * @param {Boolean} isStdout - if it's the function toStdout calling
- * 
+ * @param {Object} obj - the object passed
+ * @param {String} obj.eventType - the type of event to add
+ * @param {Function} obj.func - optional function for eventType "exit"
  * @example
  * addEvent({ eventType: "SIGINT" })
  */
@@ -280,9 +284,17 @@ function addEvent({ eventType, func }) {
 }
 /**
  * Creates a Readable stream given the variables needed
- * @param {Readable} Readable - a copy of the readable stream function
- * @param {Boolean} isStdout - whether or not it's for the toStdout function
- * @param {Object} Object - the object deconstructed to get all necessary variables
+ * @param {Object} obj - the object passed
+ * @param {Number} obj.BUFFER_SIZE - static size of the buffer
+ * @param {Number} obj.sampleCount - sample count
+ * @param {Number} obj.filledSamples - how many samples have been rendered
+ * @param {Boolean} obj.lastBytes - check if it's the last sample
+ * @param {Number} obj.i - counter for the progress
+ * @param {Number} obj.durationRounded - duration of the song rounded by percentage
+ * @param {Function} obj.clearLastLines - util function to clear lines, see utils.mjs
+ * @param {class} obj.seq - spessasynth_core' sequencer
+ * @param {class} obj.synth - spessasynth_core's processor
+ * @param {Function} obj.getData - translator: Float32Arrays → Uint8Arrays
  */
 function createReadable(Readable, isStdout = false, {
   BUFFER_SIZE,
@@ -424,7 +436,7 @@ async function toStdout(loopAmount, volume = 100/100) {
   })
   addEvent({ eventType: "SIGINT" })
   log(1, performance.now().toFixed(2), "Added events exit and SIGINT")
-  const { 
+  const {
     getWavHeader,
     getData
   } = await import("./audioBuffer.mjs")

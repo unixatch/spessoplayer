@@ -274,7 +274,7 @@ const actUpOnPassedArgs = async (args) => {
 
 /**
  * Sets the global.loopN variable
- * @param {string} arg - the loop amount
+ * @param {String} arg - the loop amount
  */
 const setLoop = arg => {
   if (typeof Number(arg) === "number"
@@ -292,7 +292,7 @@ const setLoop = arg => {
 }
 /**
  * Sets the global.loopStart variable
- * @param {string} arg - the start of the loop in seconds or in HH:MM:SS:ms format
+ * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
  */
 const setLoopStart = arg => {
   if (typeof Number(arg) === "number"
@@ -312,7 +312,7 @@ const setLoopStart = arg => {
 }
 /**
  * Sets the global.loopEnd variable
- * @param {string} arg - the end of the loop in seconds or in HH:MM:SS:ms format
+ * @param {String} arg - the end of the loop in seconds or in HH:MM:SS:ms format
  */
 const setLoopEnd = arg => {
   if (typeof Number(arg) === "number"
@@ -332,7 +332,7 @@ const setLoopEnd = arg => {
 }
 /**
  * Sets the global.sampleRate variable
- * @param {string} arg - the sample rate to set
+ * @param {String} arg - the sample rate to set
  */
 const setSampleRate = arg => {
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
@@ -365,7 +365,7 @@ const setVerboseLevel = async (arg) => {
 }
 /**
  * Sets the global.format variable for use in stdout mode
- * @param {string} arg - the format to use (similar to ffmpeg's -f)
+ * @param {String} arg - the format to use (similar to ffmpeg's -f)
  */
 const setFormat = arg => {
   switch (arg) {
@@ -395,7 +395,7 @@ const setFormat = arg => {
 }
 /**
  * Applies effects from the user's string passed through --effects
- * @param {string} arg - the comma-separeted string to parse
+ * @param {String} arg - the comma-separeted string to parse
  */
 const setEffects = arg => {
   const regexListOfEffects =
@@ -447,7 +447,7 @@ const setEffects = arg => {
 }
 /**
  * Sets the global.volume variable for the masterGain
- * @param {string} arg - the volume in either percentage, decibels or decimals
+ * @param {String} arg - the volume in either percentage, decibels or decimals
  */
 const setVolume = arg => {
   if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
@@ -473,7 +473,7 @@ const setVolume = arg => {
 }
 /**
  * Sets the global.reverb variable
- * @param {string} arg - the volume in either percentage, decibels or decimals
+ * @param {String} arg - the volume in either percentage, decibels or decimals
  */
 const setReverb = arg => {
   if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
@@ -502,7 +502,7 @@ const setReverb = arg => {
 }
 /**
  * Sets the file path to the log file
- * @param {string} arg - Path to the log file
+ * @param {String} arg - Path to the log file
  */
 const setLogFilePath = arg => {
   global.logFilePath = arg ?? "./spesso.log";

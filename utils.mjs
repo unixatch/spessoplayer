@@ -41,6 +41,13 @@ function declareColors() {
 }
 declareColors()
 
+/**
+ * Clears lines from the last line up
+ * @param {Number[]} lines - two numbers, x and y values
+ * @example
+ * // Clears only the last line
+ * clearLastLines([0, -1])
+ */
 const clearLastLines = lines => {
   if (!Array.isArray(lines)) throw new TypeError("Didn't give an array");
   let lineX, lineY;
@@ -58,6 +65,14 @@ const clearLastLines = lines => {
   process.stdout
     .clearScreenDown();
 }
+/**
+ * Runs program synchronously and throws a ReferenceError if it doesn't find it
+ * @param {Object} obj - the obj passed
+ * @param {Function} obj.spawnSync - child_process.spawnSync
+ * @param {String} obj.program - program to find
+ * @param {string[]} obj.args - optional arguments
+ * @param {(string|string[])} obj.stdioArray - stdio to set for the process
+ */
 function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) {
   const code = spawnSync(
     program,
@@ -69,6 +84,14 @@ function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) 
     throw new ReferenceError("Program doesn't exist")
   } else return true
 }
+/**
+ * Tries to check and install the program via a package manager
+ * @param {String} packageToUse - package to search and install
+ * @param {Function} spawnSync - child_process.spawnSync
+ * @param {Object} stdioObj - object passed for stdout and stderr
+ * @param {Writable} obj.stdout - process' stdout
+ * @param {Writable} obj.stderr - process' stderr
+ */
 function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   const packageManagers = [
     "apt",
@@ -132,6 +155,12 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
   console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
 }
+/**
+ * Logger
+ * @param {Number} level - level of the log
+ * @param {Number} time - time that it takes to creates this log
+ * @param {string[]} ...messages - messages to print
+ */
 function log(level, time, ...messages) {
   const spacesAmount = new Date().toISOString().length + ((time+"").length + 7) + 2;
   const debugLevelSpesso = process.env["DEBUG_LEVEL_SPESSO"];
@@ -165,6 +194,10 @@ function log(level, time, ...messages) {
   }
 }
 
+/**
+ * Simply returns the programs' current directory
+ * @type {String}
+ */
 const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
 export {
   _dirname_,
