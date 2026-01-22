@@ -26,7 +26,8 @@ log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
 
 
-let spawn;
+let spawn,
+    spawnSync;
 if (global?.toStdout) {
   await toStdout(global?.loopN, global?.volume)
   process.exit()
@@ -365,11 +366,60 @@ async function toStdout(loopAmount, volume = 100/100) {
   let outRight = new Float32Array(sampleCount);
   let outputArray = [outLeft, outRight];
   
-  
-  addEvent({ eventType: "exit", isStdout: true, 
+  ({ spawn, spawnSync } = await import("child_process"));
+  addEvent({ eventType: "exit",
     func: () => {
       // Necessary for programs like mpv
-      if (doneStreaming) process.kill(process.pid, "SIGKILL")
+      if (doneStreaming) {
+        let command,
+            commandToSend,
+            argumentsForCommand,
+            regexForCommand;
+        const arrayOfProgramsWinVersion = ["mpv.exe"];
+        const arrayOfPrograms = ["mpv"];
+        
+        switch (process.platform) {
+          case 'win32':
+            command = "tasklist";
+            argumentsForCommand = [];
+            regexForCommand = new RegExp(
+              `(?:${arrayOfPrograms.join("|")})\\s*(?<pid>\\d+)`,
+              "g"
+            );
+            commandToSend = () => spawnSync("taskkill", [
+              "/PID", process.pid, "/T", "/F"
+            ]);
+            break;
+          
+          case 'linux':
+          case 'android':
+          case 'darwin':
+            command = "ps";
+            argumentsForCommand = [
+              "-o", "pid,comm",
+              "-C", "node,"+arrayOfPrograms.join(",")
+            ];
+            regexForCommand = new RegExp(
+              `(?<pid>\\d+) (?:${arrayOfPrograms.join("|")})`,
+              "g"
+            );
+            commandToSend = () => process.kill(process.pid, "SIGKILL");
+            break;
+        }
+        
+        // Get PIDs by group name ?<pid>
+        const iteratorObject = spawnSync(command, argumentsForCommand)
+                                 .stdout.toString()
+                                 .matchAll(regexForCommand)
+                                 .map(i => i.groups);
+        // If it matches something,
+        // check whether it's a connected pipe to the program before SIGKILLing
+        for (const foundProgram of iteratorObject) {
+          if (Number(foundProgram.pid) >= process.pid
+              && Number(foundProgram.pid) <= process.pid+20) commandToSend()
+          if (process.platform === "win32") commandToSend()
+        }
+      }
     }
   })
   addEvent({ eventType: "SIGINT" })
@@ -420,7 +470,6 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "flac": {
-      ({ spawn } = await import("child_process"));
       const ffmpeg = spawn("ffmpeg", [
                        "-i", "-",
                        "-f", "flac",
@@ -453,7 +502,6 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "mp3": {
-      ({ spawn } = await import("child_process"));
       const ffmpeg = spawn("ffmpeg", [
                        "-i", "-",
                        "-f", "mp3",
