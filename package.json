@@ -4,13 +4,13 @@
   "description": "A midi converter that uses spessasynth_core to generate the data",
   "keywords": [
     "midi", "soundfont",
-    "mid", "sf2", "dls"
+    "mid", "sf2", "dls",
     "midiplayer", "player",
     "cli",
     "node",
     "stdout",
     "lossless", "lossy",
-    "wav", "pcm", "flac", "mp3",
+    "wav", "pcm", "flac", "mp3"
   ],
   "license": "GPL-3.0-only",
   "author": "unixatch",
