@@ -762,7 +762,7 @@ async function toFile(loopAmount, volume = 100/100) {
         log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
         break;
       }
-      case /^.*\.(?:s32le|pcm)$/.test(outFile): {
+      case /^.*\.(?:s16le|s32le|pcm)$/.test(outFile): {
         const newName = newFileName(outFile);
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile);

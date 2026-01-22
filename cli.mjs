@@ -91,7 +91,7 @@ const actUpOnPassedArgs = async (args) => {
           log(1, performance.now().toFixed(2), "Set file output to mp3")
           break;
         }
-        case /^.*\.(?:s32le|pcm)$/.test(arg) && arg: {
+        case /^.*\.(?:s16le|s32le|pcm)$/.test(arg) && arg: {
           global.fileOutputs[3] = arg;
           log(1, performance.now().toFixed(2), "Set file output to pcm")
           break;
@@ -384,7 +384,7 @@ const setFormat = arg => {
       log(1, performance.now().toFixed(2), `Set stdout format to ${global.format}`)
       return;
     }
-    case /^(?:s32le|pcm)$/.test(arg) && arg: {
+    case /^(?:s16le|s32le|pcm)$/.test(arg) && arg: {
       global.format = "pcm";
       log(1, performance.now().toFixed(2), `Set stdout format to ${global.format}`)
       return;
