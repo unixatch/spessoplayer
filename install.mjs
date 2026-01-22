@@ -23,43 +23,46 @@ let readline,
     stdin,
     stdout,
     stderr;
+/**
+ * Checks if a program exists, if it doesn't exist,
+ * it asks the user for confirmation to install via package managers
+ * @param {String} program - the program to check
+ * @param {String} [noInstallMsg=""] - the message to show when the user refuses to install it
+ */
+async function runCheck(program, noInstallMsg = "") {
+  try {
+    runProgramSync({ spawnSync, program })
+  } catch {
+    console.log("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
+    if (!readline) {
+      readline = await import("readline/promises");
+      ({ stdin, stdout, stderr } = await import ('process'));
+    }
+    
+    const rl = readline.createInterface({ input: stdin, output: stdout });
+    const answer = await rl.question("Do you want to install it [Y|n]? ");
+    rl.close()
+    //                               ↓ In case it's neither y or n
+    if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
+      tryToInstall(program, spawnSync, { stdout, stderr })
+    } else if (/(?:n|no)/.test(answer)) {
+      console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
+    }
+  }
+}
 // ffmpeg check
-try {
-  runProgramSync({ spawnSync, program: "ffmpeg" })
-} catch (e) {
-  console.log("\x1b[33;4m"+"ffmpeg"+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
-  if (!readline) {
-    readline = await import("readline/promises");
-    ({ stdin, stdout, stderr } = await import ('process'));
-  }
-  
-  const rl = readline.createInterface({ input: stdin, output: stdout });
-  const answer = await rl.question("Do you want to install it [Y|n]? ");
-  rl.close()
-  //                               ↓ In case it's neither y or n
-  if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
-    tryToInstall("ffmpeg", spawnSync, { stdout, stderr })
-  } else if (/(?:n|no)/.test(answer)) {
-    console.log("\x1b[33m"+"Continuing installation, but you'll get errors when trying to convert to other formats"+"\x1b[0m")
-  }
-}
+await runCheck(
+  "ffmpeg",
+  "Continuing installation, but you'll get errors when trying to convert to other formats"
+)
 // SoX check
-try {
-  runProgramSync({ spawnSync, program: "sox" })
-} catch (e) {
-  console.log("\x1b[33;4m"+"sox"+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
-  if (!readline) {
-    readline = await import("readline/promises");
-    ({ stdin, stdout, stderr } = await import ('process'));
-  }
-  
-  const rl = readline.createInterface({ input: stdin, output: stdout });
-  const answer = await rl.question("Do you want to install it [Y|n]? ");
-  rl.close()
-  //                               ↓ In case it's neither y or n
-  if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
-    tryToInstall("sox", spawnSync, { stdout, stderr })
-  } else if (/(?:n|no)/.test(answer)) {
-    console.log("\x1b[33m"+"Continuing installation, but you'll get errors when trying to add effects"+"\x1b[0m")
-  }
-}
+await runCheck(
+  "sox",
+  "Continuing installation, but you'll get errors when trying to add effects"
+)
+// mpv check
+await runCheck(
+  "mpv",
+  "Continuing installation, but you'll get errors when trying to play songs directly"
+)
+export runCheck
