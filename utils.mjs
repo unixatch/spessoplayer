@@ -15,6 +15,7 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { join, parse } from "path"
 import { fileURLToPath } from "url"
 
 function declareColors() {
