@@ -26,6 +26,27 @@ log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
 
 
+/**
+ * Simply returns an object containing ffmpeg's arguments in all supported formats
+ * @param {String} [outFile="pipe:1"] - file path to write to
+ * @return {Object} - available formats in Object format
+ */
+function ffmpegArgs(outFile = "pipe:1") {
+  return {
+    flac: [
+      "-i", "-",
+      "-f", "flac",
+      "-compression_level", "12",
+      outFile
+    ],
+    mp3: [
+      "-i", "-",
+      "-f", "mp3",
+      "-aq", "0",
+      outFile
+    ]
+  };
+}
 let spawn,
     spawnSync;
 if (global?.toStdout) {
@@ -482,12 +503,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "flac": {
-      const ffmpeg = spawn("ffmpeg", [
-                       "-i", "-",
-                       "-f", "flac",
-                       "-compression_level", "12",
-                       "pipe:1"
-                     ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
+      const ffmpeg = spawn("ffmpeg", ffmpegArgs().flac, {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (global?.effects) {
         await applyEffects({
@@ -514,12 +530,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "mp3": {
-      const ffmpeg = spawn("ffmpeg", [
-                       "-i", "-",
-                       "-f", "mp3",
-                       "-aq", "0",
-                       "pipe:1"
-                     ], {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
+      const ffmpeg = spawn("ffmpeg", ffmpegArgs().mp3, {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (global?.effects) {
         await applyEffects({
@@ -694,12 +705,7 @@ async function toFile(loopAmount, volume = 100/100) {
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile);
         
-        const ffmpeg = spawn("ffmpeg", [
-          "-i", "-",
-          "-f", "flac",
-          "-compression_level", "12",
-          outFile
-        ]);
+        const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile).flac);
         log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
         if (global?.effects) {
           await applyEffects({
@@ -731,12 +737,7 @@ async function toFile(loopAmount, volume = 100/100) {
         global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile);
         
-        const ffmpeg = spawn("ffmpeg", [
-          "-i", "-",
-          "-f", "mp3",
-          "-aq", "0",
-          outFile
-        ]);
+        const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile).mp3);
         log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
         if (global?.effects) {
           await applyEffects({
