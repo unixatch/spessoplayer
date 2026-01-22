@@ -193,6 +193,33 @@ function log(level, time, ...messages) {
     }
   }
 }
+/**
+ * Returns a new path with a new number (adds 1) at the end of the filename
+ * if necessary otherwise it returns the given path
+ * @param {String} path - The path to parse and modify if needed
+ * @example
+ * // It'll return out1.wav
+ *    newFileName("out.wav")
+ * @example
+ * // It'll return out2.wav
+ *    newFileName("out1.wav")
+ * @returns {String} The path, modified or not
+ */
+function newFileName(path) {
+  if (fs.existsSync(path)) {
+    const pathDir = parse(path).dir;
+    const pathFileName = (parse(path).name.match(/[0-9]+$/g)?.length > 0)
+      ? parse(path).name.replace(/[0-9]+$/, "")
+      + (Number(parse(path).name.match(/[0-9]+$/g)[0]) + 1)
+      : parse(path).name.replace(/[0-9]+$/, "") + 1;
+    const pathExt = parse(path).ext;
+    path = join(pathDir, pathFileName + pathExt);
+    
+    if (fs.existsSync(path)) return newFileName(path);
+    return path;
+  }
+  return path;
+}
 
 /**
  * Simply returns the programs' current directory
@@ -204,5 +231,6 @@ export {
   clearLastLines,
   runProgramSync,
   tryToInstall,
-  log
+  log,
+  newFileName
 }
