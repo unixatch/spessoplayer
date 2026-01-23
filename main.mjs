@@ -549,7 +549,7 @@ async function toStdout(
       }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
-          ffmpeg.on("error", () => reject())
+          ffmpeg.on("error", e => reject(e))
           ffmpeg.on("exit", () => resolve())
         })
       )
@@ -582,7 +582,7 @@ async function toStdout(
       }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
-          ffmpeg.on("error", () => reject())
+          ffmpeg.on("error", e => reject(e))
           ffmpeg.on("exit", () => resolve())
         })
       )
@@ -622,14 +622,14 @@ async function toStdout(
   }
   await Promise.all([
     new Promise((resolve, reject) => {
-      readStream.on("error", () => reject())
+      readStream.on("error", e => reject(e))
       readStream.on("end", () => {
         doneStreaming = true;
         resolve()
       })
     }),
     (isStartPlayer) ? new Promise((resolve, reject) => {
-      mpv.on("error", () => reject())
+      mpv.on("error", e => reject(e))
       mpv.on("exit", () => resolve())
       mpv.on("end", () => resolve())
     }) : undefined,
@@ -736,7 +736,7 @@ async function toFile(loopAmount, volume = 100/100) {
         }
         promisesOfPrograms.push(
           new Promise((resolve, reject) => {
-            ffmpeg.on("error", () => reject())
+            ffmpeg.on("error", e => reject(e))
             ffmpeg.on("exit", () => resolve())
           })
         )
@@ -767,7 +767,7 @@ async function toFile(loopAmount, volume = 100/100) {
         }
         promisesOfPrograms.push(
           new Promise((resolve, reject) => {
-            ffmpeg.on("error", () => reject())
+            ffmpeg.on("error", e => reject(e))
             ffmpeg.on("exit", () => resolve())
           })
         )
@@ -791,7 +791,7 @@ async function toFile(loopAmount, volume = 100/100) {
   }
   await Promise.all([
     new Promise((resolve, reject) => {
-      readStream.on("error", () => reject())
+      readStream.on("error", e => reject(e))
       readStream.on("end", () => resolve())
     }),
     ...promisesOfPrograms // if there are any

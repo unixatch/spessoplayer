@@ -65,4 +65,4 @@ await runCheck(
   "mpv",
   "Continuing installation, but you'll get errors when trying to play songs directly"
 )
-export runCheck
+export { runCheck }

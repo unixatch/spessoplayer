@@ -17,7 +17,7 @@
 */
 
 const { spawnSync } = await import("child_process");
-const { runProgramSync, tryToInstall } = await import("./utils.mjs");
+const { runProgramSync, tryToUnInstall } = await import("./utils.mjs");
 
 let readline,
     stdin,
@@ -65,4 +65,4 @@ await runCheck(
   "mpv",
   "Continuing uninstallation, keeping mpv"
 )
-export runCheck
+export { runCheck }
