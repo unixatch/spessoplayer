@@ -511,18 +511,14 @@ const setLogFilePath = arg => {
  */
 const uninstall = async () => {
   const fs = await import("node:fs");
-  const { fork, execSync } = await import("child_process");
+  const { execSync } = await import("child_process");
   const uninstallScriptPath = join(_dirname_, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
   
   log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
-  const uninstallScript = fork(uninstallScriptPath);
-  await new Promise((resolve, reject) => {
-    uninstallScript.on("exit", () => resolve())
-    uninstallScript.on("error", e => reject(e))
-  })
+  execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
   log(1, performance.now().toFixed(2), "Uninstalling spessoplayer")
-  execSync(`npm uninstall ${(isGloballyInstalled) ? "-g" : ""} spessoplayer`, { cwd: "." })
+  execSync(`npm uninstall ${(isGloballyInstalled) ? "-g" : ""} spessoplayer`, { cwd: ".", stdio: "inherit" })
 }
 /**
  * Shows the help text

@@ -37,7 +37,8 @@ async function runCheck(program, noInstallMsg = "") {
     }
     
     const rl = readline.createInterface({ input: stdin, output: stdout });
-    const answer = await rl.question("Do you want to uninstall it "+(program === "sox") ? "[Y|n]" : "[y|N]"+"? ");
+    const isSox = (program === "sox") ? "[Y|n]" : "[y|N]";
+    const answer = await rl.question("Do you want to uninstall it " + isSox + "? ");
     rl.close()
     if (!/(?:n|no|y|yes)/.test(answer)) {
       if (program === "sox") {
