@@ -34,6 +34,10 @@ const actUpOnPassedArgs = async (args) => {
       await version()
       process.exit()
     }
+    if (newArguments.filter(i => /^(?:--uninstall|\/uninstall|-u|\/u)$/.test(i)).length > 0) {
+      await uninstall()
+      process.exit()
+    }
     
     const regexOfVerboseLevel = /^(?:--verbose(?:=(?<number>\d))*|\/verbose(?:=(?<number>\d))*|-v(?:=(?<number>\d))*|\/v(?:=(?<number>\d))*)$/;
     const regexOfLogFile = /^(?:--log-file(?:=(?<path>\w+))*|\/log-file(?:=(?<path>\w+))*|-lf(?:=(?<path>\w+))*|\/lf(?:=(?<path>\w+))*)$/;
@@ -503,6 +507,21 @@ const setLogFilePath = arg => {
   log(1, performance.now().toFixed(2), `Set log file path to ${global.logFilePath}`)
 }
 /**
+ * Runs uninstall.mjs
+ */
+const uninstall = async () => {
+  const fs = await import("node:fs");
+  const { fork } = await import("child_process");
+  const uninstallScriptPath = join(_dirname_, "uninstall.mjs");
+  
+  log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
+  const uninstallScript = fork(uninstallScriptPath);
+  await new Promise((resolve, reject) => {
+    uninstallScript.on("exit", () => resolve())
+    uninstallScript.on("error", e => reject(e))
+  })
+}
+/**
  * Shows the help text
  */
 const help = () => {
@@ -558,6 +577,9 @@ const help = () => {
     ${green}--log-file${normal}, ${green}/log-file${normal}, ${green}-lf${normal}, ${green}/lf${normal}:
       ${dimGray+italics}Sets path to the log file (default: ./spesso.log)${normal}
         ${dimGray+italics}(Meanwhile it writes to file, it also prints to stderr)${normal}
+      
+    ${green}--uninstall${normal}, ${green}/uninstall${normal}, ${green}-u${normal}, ${green}/u${normal}:
+      ${dimGray+italics}Uninstalls dependencies with confirmation${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}

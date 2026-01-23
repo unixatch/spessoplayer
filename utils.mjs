@@ -157,6 +157,85 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
   console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
 }
 /**
+ * Tries to check and uninstall the program via a package manager
+ * @param {String} packageToUse - package to search and install
+ * @param {Function} spawnSync - child_process.spawnSync
+ * @param {Object} stdioObj - object passed for stdout and stderr
+ * @param {Writable} obj.stdout - process' stdout
+ * @param {Writable} obj.stderr - process' stderr
+ */
+function tryToUnInstall(packageToUse, spawnSync, { stdout, stderr }) {
+  const packageManagers = [
+    "apt",
+    "dnf",
+    "yum",
+    "zypper",
+    "pacman",
+    "emerge",
+    "pkg",
+    "winget",
+    "brew",
+    "rpm",
+    "apk"
+  ];
+  for (let packageManager of packageManagers) {
+    switch (packageManager) {
+      case "apt":
+      case "dnf":
+      case "yum":
+      case "zypper":
+        try {
+          return runProgramSync({
+            spawnSync,
+            program: packageManager,
+            args: ["remove", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
+      case "pkg":
+      case "winget":
+      case "brew":
+        try {
+          return runProgramSync({
+            spawnSync,
+            program: packageManager,
+            args: ["uninstall", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
+      case "pacman":
+        try {
+          return runProgramSync({
+            spawnSync,
+            program: packageManager,
+            args: ["-Rs", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
+      case "emerge":
+        try {
+          return runProgramSync({
+            spawnSync,
+            program: packageManager,
+            args: ["--ask", "--verbose", "--depclean", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
+      case "apk":
+        try {
+          return runProgramSync({
+            spawnSync,
+            program: packageManager,
+            args: ["del", packageToUse],
+            stdioArray: ["pipe", stdout, stderr]
+          })
+        } catch { break; }
+    }
+  }
+  console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
+  console.log(`${yellow}uninstall it either manually or with a package manager you use${normal}`)
+}
+/**
  * Logger
  * @param {Number} level - level of the log
  * @param {Number} time - time that it takes to creates this log
