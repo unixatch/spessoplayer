@@ -17,7 +17,7 @@
 */
 
 const { spawnSync } = await import("child_process");
-const { runProgramSync, tryToUnInstall } = await import("./utils.mjs");
+const { runProgramSync, tryToUninstall } = await import("./utils.mjs");
 
 let readline,
     stdin,
@@ -41,7 +41,7 @@ async function runCheck(program, noInstallMsg = "") {
     rl.close()
     //                               ↓ In case it's neither y or n
     if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
-      tryToUnInstall(program, spawnSync, { stdout, stderr })
+      tryToUninstall(program, spawnSync, { stdout, stderr })
     } else if (/(?:n|no)/.test(answer)) {
       console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
     }

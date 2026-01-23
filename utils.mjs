@@ -164,7 +164,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
  * @param {Writable} obj.stdout - process' stdout
  * @param {Writable} obj.stderr - process' stderr
  */
-function tryToUnInstall(packageToUse, spawnSync, { stdout, stderr }) {
+function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
   const packageManagers = [
     "apt",
     "dnf",
