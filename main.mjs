@@ -390,81 +390,92 @@ function createReadable(Readable, isStdout = false, {
  * @param {Number} obj.sampleCount - sample count of the song
  * @param {Number} obj.sampleRate - sample rate of the song
  */
-async function toStdout(loopAmount, volume = 100/100) {
+async function toStdout(
+  loopAmount,
+  volume = 100/100,
+  {
+    mpv,
+    isStartPlayer,
+    seq, synth,
+    sampleCount, sampleRate
+  } = false
+) {
   if (!global?.midiFile || !global?.soundfontFile) {
     throw new ReferenceError("Missing some required files")
     process.exit(1)
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
-  const {
-    seq,
-    synth,
-    sampleCount,
-    sampleRate
-  } = await initSpessaSynth(loopAmount, volume);
+  if (!isStartPlayer) {
+    ({
+      seq, synth,
+      sampleCount, sampleRate
+    } = await initSpessaSynth(loopAmount, volume));
+  }
   
   let outLeft = new Float32Array(sampleCount);
   let outRight = new Float32Array(sampleCount);
   let outputArray = [outLeft, outRight];
   
   ({ spawn, spawnSync } = await import("child_process"));
-  addEvent({ eventType: "exit",
-    func: () => {
-      // Necessary for programs like mpv
-      if (doneStreaming) {
-        let command,
-            commandToSend,
-            argumentsForCommand,
-            regexForCommand;
-        const arrayOfProgramsWinVersion = ["mpv.exe"];
-        const arrayOfPrograms = ["mpv"];
-        
-        switch (process.platform) {
-          case 'win32':
-            command = "tasklist";
-            argumentsForCommand = [];
-            regexForCommand = new RegExp(
-              `(?:${arrayOfPrograms.join("|")})\\s*(?<pid>\\d+)`,
-              "g"
-            );
-            commandToSend = () => spawnSync("taskkill", [
-              "/PID", process.pid, "/T", "/F"
-            ]);
-            break;
+  if (!isStartPlayer) {
+    addEvent({ eventType: "exit",
+      func: () => {
+        // Necessary for programs like mpv
+        if (doneStreaming) {
+          let command,
+              commandToSend,
+              argumentsForCommand,
+              regexForCommand;
+          const arrayOfProgramsWinVersion = ["mpv.exe"];
+          const arrayOfPrograms = ["mpv"];
           
-          case 'linux':
-          case 'android':
-          case 'darwin':
-            command = "ps";
-            argumentsForCommand = [
-              "-o", "pid,comm",
-              "-C", "node,"+arrayOfPrograms.join(",")
-            ];
-            regexForCommand = new RegExp(
-              `(?<pid>\\d+) (?:${arrayOfPrograms.join("|")})`,
-              "g"
-            );
-            commandToSend = () => process.kill(process.pid, "SIGKILL");
-            break;
-        }
-        
-        // Get PIDs by group name ?<pid>
-        const iteratorObject = spawnSync(command, argumentsForCommand)
-                                 .stdout.toString()
-                                 .matchAll(regexForCommand)
-                                 .map(i => i.groups);
-        // If it matches something,
-        // check whether it's a connected pipe to the program before SIGKILLing
-        for (const foundProgram of iteratorObject) {
-          if (Number(foundProgram.pid) >= process.pid
-              && Number(foundProgram.pid) <= process.pid+20) commandToSend()
-          if (process.platform === "win32") commandToSend()
+          switch (process.platform) {
+            case 'win32':
+              command = "tasklist";
+              argumentsForCommand = [];
+              regexForCommand = new RegExp(
+                `(?:${arrayOfPrograms.join("|")})\\s*(?<pid>\\d+)`,
+                "g"
+              );
+              commandToSend = () => spawnSync("taskkill", [
+                "/PID", process.pid, "/T", "/F"
+              ]);
+              break;
+            
+            case 'linux':
+            case 'android':
+            case 'darwin':
+              command = "ps";
+              argumentsForCommand = [
+                "-o", "pid,comm",
+                "-C", "node,"+arrayOfPrograms.join(",")
+              ];
+              regexForCommand = new RegExp(
+                `(?<pid>\\d+) (?:${arrayOfPrograms.join("|")})`,
+                "g"
+              );
+              commandToSend = () => process.kill(process.pid, "SIGKILL");
+              break;
+          }
+          
+          // Get PIDs by group name ?<pid>
+          const iteratorObject = spawnSync(command, argumentsForCommand)
+                                   .stdout.toString()
+                                   .matchAll(regexForCommand)
+                                   .map(i => i.groups);
+          // If it matches something,
+          // check whether it's a connected pipe to the program before SIGKILLing
+          for (const foundProgram of iteratorObject) {
+            if (Number(foundProgram.pid) >= process.pid
+                && Number(foundProgram.pid) <= process.pid+20) commandToSend()
+            if (process.platform === "win32") commandToSend()
+          }
         }
       }
-    }
-  })
+    })
+  }
   addEvent({ eventType: "SIGINT" })
-  log(1, performance.now().toFixed(2), "Added events exit and SIGINT")
+  log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Added events exit and SIGINT" : "Added event SIGINT")
   const {
     getWavHeader,
     getData
@@ -498,17 +509,32 @@ async function toStdout(loopAmount, volume = 100/100) {
           program: "sox",
           stdoutHeader, readStream,
           promisesOfPrograms,
+          stdout: (isStartPlayer) ? mpv.stdin : undefined,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
         log(1, performance.now().toFixed(2), "Done setting up")
         break;
       }
+      if (isStartPlayer) {
+        mpv.stdin.write(stdoutHeader)
+        readStream.pipe(mpv.stdin)
+        log(1, performance.now().toFixed(2), "Done setting up")
+        break;
+      }
       process.stdout.write(stdoutHeader)
       readStream.pipe(process.stdout)
+      log(1, performance.now().toFixed(2), "Done setting up")
       break;
     }
     case "flac": {
-      const ffmpeg = spawn("ffmpeg", ffmpegArgs().flac, {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
+      const ffmpeg = spawn("ffmpeg",
+        ffmpegArgs().flac,
+        {stdio: [
+          "pipe",
+          (!isStartPlayer) ? process.stdout : mpv.stdin,
+          "pipe"
+        ], detached: true}
+      );
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (global?.effects) {
         await applyEffects({
@@ -534,7 +560,14 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "mp3": {
-      const ffmpeg = spawn("ffmpeg", ffmpegArgs().mp3, {stdio: [ "pipe", process.stdout, "pipe" ], detached: true});
+      const ffmpeg = spawn("ffmpeg",
+        ffmpegArgs().mp3,
+        {stdio: [
+          "pipe",
+          (!isStartPlayer) ? process.stdout : mpv.stdin,
+          "pipe"
+        ], detached: true}
+      );
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (global?.effects) {
         await applyEffects({
@@ -560,7 +593,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       break;
     }
     case "pcm": {
-      readStream.pipe(process.stdout)
+      readStream.pipe((!isStartPlayer) ? process.stdout : mpv.stdin)
       log(1, performance.now().toFixed(2), "Done setting up")
       break;
     }
@@ -571,8 +604,15 @@ async function toStdout(loopAmount, volume = 100/100) {
           program: "sox",
           stdoutHeader, readStream,
           promisesOfPrograms,
+          stdout: (isStartPlayer) ? mpv.stdin : undefined,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
+        log(1, performance.now().toFixed(2), "Done setting up")
+        break;
+      }
+      if (isStartPlayer) {
+        mpv.stdin.write(stdoutHeader)
+        readStream.pipe(mpv.stdin)
         log(1, performance.now().toFixed(2), "Done setting up")
         break;
       }
@@ -588,9 +628,14 @@ async function toStdout(loopAmount, volume = 100/100) {
         resolve()
       })
     }),
+    (isStartPlayer) ? new Promise((resolve, reject) => {
+      mpv.on("error", () => reject())
+      mpv.on("exit", () => resolve())
+      mpv.on("end", () => resolve())
+    }) : undefined,
     ...promisesOfPrograms // If there are any
   ])
-  log(1, performance.now().toFixed(2), "Finished printing to stdout")
+  log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Finished printing to stdout" : "Finished sending data to mpv's process")
 }
 
 /**
@@ -763,51 +808,11 @@ async function toFile(loopAmount, volume = 100/100) {
  * @param {Number} volume - the volume of the song
  */
 async function startPlayer(loopAmount, volume = 100/100) {
-  if (!global?.midiFile || !global?.soundfontFile) {
-    throw new ReferenceError("Missing some required files")
-    process.exit(1)
-  }
-  log(1, performance.now().toFixed(2), "Started toStdout")
-  const {
-    seq,
-    synth,
-    sampleCount,
-    sampleRate
-  } = await initSpessaSynth(loopAmount, volume);
-  
-  let outLeft = new Float32Array(sampleCount);
-  let outRight = new Float32Array(sampleCount);
-  let outputArray = [outLeft, outRight];
-  
   ({ spawn, spawnSync } = await import("child_process"));
-  addEvent({ eventType: "SIGINT" })
   const {
-    getWavHeader,
-    getData
-  } = await import("./audioBuffer.mjs")
-  const { Readable } = await import("node:stream");
-  
-  const BUFFER_SIZE = 128;
-  let filledSamples = 0;
-  let lastBytes = false;
-  let doneStreaming = false;
-
-  let readStream = createReadable(Readable, true, {
-    BUFFER_SIZE,
-    filledSamples,
-    lastBytes,
-    sampleCount,
-    sampleRate,
     seq, synth,
-    getData
-  });
-  let stdoutHeader = getWavHeader(outputArray, sampleRate);
-  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
-  // Needed this scope because otherwise it crashes
-  {
-    // Frees up memory
-    [outLeft, outRight, outputArray] = [null, null, null];
-  }
+    sampleCount, sampleRate
+  } = await initSpessaSynth(loopAmount, volume);
   const isRawAudio = (global?.format === "pcm") ? [
     "--demuxer=rawaudio",
     "--demuxer-rawaudio-format=s16le",
@@ -820,118 +825,12 @@ async function startPlayer(loopAmount, volume = 100/100) {
     ],
     {stdio: ["pipe", "inherit", "inherit"]}
   );
-  let promisesOfPrograms = [];
-  switch (global?.format) {
-    case "wave": {
-      if (global?.effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader,
-          readStream,
-          promisesOfPrograms,
-          stdout: mpv.stdin,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      mpv.stdin.write(stdoutHeader)
-      readStream.pipe(mpv.stdin)
-      break;
-    }
-    case "flac": {
-      const ffmpeg = spawn("ffmpeg", ffmpegArgs().flac, {stdio: [ "pipe", mpv.stdin, "pipe" ], detached: true});
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (global?.effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader,
-          readStream,
-          promisesOfPrograms,
-          stdout: ffmpeg.stdin,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      promisesOfPrograms.push(
-        new Promise((resolve, reject) => {
-          ffmpeg.on("error", () => reject())
-          ffmpeg.on("exit", () => resolve())
-        })
-      )
-      log(1, performance.now().toFixed(2), "Added promise")
-      ffmpeg.stdin.write(stdoutHeader)
-      readStream.pipe(ffmpeg.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    case "mp3": {
-      const ffmpeg = spawn("ffmpeg", ffmpegArgs().mp3, {stdio: [ "pipe", mpv.stdin, "pipe" ], detached: true});
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (global?.effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader,
-          readStream,
-          promisesOfPrograms,
-          stdout: ffmpeg.stdin,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      promisesOfPrograms.push(
-        new Promise((resolve, reject) => {
-          ffmpeg.on("error", () => reject())
-          ffmpeg.on("exit", () => resolve())
-        })
-      )
-      log(1, performance.now().toFixed(2), "Added promise")
-      ffmpeg.stdin.write(stdoutHeader)
-      readStream.pipe(ffmpeg.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    case "pcm": {
-      readStream.pipe(mpv.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    
-    default:
-      if (global?.effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader,
-          readStream,
-          stdout: mpv.stdin,
-          promisesOfPrograms,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      mpv.stdin.write(stdoutHeader)
-      readStream.pipe(mpv.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-  }
-  await Promise.all([
-    new Promise((resolve, reject) => {
-      readStream.on("error", () => reject())
-      readStream.on("end", () => {
-        doneStreaming = true;
-        resolve()
-      })
-    }),
-    new Promise((resolve, reject) => {
-      mpv.on("error", () => reject())
-      mpv.on("exit", () => resolve())
-      mpv.on("end", () => resolve())
-    }),
-    ...promisesOfPrograms // If there are any
-  ])
-  log(1, performance.now().toFixed(2), "Finished printing to mpv's process")
+  await toStdout(loopAmount, volume, {
+    mpv,
+    isStartPlayer: true,
+    seq, synth,
+    sampleCount, sampleRate
+  })
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }
