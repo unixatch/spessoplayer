@@ -37,10 +37,16 @@ async function runCheck(program, noInstallMsg = "") {
     }
     
     const rl = readline.createInterface({ input: stdin, output: stdout });
-    const answer = await rl.question("Do you want to uninstall it [Y|n]? ");
+    const answer = await rl.question("Do you want to uninstall it "+(program === "sox") ? "[Y|n]" : "[y|N]"+"? ");
     rl.close()
+    if (!/(?:n|no|y|yes)/.test(answer)) {
+      if (program === "sox") {
+        return tryToUninstall(program, spawnSync, { stdout, stderr })
+      }
+      return console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
+    }
     //                               ↓ In case it's neither y or n
-    if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
+    if (/(?:y|yes)/i.test(answer)) {
       tryToUninstall(program, spawnSync, { stdout, stderr })
     } else if (/(?:n|no)/.test(answer)) {
       console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")

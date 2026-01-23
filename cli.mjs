@@ -507,12 +507,13 @@ const setLogFilePath = arg => {
   log(1, performance.now().toFixed(2), `Set log file path to ${global.logFilePath}`)
 }
 /**
- * Runs uninstall.mjs
+ * Runs uninstall.mjs and uninstall spessoplayer
  */
 const uninstall = async () => {
   const fs = await import("node:fs");
-  const { fork } = await import("child_process");
+  const { fork, execSync } = await import("child_process");
   const uninstallScriptPath = join(_dirname_, "uninstall.mjs");
+  const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
   
   log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
   const uninstallScript = fork(uninstallScriptPath);
@@ -520,6 +521,8 @@ const uninstall = async () => {
     uninstallScript.on("exit", () => resolve())
     uninstallScript.on("error", e => reject(e))
   })
+  log(1, performance.now().toFixed(2), "Uninstalling spessoplayer")
+  execSync(`npm uninstall ${(isGloballyInstalled) ? "-g" : ""} spessoplayer`, { cwd: "." })
 }
 /**
  * Shows the help text
@@ -579,7 +582,7 @@ const help = () => {
         ${dimGray+italics}(Meanwhile it writes to file, it also prints to stderr)${normal}
       
     ${green}--uninstall${normal}, ${green}/uninstall${normal}, ${green}-u${normal}, ${green}/u${normal}:
-      ${dimGray+italics}Uninstalls dependencies with confirmation${normal}
+      ${dimGray+italics}Uninstalls dependencies with confirmation and the entire program${normal}
       
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
