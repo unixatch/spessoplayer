@@ -182,8 +182,7 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
  */
 async function applyEffects({
   program,
-  stdoutHeader,
-  readStream,
+  stdoutHeader, readStream,
   promisesOfPrograms,
   stdout = process.stdout,
   destination = "-",
@@ -306,11 +305,14 @@ function addEvent({ eventType, func }) {
 }
 /**
  * Creates a Readable stream given the variables needed
+ * @param {Readable} Readable - Readable stream function
+ * @param {Boolean} [isStdout=false] - if it's for toStdout or not
  * @param {Object} obj - the object passed
  * @param {Number} obj.BUFFER_SIZE - static size of the buffer
- * @param {Number} obj.sampleCount - sample count
  * @param {Number} obj.filledSamples - how many samples have been rendered
  * @param {Boolean} obj.lastBytes - check if it's the last sample
+ * @param {Number} obj.sampleCount - sample count
+ * @param {Number} obj.sampleRate - sample rate
  * @param {Number} obj.i - counter for the progress
  * @param {Number} obj.durationRounded - duration of the song rounded by percentage
  * @param {Function} obj.clearLastLines - util function to clear lines, see utils.mjs
@@ -319,12 +321,10 @@ function addEvent({ eventType, func }) {
  * @param {Function} obj.getData - translator: Float32Arrays → Uint8Arrays
  */
 function createReadable(Readable, isStdout = false, {
-  BUFFER_SIZE,
-  sampleCount,
-  filledSamples,
+  BUFFER_SIZE, filledSamples,
   lastBytes,
-  sampleRate, i,
-  durationRounded,
+  sampleCount, sampleRate,
+  i, durationRounded,
   clearLastLines,
   seq, synth,
   getData
@@ -382,6 +382,13 @@ function createReadable(Readable, isStdout = false, {
  * and spits them out to stdout
  * @param {Number} loopAmount - the number of loops to do
  * @param {Number} volume - the volume of the song
+ * @param {Number} [obj=false] - object for additional options
+ * @param {ChildProcess} obj.mpv - mpv's process
+ * @param {Boolean} obj.isStartPlayer - if it's from startPlayer
+ * @param {class} obj.seq - spessasynth_core's sequencer
+ * @param {class} obj.synth - spessasynth_core's processor
+ * @param {Number} obj.sampleCount - sample count of the song
+ * @param {Number} obj.sampleRate - sample rate of the song
  */
 async function toStdout(loopAmount, volume = 100/100) {
   if (!global?.midiFile || !global?.soundfontFile) {
@@ -470,11 +477,9 @@ async function toStdout(loopAmount, volume = 100/100) {
   let doneStreaming = false;
 
   let readStream = createReadable(Readable, true, {
-    BUFFER_SIZE,
-    filledSamples,
+    BUFFER_SIZE, filledSamples,
     lastBytes,
-    sampleCount,
-    sampleRate,
+    sampleCount, sampleRate,
     seq, synth,
     getData
   });
@@ -491,8 +496,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       if (global?.effects) {
         await applyEffects({
           program: "sox",
-          stdoutHeader,
-          readStream,
+          stdoutHeader, readStream,
           promisesOfPrograms,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
@@ -509,8 +513,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       if (global?.effects) {
         await applyEffects({
           program: "sox",
-          stdoutHeader,
-          readStream,
+          stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
@@ -536,8 +539,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       if (global?.effects) {
         await applyEffects({
           program: "sox",
-          stdoutHeader,
-          readStream,
+          stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
@@ -567,8 +569,7 @@ async function toStdout(loopAmount, volume = 100/100) {
       if (global?.effects) {
         await applyEffects({
           program: "sox",
-          stdoutHeader,
-          readStream,
+          stdoutHeader, readStream,
           promisesOfPrograms,
           effects: (Array.isArray(global?.effects)) ? global.effects : undefined
         })
@@ -605,10 +606,8 @@ async function toFile(loopAmount, volume = 100/100) {
   }
   log(1, performance.now().toFixed(2), "Started toFile")
   const {
-    seq,
-    synth,
-    sampleCount,
-    sampleRate
+    seq, synth,
+    sampleCount, sampleRate
   } = await initSpessaSynth(loopAmount, volume, true);
 
   const {
@@ -638,11 +637,9 @@ async function toFile(loopAmount, volume = 100/100) {
     [outLeft, outRight, outputArray] = [null, null, null];
   }
   let readStream = createReadable(Readable, false, {
-    BUFFER_SIZE,
-    filledSamples,
+    BUFFER_SIZE, filledSamples,
     lastBytes,
-    sampleCount,
-    sampleRate,
+    sampleCount, sampleRate,
     seq, synth,
     getData, i, durationRounded,
     clearLastLines
@@ -659,8 +656,7 @@ async function toFile(loopAmount, volume = 100/100) {
         if (global?.effects) {
           await applyEffects({
             program: "sox",
-            stdoutHeader,
-            readStream,
+            stdoutHeader, readStream,
             promisesOfPrograms,
             destination: outFile,
             effects: (Array.isArray(global?.effects)) ? global.effects : undefined
@@ -685,8 +681,7 @@ async function toFile(loopAmount, volume = 100/100) {
         if (global?.effects) {
           await applyEffects({
             program: "sox",
-            stdoutHeader,
-            readStream,
+            stdoutHeader, readStream,
             promisesOfPrograms,
             stdout: ffmpeg.stdin,
             effects: (Array.isArray(global?.effects)) ? global.effects : undefined
@@ -717,8 +712,7 @@ async function toFile(loopAmount, volume = 100/100) {
         if (global?.effects) {
           await applyEffects({
             program: "sox",
-            stdoutHeader,
-            readStream,
+            stdoutHeader, readStream,
             promisesOfPrograms,
             stdout: ffmpeg.stdin,
             effects: (Array.isArray(global?.effects)) ? global.effects : undefined
