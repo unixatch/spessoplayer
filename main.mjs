@@ -16,11 +16,14 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { _dirname_, log } from "./utils.mjs"
+
+addEvent({ eventType: "SIGINT" })
+log(1, performance.now().toFixed(2), "Added SIGINT event")
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
-  join, parse,
-  log
+  join, parse
 } = await import("./cli.mjs");
 log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
@@ -474,8 +477,7 @@ async function toStdout(
       }
     })
   }
-  addEvent({ eventType: "SIGINT" })
-  log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Added events exit and SIGINT" : "Added event SIGINT")
+  log(1, performance.now().toFixed(2), "Added event exit")
   const {
     getWavHeader,
     getData
@@ -662,8 +664,6 @@ async function toFile(loopAmount, volume = 100/100) {
   const { Readable } = await import("node:stream");
   const { clearLastLines } = await import("./utils.mjs");
   
-  addEvent({ eventType: "SIGINT" })
-  log(1, performance.now().toFixed(2), "Added event SIGINT")
   let i = 0;
   const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
   

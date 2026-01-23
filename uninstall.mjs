@@ -53,10 +53,15 @@ async function runCheck(program, noInstallMsg = "") {
       console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
     }
   } catch (e) {
+    if (e.name === "AbortError") {
+      console.error(`\n${gray}Uninstallation of dependencies interrupted with Ctrl+c${normal}`);
+      process.exit(2)
+    }
     console.error(e);
     process.exit(1)
   }
 }
+
 // ffmpeg check
 await runCheck(
   "ffmpeg",

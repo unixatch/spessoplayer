@@ -516,7 +516,15 @@ const uninstall = async () => {
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
   
   log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
-  execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
+  try {
+    execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
+  } catch (e) {
+    if (e.status !== 0 && e.status !== 2) {
+      console.error(`${red}Uninstallation interrupted with error ${e.status}${normal}`);
+      process.exit(2);
+    }
+    if (e.status === 2) process.exit(2)
+  }
   log(1, performance.now().toFixed(2), "Uninstalling spessoplayer")
   execSync(`npm uninstall ${(isGloballyInstalled) ? "-g" : ""} spessoplayer`, { cwd: ".", stdio: "inherit" })
 }
@@ -602,6 +610,5 @@ const version = async () => {
 
 export {
   actUpOnPassedArgs,
-  join, parse,
-  log
+  join, parse
 }

@@ -32,16 +32,29 @@ let readline,
 async function runCheck(program, noInstallMsg = "") {
   try {
     runProgramSync({ spawnSync, program })
-  } catch {
+  } catch (e) {
+    if (e.message !== "Program doesn't exist") {
+      console.error(e);
+      console.error(`${red}There was an error while trying to check ${program}, exiting...${normal}`);
+      process.exit(1);
+    }
     console.log("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
     if (!readline) {
       readline = await import("readline/promises");
       ({ stdin, stdout, stderr } = await import ('process'));
     }
     
-    const rl = readline.createInterface({ input: stdin, output: stdout });
-    const answer = await rl.question("Do you want to install it [Y|n]? ");
-    rl.close()
+    let answer;
+    try {
+      const rl = readline.createInterface({ input: stdin, output: stdout });
+      answer = await rl.question("Do you want to install it [Y|n]? ");
+      rl.close()
+    } catch (e) {
+      if (e.name === "AbortError") {
+        console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`);
+        process.exit(2)
+      }
+    }
     //                               ↓ In case it's neither y or n
     if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
       tryToInstall(program, spawnSync, { stdout, stderr })
