@@ -25,248 +25,247 @@ import { _dirname_, log } from "./utils.mjs"
 const actUpOnPassedArgs = async (args) => {
   let lastParam;
   let newArguments = args.slice(2);
-  if (newArguments.length !== 0) {
-    if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(i)).length > 0) {
-      help()
-      process.exit()
-    }
-    if (newArguments.filter(i => /^(?:--version|\/version|-V|\/V)$/.test(i)).length > 0) {
-      await version()
-      process.exit()
-    }
-    if (newArguments.filter(i => /^(?:--uninstall|\/uninstall|-u|\/u)$/.test(i)).length > 0) {
-      await uninstall()
-      process.exit()
-    }
-    
-    const regexOfVerboseLevel = /^(?:--verbose(?:=(?<number>\d))*|\/verbose(?:=(?<number>\d))*|-v(?:=(?<number>\d))*|\/v(?:=(?<number>\d))*)$/;
-    const regexOfLogFile = /^(?:--log-file(?:=(?<path>\w+))*|\/log-file(?:=(?<path>\w+))*|-lf(?:=(?<path>\w+))*|\/lf(?:=(?<path>\w+))*)$/;
-    const isVerboseLevelSet = newArguments.find(i => regexOfVerboseLevel.test(i));
-    if (isVerboseLevelSet) {
-      let verboseOptionNumber = isVerboseLevelSet.match(regexOfVerboseLevel).groups.number;
-      let verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
-      
-      if (!verboseOptionNumber) verboseOptionNumber = "1";
-      // Delete verbose-level from newArguments
-      newArguments.splice(verboseOptionPosition, 1)
-      
-      if (!process.env["DEBUG_LEVEL_SPESSO"]) {
-        await setVerboseLevel(verboseOptionNumber)
-      } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
-    } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
-      log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
-    }
-    const isPathOfLogFileSet = newArguments.find(i => regexOfLogFile.test(i));
-    if (isPathOfLogFileSet
-        && !isVerboseLevelSet
-        && !process.env["DEBUG_LEVEL_SPESSO"]) {
-      await setVerboseLevel("1")
-    }
-    
-    if (isPathOfLogFileSet) {
-      let pathOfLogFile = isPathOfLogFileSet.match(regexOfLogFile).groups.path;
-      let pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
-      
-      // Delete verbose-level from newArguments
-      newArguments.splice(pathOfLogFilePosition, 1)
-      
-      if (!process.env["DEBUG_FILE_SPESSO"]) {
-        setLogFilePath(pathOfLogFile)
-      } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
-    } else if (process.env["DEBUG_FILE_SPESSO"]) {
-      log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
-    }
-
-    global.fileOutputs = [];
-    for (const arg of newArguments) {
-      switch (arg) {
-        case /^.*(?:\.wav|\.wave)$/.test(arg) && arg: {
-          global.fileOutputs[0] = arg;
-          log(1, performance.now().toFixed(2), "Set file output to wav")
-          break;
-        }
-        case /^.*\.flac$/.test(arg) && arg: {
-          global.fileOutputs[1] = arg;
-          log(1, performance.now().toFixed(2), "Set file output to flac")
-          break;
-        }
-        case /^.*\.mp3$/.test(arg) && arg: {
-          global.fileOutputs[2] = arg;
-          log(1, performance.now().toFixed(2), "Set file output to mp3")
-          break;
-        }
-        case /^.*\.(?:s16le|s32le|pcm)$/.test(arg) && arg: {
-          global.fileOutputs[3] = arg;
-          log(1, performance.now().toFixed(2), "Set file output to pcm")
-          break;
-        }
-        case /^-$/.test(arg) && arg: {
-          global.toStdout = true;
-          break;
-        }
-        case /^(?:--reverb-volume|\/reverb-volume|-rvb|\/rvb)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "reverb"
-          break;
-        }
-        case /^(?:--volume|\/volume|-vol|\/vol)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "volume"
-          break;
-        }
-        case /^(?:--effects|\/effects|-e|\/e)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "effects"
-          break;
-        }
-        case /^(?:--format|\/format|-f|\/f)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "format"
-          break;
-        }
-        case /^(?:--sample-rate|\/sample-rate|-r|\/r)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "sample-rate"
-          break;
-        }
-        case /^(?:--loop-start|\/loop-start|-ls|\/ls)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "loop-start"
-          break;
-        }
-        case /^(?:--loop-end|\/loop-end|-le|\/le)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "loop-end"
-          break;
-        }
-        case /^(?:--loop|\/loop|-l|\/l)$/.test(arg) && arg: {
-          // In case there's no other argument
-          const indexOfArg = newArguments.indexOf(arg);
-          if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-          
-          lastParam = "loop"
-          break;
-        }
-        case /^(?!-|\/)(?:\w|\W)*$/.test(basename(arg)) && arg: {
-          if (lastParam === undefined) {
-            const fs = await import("node:fs");
-            global["fs"] = fs;
-            let fileMagicNumber;
-            await new Promise((resolve, reject) => {
-              const readStream = fs.createReadStream(arg, { start: 0, end: 20 });
-              readStream.on("data", (data) => {
-                fileMagicNumber = data.toString();
-                resolve()
-              })
-              readStream.on("error", (e) => {
-                if (e.code === "ENOENT") console.error(`${red}Can't open '${arg}' because it doesn't exist${normal}`)
-                process.exit(1)
-              })
-            })
-            // MIDI files
-            if (fileMagicNumber.includes("MThd")) {
-              global.midiFile = arg;
-              log(1, performance.now().toFixed(2), `Set midi file to "${global.midiFile}"`)
-              break;
-            }
-            if (fileMagicNumber.includes("sfbk")) {
-              // Soundfont files
-              global.soundfontFile = arg;
-              log(1, performance.now().toFixed(2), `Set soundfont file to "${global.soundfontFile}"`)
-              break;
-            }
-            if (fileMagicNumber.includes("DLS")) {
-              // Downloadable sounds files
-              global.soundfontFile = arg;
-              log(1, performance.now().toFixed(2), `Set downloadable sounds file to "${global.soundfontFile}"`)
-              break;
-            }
-          }
-        }
-        
-        default:
-          if (lastParam === "loop") {
-            setLoop(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "loop-start") {
-            setLoopStart(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "loop-end") {
-            setLoopEnd(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "sample-rate") {
-            setSampleRate(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "format") {
-            setFormat(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "volume") {
-            setVolume(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "reverb") {
-            setReverb(arg)
-            lastParam = undefined;
-            break;
-          }
-          if (lastParam === "effects") {
-            setEffects(arg)
-            lastParam = undefined;
-            break;
-          }
-          // Invalid param
-          console.log(red+`'${
-            underline+dimRed +
-            arg +
-            normal+red
-          }' is an invalid parameter`+normal)
-          help()
-          process.exit()
-      }
-    }
-    if (global?.midiFile === undefined) {
-      console.error(`${red}Missing a required midi file${normal}`);
-      process.exit(1)
-    }
-    if (global?.soundfontFile === undefined) {
-      console.error(`${red}Missing a required soundfont file${normal}`);
-      process.exit(1)
-    }
-  } else {
+  if (newArguments.length === 0) {
     help()
     process.exit()
+  }
+  if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(i)).length > 0) {
+    help()
+    process.exit()
+  }
+  if (newArguments.filter(i => /^(?:--version|\/version|-V|\/V)$/.test(i)).length > 0) {
+    await version()
+    process.exit()
+  }
+  if (newArguments.filter(i => /^(?:--uninstall|\/uninstall|-u|\/u)$/.test(i)).length > 0) {
+    await uninstall()
+    process.exit()
+  }
+  
+  const regexOfVerboseLevel = /^(?:--verbose(?:=(?<number>\d))*|\/verbose(?:=(?<number>\d))*|-v(?:=(?<number>\d))*|\/v(?:=(?<number>\d))*)$/;
+  const regexOfLogFile = /^(?:--log-file(?:=(?<path>\w+))*|\/log-file(?:=(?<path>\w+))*|-lf(?:=(?<path>\w+))*|\/lf(?:=(?<path>\w+))*)$/;
+  const isVerboseLevelSet = newArguments.find(i => regexOfVerboseLevel.test(i));
+  if (isVerboseLevelSet) {
+    let verboseOptionNumber = isVerboseLevelSet.match(regexOfVerboseLevel).groups.number;
+    let verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
+    
+    if (!verboseOptionNumber) verboseOptionNumber = "1";
+    // Delete verbose-level from newArguments
+    newArguments.splice(verboseOptionPosition, 1)
+    
+    if (!process.env["DEBUG_LEVEL_SPESSO"]) {
+      await setVerboseLevel(verboseOptionNumber)
+    } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+  } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
+    log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+  }
+  const isPathOfLogFileSet = newArguments.find(i => regexOfLogFile.test(i));
+  if (isPathOfLogFileSet
+      && !isVerboseLevelSet
+      && !process.env["DEBUG_LEVEL_SPESSO"]) {
+    await setVerboseLevel("1")
+  }
+  
+  if (isPathOfLogFileSet) {
+    let pathOfLogFile = isPathOfLogFileSet.match(regexOfLogFile).groups.path;
+    let pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
+    
+    // Delete verbose-level from newArguments
+    newArguments.splice(pathOfLogFilePosition, 1)
+    
+    if (!process.env["DEBUG_FILE_SPESSO"]) {
+      setLogFilePath(pathOfLogFile)
+    } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+  } else if (process.env["DEBUG_FILE_SPESSO"]) {
+    log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+  }
+
+  global.fileOutputs = [];
+  for (const arg of newArguments) {
+    switch (arg) {
+      case /^.*(?:\.wav|\.wave)$/.test(arg) && arg: {
+        global.fileOutputs[0] = arg;
+        log(1, performance.now().toFixed(2), "Set file output to wav")
+        break;
+      }
+      case /^.*\.flac$/.test(arg) && arg: {
+        global.fileOutputs[1] = arg;
+        log(1, performance.now().toFixed(2), "Set file output to flac")
+        break;
+      }
+      case /^.*\.mp3$/.test(arg) && arg: {
+        global.fileOutputs[2] = arg;
+        log(1, performance.now().toFixed(2), "Set file output to mp3")
+        break;
+      }
+      case /^.*\.(?:s16le|s32le|pcm)$/.test(arg) && arg: {
+        global.fileOutputs[3] = arg;
+        log(1, performance.now().toFixed(2), "Set file output to pcm")
+        break;
+      }
+      case /^-$/.test(arg) && arg: {
+        global.toStdout = true;
+        break;
+      }
+      case /^(?:--reverb-volume|\/reverb-volume|-rvb|\/rvb)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "reverb"
+        break;
+      }
+      case /^(?:--volume|\/volume|-vol|\/vol)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "volume"
+        break;
+      }
+      case /^(?:--effects|\/effects|-e|\/e)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "effects"
+        break;
+      }
+      case /^(?:--format|\/format|-f|\/f)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "format"
+        break;
+      }
+      case /^(?:--sample-rate|\/sample-rate|-r|\/r)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "sample-rate"
+        break;
+      }
+      case /^(?:--loop-start|\/loop-start|-ls|\/ls)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "loop-start"
+        break;
+      }
+      case /^(?:--loop-end|\/loop-end|-le|\/le)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "loop-end"
+        break;
+      }
+      case /^(?:--loop|\/loop|-l|\/l)$/.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "loop"
+        break;
+      }
+      case /^(?!-|\/)(?:\w|\W)*$/.test(basename(arg)) && arg: {
+        if (lastParam === undefined) {
+          const fs = await import("node:fs");
+          global["fs"] = fs;
+          let fileMagicNumber;
+          await new Promise((resolve, reject) => {
+            const readStream = fs.createReadStream(arg, { start: 0, end: 20 });
+            readStream.on("data", (data) => {
+              fileMagicNumber = data.toString();
+              resolve()
+            })
+            readStream.on("error", (e) => {
+              if (e.code === "ENOENT") console.error(`${red}Can't open '${arg}' because it doesn't exist${normal}`)
+              process.exit(1)
+            })
+          })
+          // MIDI files
+          if (fileMagicNumber.includes("MThd")) {
+            global.midiFile = arg;
+            log(1, performance.now().toFixed(2), `Set midi file to "${global.midiFile}"`)
+            break;
+          }
+          if (fileMagicNumber.includes("sfbk")) {
+            // Soundfont files
+            global.soundfontFile = arg;
+            log(1, performance.now().toFixed(2), `Set soundfont file to "${global.soundfontFile}"`)
+            break;
+          }
+          if (fileMagicNumber.includes("DLS")) {
+            // Downloadable sounds files
+            global.soundfontFile = arg;
+            log(1, performance.now().toFixed(2), `Set downloadable sounds file to "${global.soundfontFile}"`)
+            break;
+          }
+        }
+      }
+      
+      default:
+        if (lastParam === "loop") {
+          setLoop(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "loop-start") {
+          setLoopStart(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "loop-end") {
+          setLoopEnd(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "sample-rate") {
+          setSampleRate(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "format") {
+          setFormat(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "volume") {
+          setVolume(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "reverb") {
+          setReverb(arg)
+          lastParam = undefined;
+          break;
+        }
+        if (lastParam === "effects") {
+          setEffects(arg)
+          lastParam = undefined;
+          break;
+        }
+        // Invalid param
+        console.log(red+`'${
+          underline+dimRed +
+          arg +
+          normal+red
+        }' is an invalid parameter`+normal)
+        help()
+        process.exit()
+    }
+  }
+  if (global?.midiFile === undefined) {
+    console.error(`${red}Missing a required midi file${normal}`);
+    process.exit(1)
+  }
+  if (global?.soundfontFile === undefined) {
+    console.error(`${red}Missing a required soundfont file${normal}`);
+    process.exit(1)
   }
 }
 
