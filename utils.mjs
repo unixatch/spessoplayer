@@ -300,6 +300,82 @@ function newFileName(path) {
   }
   return path;
 }
+class Options {
+  static #options = {};
+
+  static #checkValueAndExistence(value, requiredType, property, isObject) {
+    if (typeof value !== requiredType) {
+      throw new TypeError(`${value} is not of type ${requiredType}`)
+    }
+    if (property && !this.#options[property]) {
+      if (isObject) return this.#options[property] = {};
+      this.#options[property] = [];
+    }
+  }
+  static set verboseLevel(number) {
+    this.#checkValueAndExistence(number, "number")
+    this.#options.verboseLevel = number;
+  }
+  static set logFilePath(path) {
+    this.#checkValueAndExistence(path, "string")
+    this.#options.logFilePath = path;
+  }
+  static set toStdout(value) {
+    this.#checkValueAndExistence(value, "boolean")
+    this.#options.toStdout = value;
+  }
+  static set format(string) {
+    this.#checkValueAndExistence(string, "string")
+    this.#options.format = string;
+  }
+  static fileOutputs(index, string) {
+    this.#checkValueAndExistence(index, "string")
+    this.#checkValueAndExistence(string, "string", "fileOutputs", true)
+    this.#options.fileOutputs[index].push(string)
+  }
+  // Effects
+  static reverbVolume(number) {
+    this.#checkValueAndExistence(number, "number", "reverbVolume")
+    this.#options.reverbVolume.push(number)
+  }
+  static effects(index, object) {
+    this.#checkValueAndExistence(index, "string")
+    this.#checkValueAndExistence(object, "object", "effects", true)
+    this.#options.effects[index] = object;
+  }
+  // options of songs
+  static volume(number) {
+    this.#checkValueAndExistence(value, "number", "volume")
+    this.#options.volume.push(number);
+  }
+  static sampleRate(number) {
+    this.#checkValueAndExistence(number, "number", "sampleRate")
+    this.#options.sampleRate.push(number);
+  }
+  static loopN(number) {
+    this.#checkValueAndExistence(number, "number", "loopN")
+    this.#options.loopN.push(number);
+  }
+  static loopStart(number) {
+    this.#checkValueAndExistence(number, "number", "loopStart")
+    this.#options.loopStart.push(number);
+  }
+  static loopEnd(number) {
+    this.#checkValueAndExistence(number, "number", "loopEnd")
+    this.#options.loopEnd.push(number);
+  }
+  // Needed files
+  static midiFiles(path) {
+    this.#checkValueAndExistence(path, "string", "midiFiles")
+    this.#options.midiFiles.push(path);
+  }
+  static soundfontFiles(path) {
+    this.#checkValueAndExistence(path, "string", "soundfontFiles")
+    this.#options.soundfontFiles.push(path);
+  }
+  
+  static get all() { return this.#options; }
+}
 
 /**
  * Simply returns the programs' current directory
