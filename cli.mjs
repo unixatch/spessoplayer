@@ -18,6 +18,54 @@
 import { join, basename, parse } from "path"
 import { _dirname_, log } from "./utils.mjs"
 
+const regexes = {
+  help: /^(?:--help|\/help|-h|\/h|\/\?)$/,
+  version: /^(?:--version|\/version|-V|\/V)$/,
+  uninstall: /^(?:--uninstall|\/uninstall|-u|\/u)$/,
+
+  verboseLevel: new RegExp([
+    "^(?:--verbose(?:=(?<number>\\d))*", // --verbose[=n]
+    "|\\/verbose(?:=(?<number>\\d))*",   // /verbose[=n]
+    "|-v(?:=(?<number>\\d))*",           // -v[=n]
+    "|\\/v(?:=(?<number>\\d))*)$"        // /v[=n]
+  ].join("")),
+
+  logFile: new RegExp([
+    "^(?:--log-file(?:=(?<path>\\w+))*", // --log-file[=n]
+    "|\\/log-file(?:=(?<path>\\w+))*",   // /log-file[=n]
+    "|-lf(?:=(?<path>\\w+))*",           // -lf[=n]
+    "|\\/lf(?:=(?<path>\\w+))*)$"        // /lf[=n]
+  ].join("")),
+
+  stdout: /^-$/,
+  wav: /^.*(?:\.wav|\.wave)$/,
+  wavFormat: /^(?:wav|wave)$/,
+  flac: /^.*\.flac$/,
+  mp3: /^.*\.mp3$/,
+  raw: /^.*\.(?:s16le|s32le|pcm)$/,
+  rawFormat: /^(?:s16le|s32le|pcm)$/,
+
+  reverbVolume: /^(?:--reverb-volume|\/reverb-volume|-rvb|\/rvb)$/,
+  effects: /^(?:--effects|\/effects|-e|\/e)$/,
+
+  format: /^(?:--format|\/format|-f|\/f)$/,
+  volume: /^(?:--volume|\/volume|-vol|\/vol)$/,
+  sampleRate: /^(?:--sample-rate|\/sample-rate|-r|\/r)$/,
+
+  loop: /^(?:--loop|\/loop|-l|\/l)$/,
+  loopStart: /^(?:--loop-start|\/loop-start|-ls|\/ls)$/,
+  loopEnd: /^(?:--loop-end|\/loop-end|-le|\/le)$/,
+
+  fileCheck: /^(?!-|\/)(?:\w|\W)*$/,
+
+  infinity: /^(?:Infinity|infinity)$/,
+  //                          HH:MM:SS.sss
+  ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
+  areDecibels: /^(?:\-|\+*)[\d.]+dB/,
+  decibelNumber: /^((?:\-|\+*)[\d.]+)dB/,
+  isPercentage: /^[\d.]+%$/,
+  percentageNumber: /^([\d.]+)%$/
+};
 /**
  * Sets necessary variables in global object for main.mjs
  * @param {Array} args - The process.argv to analyse
@@ -29,24 +77,22 @@ const actUpOnPassedArgs = async (args) => {
     help()
     process.exit()
   }
-  if (newArguments.filter(i => /^(?:--help|\/help|-h|\/h|\/\?)$/.test(i)).length > 0) {
+  if (newArguments.filter(i => regexes.help.test(i)).length > 0) {
     help()
     process.exit()
   }
-  if (newArguments.filter(i => /^(?:--version|\/version|-V|\/V)$/.test(i)).length > 0) {
+  if (newArguments.filter(i => regexes.version.test(i)).length > 0) {
     await version()
     process.exit()
   }
-  if (newArguments.filter(i => /^(?:--uninstall|\/uninstall|-u|\/u)$/.test(i)).length > 0) {
+  if (newArguments.filter(i => regexes.uninstall.test(i)).length > 0) {
     await uninstall()
     process.exit()
   }
   
-  const regexOfVerboseLevel = /^(?:--verbose(?:=(?<number>\d))*|\/verbose(?:=(?<number>\d))*|-v(?:=(?<number>\d))*|\/v(?:=(?<number>\d))*)$/;
-  const regexOfLogFile = /^(?:--log-file(?:=(?<path>\w+))*|\/log-file(?:=(?<path>\w+))*|-lf(?:=(?<path>\w+))*|\/lf(?:=(?<path>\w+))*)$/;
-  const isVerboseLevelSet = newArguments.find(i => regexOfVerboseLevel.test(i));
+  const isVerboseLevelSet = newArguments.find(i => regexes.verboseLevel.test(i));
   if (isVerboseLevelSet) {
-    let verboseOptionNumber = isVerboseLevelSet.match(regexOfVerboseLevel).groups.number;
+    let verboseOptionNumber = isVerboseLevelSet.match(regexes.verboseLevel).groups.number;
     let verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
     
     if (!verboseOptionNumber) verboseOptionNumber = "1";
@@ -59,7 +105,7 @@ const actUpOnPassedArgs = async (args) => {
   } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
     log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
   }
-  const isPathOfLogFileSet = newArguments.find(i => regexOfLogFile.test(i));
+  const isPathOfLogFileSet = newArguments.find(i => regexes.logFile.test(i));
   if (isPathOfLogFileSet
       && !isVerboseLevelSet
       && !process.env["DEBUG_LEVEL_SPESSO"]) {
@@ -67,7 +113,7 @@ const actUpOnPassedArgs = async (args) => {
   }
   
   if (isPathOfLogFileSet) {
-    let pathOfLogFile = isPathOfLogFileSet.match(regexOfLogFile).groups.path;
+    let pathOfLogFile = isPathOfLogFileSet.match(regexes.logFile).groups.path;
     let pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
     
     // Delete verbose-level from newArguments
@@ -83,31 +129,31 @@ const actUpOnPassedArgs = async (args) => {
   global.fileOutputs = [];
   for (const arg of newArguments) {
     switch (arg) {
-      case /^.*(?:\.wav|\.wave)$/.test(arg) && arg: {
+      case regexes.wav.test(arg) && arg: {
         global.fileOutputs[0] = arg;
         log(1, performance.now().toFixed(2), "Set file output to wav")
         break;
       }
-      case /^.*\.flac$/.test(arg) && arg: {
+      case regexes.flac.test(arg) && arg: {
         global.fileOutputs[1] = arg;
         log(1, performance.now().toFixed(2), "Set file output to flac")
         break;
       }
-      case /^.*\.mp3$/.test(arg) && arg: {
+      case regexes.mp3.test(arg) && arg: {
         global.fileOutputs[2] = arg;
         log(1, performance.now().toFixed(2), "Set file output to mp3")
         break;
       }
-      case /^.*\.(?:s16le|s32le|pcm)$/.test(arg) && arg: {
+      case regexes.raw.test(arg) && arg: {
         global.fileOutputs[3] = arg;
         log(1, performance.now().toFixed(2), "Set file output to pcm")
         break;
       }
-      case /^-$/.test(arg) && arg: {
+      case regexes.stdout.test(arg) && arg: {
         global.toStdout = true;
         break;
       }
-      case /^(?:--reverb-volume|\/reverb-volume|-rvb|\/rvb)$/.test(arg) && arg: {
+      case regexes.reverbVolume.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -115,7 +161,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "reverb"
         break;
       }
-      case /^(?:--volume|\/volume|-vol|\/vol)$/.test(arg) && arg: {
+      case regexes.volume.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -123,7 +169,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "volume"
         break;
       }
-      case /^(?:--effects|\/effects|-e|\/e)$/.test(arg) && arg: {
+      case regexes.effects.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -131,7 +177,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "effects"
         break;
       }
-      case /^(?:--format|\/format|-f|\/f)$/.test(arg) && arg: {
+      case regexes.format.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -139,7 +185,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "format"
         break;
       }
-      case /^(?:--sample-rate|\/sample-rate|-r|\/r)$/.test(arg) && arg: {
+      case regexes.sampleRate.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -147,7 +193,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "sample-rate"
         break;
       }
-      case /^(?:--loop-start|\/loop-start|-ls|\/ls)$/.test(arg) && arg: {
+      case regexes.loopStart.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -155,7 +201,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "loop-start"
         break;
       }
-      case /^(?:--loop-end|\/loop-end|-le|\/le)$/.test(arg) && arg: {
+      case regexes.loopEnd.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -163,7 +209,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "loop-end"
         break;
       }
-      case /^(?:--loop|\/loop|-l|\/l)$/.test(arg) && arg: {
+      case regexes.loop.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
@@ -171,7 +217,7 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "loop"
         break;
       }
-      case /^(?!-|\/)(?:\w|\W)*$/.test(basename(arg)) && arg: {
+      case regexes.fileCheck.test(basename(arg)) && arg: {
         if (lastParam === undefined) {
           const fs = await import("node:fs");
           global["fs"] = fs;
@@ -209,54 +255,50 @@ const actUpOnPassedArgs = async (args) => {
       }
       
       default:
-        if (lastParam === "loop") {
-          setLoop(arg)
-          lastParam = undefined;
-          break;
+        switch (lastParam) {
+          case "loop":
+            setLoop(arg)
+            lastParam = undefined;
+            break;
+          case "loop-start":
+            setLoopStart(arg)
+            lastParam = undefined;
+            break;
+          case "loop-end":
+            setLoopEnd(arg)
+            lastParam = undefined;
+            break;
+          case "sample-rate":
+            setSampleRate(arg)
+            lastParam = undefined;
+            break;
+          case "format":
+            setFormat(arg)
+            lastParam = undefined;
+            break;
+          case "volume":
+            setVolume(arg)
+            lastParam = undefined;
+            break;
+          case "reverb":
+            setReverb(arg)
+            lastParam = undefined;
+            break;
+          case "effects":
+            setEffects(arg)
+            lastParam = undefined;
+            break;
+          
+          default:
+            // Invalid param
+            console.log(red+`'${
+              underline+dimRed +
+              arg +
+              normal+red
+            }' is an invalid parameter`+normal)
+            help()
+            process.exit()
         }
-        if (lastParam === "loop-start") {
-          setLoopStart(arg)
-          lastParam = undefined;
-          break;
-        }
-        if (lastParam === "loop-end") {
-          setLoopEnd(arg)
-          lastParam = undefined;
-          break;
-        }
-        if (lastParam === "sample-rate") {
-          setSampleRate(arg)
-          lastParam = undefined;
-          break;
-        }
-        if (lastParam === "format") {
-          setFormat(arg)
-          lastParam = undefined;
-          break;
-        }
-        if (lastParam === "volume") {
-          setVolume(arg)
-          lastParam = undefined;
-          break;
-        }
-        if (lastParam === "reverb") {
-          setReverb(arg)
-          lastParam = undefined;
-          break;
-        }
-        if (lastParam === "effects") {
-          setEffects(arg)
-          lastParam = undefined;
-          break;
-        }
-        // Invalid param
-        console.log(red+`'${
-          underline+dimRed +
-          arg +
-          normal+red
-        }' is an invalid parameter`+normal)
-        help()
-        process.exit()
     }
   }
   if (global?.midiFile === undefined) {
@@ -275,12 +317,12 @@ const actUpOnPassedArgs = async (args) => {
  */
 const setLoop = arg => {
   if (typeof Number(arg) === "number"
-      && !/^(?:Infinity|infinity)$/.test(arg)) {
+      && !regexes.infinity.test(arg)) {
     global.loopN = Number(arg);
     log(1, performance.now().toFixed(2), `Set loop amount to ${global.loopN}`)
     return;
   }
-  if (/^(?:Infinity|infinity)$/.test(arg)) {
+  if (regexes.infinity.test(arg)) {
     console.error(`${normalRed}Can't use infinity, sorry${normal}`)
     process.exit(1);
   }
@@ -294,7 +336,7 @@ const setLoop = arg => {
 const setLoopStart = arg => {
   if (typeof Number(arg) === "number"
       || Date.parse(`1970T${arg}Z`) !== NaN) {
-    if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
+    if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       global.loopStart = seconds;
       log(1, performance.now().toFixed(2), `Set loop-start to ${global.loopStart}`)
@@ -314,7 +356,7 @@ const setLoopStart = arg => {
 const setLoopEnd = arg => {
   if (typeof Number(arg) === "number"
       || Date.parse(`1970T${arg}Z`) !== NaN) {
-    if (/[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/.test(arg)) {
+    if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       global.loopEnd = seconds;
       log(1, performance.now().toFixed(2), `Set loop-end to ${global.loopEnd}`)
@@ -366,7 +408,7 @@ const setVerboseLevel = async (arg) => {
  */
 const setFormat = arg => {
   switch (arg) {
-    case /^(?:wav|wave)$/.test(arg) && arg: {
+    case regexes.wavFormat.test(arg) && arg: {
       global.format = "wave";
       log(1, performance.now().toFixed(2), `Set stdout format to ${global.format}`)
       return;
@@ -381,7 +423,7 @@ const setFormat = arg => {
       log(1, performance.now().toFixed(2), `Set stdout format to ${global.format}`)
       return;
     }
-    case /^(?:s16le|s32le|pcm)$/.test(arg) && arg: {
+    case regexes.rawFormat.test(arg) && arg: {
       global.format = "pcm";
       log(1, performance.now().toFixed(2), `Set stdout format to ${global.format}`)
       return;
@@ -447,15 +489,15 @@ const setEffects = arg => {
  * @param {String} arg - the volume in either percentage, decibels or decimals
  */
 const setVolume = arg => {
-  if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
-    const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
+  if (regexes.areDecibels.test(arg)) {
+    const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
     global.volume = toPercentage;
     log(1, performance.now().toFixed(2), `Set volume to ${global.volume}`)
     return;
   }
-  if (/^[\d.]+%$/.test(arg)) {
-    const percentage = Number(arg.match(/^([\d.]+)%$/)[1]);
+  if (regexes.isPercentage.test(arg)) {
+    const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     global.volume = percentage / 100;
     log(1, performance.now().toFixed(2), `Set volume to ${global.volume}`)
     return;
@@ -473,15 +515,15 @@ const setVolume = arg => {
  * @param {String} arg - the volume in either percentage, decibels or decimals
  */
 const setReverb = arg => {
-  if (/^(?:\-|\+*)[\d.]+dB/.test(arg)) {
-    const dBNumber = Number(arg.match(/^((?:\-|\+*)[\d.]+)dB/)[1]);
+  if (regexes.areDecibels.test(arg)) {
+    const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     global.reverbVolume = dBNumber;
     global.effects = true;
     log(1, performance.now().toFixed(2), `Set reverb volume to ${global.reverbVolume} and effects variable to ${global.effects}`)
     return;
   }
-  if (/^[\d.]+%$/.test(arg)) {
-    const percentage = Number(arg.match(/^([\d.]+)%$/)[1]);
+  if (regexes.isPercentage.test(arg)) {
+    const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     const toDB = 10 * 10**(percentage/100);
     global.reverbVolume = toDB;
     global.effects = true;
