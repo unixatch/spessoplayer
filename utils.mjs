@@ -388,5 +388,6 @@ export {
   runProgramSync,
   tryToInstall,
   log,
-  newFileName
+  newFileName,
+  Options
 }
