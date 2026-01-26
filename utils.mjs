@@ -389,6 +389,7 @@ export {
   tryToInstall,
   tryToUninstall,
   log,
-  newFileName
+  newFileName,
+  Options
 }
 
