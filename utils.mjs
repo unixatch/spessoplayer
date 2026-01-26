@@ -304,8 +304,10 @@ class Options {
   static #options = {};
 
   static #checkValueAndExistence(value, requiredType, property, isObject) {
-    if (typeof value !== requiredType) {
-      throw new TypeError(`${value} is not of type ${requiredType}`)
+    if (requiredType !== "array" || !Array.isArray(value)) {
+      if (typeof value !== requiredType) {
+        throw new TypeError(`${value} is not of type ${requiredType}`)
+      }
     }
     if (property && !this.#options[property]) {
       if (isObject) return this.#options[property] = {};
@@ -329,8 +331,9 @@ class Options {
     this.#options.format = string;
   }
   static fileOutputs(index, string) {
-    this.#checkValueAndExistence(index, "string")
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(string, "string", "fileOutputs", true)
+    if (!this.#options.fileOutputs[index]) this.#options.fileOutputs[index] = [];
     this.#options.fileOutputs[index].push(string)
   }
   // Effects
@@ -338,14 +341,14 @@ class Options {
     this.#checkValueAndExistence(number, "number", "reverbVolume")
     this.#options.reverbVolume.push(number)
   }
-  static effects(index, object) {
-    this.#checkValueAndExistence(index, "string")
-    this.#checkValueAndExistence(object, "object", "effects", true)
-    this.#options.effects[index] = object;
+  static effects(index, arrayOfObjects) {
+    this.#checkValueAndExistence(index, "number")
+    this.#checkValueAndExistence(arrayOfObjects, "array", "effects", true)
+    this.#options.effects[index] = arrayOfObjects;
   }
   // options of songs
   static volume(number) {
-    this.#checkValueAndExistence(value, "number", "volume")
+    this.#checkValueAndExistence(number, "number", "volume")
     this.#options.volume.push(number);
   }
   static sampleRate(number) {
@@ -374,7 +377,7 @@ class Options {
     this.#options.soundfontFiles.push(path);
   }
   
-  static get all() { return this.#options; }
+  static get all() { return structuredClone(this.#options); }
 }
 
 /**
