@@ -415,10 +415,6 @@ async function toStdout(
     } = await initSpessaSynth(loopAmount, volume));
   }
   
-  let outLeft = new Float32Array(sampleCount);
-  let outRight = new Float32Array(sampleCount);
-  let outputArray = [outLeft, outRight];
-  
   ({ spawn, spawnSync } = await import("child_process"));
   if (!isStartPlayer) {
     addEvent({ eventType: "exit",
@@ -496,13 +492,9 @@ async function toStdout(
     seq, synth,
     getData
   });
-  let stdoutHeader = getWavHeader(outputArray, sampleRate);
+  let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
-  // Needed this scope because otherwise it crashes
-  {
-    // Frees up memory
-    [outLeft, outRight, outputArray] = [null, null, null];
-  }
+
   let promisesOfPrograms = [];
   switch (global?.format) {
     case "wave": {
@@ -667,20 +659,12 @@ async function toFile(loopAmount, volume = 100/100) {
   let i = 0;
   const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
   
-  let outLeft = new Float32Array(sampleCount);
-  let outRight = new Float32Array(sampleCount);
-  let outputArray = [outLeft, outRight];
-  
   const BUFFER_SIZE = 128;
   let filledSamples = 0;
   let lastBytes = false;
-  let stdoutHeader = getWavHeader(outputArray, sampleRate);
+  let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
-  // Needed this scope because otherwise it crashes
-  {
-    // Frees up memory
-    [outLeft, outRight, outputArray] = [null, null, null];
-  }
+
   let readStream = createReadable(Readable, false, {
     BUFFER_SIZE, filledSamples,
     lastBytes,
