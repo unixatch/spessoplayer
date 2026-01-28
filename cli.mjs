@@ -335,7 +335,7 @@ const setLoop = arg => {
  */
 const setLoopStart = arg => {
   if (typeof Number(arg) === "number"
-      || Date.parse(`1970T${arg}Z`) !== NaN) {
+      || !Number.isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       global.loopStart = seconds;
@@ -355,7 +355,7 @@ const setLoopStart = arg => {
  */
 const setLoopEnd = arg => {
   if (typeof Number(arg) === "number"
-      || Date.parse(`1970T${arg}Z`) !== NaN) {
+      || !Number.isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       global.loopEnd = seconds;
