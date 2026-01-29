@@ -107,7 +107,7 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
     "rpm",
     "apk"
   ];
-  for (let packageManager of packageManagers) {
+  for (const packageManager of packageManagers) {
     switch (packageManager) {
       case "apt":
       case "dnf":
@@ -153,8 +153,8 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
     }
   }
-  console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
-  console.log(`${yellow}install it either manually or with a package manager you use${normal}`)
+  console.warn(`${yellow}Couldn't find any package manager in the list${normal}`)
+  console.warn(`${yellow}install it either manually or with a package manager you use${normal}`)
 }
 /**
  * Tries to check and uninstall the program via a package manager
@@ -178,7 +178,7 @@ function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
     "rpm",
     "apk"
   ];
-  for (let packageManager of packageManagers) {
+  for (const packageManager of packageManagers) {
     switch (packageManager) {
       case "apt":
       case "dnf":
@@ -232,8 +232,8 @@ function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
     }
   }
-  console.log(`${yellow}Couldn't find any package manager in the list${normal}`)
-  console.log(`${yellow}uninstall it either manually or with a package manager you use${normal}`)
+  console.warn(`${yellow}Couldn't find any package manager in the list${normal}`)
+  console.warn(`${yellow}uninstall it either manually or with a package manager you use${normal}`)
 }
 /**
  * Logger
@@ -305,12 +305,13 @@ function newFileName(path) {
  * Simply returns the programs' current directory
  * @type {String}
  */
-const _dirname_ = fileURLToPath(new URL('.', import.meta.url));
+const _dirname_ = fileURLToPath(new URL(".", import.meta.url));
 export {
   _dirname_,
   clearLastLines,
   runProgramSync,
   tryToInstall,
+  tryToUninstall,
   log,
   newFileName
 }

@@ -16,14 +16,13 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { _dirname_, log } from "./utils.mjs"
+import { log } from "./utils.mjs"
 
 addEvent({ eventType: "SIGINT" })
 log(1, performance.now().toFixed(2), "Added SIGINT event")
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
-  join, parse
 } = await import("./cli.mjs");
 log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
@@ -95,8 +94,8 @@ function getSampleCount(midi, sampleRate, loopAmount) {
   }
   log(1, performance.now().toFixed(2), "Sample count set to " + sampleCount)
   return {
-    loopDetectedInMidi: loopDetectedInMidi,
-    sampleCount: sampleCount
+    loopDetectedInMidi,
+    sampleCount
   };
 }
 /**
@@ -162,12 +161,10 @@ async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
   addEvent({ eventType: "uncaughtException" })
   log(1, performance.now().toFixed(2), "Finished setting up SpessaSynth")
   return {
-    audioToWav: audioToWav,
-    seq: seq,
-    synth: synth,
-    midi: midi,
-    sampleCount: sampleCount,
-    sampleRate: sampleRate
+    audioToWav,
+    seq, synth,
+    midi,
+    sampleCount, sampleRate
   }
 }
 /**
@@ -223,7 +220,7 @@ async function applyEffects({
   log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs.join(" "))
   
   promisesOfPrograms.push(
-    new Promise((resolve, reject) => {
+    new Promise(resolve => {
       sox.stderr.on("data", (data) => {
         const stringOfError = data.toString();
         // Do not print if these match stringOfError
@@ -371,7 +368,7 @@ function createReadable(Readable, isStdout = false, {
       
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        let data = getData(arr, sampleRate);
+        const data = getData(arr, sampleRate);
         return this.push(data)
       }
       this.push(null)
@@ -401,11 +398,10 @@ async function toStdout(
     isStartPlayer,
     seq, synth,
     sampleCount, sampleRate
-  } = false
+  }
 ) {
   if (!global?.midiFile || !global?.soundfontFile) {
     throw new ReferenceError("Missing some required files")
-    process.exit(1)
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
   if (!isStartPlayer) {
@@ -429,11 +425,11 @@ async function toStdout(
           const arrayOfPrograms = ["mpv"];
           
           switch (process.platform) {
-            case 'win32':
+            case "win32":
               command = "tasklist";
               argumentsForCommand = [];
               regexForCommand = new RegExp(
-                `(?:${arrayOfPrograms.join("|")})\\s*(?<pid>\\d+)`,
+                `(?:${arrayOfProgramsWinVersion.join("|")})\\s*(?<pid>\\d+)`,
                 "g"
               );
               commandToSend = () => spawnSync("taskkill", [
@@ -441,9 +437,9 @@ async function toStdout(
               ]);
               break;
             
-            case 'linux':
-            case 'android':
-            case 'darwin':
+            case "linux":
+            case "android":
+            case "darwin":
               command = "ps";
               argumentsForCommand = [
                 "-o", "pid,comm",
@@ -485,17 +481,17 @@ async function toStdout(
   let lastBytes = false;
   let doneStreaming = false;
 
-  let readStream = createReadable(Readable, true, {
+  const readStream = createReadable(Readable, true, {
     BUFFER_SIZE, filledSamples,
     lastBytes,
     sampleCount, sampleRate,
     seq, synth,
     getData
   });
-  let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
+  const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
-  let promisesOfPrograms = [];
+  const promisesOfPrograms = [];
   switch (global?.format) {
     case "wave": {
       if (global?.effects) {
@@ -641,7 +637,6 @@ async function toStdout(
 async function toFile(loopAmount, volume = 100/100) {
   if (!global?.midiFile || !global?.soundfontFile || global.fileOutputs.length === 0 ) {
     throw new ReferenceError("Missing some required files")
-    process.exit(1)
   }
   log(1, performance.now().toFixed(2), "Started toFile")
   const {
@@ -662,10 +657,10 @@ async function toFile(loopAmount, volume = 100/100) {
   const BUFFER_SIZE = 128;
   let filledSamples = 0;
   let lastBytes = false;
-  let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
+  const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
-  let readStream = createReadable(Readable, false, {
+  const readStream = createReadable(Readable, false, {
     BUFFER_SIZE, filledSamples,
     lastBytes,
     sampleCount, sampleRate,
@@ -674,7 +669,7 @@ async function toFile(loopAmount, volume = 100/100) {
     clearLastLines
   });
   const { newFileName } = await import("./utils.mjs");
-  let promisesOfPrograms = [];
+  const promisesOfPrograms = [];
   for (let outFile of global.fileOutputs) {
     switch (true) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
@@ -780,7 +775,7 @@ async function toFile(loopAmount, volume = 100/100) {
     }),
     ...promisesOfPrograms // if there are any
   ])
-  console.log("Written", global.fileOutputs.filter(i => i));
+  console.log("Written", global.fileOutputs.filter(ifil => ifil));
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }

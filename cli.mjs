@@ -61,8 +61,8 @@ const regexes = {
   infinity: /^(?:Infinity|infinity)$/,
   //                          HH:MM:SS.sss
   ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
-  areDecibels: /^(?:\-|\+*)[\d.]+dB/,
-  decibelNumber: /^((?:\-|\+*)[\d.]+)dB/,
+  areDecibels: /^(?:-|\+*)[\d.]+dB/,
+  decibelNumber: /^((?:-|\+*)[\d.]+)dB/,
   isPercentage: /^[\d.]+%$/,
   percentageNumber: /^([\d.]+)%$/
 };
@@ -71,7 +71,10 @@ const regexes = {
  * @param {Array} args - The process.argv to analyse
  */
 const actUpOnPassedArgs = async (args) => {
-  let lastParam;
+  const lastMidis = [];
+  let lastParam,
+      lastIndex,
+      lastSoundfont;
   let newArguments = args.slice(2);
   if (newArguments.length === 0) {
     help()
@@ -93,7 +96,7 @@ const actUpOnPassedArgs = async (args) => {
   const isVerboseLevelSet = newArguments.find(i => regexes.verboseLevel.test(i));
   if (isVerboseLevelSet) {
     let verboseOptionNumber = isVerboseLevelSet.match(regexes.verboseLevel).groups.number;
-    let verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
+    const verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
     
     if (!verboseOptionNumber) verboseOptionNumber = "1";
     // Delete verbose-level from newArguments
@@ -113,8 +116,8 @@ const actUpOnPassedArgs = async (args) => {
   }
   
   if (isPathOfLogFileSet) {
-    let pathOfLogFile = isPathOfLogFileSet.match(regexes.logFile).groups.path;
-    let pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
+    const pathOfLogFile = isPathOfLogFileSet.match(regexes.logFile).groups.path;
+    const pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
     
     // Delete verbose-level from newArguments
     newArguments.splice(pathOfLogFilePosition, 1)
@@ -291,7 +294,7 @@ const actUpOnPassedArgs = async (args) => {
           
           default:
             // Invalid param
-            console.log(red+`'${
+            console.error(red+`'${
               underline+dimRed +
               arg +
               normal+red
@@ -551,7 +554,6 @@ const setLogFilePath = arg => {
  * Runs uninstall.mjs and uninstall spessoplayer
  */
 const uninstall = async () => {
-  const fs = await import("node:fs");
   const { execSync } = await import("child_process");
   const uninstallScriptPath = join(_dirname_, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
@@ -643,10 +645,10 @@ const help = () => {
 const version = async () => {
   const fs = await import("node:fs");
   const packageJSONPath = join(_dirname_, "package.json");
-  const { version } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
+  const { versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
   
   log(1, performance.now().toFixed(2), `Taken version number from ${packageJSONPath}`)
-  console.log(`${green + version + normal}`)
+  console.log(`${green + versionNumber + normal}`)
 }
 
 export {

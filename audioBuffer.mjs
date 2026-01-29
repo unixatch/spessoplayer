@@ -151,7 +151,7 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
     infoChunk = writeRIFFChunkParts("INFO", infoChunks, true);
   }
   let cueChunk = new IndexedByteArray(0);
-  const cueOn = loop?.end !== void 0 && loop?.start !== void 0;
+  const cueOn = loop?.end !== undefined && loop?.start !== undefined;
   if (cueOn) {
     const loopStartSamples = Math.floor(loop.start * sampleRate);
     const loopEndSamples = Math.floor(loop.end * sampleRate);
@@ -246,7 +246,7 @@ function getData(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
   const dataSize = length * numChannels * bytesPerSample;
   const fileSize = dataSize;
   
-  let Data = new Uint8Array(fileSize);
+  const Data = new Uint8Array(fileSize);
   let offset = 0;
   // Volume
   let multiplier = 32767;
