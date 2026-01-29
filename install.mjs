@@ -38,10 +38,10 @@ async function runCheck(program, noInstallMsg = "") {
       console.error(`${red}There was an error while trying to check ${program}, exiting...${normal}`);
       process.exit(1);
     }
-    console.log("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally"+"\x1b[0m");
+    console.warn("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally\x1b[0m");
     if (!readline) {
       readline = await import("readline/promises");
-      ({ stdin, stdout, stderr } = await import ('process'));
+      ({ stdin, stdout, stderr } = await import ("process"));
     }
     
     let answer;
@@ -49,8 +49,8 @@ async function runCheck(program, noInstallMsg = "") {
       const rl = readline.createInterface({ input: stdin, output: stdout });
       answer = await rl.question("Do you want to install it [Y|n]? ");
       rl.close()
-    } catch (e) {
-      if (e.name === "AbortError") {
+    } catch (e2) {
+      if (e2.name === "AbortError") {
         console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`);
         process.exit(2)
       }
@@ -59,7 +59,7 @@ async function runCheck(program, noInstallMsg = "") {
     if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
       tryToInstall(program, spawnSync, { stdout, stderr })
     } else if (/(?:n|no)/.test(answer)) {
-      console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
+      console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
     }
   }
 }

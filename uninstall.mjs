@@ -17,7 +17,7 @@
 */
 
 const { spawnSync } = await import("child_process");
-const { runProgramSync, tryToUninstall } = await import("./utils.mjs");
+const { tryToUninstall } = await import("./utils.mjs");
 
 let readline,
     stdin,
@@ -33,7 +33,7 @@ async function runCheck(program, noInstallMsg = "") {
   try {
     if (!readline) {
       readline = await import("readline/promises");
-      ({ stdin, stdout, stderr } = await import ('process'));
+      ({ stdin, stdout, stderr } = await import ("process"));
     }
     
     const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -44,13 +44,13 @@ async function runCheck(program, noInstallMsg = "") {
       if (program === "sox") {
         return tryToUninstall(program, spawnSync, { stdout, stderr })
       }
-      return console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
+      return console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
     }
     //                               ↓ In case it's neither y or n
     if (/(?:y|yes)/i.test(answer)) {
       tryToUninstall(program, spawnSync, { stdout, stderr })
     } else if (/(?:n|no)/.test(answer)) {
-      console.log("\x1b[33m"+noInstallMsg+"\x1b[0m")
+      console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
     }
   } catch (e) {
     if (e.name === "AbortError") {
