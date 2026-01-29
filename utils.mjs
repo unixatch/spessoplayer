@@ -332,49 +332,65 @@ class Options {
   }
   static fileOutputs(index, string) {
     this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(string, "string", "fileOutputs", true)
-    if (!this.#options.fileOutputs[index]) this.#options.fileOutputs[index] = [];
-    this.#options.fileOutputs[index].push(string)
+    this.#checkValueAndExistence(string, "string", "fileOutputs")
+    this.#options.fileOutputs[index] = string;
   }
   // Effects
-  static reverbVolume(number) {
+  static reverbVolume(index, number) {
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "reverbVolume")
+    if (!Number.isNaN(index)) return this.#options.reverbVolume[index] = number;
     this.#options.reverbVolume.push(number)
   }
   static effects(index, arrayOfObjects) {
     this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(arrayOfObjects, "array", "effects", true)
+    this.#checkValueAndExistence(arrayOfObjects, "array", "effects")
+    if (Number.isNaN(index)) return this.#options.effects.push(arrayOfObjects);
     this.#options.effects[index] = arrayOfObjects;
   }
   // options of songs
-  static volume(number) {
+  static volume(index, number) {
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "volume")
+    if (!Number.isNaN(index)) return this.#options.volume[index] = number;
     this.#options.volume.push(number);
   }
-  static sampleRate(number) {
+  // In case it's stdout
+  static set stdoutSampleRate(number) {
+    this.#checkValueAndExistence(number, "number")
+    this.#options.sampleRate = number;
+  }
+  static sampleRate(index, number) {
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "sampleRate")
+    if (!Number.isNaN(index)) return this.#options.sampleRate[index] = number;
     this.#options.sampleRate.push(number);
   }
-  static loopN(number) {
+  static loopN(index, number) {
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "loopN")
+    if (!Number.isNaN(index)) return this.#options.loopN[index] = number;
     this.#options.loopN.push(number);
   }
-  static loopStart(number) {
+  static loopStart(index, number) {
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "loopStart")
+    if (!Number.isNaN(index)) return this.#options.loopStart[index] = number;
     this.#options.loopStart.push(number);
   }
-  static loopEnd(number) {
+  static loopEnd(index, number) {
+    this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "loopEnd")
+    if (!Number.isNaN(index)) return this.#options.loopEnd[index] = number;
     this.#options.loopEnd.push(number);
   }
-  // Needed files
-  static midiFiles(path) {
-    this.#checkValueAndExistence(path, "string", "midiFiles")
-    this.#options.midiFiles.push(path);
-  }
-  static soundfontFiles(path) {
-    this.#checkValueAndExistence(path, "string", "soundfontFiles")
-    this.#options.soundfontFiles.push(path);
+  // Grouped files
+  static files(property, arrayOfSongs) {
+    this.#checkValueAndExistence(property, "string")
+    this.#checkValueAndExistence(arrayOfSongs, "array", "files", true)
+    const group = this.#options.files;
+    if (!group[property]) group[property] = [];
+    group[property].push(...arrayOfSongs)
   }
   
   static get all() { return structuredClone(this.#options); }
