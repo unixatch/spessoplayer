@@ -45,6 +45,12 @@ const regexes = {
   raw: /^.*\.(?:s16le|s32le|pcm)$/,
   rawFormat: /^(?:s16le|s32le|pcm)$/,
 
+  input: new RegExp([
+    "^(?:--input(?<index>\\d+)*",
+    "|\\/input(?<index>\\d+)*",
+    "|-i(?<index>\\d+)*",
+    "|\\/i(?<index>\\d+)*)$"
+  ].join("")),
   reverbVolume: new RegExp([
     "^(?:--reverb-volume(?<index>\\d+)*",
     "|\\/reverb-volume(?<index>\\d+)*",
@@ -114,11 +120,11 @@ const actUpOnPassedArgs = async (args) => {
       lastSoundfont;
   let newArguments = args.slice(2);
   if (newArguments.length === 0) {
-    help()
+    await help()
     process.exit()
   }
   if (newArguments.filter(i => regexes.help.test(i)).length > 0) {
-    help()
+    await help()
     process.exit()
   }
   if (newArguments.filter(i => regexes.version.test(i)).length > 0) {
@@ -190,6 +196,14 @@ const actUpOnPassedArgs = async (args) => {
       }
       case regexes.stdout.test(arg) && arg: {
         Options.toStdout = true;
+        break;
+      }
+      case (lastIndex = arg.match(regexes.input)?.groups) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+        
+        lastParam = "input"
         break;
       }
       case (lastIndex = arg.match(regexes.reverbVolume)?.groups) && arg: {
@@ -335,7 +349,7 @@ const actUpOnPassedArgs = async (args) => {
               arg +
               normal+red
             }' is an invalid parameter`+normal)
-            help()
+            await help()
             process.exit()
         }
     }
@@ -614,7 +628,10 @@ const uninstall = async () => {
 /**
  * Shows the help text
  */
-const help = () => {
+const help = async () => {
+  const optionalIndex = `${normal}[${dimGray}n${normal}]`;
+  const optionalVerboseIndex = `${normal}[${dimGray}=n${normal}]`;
+  
   const helpText = `${underline}spessoplayer${normal}
   ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
   
@@ -622,7 +639,10 @@ const help = () => {
     ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
   
   Available parameters:
-    ${green}--volume${normal}, ${green}/volume${normal}, ${green}-vol${normal}, ${green}/vol${normal}:
+    ${green}--input${optionalIndex}, ${green}/input${optionalIndex}, ${green}-i${optionalIndex}, ${green}/i${optionalIndex}:
+      ${dimGray+italics}Takes the next file and puts it in the list by index${normal}
+      
+    ${green}--volume${optionalIndex}, ${green}/volume${optionalIndex}, ${green}-vol${optionalIndex}, ${green}/vol${optionalIndex}:
       ${dimGray+italics}Volume to set (default: 100%)${normal}
       
       ${dimGray+italics}Available formats:${normal}
@@ -630,24 +650,24 @@ const help = () => {
       ${dimGray+italics}- percentages (example 70%)${normal}
       ${dimGray+italics}- decimals (example 0.9)${normal}
       
-    ${green}--reverb-volume${normal}, ${green}/reverb-volume${normal}, ${green}-rvb${normal}, ${green}/rvb${normal}:
+    ${green}--reverb-volume${optionalIndex}, ${green}/reverb-volume${optionalIndex}, ${green}-rvb${optionalIndex}, ${green}/rvb${optionalIndex}:
       ${dimGray+italics}Volume to set for reverb (default: none)${normal}
       ${dimGray+italics}Same formats as volume${normal}
       
-    ${green}--effects${normal}, ${green}/effects${normal}, ${green}-e${normal}, ${green}/e${normal}:
+    ${green}--effects${optionalIndex}, ${green}/effects${optionalIndex}, ${green}-e${optionalIndex}, ${green}/e${optionalIndex}:
       ${dimGray+italics}Adds any effects that SoX provides (e.g "reverb,fade 1")${normal}
     
-    ${green}--loop${normal}, ${green}/loop${normal}, ${green}-l${normal}, ${green}/l${normal}:
+    ${green}--loop${optionalIndex}, ${green}/loop${optionalIndex}, ${green}-l${optionalIndex}, ${green}/l${optionalIndex}:
       ${dimGray+italics}Loop x amount of times (default: 0)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers)${normal}
       
-    ${green}--loop-start${normal}, ${green}/loop-start${normal}, ${green}-ls${normal}, ${green}/ls${normal}:
+    ${green}--loop-start${optionalIndex}, ${green}/loop-start${optionalIndex}, ${green}-ls${optionalIndex}, ${green}/ls${optionalIndex}:
       ${dimGray+italics}When the loop starts${normal}
       
-    ${green}--loop-end${normal}, ${green}/loop-end${normal}, ${green}-le${normal}, ${green}/le${normal}:
+    ${green}--loop-end${optionalIndex}, ${green}/loop-end${optionalIndex}, ${green}-le${optionalIndex}, ${green}/le${optionalIndex}:
       ${dimGray+italics}When the loop ends${normal}
       
-    ${green}--sample-rate${normal}, ${green}/sample-rate${normal}, ${green}-r${normal}, ${green}/r${normal}:
+    ${green}--sample-rate${optionalIndex}, ${green}/sample-rate${optionalIndex}, ${green}-r${optionalIndex}, ${green}/r${optionalIndex}:
       ${dimGray+italics}Sample rate to use (default: 48000)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
         ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
@@ -661,7 +681,7 @@ const help = () => {
       ${dimGray+italics}- flac${normal}
       ${dimGray+italics}- pcm (s32le)${normal}
       
-    ${green}--verbose${normal}, ${green}/verbose${normal}, ${green}-v${normal}, ${green}/v${normal}:
+    ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex}, ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
       ${dimGray+italics}Sets the verbosity (default: 2)${normal}
       
     ${green}--log-file${normal}, ${green}/log-file${normal}, ${green}-lf${normal}, ${green}/lf${normal}:
@@ -677,6 +697,17 @@ const help = () => {
     ${green}--version${normal}, ${green}/version${normal}:
       ${dimGray+italics}Shows the installed version${normal}
   `
+  if (process.env.PAGER) {
+    const { spawnSync } = await import("child_process");
+    const PAGERCommand = process.env.PAGER.split(" ").slice(0, 1),
+          PAGERArguments = process.env.PAGER.split(" ").slice(1);
+    spawnSync(
+      ...PAGERCommand,
+      [...PAGERArguments],
+      { stdio: ["pipe", "inherit", "inherit"], input: helpText }
+    )
+    return;
+  }
   console.log(helpText)
 }
 /**
