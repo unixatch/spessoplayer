@@ -109,6 +109,22 @@ const regexes = {
   isPercentage: /^[\d.]+%$/,
   percentageNumber: /^([\d.]+)%$/
 };
+
+async function get20BytesFromFile(path) {
+  let fileMagicNumber;
+  await new Promise(resolve => {
+    const readStream = fs.createReadStream(path, { start: 0, end: 20 });
+    readStream.on("data", (data) => {
+      fileMagicNumber = data.toString();
+      resolve()
+    })
+    readStream.on("error", (e) => {
+      if (e.code === "ENOENT") console.error(`${red}Can't open '${path}' because it doesn't exist${normal}`)
+      process.exit(1)
+    })
+  })
+  return fileMagicNumber;
+}
 /**
  * Sets necessary variables in Options class for main.mjs
  * @param {Array} args - The process.argv to analyse
@@ -271,40 +287,12 @@ const actUpOnPassedArgs = async (args) => {
         break;
       }
       case regexes.fileCheck.test(basename(arg)) && arg: {
-        if (lastParam === undefined) {
-          const fs = await import("node:fs");
-          global["fs"] = fs;
-          let fileMagicNumber;
-          await new Promise((resolve, reject) => {
-            const readStream = fs.createReadStream(arg, { start: 0, end: 20 });
-            readStream.on("data", (data) => {
-              fileMagicNumber = data.toString();
-              resolve()
-            })
-            readStream.on("error", (e) => {
-              if (e.code === "ENOENT") console.error(`${red}Can't open '${arg}' because it doesn't exist${normal}`)
-              process.exit(1)
-            })
-          })
-          // MIDI files
-          if (fileMagicNumber.includes("MThd")) {
-            global.midiFile = arg;
-            log(1, performance.now().toFixed(2), `Set midi file to "${global.midiFile}"`)
-            break;
-          }
-          if (fileMagicNumber.includes("sfbk")) {
-            // Soundfont files
-            global.soundfontFile = arg;
-            log(1, performance.now().toFixed(2), `Set soundfont file to "${global.soundfontFile}"`)
-            break;
-          }
-          if (fileMagicNumber.includes("DLS")) {
-            // Downloadable sounds files
-            global.soundfontFile = arg;
-            log(1, performance.now().toFixed(2), `Set downloadable sounds file to "${global.soundfontFile}"`)
-            break;
-          }
-        }
+        // returns true === break right now
+        if (await setFile({
+          lastParam,
+          arg,
+          lastMidis, lastSoundfont
+        })) break;
       }
       
       default:
@@ -362,6 +350,78 @@ const actUpOnPassedArgs = async (args) => {
 }
 
 /**
+ * Sets a supported file inside a group in Options class
+ * @return {(true|false)}
+ *         true if it needs to break,
+ *         false if it needs to fallthrough the switch
+ *         (See "case regexes.fileCheck.test(basename(arg)) && arg")
+ */
+const setFile = async ({
+  lastParam,
+  arg,
+  lastMidis, lastSoundfont
+}) => {
+  if (lastParam !== undefined) return false;
+
+  if (!global.fs) {
+    const fs = await import("node:fs");
+    global.fs = fs;
+  }
+  const fileMagicNumber = await get20BytesFromFile(arg);
+  
+  // MIDI files
+  if (fileMagicNumber.includes("MThd")) {
+    if (!lastSoundfont) {
+      lastMidis.push(arg)
+      log(1, performance.now().toFixed(2), `Set midi file to "${arg}"`)
+      return true;
+    }
+    const areThereOthers = newArguments.filter(i => {
+      return i !== arg
+             && regexes.fileCheck.test(i)
+             && !lastMidis.includes(i)
+             && i !== lastSoundfont
+    });
+    if (areThereOthers.length > 0) {
+      lastMidis.push(arg)
+      log(1, performance.now().toFixed(2), `Set midi file to "${arg}"`)
+      return true;
+    }
+    lastMidis.push(arg)
+    const indexesAndKeys = Object.keys(Options.all.files).map((e, i) => [i, e]);
+    for (const [index, key] of indexesAndKeys) {
+      if (lastParam !== "input") {
+        return true;
+      }
+      if (index === Number(lastIndex?.index) ?? 0) {
+        Options.files(key, lastMidis);
+        lastMidis.length = 0;
+        lastSoundfont = undefined;
+        lastParam = undefined;
+        return true;
+      }
+    }
+    Options.files(lastSoundfont, lastMidis);
+    lastMidis.length = 0;
+    lastSoundfont = undefined;
+    return true;
+  }
+  
+  // Soundfont and downloadable sounds files
+  if (fileMagicNumber.includes("sfbk")
+      || fileMagicNumber.includes("DLS")) {
+    if (lastMidis.length > 0) {
+      lastSoundfont = arg;
+      Options.files(lastSoundfont, lastMidis);
+      log(1, performance.now().toFixed(2), `Set soundfont file to "${Object.keys(Options.all.files).find(i => i === arg)}"`)
+      lastMidis.length = 0;
+      lastSoundfont = undefined;
+      return true;
+    }
+    lastSoundfont = arg;
+    return true;
+  }
+}
 /**
  * Sets the Options.loopN variable
  * @param {String} arg - the loop amount
