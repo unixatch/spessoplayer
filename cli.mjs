@@ -99,6 +99,7 @@ const regexes = {
     "|\\/le(?<index>\\d+)*)$"
   ].join("")),
 
+  allSupportedFiles: /MThd|sfbk|DLS/,
   fileCheck: /^(?!-|\/)(?:\w|\W)*$/,
 
   infinity: /^(?:Infinity|infinity)$/,
@@ -130,9 +131,9 @@ async function get20BytesFromFile(path) {
  * @param {Array} args - The process.argv to analyse
  */
 const actUpOnPassedArgs = async (args) => {
-  const lastMidis = [];
   let lastParam,
       lastIndex,
+      lastMidis = [],
       lastSoundfont;
   let newArguments = args.slice(2);
   if (newArguments.length === 0) {
@@ -295,12 +296,21 @@ const actUpOnPassedArgs = async (args) => {
         break;
       }
       case regexes.fileCheck.test(basename(arg)) && arg: {
-        // returns true === break right now
-        if (await setFile({
-          lastParam,
-          arg,
-          lastMidis, lastSoundfont
-        })) break;
+        let returnedObject = await setFile({
+                               lastParam, lastIndex,
+                               newArguments, arg,
+                               lastMidis, lastSoundfont
+                             });
+        if (returnedObject?.result) {
+          // Reassigns the variables with the new data
+          // or it does nothing (= variable is a default)
+          ({
+            lastMidis = lastMidis,
+            lastSoundfont = lastSoundfont
+          } = returnedObject);
+          // Result returns true === break right now
+          break;
+        }
       }
       
       default:
@@ -359,17 +369,24 @@ const actUpOnPassedArgs = async (args) => {
 
 /**
  * Sets a supported file inside a group in Options class
- * @return {(true|false)}
+ * @param {Object} passedVariables - variables injected with this object
+ * @param {String} passedVariables.lastParam - last parameter that has been used last time
+ * @param {String} passedVariables.lastIndex - last index that has been set last time
+ * @param {String} passedVariables.newArguments - arguments passed from the terminal
+ * @param {String} passedVariables.arg - argument passed to this function that is also a file path
+ * @param {String} passedVariables.lastMidis - latest array of midi files to keep in mind
+ * @param {String} passedVariables.lastSoundfont - latest file path of the soundfont
+ * @return {(Object|false)}
  *         true if it needs to break,
  *         false if it needs to fallthrough the switch
  *         (See "case regexes.fileCheck.test(basename(arg)) && arg")
  */
 const setFile = async ({
-  lastParam,
-  arg,
+  lastParam, lastIndex,
+  newArguments, arg,
   lastMidis, lastSoundfont
 }) => {
-  if (lastParam !== undefined) return false;
+  if (lastParam !== undefined && lastParam !== "input") return false;
 
   if (!global.fs) {
     const fs = await import("node:fs");
@@ -382,37 +399,63 @@ const setFile = async ({
     if (!lastSoundfont) {
       lastMidis.push(arg)
       log(1, performance.now().toFixed(2), `Set midi file to "${arg}"`)
-      return true;
+      return {
+        lastMidis,
+        result: true
+      };
     }
     const areThereOthers = newArguments.filter(i => {
-      return i !== arg
-             && regexes.fileCheck.test(i)
-             && !lastMidis.includes(i)
-             && i !== lastSoundfont
+      if (i !== arg
+          && !lastMidis.includes(i)
+          && i !== lastSoundfont
+          && regexes.fileCheck.test(i)) {
+        try {
+          const beginningOfFile = new Uint8Array(20);
+          fs.readSync(
+            fs.openSync(i),
+            beginningOfFile,
+            { length: 20 }
+          )
+          const decodedText = new TextDecoder().decode(beginningOfFile);
+          if (decodedText.match(regexes.allSupportedFiles)) return true;
+        } catch (e) {
+          if (e.code === "ENOENT") return false;
+          throw e
+        }
+      }
+      return false;
     });
     if (areThereOthers.length > 0) {
       lastMidis.push(arg)
       log(1, performance.now().toFixed(2), `Set midi file to "${arg}"`)
-      return true;
+      return {
+        lastMidis,
+        result: true
+      };
     }
-    lastMidis.push(arg)
+    if (lastParam !== "input") {
+      lastMidis.push(arg)
+      Options.files(lastSoundfont, lastMidis);
+      lastMidis.length = 0;
+      lastSoundfont = null;
+      return {
+        lastMidis, lastSoundfont,
+        result: true
+      };
+    }
     const indexesAndKeys = Object.keys(Options.all.files).map((e, i) => [i, e]);
     for (const [index, key] of indexesAndKeys) {
-      if (lastParam !== "input") {
-        return true;
-      }
       if (index === Number(lastIndex?.index) ?? 0) {
+        lastMidis.push(arg)
         Options.files(key, lastMidis);
         lastMidis.length = 0;
-        lastSoundfont = undefined;
-        lastParam = undefined;
-        return true;
+        lastSoundfont = null;
+        return {
+          lastMidis, lastSoundfont,
+          result: true
+        };
       }
     }
-    Options.files(lastSoundfont, lastMidis);
-    lastMidis.length = 0;
-    lastSoundfont = undefined;
-    return true;
   }
   
   // Soundfont and downloadable sounds files
@@ -423,11 +466,17 @@ const setFile = async ({
       Options.files(lastSoundfont, lastMidis);
       log(1, performance.now().toFixed(2), `Set soundfont file to "${Object.keys(Options.all.files).find(i => i === arg)}"`)
       lastMidis.length = 0;
-      lastSoundfont = undefined;
-      return true;
+      lastSoundfont = null;
+      return {
+        lastMidis, lastSoundfont,
+        result: true
+      };
     }
     lastSoundfont = arg;
-    return true;
+    return {
+      lastSoundfont,
+      result: true
+    };
   }
 }
 /**
