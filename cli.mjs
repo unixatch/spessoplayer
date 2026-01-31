@@ -349,13 +349,13 @@ const actUpOnPassedArgs = async (args) => {
             break;
           
           default:
-            // Invalid param
-            console.error(red+`'${
-              underline+dimRed +
-              arg +
-              normal+red
-            }' is an invalid parameter`+normal)
-            await help()
+            await help({
+              errorText: red+`'${
+                underline+dimRed +
+                arg +
+                normal+red
+              }' is an invalid parameter`+normal
+            })
             process.exit()
         }
     }
@@ -744,8 +744,10 @@ const uninstall = async () => {
 }
 /**
  * Shows the help text
+ * @param {Object} errorObject - an object containing additional info that should be printed alongside help
+ * @param {String} errorObject.errorText - error text that should be printed before helpText
  */
-const help = async () => {
+const help = async ({ errorText }) => {
   const optionalIndex = `${normal}[${dimGray}n${normal}]`;
   const optionalVerboseIndex = `${normal}[${dimGray}=n${normal}]`;
   
@@ -821,10 +823,11 @@ const help = async () => {
     spawnSync(
       ...PAGERCommand,
       [...PAGERArguments],
-      { stdio: ["pipe", "inherit", "inherit"], input: helpText }
+      { stdio: ["pipe", "inherit", "inherit"], input: errorText+"\n"+helpText }
     )
     return;
   }
+  if (errorText) console.error(errorText)
   console.log(helpText)
 }
 /**
