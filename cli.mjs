@@ -214,36 +214,40 @@ const actUpOnPassedArgs = async (args) => {
         Options.toStdout = true;
         break;
       }
-      case (lastIndex = arg.match(regexes.input)?.groups) && arg: {
+      case regexes.input.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "input";
+        lastIndex = arg.match(regexes.input)?.groups;
         break;
       }
-      case (lastIndex = arg.match(regexes.reverbVolume)?.groups) && arg: {
+      case regexes.reverbVolume.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "reverb";
+        lastIndex = arg.match(regexes.reverbVolume)?.groups;
         break;
       }
-      case (lastIndex = arg.match(regexes.volume)?.groups) && arg: {
+      case regexes.volume.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "volume";
+        lastIndex = arg.match(regexes.volume)?.groups;
         break;
       }
-      case (lastIndex = arg.match(regexes.effects)?.groups) && arg: {
+      case regexes.effects.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "effects";
+        lastIndex = arg.match(regexes.effects)?.groups;
         break;
       }
       case regexes.format.test(arg) && arg: {
@@ -254,36 +258,40 @@ const actUpOnPassedArgs = async (args) => {
         lastParam = "format";
         break;
       }
-      case (lastIndex = arg.match(regexes.sampleRate)?.groups) && arg: {
+      case regexes.sampleRate.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "sample-rate";
+        lastIndex = arg.match(regexes.sampleRate)?.groups;
         break;
       }
-      case (lastIndex = arg.match(regexes.loopStart)?.groups) && arg: {
+      case regexes.loopStart.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "loop-start";
+        lastIndex = arg.match(regexes.loopStart)?.groups;
         break;
       }
-      case (lastIndex = arg.match(regexes.loopEnd)?.groups) && arg: {
+      case regexes.loopEnd.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "loop-end";
+        lastIndex = arg.match(regexes.loopEnd)?.groups;
         break;
       }
-      case (lastIndex = arg.match(regexes.loop)?.groups) && arg: {
+      case regexes.loop.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
         
         lastParam = "loop";
+        lastIndex = arg.match(regexes.loop)?.groups;
         break;
       }
       case regexes.fileCheck.test(basename(arg)) && arg: {
