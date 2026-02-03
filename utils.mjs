@@ -414,12 +414,19 @@ class Options {
     this.#options.loopEnd.push(number);
   }
   // Grouped files
-  static files(property, arrayOfSongs) {
-    this.#checkValueAndExistence(property, "string")
-    this.#checkValueAndExistence(arrayOfSongs, "array", "files", true)
+  static files(index, string, isSoundfont = false, replace = false) {
+    this.#checkValueAndExistence(index, "number")
+    this.#checkValueAndExistence(string, "string", "files")
+    this.#checkValueAndExistence(isSoundfont, "boolean")
     const group = this.#options.files;
-    if (!group[property]) group[property] = [];
-    group[property].push(...arrayOfSongs)
+    if (!group[index]) group[index] = new Set();
+    if (isSoundfont) {
+      const indexZero = group[index].getIndex(0);
+      if (replace) group[index].delete(indexZero)
+      group[index].addLeft(string)
+    } else {
+      group[index].add(string)
+    }
   }
   
   static get all() { return structuredClone(this.#options); }
