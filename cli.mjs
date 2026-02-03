@@ -132,9 +132,7 @@ async function get20BytesFromFile(path) {
  */
 const actUpOnPassedArgs = async (args) => {
   let lastParam,
-      lastIndex,
-      lastMidis = [],
-      lastSoundfont;
+      lastIndex;
   let newArguments = args.slice(2);
   if (newArguments.length === 0) {
     await help()
@@ -296,21 +294,12 @@ const actUpOnPassedArgs = async (args) => {
         break;
       }
       case regexes.fileCheck.test(basename(arg)) && arg: {
-        let returnedObject = await setFile({
+        const result = await setFile({
                                lastParam, lastIndex,
-                               newArguments, arg,
-                               lastMidis, lastSoundfont
+                               newArguments, arg
                              });
-        if (returnedObject?.result) {
-          // Reassigns the variables with the new data
-          // or it does nothing (= variable is a default)
-          ({
-            lastMidis = lastMidis,
-            lastSoundfont = lastSoundfont
-          } = returnedObject);
-          // Result returns true === break right now
-          break;
-        }
+        // Result returns true === break right now
+        if (result) break;
       }
       
       default:
@@ -374,9 +363,7 @@ const actUpOnPassedArgs = async (args) => {
  * @param {String} passedVariables.lastIndex - last index that has been set last time
  * @param {String} passedVariables.newArguments - arguments passed from the terminal
  * @param {String} passedVariables.arg - argument passed to this function that is also a file path
- * @param {String} passedVariables.lastMidis - latest array of midi files to keep in mind
- * @param {String} passedVariables.lastSoundfont - latest file path of the soundfont
- * @return {(Object|false)}
+ * @return {(true|false)}
  *         true if it needs to break,
  *         false if it needs to fallthrough the switch
  *         (See "case regexes.fileCheck.test(basename(arg)) && arg")
@@ -384,100 +371,63 @@ const actUpOnPassedArgs = async (args) => {
 const setFile = async ({
   lastParam, lastIndex,
   newArguments, arg,
-  lastMidis, lastSoundfont
 }) => {
   if (lastParam !== undefined && lastParam !== "input") return false;
-
+  
   if (!global.fs) {
     const fs = await import("node:fs");
     global.fs = fs;
   }
   const fileMagicNumber = await get20BytesFromFile(arg);
   
-  // MIDI files
+  // -- MIDI files --
   if (fileMagicNumber.includes("MThd")) {
-    if (!lastSoundfont) {
-      lastMidis.push(arg)
-      log(1, performance.now().toFixed(2), `Set midi file to "${arg}"`)
-      return {
-        lastMidis,
-        result: true
-      };
-    }
-    const areThereOthers = newArguments.filter(i => {
-      if (i !== arg
-          && !lastMidis.includes(i)
-          && i !== lastSoundfont
-          && regexes.fileCheck.test(i)) {
-        try {
-          const beginningOfFile = new Uint8Array(20);
-          fs.readSync(
-            fs.openSync(i),
-            beginningOfFile,
-            { length: 20 }
-          )
-          const decodedText = new TextDecoder().decode(beginningOfFile);
-          if (decodedText.match(regexes.allSupportedFiles)) return true;
-        } catch (e) {
-          if (e.code === "ENOENT") return false;
-          throw e
-        }
-      }
-      return false;
-    });
-    if (areThereOthers.length > 0) {
-      lastMidis.push(arg)
-      log(1, performance.now().toFixed(2), `Set midi file to "${arg}"`)
-      return {
-        lastMidis,
-        result: true
-      };
-    }
-    if (lastParam !== "input") {
-      lastMidis.push(arg)
-      Options.files(lastSoundfont, lastMidis);
-      lastMidis.length = 0;
-      lastSoundfont = null;
-      return {
-        lastMidis, lastSoundfont,
-        result: true
-      };
-    }
-    const indexesAndKeys = Object.keys(Options.all.files).map((e, i) => [i, e]);
+    const inputIndex = Number(lastIndex?.index ?? 0);
+    const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
     for (const [index, key] of indexesAndKeys) {
-      if (index === Number(lastIndex?.index) ?? 0) {
-        lastMidis.push(arg)
-        Options.files(key, lastMidis);
-        lastMidis.length = 0;
-        lastSoundfont = null;
-        return {
-          lastMidis, lastSoundfont,
-          result: true
-        };
+      if (index === inputIndex) {
+        Options.files(index, arg);
+        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index}`)
+        return true;
+      }
+      if (index === indexesAndKeys.length-1
+          && inputIndex !== index) {
+        Options.files(inputIndex, arg)
+        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${inputIndex}`)
+        return true;
       }
     }
   }
-  
+  // -- End of MIDI files --
+
   // Soundfont and downloadable sounds files
   if (fileMagicNumber.includes("sfbk")
       || fileMagicNumber.includes("DLS")) {
-    if (lastMidis.length > 0) {
-      lastSoundfont = arg;
-      Options.files(lastSoundfont, lastMidis);
-      log(1, performance.now().toFixed(2), `Set soundfont file to "${Object.keys(Options.all.files).find(i => i === arg)}"`)
-      lastMidis.length = 0;
-      lastSoundfont = null;
-      return {
-        lastMidis, lastSoundfont,
-        result: true
-      };
+    const inputIndex = Number(lastIndex?.index ?? 0);
+    const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
+    for (const [index, setOfFiles] of indexesAndKeys) {
+      if (index === inputIndex) {
+        const fileMagicNumber = await get20BytesFromFile(setOfFiles.getIndex(0));
+        if (fileMagicNumber.includes("sfbk")
+            || fileMagicNumber.includes("DLS")) {
+          log(1, performance.now().toFixed(2), `Replaced soundfont file from "${setOfFiles.getIndex(0)}" to "${arg}" at index ${index}`)
+          Options.files(index, arg, true, true);
+          return true;
+        }
+        Options.files(index, arg, true);
+        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index}`)
+        return true;
+      }
+      
+      if (index === indexesAndKeys.length-1
+          && index !== inputIndex) {
+        Options.files(inputIndex, arg, true);
+        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${inputIndex}`)
+        return true;
+      }
     }
-    lastSoundfont = arg;
-    return {
-      lastSoundfont,
-      result: true
-    };
   }
+  // End of soundfont and downloadable sounds files
 }
 /**
  * Sets the Options.loopN variable
