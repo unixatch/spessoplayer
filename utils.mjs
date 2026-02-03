@@ -247,7 +247,7 @@ function log(level, time, ...messages) {
   const debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
   if (debugLevelSpesso
       && debugLevelSpesso <= level
-      || global.verboseLevel <= level) {
+      || Options.verboseLevel <= level) {
     const message = [
       new Date(),
       "["+time+" ms]",
@@ -264,7 +264,7 @@ function log(level, time, ...messages) {
     ];
     if (messages[0] === "Finished printing to stdout") message.unshift("\n")
     console.error(...message);
-    const path = debugFileSpesso || global.logFilePath;
+    const path = debugFileSpesso || Options.logFilePath;
     if (path) {
       message[0] = message[0].toISOString();
       message[message.length-1] = message[message.length-1].replace(/\x1b\[.{1,10}m/, "")

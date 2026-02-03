@@ -567,10 +567,10 @@ const setVerboseLevel = async (arg) => {
   if (typeof Number(arg) === "number"
       && !(Number(arg) < 0 && Number(arg) > 2)
       && !arg.startsWith("-")) {
-    Options.verboseLevel(Number(arg));
+    Options.verboseLevel = Number(arg);
     if (isFromUser) {
-      log(1, performance.now().toFixed(2), `Set verbose level asked by the user to ${Options.all.verboseLevel.find(i => i === Number(arg))}`)
-    } else log(1, performance.now().toFixed(2), `Set verbose level to ${Options.all.verboseLevel.find(i => i === Number(arg))}`)
+      log(1, performance.now().toFixed(2), `Set verbose level asked by the user to ${Number(arg)}`)
+    } else log(1, performance.now().toFixed(2), `Set verbose level to ${Number(arg)}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
