@@ -747,7 +747,7 @@ const uninstall = async () => {
  * @param {Object} errorObject - an object containing additional info that should be printed alongside help
  * @param {String} errorObject.errorText - error text that should be printed before helpText
  */
-const help = async ({ errorText }) => {
+const help = async ({ errorText } = "") => {
   const optionalIndex = `${normal}[${dimGray}n${normal}]`;
   const optionalVerboseIndex = `${normal}[${dimGray}=n${normal}]`;
   
@@ -823,7 +823,12 @@ const help = async ({ errorText }) => {
     spawnSync(
       ...PAGERCommand,
       [...PAGERArguments],
-      { stdio: ["pipe", "inherit", "inherit"], input: errorText+"\n"+helpText }
+      {
+        stdio: ["pipe", "inherit", "inherit"],
+        input: (errorText)
+          ? errorText+"\n"+helpText
+          : helpText
+      }
     )
     return;
   }
