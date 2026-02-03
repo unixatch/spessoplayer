@@ -300,6 +300,29 @@ function newFileName(path) {
   }
   return path;
 }
+/**
+ * Adds unshift functionality to Set
+ * @param {Array} value - value to add
+ * @return {Set} - an updated set with the values added on the left
+ */
+Set.prototype.addLeft = function (value) {
+  const newValue = new Set([value]).union(this);
+  this.clear()
+  newValue.values().forEach(i => this.add(i))
+  return this;
+}
+/**
+ * Adds index retrieval functionality to Set
+ * @param {Number} index - index to get
+ * @return {*} - the value at the specified index in the Set
+ */
+Set.prototype.getIndex = function (index) {
+  if (typeof index !== "number") {
+    throw new TypeError(`${index} is not a number`)
+  }
+  const array = [...this.values()];
+  return array[index];
+}
 class Options {
   static #options = {};
 
@@ -318,9 +341,15 @@ class Options {
     this.#checkValueAndExistence(number, "number")
     this.#options.verboseLevel = number;
   }
+  static get verboseLevel() {
+    return this.#options.verboseLevel;
+  }
   static set logFilePath(path) {
     this.#checkValueAndExistence(path, "string")
     this.#options.logFilePath = path;
+  }
+  static get logFilePath() {
+    return this.#options.logFilePath;
   }
   static set toStdout(value) {
     this.#checkValueAndExistence(value, "boolean")
