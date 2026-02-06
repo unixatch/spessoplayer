@@ -25,7 +25,6 @@
   },
   "scripts": {
     "test": "node main.js",
-    "prepare": "node install.mjs",
     "postinstall": "node install.mjs"
   },
   "dependencies": {
