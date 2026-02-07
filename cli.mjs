@@ -187,6 +187,7 @@ const actUpOnPassedArgs = async (args) => {
     log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
   }
 
+  let setFilePromises = [];
   for (const arg of newArguments) {
     switch (arg) {
       case regexes.wav.test(arg) && arg: {
@@ -293,13 +294,17 @@ const actUpOnPassedArgs = async (args) => {
         lastIndex = arg.match(regexes.loop)?.groups;
         break;
       }
-      case regexes.fileCheck.test(basename(arg)) && arg: {
-        const result = await setFile({
-                               lastParam, lastIndex,
-                               newArguments, arg
-                             });
-        // Result returns true === break right now
-        if (result) break;
+      case (lastParam === "input"
+            || lastParam === undefined)
+            && regexes.fileCheck.test(basename(arg))
+            && arg: {
+        setFilePromises.push(
+          setFile({
+            lastParam, lastIndex,
+            newArguments, arg
+          })
+        )
+        break;
       }
       
       default:
@@ -349,6 +354,8 @@ const actUpOnPassedArgs = async (args) => {
         }
     }
   }
+  // Adds files to the list asynchronously
+  await Promise.all(setFilePromises)
   if (!Options.all.files
       || !Object.keys(Options.all.files).length > 0) {
     console.error(`${red}Missing required files${normal}`);
@@ -370,8 +377,23 @@ const actUpOnPassedArgs = async (args) => {
  */
 const setFile = async ({
   lastParam, lastIndex,
-  newArguments, arg,
+  newArguments, arg
 }) => {
+  function doesSetHave(setOfFiles, path, isMidi = true) {
+    const pathUpToName = join(parse(path).dir, parse(path).name);
+    if (isMidi) {
+      return setOfFiles?.has(pathUpToName+".sf2")
+             || setOfFiles?.has(pathUpToName+".dls");
+    }
+    return setOfFiles?.has(pathUpToName+".mid");
+  }
+  function checkForIdenticalNames(path) {
+    return newArguments.filter(i => {
+              return i !== path
+              && parse(i).name === parse(path).name
+              && lastParam !== "input"
+           }).length > 0
+  }
   if (lastParam !== undefined && lastParam !== "input") return false;
   
   if (!global.fs) {
@@ -384,18 +406,46 @@ const setFile = async ({
   if (fileMagicNumber.includes("MThd")) {
     const inputIndex = Number(lastIndex?.index ?? 0);
     const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
-    for (const [index, key] of indexesAndKeys) {
-      if (index === inputIndex) {
+    for (const infos of indexesAndKeys) {
+      let index, setOfFiles;
+      if (infos) {
+        [index, setOfFiles] = infos;
+      } else continue;
+      
+      if (setOfFiles instanceof Set
+          && doesSetHave(setOfFiles, arg)) {
         Options.files(index, arg);
         log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index}`)
         return true;
       }
+    }
+    for (const infos of indexesAndKeys) {
+      let index, setOfFiles;
+      if (infos) {
+        [index, setOfFiles] = infos;
+      } else continue;
+      
       if (index === indexesAndKeys.length-1
           && inputIndex !== index) {
+        if (checkForIdenticalNames(arg)) {
+          Options.files(indexesAndKeys.length, arg)
+          log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index+1}`)
+          return true;
+        }
         Options.files(inputIndex, arg)
         log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${inputIndex}`)
         return true;
       }
+      if (index !== inputIndex) continue;
+      
+      if (checkForIdenticalNames(arg)) {
+        Options.files(indexesAndKeys.length, arg)
+        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index+1}`)
+        return true;
+      }
+      Options.files(index, arg);
+      log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index}`)
+      return true;
     }
   }
   // -- End of MIDI files --
@@ -405,26 +455,55 @@ const setFile = async ({
       || fileMagicNumber.includes("DLS")) {
     const inputIndex = Number(lastIndex?.index ?? 0);
     const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
-    for (const [index, setOfFiles] of indexesAndKeys) {
-      if (index === inputIndex) {
-        const fileMagicNumber = await get20BytesFromFile(setOfFiles.getIndex(0));
-        if (fileMagicNumber.includes("sfbk")
-            || fileMagicNumber.includes("DLS")) {
-          log(1, performance.now().toFixed(2), `Replaced soundfont file from "${setOfFiles.getIndex(0)}" to "${arg}" at index ${index}`)
-          Options.files(index, arg, true, true);
-          return true;
-        }
+    for (const infos of indexesAndKeys) {
+      let index, setOfFiles;
+      if (infos) {
+        [index, setOfFiles] = infos;
+      } else continue;
+      
+      if (setOfFiles instanceof Set
+          && doesSetHave(setOfFiles, arg, false)) {
         Options.files(index, arg, true);
         log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index}`)
         return true;
       }
+    }
+    for (const infos of indexesAndKeys) {
+      let index, setOfFiles;
+      if (infos) {
+        [index, setOfFiles] = infos;
+      } else continue;
       
       if (index === indexesAndKeys.length-1
           && index !== inputIndex) {
+        if (checkForIdenticalNames(arg)) {
+          Options.files(indexesAndKeys.length, arg, true)
+          log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index+1}`)
+          return true;
+        }
         Options.files(inputIndex, arg, true);
         log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${inputIndex}`)
         return true;
       }
+      if (index !== inputIndex) continue;
+      
+      if (checkForIdenticalNames(arg)) {
+        Options.files(indexesAndKeys.length, arg, true)
+        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index+1}`)
+        return true;
+      }
+      const fileMagicNumber = (setOfFiles instanceof Set)
+        ? await get20BytesFromFile(setOfFiles.getIndex(0))
+        : [];
+      if (fileMagicNumber.includes("sfbk")
+          || fileMagicNumber.includes("DLS")) {
+        log(1, performance.now().toFixed(2), `Replaced soundfont file from "${setOfFiles.getIndex(0)}" to "${arg}" at index ${index}`)
+        Options.files(index, arg, true, true);
+        return true;
+      }
+      Options.files(index, arg, true);
+      log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index}`)
+      return true;
     }
   }
   // End of soundfont and downloadable sounds files
