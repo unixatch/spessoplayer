@@ -292,8 +292,7 @@ const actUpOnPassedArgs = async (args) => {
         lastIndex = arg.match(regexes.loop)?.groups;
         break;
       }
-      case (lastParam === "input"
-            || lastParam === undefined)
+      case (lastParam === "input" || lastParam === undefined)
             && regexes.fileCheck.test(basename(arg))
             && arg: {
         setFilePromises.push(
@@ -302,6 +301,7 @@ const actUpOnPassedArgs = async (args) => {
             newArguments, arg
           })
         )
+        if (lastParam === "input") lastParam = undefined;
         break;
       }
       
