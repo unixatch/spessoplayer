@@ -323,9 +323,23 @@ Set.prototype.getIndex = function (index) {
   const array = [...this.values()];
   return array[index];
 }
+/**
+ * A class that represents options interpreted by cli.mjs
+ * @property {Object} options - main private object that contains the data
+ */
 class Options {
   static #options = {};
 
+  /**
+   * @function #checkValueAndExistence
+   * @desc type checker
+   * @param {*} value - any kind of value to check
+   * @param {String} requiredType - type that must be correct
+   * @param {String} property - any kind of property to add to #options
+   * @param {Boolean} isObject - if the property should be an object
+   * @memberof Options
+   * @private
+   */
   static #checkValueAndExistence(value, requiredType, property, isObject) {
     if (requiredType !== "array" || !Array.isArray(value)) {
       if (typeof value !== requiredType) {
@@ -337,83 +351,154 @@ class Options {
       this.#options[property] = [];
     }
   }
+  /**
+   * Sets verboseLevel
+   * @param {Number} number - verboseLevel's number
+   */
   static set verboseLevel(number) {
     this.#checkValueAndExistence(number, "number")
     this.#options.verboseLevel = number;
   }
+  /**
+   * Gives verboseLevel's number
+   * @return {Number} verboseLevel's number
+   */
   static get verboseLevel() {
     return this.#options.verboseLevel;
   }
+  /**
+   * Sets logFilePath
+   * @param {String} path - path to write to
+   */
   static set logFilePath(path) {
     this.#checkValueAndExistence(path, "string")
     this.#options.logFilePath = path;
   }
+  /**
+   * Gives logFilePath
+   * @return {String} logFilePath
+   */
   static get logFilePath() {
     return this.#options.logFilePath;
   }
+  /**
+   * Sets toStdout boolean
+   * @param {Boolean} value - enable or disable printing to stdout
+   */
   static set toStdout(value) {
     this.#checkValueAndExistence(value, "boolean")
     this.#options.toStdout = value;
   }
+  /**
+   * Sets the stdout format
+   * @param {String} string - a string representing the format
+   */
   static set format(string) {
     this.#checkValueAndExistence(string, "string")
     this.#options.format = string;
   }
+  /**
+   * Adds a path to write to in a particular format
+   * @param {Number} index - index of the internal array
+   * @param {String} string - string to add to the specified index
+   */
   static fileOutputs(index, string) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(string, "string", "fileOutputs")
     this.#options.fileOutputs[index] = string;
   }
-  // Effects
+  /**
+   * Change reverb's volume of a specific file
+   * @param {Number} index - index of the file's option
+   * @param {Number} number - the volume value as a float or integer
+   */
   static reverbVolume(index, number) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "reverbVolume")
     if (!Number.isNaN(index)) return this.#options.reverbVolume[index] = number;
     this.#options.reverbVolume.push(number)
   }
+  /**
+   * Adds a list of effects to a specific file
+   * @param {Number} index - index of the file
+   * @param {Array} arrayOfObjects - an array of object effects
+   */
   static effects(index, arrayOfObjects) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(arrayOfObjects, "array", "effects")
     if (Number.isNaN(index)) return this.#options.effects.push(arrayOfObjects);
     this.#options.effects[index] = arrayOfObjects;
   }
-  // options of songs
+  /**
+   * Change general volume of a specific file
+   * @param {Number} index - index of the file
+   * @param {Number} number - volume value as a float or integer
+   */
   static volume(index, number) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "volume")
     if (!Number.isNaN(index)) return this.#options.volume[index] = number;
     this.#options.volume.push(number);
   }
-  // In case it's stdout
+  /**
+   * Sets the sample rate of the stdout output
+   * @param {Number} number - sample rate to set for all files in stdout
+   */
   static set stdoutSampleRate(number) {
     this.#checkValueAndExistence(number, "number")
     this.#options.sampleRate = number;
   }
+  /**
+   * Sets the sample rate of a specific file
+   * @param {Number} index - index of the file
+   * @param {Number} number - sample rate to set
+   */
   static sampleRate(index, number) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "sampleRate")
     if (!Number.isNaN(index)) return this.#options.sampleRate[index] = number;
     this.#options.sampleRate.push(number);
   }
+  /**
+   * Sets the amount of loops to do for a specific file
+   * @param {Number} index - index of the file
+   * @param {Number} number - how many loops to do
+   */
   static loopN(index, number) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "loopN")
     if (!Number.isNaN(index)) return this.#options.loopN[index] = number;
     this.#options.loopN.push(number);
   }
+  /**
+   * Sets when the loop starts for a specific file
+   * @param {Number} index - index of the file
+   * @param {Number} number - start of the loop as a float or integer
+   */
   static loopStart(index, number) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "loopStart")
     if (!Number.isNaN(index)) return this.#options.loopStart[index] = number;
     this.#options.loopStart.push(number);
   }
+  /**
+   * Sets when the loop ends for a specific file
+   * @param {Number} index - index of the file
+   * @param {Number} number - end of the loop as a float
+   */
   static loopEnd(index, number) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(number, "number", "loopEnd")
     if (!Number.isNaN(index)) return this.#options.loopEnd[index] = number;
     this.#options.loopEnd.push(number);
   }
-  // Grouped files
+  /**
+   * The main method to add a file to the list of Sets
+   * @param {Number} index - index of the group of files
+   * @param {String} string - file to add
+   * @param {Boolean} isSoundfont - if it's a soundfont, then add as a first element
+   * @param {Boolean} replace - if it should delete the first element before adding the soundfont
+   */
   static files(index, string, isSoundfont = false, replace = false) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(string, "string", "files")
@@ -429,6 +514,10 @@ class Options {
     }
   }
   
+  /**
+   * Gives all the data
+   * @return {Object} the deep cloned #options object
+   */
   static get all() { return structuredClone(this.#options); }
 }
 
