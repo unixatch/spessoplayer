@@ -385,12 +385,13 @@ const setFile = async ({
     }
     return setOfFiles?.has(pathUpToName+".mid");
   }
-  function checkForIdenticalNames(path) {
-    return newArguments.filter(i => {
-              return i !== path
-              && parse(i).name === parse(path).name
-              && lastParam !== "input"
-           }).length > 0
+  function checkForIdenticalNames(path, isMidi = true) {
+    const pathUpToName = join(parse(path).dir, parse(path).name);
+    if (isMidi) {
+      return newArguments.includes(pathUpToName+".sf2")
+             || newArguments.includes(pathUpToName+".dls");
+    }
+    return newArguments.includes(pathUpToName+".mid");
   }
   if (lastParam !== undefined && lastParam !== "input") return false;
   
@@ -411,7 +412,8 @@ const setFile = async ({
       } else continue;
       
       if (setOfFiles instanceof Set
-          && doesSetHave(setOfFiles, arg)) {
+          && doesSetHave(setOfFiles, arg)
+          && !lastIndex?.index && !lastParam) {
         Options.files(index, arg);
         log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index}`)
         return true;
@@ -425,7 +427,8 @@ const setFile = async ({
       
       if (index === indexesAndKeys.length-1
           && inputIndex !== index) {
-        if (checkForIdenticalNames(arg)) {
+        if (checkForIdenticalNames(arg)
+            && !lastIndex?.index && !lastParam) {
           Options.files(indexesAndKeys.length, arg)
           log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${indexesAndKeys.length}`)
           return true;
@@ -436,7 +439,8 @@ const setFile = async ({
       }
       if (index !== inputIndex) continue;
       
-      if (checkForIdenticalNames(arg)) {
+      if (checkForIdenticalNames(arg)
+          && !lastIndex?.index && !lastParam) {
         Options.files(indexesAndKeys.length, arg)
         log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${indexesAndKeys.length}`)
         return true;
@@ -460,7 +464,8 @@ const setFile = async ({
       } else continue;
       
       if (setOfFiles instanceof Set
-          && doesSetHave(setOfFiles, arg, false)) {
+          && doesSetHave(setOfFiles, arg, false)
+          && !lastIndex?.index && !lastParam) {
         Options.files(index, arg, true);
         log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index}`)
         return true;
@@ -474,7 +479,8 @@ const setFile = async ({
       
       if (index === indexesAndKeys.length-1
           && index !== inputIndex) {
-        if (checkForIdenticalNames(arg)) {
+        if (checkForIdenticalNames(arg, false)
+            && !lastIndex?.index && !lastParam) {
           Options.files(indexesAndKeys.length, arg, true)
           log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${indexesAndKeys.length}`)
           return true;
@@ -485,7 +491,8 @@ const setFile = async ({
       }
       if (index !== inputIndex) continue;
       
-      if (checkForIdenticalNames(arg)) {
+      if (checkForIdenticalNames(arg, false)
+          && !lastIndex?.index && !lastParam) {
         Options.files(indexesAndKeys.length, arg, true)
         log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${indexesAndKeys.length}`)
         return true;
