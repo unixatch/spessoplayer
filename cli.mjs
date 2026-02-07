@@ -427,7 +427,7 @@ const setFile = async ({
           && inputIndex !== index) {
         if (checkForIdenticalNames(arg)) {
           Options.files(indexesAndKeys.length, arg)
-          log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index+1}`)
+          log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${indexesAndKeys.length}`)
           return true;
         }
         Options.files(inputIndex, arg)
@@ -438,7 +438,7 @@ const setFile = async ({
       
       if (checkForIdenticalNames(arg)) {
         Options.files(indexesAndKeys.length, arg)
-        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index+1}`)
+        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${indexesAndKeys.length}`)
         return true;
       }
       Options.files(index, arg);
@@ -476,7 +476,7 @@ const setFile = async ({
           && index !== inputIndex) {
         if (checkForIdenticalNames(arg)) {
           Options.files(indexesAndKeys.length, arg, true)
-          log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index+1}`)
+          log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${indexesAndKeys.length}`)
           return true;
         }
         Options.files(inputIndex, arg, true);
@@ -487,7 +487,7 @@ const setFile = async ({
       
       if (checkForIdenticalNames(arg)) {
         Options.files(indexesAndKeys.length, arg, true)
-        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index+1}`)
+        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${indexesAndKeys.length}`)
         return true;
       }
       const fileMagicNumber = (setOfFiles instanceof Set)
