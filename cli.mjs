@@ -98,8 +98,6 @@ const regexes = {
     "|-le(?<index>\\d+)*",
     "|\\/le(?<index>\\d+)*)$"
   ].join("")),
-
-  allSupportedFiles: /MThd|sfbk|DLS/,
   fileCheck: /^(?!-|\/)(?:\w|\W)*$/,
 
   infinity: /^(?:Infinity|infinity)$/,
@@ -354,7 +352,7 @@ const actUpOnPassedArgs = async (args) => {
         }
     }
   }
-  // Adds files to the list asynchronously
+  // Adds files to the list asynchronously/in parallel
   await Promise.all(setFilePromises)
   if (!Options.all.files
       || !Object.keys(Options.all.files).length > 0) {
