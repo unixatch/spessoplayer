@@ -398,7 +398,7 @@ async function toStdout(
     isStartPlayer,
     seq, synth,
     sampleCount, sampleRate
-  }
+  } = {}
 ) {
   if (!global?.midiFile || !global?.soundfontFile) {
     throw new ReferenceError("Missing some required files")
