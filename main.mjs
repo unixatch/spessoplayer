@@ -77,8 +77,8 @@ function getSampleCount({
   let loopDetectedInMidi = false;
   if (midi.loop.start > 0) {
     loopDetectedInMidi = true;
-    global.loopStart = midi.midiTicksToSeconds(midi.loop.start);
-    global.loopEnd = midi.midiTicksToSeconds(midi.loop.end);
+    loopStart = midi.midiTicksToSeconds(midi.loop.start);
+    loopEnd = midi.midiTicksToSeconds(midi.loop.end);
   }
   const possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
   let sampleCount;
@@ -86,17 +86,17 @@ function getSampleCount({
     sampleCount = Math.ceil(sampleRate * midi.duration);
   } else {
     let end;
-    if (global?.loopEnd === undefined && !loopDetectedInMidi) {
+    if (loopEnd === undefined && !loopDetectedInMidi) {
       end = midi.duration;
-    } else if (global.loopEnd !== undefined && !loopDetectedInMidi) {
-      end = midi.duration - global.loopEnd;
-    } else end = global.loopEnd;
+    } else if (loopEnd !== undefined && !loopDetectedInMidi) {
+      end = midi.duration - loopEnd;
+    } else end = loopEnd;
 
     sampleCount = Math.ceil(
       sampleRate * 
       (
         midi.duration +
-        ((end - global.loopStart) * possibleLoopAmount)
+        ((end - loopStart) * possibleLoopAmount)
       )
     );
   }
@@ -140,22 +140,26 @@ async function initSpessaSynth({
       SpessaSynthSequencer
     } = await import("spessasynth_core"))
   }
-  const mid = fs.readFileSync(global.midiFile);
-  const sf = fs.readFileSync(global.soundfontFile);
+  const mid = fs.readFileSync(midiFile);
+  const sf = fs.readFileSync(soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
-  const sampleRate = global?.sampleRate ?? 48000;
   const {
     sampleCount,
     loopDetectedInMidi
-  } = getSampleCount(midi, sampleRate, loopAmount);
+  } = getSampleCount({
+    midi,
+    sampleRate,
+    loopAmount,
+    loopStart, loopEnd
+  });
   
-  if (global.loopStart > 0 && !loopDetectedInMidi) {
-    // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * global.loopStart;
-    midi.loop.start = midi.secondsToMIDITicks(global.loopStart);
+  if (loopStart > 0 && !loopDetectedInMidi) {
+    // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * loopStart;
+    midi.loop.start = midi.secondsToMIDITicks(loopStart);
   }
-  if (global?.loopEnd && global.loopEnd !== midi.duration && !loopDetectedInMidi) {
-    // (midi.duration - global.loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
-    midi.loop.end = midi.secondsToMIDITicks(midi.duration - global.loopEnd);
+  if (loopEnd && loopEnd !== midi.duration && !loopDetectedInMidi) {
+    // (midi.duration - loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
+    midi.loop.end = midi.secondsToMIDITicks(midi.duration - loopEnd);
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
@@ -169,7 +173,7 @@ async function initSpessaSynth({
   await synth.processorInitialized
   const seq = new SpessaSynthSequencer(synth);
   seq.loadNewSongList([midi])
-  seq.loopCount = loopAmount ?? 0;
+  seq.loopCount = loopAmount;
   seq.play();
   
   addEvent({ eventType: "uncaughtException" })
@@ -438,7 +442,7 @@ async function toStdout(
     sampleCount, sampleRate
   } = {}
 ) {
-  if (!global?.midiFile || !global?.soundfontFile) {
+  if (!midiFile || !soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
@@ -446,7 +450,13 @@ async function toStdout(
     ({
       seq, synth,
       sampleCount, sampleRate
-    } = await initSpessaSynth(loopAmount, volume));
+    } = await initSpessaSynth({
+      loopAmount,
+      volume,
+      midiFile, soundfontFile,
+      sampleRate,
+      loopStart, loopEnd
+    }));
   }
   
   ({ spawn, spawnSync } = await import("child_process"));
@@ -530,15 +540,15 @@ async function toStdout(
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
   const promisesOfPrograms = [];
-  switch (global?.format) {
+  switch (format) {
     case "wave": {
-      if (global?.effects) {
+      if (effects) {
         await applyEffects({
           program: "sox",
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: (isStartPlayer) ? mpv.stdin : undefined,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+          effects: (Array.isArray(effects)) ? effects : undefined
         })
         log(1, performance.now().toFixed(2), "Done setting up")
         break;
@@ -564,13 +574,13 @@ async function toStdout(
         ], detached: true}
       );
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (global?.effects) {
+      if (effects) {
         await applyEffects({
           program: "sox",
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+          effects: (Array.isArray(effects)) ? effects : undefined
         })
         log(1, performance.now().toFixed(2), "Done setting up")
         break;
@@ -597,13 +607,13 @@ async function toStdout(
         ], detached: true}
       );
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (global?.effects) {
+      if (effects) {
         await applyEffects({
           program: "sox",
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+          effects: (Array.isArray(effects)) ? effects : undefined
         })
         log(1, performance.now().toFixed(2), "Done setting up")
         break;
@@ -627,13 +637,13 @@ async function toStdout(
     }
     
     default:
-      if (global?.effects) {
+      if (effects) {
         await applyEffects({
           program: "sox",
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: (isStartPlayer) ? mpv.stdin : undefined,
-          effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+          effects: (Array.isArray(effects)) ? effects : undefined
         })
         log(1, performance.now().toFixed(2), "Done setting up")
         break;
@@ -686,8 +696,14 @@ async function toFile({
   log(1, performance.now().toFixed(2), "Started toFile")
   const {
     seq, synth,
-    sampleCount, sampleRate
-  } = await initSpessaSynth(loopAmount, volume, true);
+    sampleCount
+  } = await initSpessaSynth({
+    loopAmount,
+    volume,
+    midiFile, soundfontFile,
+    sampleRate,
+    loopStart, loopEnd
+  }, true);
 
   const {
     getWavHeader,
@@ -710,25 +726,26 @@ async function toFile({
     lastBytes,
     sampleCount, sampleRate,
     seq, synth,
-    getData, i, durationRounded,
-    clearLastLines
+    getData,
+    index, i, durationRounded,
+    progress, clearLastLines
   });
   const { newFileName } = await import("./utils.mjs");
   const promisesOfPrograms = [];
-  for (let outFile of global.fileOutputs) {
+  for (let outFile of fileOutputs) {
     switch (true) {
       case /^.*(?:\.wav|\.wave)$/.test(outFile): {
-        const newName = newFileName(outFile);
-        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
         outFile = newName;
         
-        if (global?.effects) {
+        if (effects) {
           await applyEffects({
             program: "sox",
             stdoutHeader, readStream,
             promisesOfPrograms,
             destination: outFile,
-            effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+            effects: (Array.isArray(effects)) ? effects : undefined
           })
           log(1, performance.now().toFixed(2), "Done setting up wav outFile")
           break;
@@ -741,19 +758,19 @@ async function toFile({
       }
       case /^.*\.flac$/.test(outFile): {
         if (!spawn) ({ spawn } = await import("child_process"));
-        const newName = newFileName(outFile);
-        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile);
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile, createNewFileNameAnyway);
         
         const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile).flac);
         log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-        if (global?.effects) {
+        if (effects) {
           await applyEffects({
             program: "sox",
             stdoutHeader, readStream,
             promisesOfPrograms,
             stdout: ffmpeg.stdin,
-            effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+            effects: (Array.isArray(effects)) ? effects : undefined
           })
           log(1, performance.now().toFixed(2), "Done setting up flac outFile")
           break;
@@ -772,19 +789,19 @@ async function toFile({
       }
       case /^.*\.mp3$/.test(outFile): {
         if (!spawn) ({ spawn } = await import("child_process"));
-        const newName = newFileName(outFile);
-        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile);
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile, createNewFileNameAnyway);
         
         const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile).mp3);
         log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-        if (global?.effects) {
+        if (effects) {
           await applyEffects({
             program: "sox",
             stdoutHeader, readStream,
             promisesOfPrograms,
             stdout: ffmpeg.stdin,
-            effects: (Array.isArray(global?.effects)) ? global.effects : undefined
+            effects: (Array.isArray(effects)) ? effects : undefined
           })
           log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
           break;
@@ -802,9 +819,9 @@ async function toFile({
         break;
       }
       case /^.*\.(?:s16le|s32le|pcm)$/.test(outFile): {
-        const newName = newFileName(outFile);
-        global.fileOutputs[global.fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile);
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile, createNewFileNameAnyway);
         
         const pcm = fs.createWriteStream(outFile);
         readStream.pipe(pcm)
@@ -813,16 +830,13 @@ async function toFile({
       }
     }
   }
-  await Promise.all([
+  return Promise.all([
     new Promise((resolve, reject) => {
       readStream.on("error", e => reject(e))
       readStream.on("end", () => resolve())
     }),
     ...promisesOfPrograms // if there are any
-  ])
-  console.log("Written", global.fileOutputs.filter(ifil => ifil));
-  // Required because some child_processes sometimes blocks node from exiting
-  process.exit()
+  ]);
 }
 
 /**
