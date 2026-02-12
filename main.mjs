@@ -58,7 +58,65 @@ if (global?.toStdout) {
   await toStdout(global?.loopN, global?.volume)
   process.exit()
 }
-if (global?.fileOutputs?.length > 0) await toFile(global?.loopN, global?.volume)
+if (listOfOptions?.fileOutputs?.length > 0) {
+  const progress = {
+    renderedAmount: [],
+    amountToRender: 0,
+    percentageDone: [],
+    _sum: function (array) {
+      let sumOfAll = 0;
+      if (!this.amountOfSongs) this.amountOfSongs = array.length;
+      for (let i = 0; i < this.amountOfSongs; i++) {
+        const number = array[i];
+        if (number) sumOfAll += array[i];
+      }
+      return sumOfAll;
+    },
+    get percentageText() {
+      return yellow+(this._sum(this.percentageDone).toFixed(2))+normal+"%";
+    },
+    get minutesRenderedText() {
+      return `${magenta}`
+              // Gets the ISO format and then gets mm:ss.sss
+              +  new Date(
+                  (Math.floor(this._sum(this.renderedAmount) * 100) / 100) * 1000
+                )
+                  .toISOString()
+                  .replace(/.*T...(.*)Z/, "$1")
+              + `${normal}`
+              + " / "
+              + `${brightMagenta}`
+                // Same down here
+              +  new Date(this.amountToRender * 1000)
+                  .toISOString()
+                  .replace(/.*T...(.*)Z/, "$1")
+              + `${normal}`;
+    }
+  };
+  const filesList = listOfOptions.files,
+        listOfPromises = [];
+  let indexOfSong = 0;
+  for (const group of filesList) {
+    if (!group) continue;
+    const soundfont = group.getIndex(0);
+    const midis = [...group.values()];
+    midis.shift()
+    midis.forEach((midi, i) => {
+      indexOfSong++;
+      listOfPromises.push(
+        toFile({
+          createNewFileNameAnyway: (i > 0 || filesList.length > 1) ? true : false,
+          index: indexOfSong, progress,
+          ...Options.getOptionsOfSong(i, midi)
+        })
+      )
+    })
+  }
+  await Promise.all(listOfPromises)
+  console.log("Written", listOfOptions?.fileOutputs.filter(ifil => ifil));
+  // Required because some child_processes sometimes blocks node from exiting
+  process.exit()
+}
 await startPlayer(global?.loopN, global?.volume)
 
 /**
@@ -367,6 +425,7 @@ function createReadable(Readable, isStdout = false, {
   seq, synth,
   getData
 }) {
+  let hasBeenAdded = false;
   const readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
@@ -383,24 +442,22 @@ function createReadable(Readable, isStdout = false, {
       if (!isStdout) {
         i++;
         if (i % 100 === 0) {
-          if (i > 0) clearLastLines([0, -1])
-          console.info(
-            `Rendered ${magenta}` +
-              // Gets the ISO format and then gets mm:ss.sss
-              new Date(
-                (Math.floor(seq.currentTime * 100) / 100) * 1000
+          if (!process.stdout.listeners("renderTexts").length > 0) {
+            addEvent({ eventType: "renderTexts" })
+          }
+          if (!hasBeenAdded) {
+            progress.amountToRender += durationRounded;
+            hasBeenAdded = true;
+          } else {
+            progress.renderedAmount[index] = seq.currentTime;
+            progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
+            process.stdout
+              .emit("renderTexts",
+                index,
+                progress,
+                clearLastLines
               )
-                .toISOString()
-                .replace(/.*T...(.*)Z/, "$1") +
-            `${normal}`,
-            "/",
-            `${brightMagenta}` +
-              // Same down here
-              new Date(durationRounded * 1000)
-                .toISOString()
-                .replace(/.*T...(.*)Z/, "$1"),
-            `${normal}`
-          );
+          }
         }
       }
       
