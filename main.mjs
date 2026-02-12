@@ -24,9 +24,11 @@ log(1, performance.now().toFixed(2), "Added SIGINT event")
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
+  Options
 } = await import("./cli.mjs");
 log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
+const listOfOptions = Options.all;
 
 
 /**
@@ -65,8 +67,13 @@ await startPlayer(global?.loopN, global?.volume)
  * @param {Number} sampleRate - The sample rate to use
  * @param {Number} loopAmount - The amount of loops to do
  */
-function getSampleCount(midi, sampleRate, loopAmount) {
-  global.loopStart = global?.loopStart ?? midi.midiTicksToSeconds(midi.loop.start);
+function getSampleCount({
+  midi,
+  sampleRate,
+  loopAmount,
+  loopStart = midi.midiTicksToSeconds(midi.loop.start),
+  loopEnd
+}) {
   let loopDetectedInMidi = false;
   if (midi.loop.start > 0) {
     loopDetectedInMidi = true;
@@ -105,7 +112,13 @@ function getSampleCount(midi, sampleRate, loopAmount) {
  * @param {Number} [volume=100/100] - the volume to set
  * @param {Boolean} [isToFile=false] - defines or not audioToWav
  */
-async function initSpessaSynth(loopAmount, volume = 100/100, isToFile = false) {
+async function initSpessaSynth({
+  loopAmount = 0,
+  volume = 100/100,
+  midiFile, soundfontFile,
+  sampleRate = 48000,
+  loopStart, loopEnd
+}, isToFile = false) {
   let audioToWav,
       BasicMIDI,
       SoundBankLoader,
@@ -344,7 +357,8 @@ function createReadable(Readable, isStdout = false, {
   BUFFER_SIZE, filledSamples,
   lastBytes,
   sampleCount, sampleRate,
-  i, durationRounded,
+  index, i, durationRounded,
+  progress,
   clearLastLines,
   seq, synth,
   getData
@@ -411,8 +425,12 @@ function createReadable(Readable, isStdout = false, {
  * @param {Number} obj.sampleRate - sample rate of the song
  */
 async function toStdout(
-  loopAmount,
-  volume = 100/100,
+  {
+    loopAmount,
+    volume = 100/100,
+    midiFile, soundfontFile,
+    format, effects
+  },
   {
     mpv,
     isStartPlayer,
@@ -654,8 +672,15 @@ async function toStdout(
  * @param {Number} loopAmount - the number of loops to do
  * @param {Number} volume - the volume of the song
  */
-async function toFile(loopAmount, volume = 100/100) {
-  if (!global?.midiFile || !global?.soundfontFile || global.fileOutputs.length === 0 ) {
+async function toFile({
+  createNewFileNameAnyway, index, progress,
+  loopN: loopAmount, loopStart, loopEnd,
+  volume = 100/100,
+  midiFile, soundfontFile, fileOutputs,
+  sampleRate,
+  effects
+}) {
+  if (!midiFile || !soundfontFile || fileOutputs.length === 0) {
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toFile")
