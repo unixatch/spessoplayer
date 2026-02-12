@@ -275,33 +275,52 @@ async function applyEffects({
  * addEvent({ eventType: "SIGINT" })
  */
 function addEvent({ eventType, func }) {
-  if (eventType === "uncaughtException") {
-    // Adds on top of spessasynth_core's uncaughtException
-    const oldUncaughtException = process.rawListeners("uncaughtException")[0];
-    process.removeListener("uncaughtException", oldUncaughtException)
-    process.on("uncaughtException", async (error) => {
-      if (global.SIGINT) return process.exit();
-      if (error?.code === "EPIPE") {
-        // Needed so that SoX can show its stderr
-        await new Promise(resolve => {
-          setTimeout(() => resolve(), 4);
-        })
-        console.error(`${gray}Closed the program before finishing to render${normal}`);
-        return process.exit(2);
-      }
-      oldUncaughtException(error)
-    })
-    return true;
-  }
-  if (eventType === "exit") {
-    process.on("exit", func)
-    return true;
-  }
-  if (eventType === "SIGINT") {
-    process.on("SIGINT", () => {
-      console.error(`${gray}Closed with Ctrl+c${normal}`);
-      global.SIGINT = true;
-    })
+  switch (eventType) {
+    case "uncaughtException": {
+      // Adds on top of spessasynth_core's uncaughtException
+      const oldUncaughtException = process.rawListeners("uncaughtException")[0];
+      process.removeListener("uncaughtException", oldUncaughtException)
+      const hasBeenAdded = process.on("uncaughtException",
+        async (error) => {
+          if (global.SIGINT) return process.exit();
+          if (error?.code === "EPIPE") {
+            // Needed so that SoX can show its stderr
+            await new Promise(resolve => {
+              setTimeout(() => resolve(), 4);
+            })
+            console.error(`${gray}Closed the program before finishing to render${normal}`);
+            return process.exit(2);
+          }
+          oldUncaughtException(error)
+        }
+      ).listeners("uncaughtException").length > 0;
+      return hasBeenAdded;
+    }
+    case "exit": {
+      const hasBeenAdded = process.on("exit", func).listeners("exit").length > 0;
+      return hasBeenAdded;
+    }
+    case "renderTexts": {
+      const hasBeenAdded = process.stdout.on("renderTexts",
+        (index, progress, clearLastLines) => {
+          setTimeout(() => {
+            clearLastLines([0, -1])
+            console.info(
+              progress.minutesRenderedText,
+              "| " + progress.percentageText
+            )
+          }, 100 + index);
+        }
+      ).listeners("renderTexts").length > 0;
+      return hasBeenAdded;
+    }
+    case "SIGINT": {
+      const hasBeenAdded = process.on("SIGINT", () => {
+        console.error(`${gray}Closed with Ctrl+c${normal}`);
+        global.SIGINT = true;
+      }).listeners("SIGINT").length > 0;
+      return hasBeenAdded;
+    }
   }
 }
 /**
