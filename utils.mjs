@@ -285,19 +285,18 @@ function log(level, time, ...messages) {
  *    newFileName("out1.wav")
  * @returns {String} The path, modified or not
  */
-function newFileName(path) {
-  if (fs.existsSync(path)) {
-    const pathDir = parse(path).dir;
-    const pathFileName = (parse(path).name.match(/[0-9]+$/g)?.length > 0)
-      ? parse(path).name.replace(/[0-9]+$/, "")
-      + (Number(parse(path).name.match(/[0-9]+$/g)[0]) + 1)
-      : parse(path).name.replace(/[0-9]+$/, "") + 1;
-    const pathExt = parse(path).ext;
-    path = join(pathDir, pathFileName + pathExt);
-    
-    if (fs.existsSync(path)) return newFileName(path);
-    return path;
-  }
+function newFileName(path, createAnyway = false) {
+  if (!fs.existsSync(path) && !createAnyway) return path;
+  
+  const pathDir = parse(path).dir;
+  const pathFileName = (parse(path).name.match(/[0-9]+$/g)?.length > 0)
+    ? parse(path).name.replace(/[0-9]+$/, "")
+    + (Number(parse(path).name.match(/[0-9]+$/g)[0]) + 1)
+    : parse(path).name.replace(/[0-9]+$/, "") + 1;
+  const pathExt = parse(path).ext;
+  path = join(pathDir, pathFileName + pathExt);
+  
+  if (fs.existsSync(path)) return newFileName(path, createAnyway);
   return path;
 }
 /**
@@ -322,6 +321,15 @@ Set.prototype.getIndex = function (index) {
   }
   const array = [...this.values()];
   return array[index];
+}
+/**
+ * Adds value retrieval functionality to Set
+ * @param {*} value - value to search
+ * @return {*} found value or undefined
+ */
+Set.prototype.get = function (value) {
+  const array = [...this.values()];
+  return array.find(i => i === value);
 }
 /**
  * A class that represents options interpreted by cli.mjs
@@ -512,6 +520,46 @@ class Options {
     } else {
       group[index].add(string)
     }
+  }
+  /**
+   * Creates a new Object similar to this.#options but with only
+   * the songs' options included
+   * @param {Number} index - index of the song
+   * @param {String} string - song
+   * @return {Object} an object containing the song's options
+   */
+  static getOptionsOfSong(index, string) {
+    this.#checkValueAndExistence(index, "number")
+    this.#checkValueAndExistence(string, "string")
+    const allOptions = Object.keys(this.#options);
+    const allOptionsLength = allOptions.length;
+    const simplifiedOptionsObject = {};
+    for (let i = 0; i < allOptionsLength; i++) {
+      const key = allOptions[i];
+      if (key === "files") {
+        const filesLength = this.#options[key].length;
+        for (let i2 = 0; i2 < filesLength; i2++) {
+          const currentSet = this.#options[key][i2];
+          if (currentSet instanceof Set && currentSet.has(string)) {
+            simplifiedOptionsObject["soundfontFile"] = currentSet.getIndex(0);
+            simplifiedOptionsObject["midiFile"] = currentSet.get(string);
+            break;
+          }
+        }
+        if (!simplifiedOptionsObject[key]) simplifiedOptionsObject[key] = undefined;
+        continue;
+      }
+      if (key === "fileOutputs") {
+        simplifiedOptionsObject[key] = this.#options[key];
+        continue;
+      }
+      if (Array.isArray(this.#options[key])) {
+        simplifiedOptionsObject[key] = this.#options[key][index];
+        continue;
+      }
+      simplifiedOptionsObject[key] = this.#options[key];
+    }
+    return simplifiedOptionsObject;
   }
   
   /**
