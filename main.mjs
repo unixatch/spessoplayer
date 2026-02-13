@@ -94,26 +94,32 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     }
   };
   const filesList = listOfOptions.files,
+        finalFileOutputs = [],
         listOfPromises = [];
-  let indexOfSong = 0;
+  let indexOfSong = 0,
+      fileOutputs,
+      promiseToAdd;
   for (const group of filesList) {
     if (!group) continue;
     const soundfont = group.getIndex(0);
     const midis = [...group.values()];
     midis.shift()
-    midis.forEach((midi, i) => {
+    for (const [i, midi] of midis.entries()) {
       indexOfSong++;
-      listOfPromises.push(
-        toFile({
-          createNewFileNameAnyway: (i > 0 || filesList.length > 1) ? true : false,
-          index: indexOfSong, progress,
-          ...Options.getOptionsOfSong(i, midi)
-        })
-      )
-    })
+      const options = Options.getOptionsOfSong(i, midi);
+      if (fileOutputs) options.fileOutputs = fileOutputs;
+      
+      [fileOutputs, promiseToAdd] = await toFile({
+        createNewFileNameAnyway: (i > 0 || filesList.length > 1) ? true : false,
+        index: indexOfSong, progress,
+        ...options
+      });
+      finalFileOutputs.push(...fileOutputs)
+      listOfPromises.push(promiseToAdd)
+    }
   }
   await Promise.all(listOfPromises)
-  console.log("Written", listOfOptions?.fileOutputs.filter(ifil => ifil));
+  console.log("Written", finalFileOutputs.filter(ifil => ifil));
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }
@@ -887,13 +893,16 @@ async function toFile({
       }
     }
   }
-  return Promise.all([
-    new Promise((resolve, reject) => {
-      readStream.on("error", e => reject(e))
-      readStream.on("end", () => resolve())
-    }),
-    ...promisesOfPrograms // if there are any
-  ]);
+  return [
+    fileOutputs,
+    Promise.all([
+      new Promise((resolve, reject) => {
+        readStream.on("error", e => reject(e))
+        readStream.on("end", () => resolve())
+      }),
+      ...promisesOfPrograms // if there are any
+    ])
+  ];
 }
 
 /**
