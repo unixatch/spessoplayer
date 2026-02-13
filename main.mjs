@@ -66,7 +66,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     _sum: function (array) {
       let sumOfAll = 0;
       if (!this.amountOfSongs) this.amountOfSongs = array.length;
-      for (let i = 0; i < this.amountOfSongs; i++) {
+      for (let i = 0; i <= this.amountOfSongs; i++) {
         const number = array[i];
         if (number) sumOfAll += array[i];
       }
@@ -383,14 +383,12 @@ function addEvent({ eventType, func }) {
     }
     case "renderTexts": {
       const hasBeenAdded = process.stdout.on("renderTexts",
-        (index, progress, clearLastLines) => {
-          setTimeout(() => {
-            clearLastLines([0, -1])
-            console.info(
-              progress.minutesRenderedText,
-              "| " + progress.percentageText
-            )
-          }, 100 + index);
+        (progress, clearLastLines) => {
+          clearLastLines([0, -1])
+          console.info(
+            progress.minutesRenderedText,
+            "| " + progress.percentageText
+          )
         }
       ).listeners("renderTexts").length > 0;
       return hasBeenAdded;
@@ -457,12 +455,7 @@ function createReadable(Readable, isStdout = false, {
           } else {
             progress.renderedAmount[index] = seq.currentTime;
             progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
-            process.stdout
-              .emit("renderTexts",
-                index,
-                progress,
-                clearLastLines
-              )
+            process.stdout.emit("renderTexts", progress, clearLastLines)
           }
         }
       }
@@ -808,7 +801,7 @@ async function toFile({
             stdoutHeader, readStream,
             promisesOfPrograms,
             destination: outFile,
-            effects: (Array.isArray(effects)) ? effects : undefined
+            effects: (Array.isArray(effects)) ? effects[index] : undefined
           })
           log(1, performance.now().toFixed(2), "Done setting up wav outFile")
           break;
@@ -833,7 +826,7 @@ async function toFile({
             stdoutHeader, readStream,
             promisesOfPrograms,
             stdout: ffmpeg.stdin,
-            effects: (Array.isArray(effects)) ? effects : undefined
+            effects: (Array.isArray(effects)) ? effects[index] : undefined
           })
           log(1, performance.now().toFixed(2), "Done setting up flac outFile")
           break;
@@ -864,7 +857,7 @@ async function toFile({
             stdoutHeader, readStream,
             promisesOfPrograms,
             stdout: ffmpeg.stdin,
-            effects: (Array.isArray(effects)) ? effects : undefined
+            effects: (Array.isArray(effects)) ? effects[index] : undefined
           })
           log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
           break;
