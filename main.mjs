@@ -306,7 +306,7 @@ async function applyEffects({
       sox.stderr.on("data", (data) => {
         const stringOfError = data.toString();
         // Do not print if these match stringOfError
-        if (stringOfError.match(/sox FAIL sox: \`-\' error writing output file: Connection reset by peer\n/g)
+        if (stringOfError.match(/sox FAIL sox: `-' error writing output file: Connection reset by peer\n/g)
             || stringOfError.match(/\n*sox WARN \w*:.*can't seek.*\n*/g)) return;
         
         const modifiedString = stringOfError
@@ -487,6 +487,8 @@ function createReadable(Readable, isStdout = false, {
 async function toStdout(
   {
     loopAmount,
+    loopStart, loopEnd,
+    sampleRate,
     volume = 100/100,
     midiFile, soundfontFile,
     format, effects
@@ -495,7 +497,7 @@ async function toStdout(
     mpv,
     isStartPlayer,
     seq, synth,
-    sampleCount, sampleRate
+    sampleCount
   } = {}
 ) {
   if (!midiFile || !soundfontFile) {
