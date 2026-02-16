@@ -54,8 +54,32 @@ function ffmpegArgs(outFile = "pipe:1") {
 }
 let spawn,
     spawnSync;
-if (global?.toStdout) {
-  await toStdout(global?.loopN, global?.volume)
+if (listOfOptions?.toStdout) {
+  const filesList = listOfOptions.files,
+        lengthOfFiles = [],
+        listOfPromises = [];
+  for (const group of filesList) {
+    if (!group) continue;
+    const soundfont = group.getIndex(0);
+    const midis = [...group.values()];
+    midis.shift()
+    for (const [i, midi] of midis.entries()) {
+      const options = Options.getOptionsOfSong(i, midi);
+      const [ length, promise ] = await toStdout(options);
+      lengthOfFiles.push(length)
+      listOfPromises.push(promise)
+    }
+  }
+  const sumOfLengths = (index, previous) => index + previous;
+  const stdoutHeader = getWavHeader({
+    length: lengthOfFiles.reduce(sumOfLengths),
+    channels: 2
+  }, listOfOptions?.sampleRate ?? 48000);
+  process.stdout.write(stdoutHeader)
+  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
+  for (const promise of listOfPromises) {
+    await promise
+  }
   process.exit()
 }
 if (listOfOptions?.fileOutputs?.length > 0) {
@@ -594,8 +618,6 @@ async function toStdout(
     seq, synth,
     getData
   });
-  const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
-  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
   const promisesOfPrograms = [];
   switch (format) {
@@ -716,22 +738,25 @@ async function toStdout(
       readStream.pipe(process.stdout)
       log(1, performance.now().toFixed(2), "Done setting up")
   }
-  await Promise.all([
-    new Promise((resolve, reject) => {
-      readStream.on("error", e => reject(e))
-      readStream.on("end", () => {
-        doneStreaming = true;
-        resolve()
-      })
-    }),
-    (isStartPlayer) ? new Promise((resolve, reject) => {
-      mpv.on("error", e => reject(e))
-      mpv.on("exit", () => resolve())
-      mpv.on("end", () => resolve())
-    }) : undefined,
-    ...promisesOfPrograms // If there are any
-  ])
-  log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Finished printing to stdout" : "Finished sending data to mpv's process")
+  log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Finished creating the stdout promise" : "Finished creating the promise for mpv's process")
+  return [
+    sampleCount,
+    Promise.all([
+      new Promise((resolve, reject) => {
+        readStream.on("error", e => reject(e))
+        readStream.on("end", () => {
+          doneStreaming = true;
+          resolve()
+        })
+      }),
+      (isStartPlayer) ? new Promise((resolve, reject) => {
+        mpv.on("error", e => reject(e))
+        mpv.on("exit", () => resolve())
+        mpv.on("end", () => resolve())
+      }) : undefined,
+      ...promisesOfPrograms // If there are any
+    ])
+  ];
 }
 
 /**
