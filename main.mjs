@@ -147,7 +147,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }
-await startPlayer(global?.loopN, global?.volume)
+await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
 
 /**
  * Calculates the sample count to use
