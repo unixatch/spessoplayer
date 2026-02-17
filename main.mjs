@@ -149,6 +149,22 @@ if (listOfOptions?.fileOutputs?.length > 0) {
 }
 await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
 
+/**
+ * Manager for all type of formats
+ * @param {Object} formatObj - necessary object
+ * @param {(String|Boolean)} [formatObj.format=true] - type of format
+ * @param {Readable} formatObj.readStream - ReadStream for piping
+ * @param {Object[]} [formatObj.effects] - list of effects to apply
+ * @param {Boolean} [formatObj.isStartPlayer] - if it's from startPlayer
+ * @param {ChildProcess} [formatObj.mpv] - child_process of mpv
+ * @param {Number} formatObj.index - index of the song
+ * @param {Function} [formatObj.newFileName] - function newFileName
+ * @param {Boolean} [formatObj.createNewFileNameAnyway] - if it's necessary to create a new file name
+ * @param {String[]} [formatObj.fileOutputs] - list of file outputs
+ * @param {Uint8Array} [formatObj.stdoutHeader] - header of the file
+ * @param {Promise[]} formatObj.promisesOfPrograms - list of promises for ffmpeg and SoX
+ * @param {String} [formatObj.outFile] - file name to output
+ */
 async function formatManager({
   format = true,
   readStream,
@@ -313,13 +329,17 @@ async function formatManager({
 }
 /**
  * Calculates the sample count to use
- * @param {class} midi - The BasicMIDI class to use
- * @param {Number} sampleRate - The sample rate to use
- * @param {Number} loopAmount - The amount of loops to do
+ * @param {class} sampleCountObj - necessary object
+ * @param {class} sampleCountObj.midi - The BasicMIDI class to use
+ * @param {Number} [sampleCountObj.sampleRate=48000] - The sample rate to use
+ * @param {(undefined|Number)} [loopAmount] - The amount of loops to do
+ * @param {Number} [loopStart=midi.midiTicksToSeconds(midi.loop.start)] - start of loop
+ * @param {(undefined|Number)} [loopEnd] - end of loop
+ * @return {Object} object containing loopDetectedInMidi and sampleCount
  */
 function getSampleCount({
   midi,
-  sampleRate,
+  sampleRate = 48000,
   loopAmount,
   loopStart = midi.midiTicksToSeconds(midi.loop.start),
   loopEnd
@@ -358,9 +378,22 @@ function getSampleCount({
 }
 /**
  * Initializes all the required variables for spessasynth_core usage
- * @param {any} loopAmount - the loop amount
- * @param {Number} [volume=100/100] - the volume to set
+ * @param {Object} initObj - necessary object
+ * @param {Boolean} [initObj.loopAmount=0] - the loop amount
+ * @param {Number} [initObj.volume=100/100] - the volume to set
+ * @param {String} initObj.midiFile - midi file
+ * @param {String} initObj.soundfontFile - soundfont file
+ * @param {Number} [initObj.sampleRate=48000] - sample rate
+ * @param {Number} initObj.loopStart - start of loop
+ * @param {Number} initObj.loopEnd - end of loop
  * @param {Boolean} [isToFile=false] - defines or not audioToWav
+ * @return {Object} object containing:
+ *                  - audioToWav;
+ *                  - seq;
+ *                  - synth;
+ *                  - midi;
+ *                  - sampleCount;
+ *                  - sampleRate;
  */
 async function initSpessaSynth({
   loopAmount = 0,
@@ -438,12 +471,14 @@ async function initSpessaSynth({
 /**
  * Applies effects using SoX
  * @param {Object} obj - the object passed
- * @param {Stream} obj.program - the process to spawn, sox usually
+ * @param {String} obj.program - the process to spawn, sox usually
  * @param {Stream} obj.stdoutHeader - the header to process
  * @param {Stream} obj.readStream - the data to process
- * @param {Stream} obj.stdout - the destination
- * @param {String} obj.destination - the destination path
+ * @param {Promise[]} obj.promisesOfPrograms - list of promises for ffmpeg and SoX
+ * @param {Stream} [obj.stdout=process.stdout] - the destination
+ * @param {String} [obj.destination="-"] - the destination path
  * @param {string[]} obj.effects - all effects to pass to SoX
+ * @return {Array} array of promises of ffmpeg and SoX processes
  * 
  * @example
  * applyEffects({ program: "sox", stdoutHeader, readStream })
@@ -537,7 +572,8 @@ async function applyEffects({
  * Adds events to process
  * @param {Object} obj - the object passed
  * @param {String} obj.eventType - the type of event to add
- * @param {Function} obj.func - optional function for eventType "exit"
+ * @param {Function} [obj.func] - optional function for eventType "exit"
+ * @return {Boolean} if it has added the event successfully or not
  * @example
  * addEvent({ eventType: "SIGINT" })
  */
@@ -598,12 +634,15 @@ function addEvent({ eventType, func }) {
  * @param {Boolean} obj.lastBytes - check if it's the last sample
  * @param {Number} obj.sampleCount - sample count
  * @param {Number} obj.sampleRate - sample rate
+ * @param {Number} obj.index - index of the song
  * @param {Number} obj.i - counter for the progress
  * @param {Number} obj.durationRounded - duration of the song rounded by percentage
+ * @param {Object} obj.progress - progress information object
  * @param {Function} obj.clearLastLines - util function to clear lines, see utils.mjs
  * @param {class} obj.seq - spessasynth_core' sequencer
  * @param {class} obj.synth - spessasynth_core's processor
  * @param {Function} obj.getData - translator: Float32Arrays → Uint8Arrays
+ * @return {Readable} a Readable
  */
 function createReadable(Readable, isStdout = false, {
   BUFFER_SIZE, filledSamples,
@@ -660,15 +699,24 @@ function createReadable(Readable, isStdout = false, {
 /**
  * Reads the generated samples from spessasynth_core
  * and spits them out to stdout
- * @param {Number} loopAmount - the number of loops to do
- * @param {Number} volume - the volume of the song
- * @param {Number} [obj=false] - object for additional options
- * @param {ChildProcess} obj.mpv - mpv's process
- * @param {Boolean} obj.isStartPlayer - if it's from startPlayer
- * @param {class} obj.seq - spessasynth_core's sequencer
- * @param {class} obj.synth - spessasynth_core's processor
- * @param {Number} obj.sampleCount - sample count of the song
- * @param {Number} obj.sampleRate - sample rate of the song
+ * @param {Object} obj1 - the number of loops to do
+ * @param {(undefined|Number)} [obj1.loopAmount] - the number of loops to do
+ * @param {(undefined|Number)} [obj1.loopStart] - start of loop
+ * @param {(undefined|Number)} [obj1.loopEnd] - end of loop
+ * @param {(undefined|Number)} [obj1.sampleRate] - sample rate
+ * @param {Number} [obj1.volume=100/100] - the volume of the song
+ * @param {String} obj1.midiFile - midi file
+ * @param {String} obj1.soundfontFile - soundfont file
+ * @param {(undefined|String)} [obj1.format] - format of the somg
+ * @param {(undefined|Object[])} [obj1.effects] - effects for the song
+ * @param {Object} [obj2={}] - object for additional options
+ * @param {ChildProcess} obj2.mpv - mpv's process
+ * @param {Boolean} obj2.isStartPlayer - if it's from startPlayer
+ * @param {class} obj2.seq - spessasynth_core's sequencer
+ * @param {class} obj2.synth - spessasynth_core's processor
+ * @param {Number} obj2.sampleCount - sample count of the song
+ * @param {Number} obj2.sampleRate - sample rate of the song
+ * @return {Array} array that contains the sample count and a promise
  */
 async function toStdout(
   {
@@ -812,8 +860,20 @@ async function toStdout(
 /**
  * Reads the generated samples from spessasynth_core
  * and renders them to a wav file
- * @param {Number} loopAmount - the number of loops to do
- * @param {Number} volume - the volume of the song
+ * @param {Object} toFileObj - necessary object
+ * @param {Boolean} toFileObj.createNewFileNameAnyway - if it's necessary to create a new file name
+ * @param {Object} toFileObj.index - index of the song
+ * @param {Object} toFileObj.progress - progress information object
+ * @param {(undefined|Number)} [toFileObj.loopN] - loop amount
+ * @param {(undefined|Number)} [toFileObj.loopStart] - start of loop
+ * @param {(undefined|Number)} [toFileObj.loopEnd] - end of loop
+ * @param {String} toFileObj.midiFile - midi file
+ * @param {String} toFileObj.soundfontFile - soundfont file
+ * @param {String[]} toFileObj.fileOutputs - list of file output names
+ * @param {(undefined|Number)} [toFileObj.sampleRate] - sample rate
+ * @param {Object[]} [toFileObj.effects] - optional list of effects to add
+ * @param {Number} toFileObj.volume - the volume of the song
+ * @return {Array} array that contains the fileOutputs array and a promise
  */
 async function toFile({
   createNewFileNameAnyway, index, progress,
