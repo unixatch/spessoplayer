@@ -149,6 +149,168 @@ if (listOfOptions?.fileOutputs?.length > 0) {
 }
 await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
 
+async function formatManager({
+  format = true,
+  readStream,
+  effects, isStartPlayer,
+  mpv, index,
+  newFileName, createNewFileNameAnyway,
+  fileOutputs,
+  stdoutHeader,
+  promisesOfPrograms,
+  outFile
+}) {
+  if (format !== "wave" || format !== ""
+      && !/^.*(?:\.wav|\.wave)$/.test(outFile)
+      && !/^.*\.(?:s16le|s32le|pcm)$/.test(outFile)) {
+    if (!spawn) ({ spawn } = await import("child_process"));
+  }
+  let toFileFormat;
+  switch (format) {
+    case "flac":
+    case /^.*\.flac$/.test(outFile):
+      toFileFormat = "flac";
+      break;
+    case "mp3":
+    case /^.*\.mp3$/.test(outFile):
+      toFileFormat = "mp3";
+      break;
+  }
+  const isStdout = format !== true,
+        isToFile = format === true;
+  switch (format) {
+    case "wave":
+    case /^.*(?:\.wav|\.wave)$/.test(outFile): {
+      let doneSettingUpMsg = "Done setting up";
+      if (isToFile) {
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        outFile = newName;
+        doneSettingUpMsg = "Done setting up wav outFile";
+      }
+      
+      if (effects) {
+        await applyEffects({
+          program: "sox",
+          stdoutHeader, readStream,
+          promisesOfPrograms,
+          destination: outFile,
+          stdout: (isStartPlayer) ? mpv.stdin : undefined,
+          effects: (Array.isArray(effects)) ? effects[index] : undefined
+        })
+        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        break;
+      }
+      if (isStartPlayer) {
+        mpv.stdin.write(stdoutHeader)
+        readStream.pipe(mpv.stdin)
+        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        break;
+      }
+      const output = (isToFile) ? fs.createWriteStream(outFile) : process.stdout;
+      if (isToFile) output.write(stdoutHeader)
+      readStream.pipe(output)
+      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      break;
+    }
+    case "flac":
+    case /^.*\.flac$/.test(outFile):
+    case "mp3":
+    case /^.*\.mp3$/.test(outFile): {
+      let doneSettingUpMsg = "Done setting up";
+      if (isToFile) {
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile, createNewFileNameAnyway);
+        doneSettingUpMsg = `Done setting up ${toFileFormat} outFile`;
+      }
+      
+      const ffmpeg = spawn("ffmpeg",
+        ffmpegArgs(outFile)[toFileFormat],
+        (isStdout)
+          ? {stdio: [
+            "pipe",
+            (!isStartPlayer) ? process.stdout : mpv.stdin,
+            "pipe"
+          ], detached: true}
+          : {}
+      );
+      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
+      if (effects) {
+        await applyEffects({
+          program: "sox",
+          stdoutHeader, readStream,
+          promisesOfPrograms,
+          stdout: ffmpeg.stdin,
+          effects: (Array.isArray(effects)) ? effects[index] : undefined
+        })
+        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        break;
+      }
+      promisesOfPrograms.push(
+        new Promise((resolve, reject) => {
+          ffmpeg.on("error", e => reject(e))
+          ffmpeg.on("exit", () => resolve())
+        })
+      )
+      log(1, performance.now().toFixed(2), "Added promise")
+      ffmpeg.stdin.write(stdoutHeader)
+      readStream.pipe(ffmpeg.stdin)
+      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      break;
+    }
+    case "pcm":
+    case /^.*\.(?:s16le|s32le|pcm)$/.test(outFile): {
+      if (isToFile) {
+        const newName = newFileName(outFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        outFile = newFileName(outFile, createNewFileNameAnyway);
+      }
+      
+      let output;
+      if (isToFile) {
+        output = fs.createWriteStream(outFile);
+      } else {
+        output = (!isStartPlayer) ? process.stdout : mpv.stdin;
+      }
+      readStream.pipe(output)
+      log(1,
+        performance.now().toFixed(2),
+        (isStdout)
+          ? "Done setting up"
+          : "Done setting up pcm outFile"
+      )
+      break;
+    }
+    
+    // default is only used for toStdout
+    default: {
+      if (isToFile) break;
+      
+      const doneSettingUpMsg = "Done setting up";
+      if (effects) {
+        await applyEffects({
+          program: "sox",
+          stdoutHeader, readStream,
+          promisesOfPrograms,
+          stdout: (isStartPlayer) ? mpv.stdin : undefined,
+          effects: (Array.isArray(effects)) ? effects : undefined
+        })
+        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        break;
+      }
+      if (isStartPlayer) {
+        mpv.stdin.write(stdoutHeader)
+        readStream.pipe(mpv.stdin)
+        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        break;
+      }
+      process.stdout.write(stdoutHeader)
+      readStream.pipe(process.stdout)
+      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+    }
+  }
+}
 /**
  * Calculates the sample count to use
  * @param {class} midi - The BasicMIDI class to use
@@ -620,124 +782,12 @@ async function toStdout(
   });
 
   const promisesOfPrograms = [];
-  switch (format) {
-    case "wave": {
-      if (effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader, readStream,
-          promisesOfPrograms,
-          stdout: (isStartPlayer) ? mpv.stdin : undefined,
-          effects: (Array.isArray(effects)) ? effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      if (isStartPlayer) {
-        mpv.stdin.write(stdoutHeader)
-        readStream.pipe(mpv.stdin)
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      process.stdout.write(stdoutHeader)
-      readStream.pipe(process.stdout)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    case "flac": {
-      const ffmpeg = spawn("ffmpeg",
-        ffmpegArgs().flac,
-        {stdio: [
-          "pipe",
-          (!isStartPlayer) ? process.stdout : mpv.stdin,
-          "pipe"
-        ], detached: true}
-      );
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader, readStream,
-          promisesOfPrograms,
-          stdout: ffmpeg.stdin,
-          effects: (Array.isArray(effects)) ? effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      promisesOfPrograms.push(
-        new Promise((resolve, reject) => {
-          ffmpeg.on("error", e => reject(e))
-          ffmpeg.on("exit", () => resolve())
-        })
-      )
-      log(1, performance.now().toFixed(2), "Added promise")
-      ffmpeg.stdin.write(stdoutHeader)
-      readStream.pipe(ffmpeg.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    case "mp3": {
-      const ffmpeg = spawn("ffmpeg",
-        ffmpegArgs().mp3,
-        {stdio: [
-          "pipe",
-          (!isStartPlayer) ? process.stdout : mpv.stdin,
-          "pipe"
-        ], detached: true}
-      );
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader, readStream,
-          promisesOfPrograms,
-          stdout: ffmpeg.stdin,
-          effects: (Array.isArray(effects)) ? effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      promisesOfPrograms.push(
-        new Promise((resolve, reject) => {
-          ffmpeg.on("error", e => reject(e))
-          ffmpeg.on("exit", () => resolve())
-        })
-      )
-      log(1, performance.now().toFixed(2), "Added promise")
-      ffmpeg.stdin.write(stdoutHeader)
-      readStream.pipe(ffmpeg.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    case "pcm": {
-      readStream.pipe((!isStartPlayer) ? process.stdout : mpv.stdin)
-      log(1, performance.now().toFixed(2), "Done setting up")
-      break;
-    }
-    
-    default:
-      if (effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader, readStream,
-          promisesOfPrograms,
-          stdout: (isStartPlayer) ? mpv.stdin : undefined,
-          effects: (Array.isArray(effects)) ? effects : undefined
-        })
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      if (isStartPlayer) {
-        mpv.stdin.write(stdoutHeader)
-        readStream.pipe(mpv.stdin)
-        log(1, performance.now().toFixed(2), "Done setting up")
-        break;
-      }
-      process.stdout.write(stdoutHeader)
-      readStream.pipe(process.stdout)
-      log(1, performance.now().toFixed(2), "Done setting up")
-  }
+  await formatManager({
+    format: format ?? "",
+    readStream, index,
+    effects, isStartPlayer,
+    mpv, promisesOfPrograms
+  })
   log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Finished creating the stdout promise" : "Finished creating the promise for mpv's process")
   return [
     sampleCount,
@@ -816,102 +866,14 @@ async function toFile({
   const { newFileName } = await import("./utils.mjs");
   const promisesOfPrograms = [];
   for (let outFile of fileOutputs) {
-    switch (true) {
-      case /^.*(?:\.wav|\.wave)$/.test(outFile): {
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-        outFile = newName;
-        
-        if (effects) {
-          await applyEffects({
-            program: "sox",
-            stdoutHeader, readStream,
-            promisesOfPrograms,
-            destination: outFile,
-            effects: (Array.isArray(effects)) ? effects[index] : undefined
-          })
-          log(1, performance.now().toFixed(2), "Done setting up wav outFile")
-          break;
-        }
-        const wav = fs.createWriteStream(outFile);
-        wav.write(stdoutHeader)
-        readStream.pipe(wav)
-        log(1, performance.now().toFixed(2), "Done setting up wav outFile")
-        break;
-      }
-      case /^.*\.flac$/.test(outFile): {
-        if (!spawn) ({ spawn } = await import("child_process"));
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile, createNewFileNameAnyway);
-        
-        const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile).flac);
-        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-        if (effects) {
-          await applyEffects({
-            program: "sox",
-            stdoutHeader, readStream,
-            promisesOfPrograms,
-            stdout: ffmpeg.stdin,
-            effects: (Array.isArray(effects)) ? effects[index] : undefined
-          })
-          log(1, performance.now().toFixed(2), "Done setting up flac outFile")
-          break;
-        }
-        promisesOfPrograms.push(
-          new Promise((resolve, reject) => {
-            ffmpeg.on("error", e => reject(e))
-            ffmpeg.on("exit", () => resolve())
-          })
-        )
-        log(1, performance.now().toFixed(2), "Added promise")
-        ffmpeg.stdin.write(stdoutHeader)
-        readStream.pipe(ffmpeg.stdin)
-        log(1, performance.now().toFixed(2), "Done setting up flac outFile")
-        break;
-      }
-      case /^.*\.mp3$/.test(outFile): {
-        if (!spawn) ({ spawn } = await import("child_process"));
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile, createNewFileNameAnyway);
-        
-        const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile).mp3);
-        log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-        if (effects) {
-          await applyEffects({
-            program: "sox",
-            stdoutHeader, readStream,
-            promisesOfPrograms,
-            stdout: ffmpeg.stdin,
-            effects: (Array.isArray(effects)) ? effects[index] : undefined
-          })
-          log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
-          break;
-        }
-        promisesOfPrograms.push(
-          new Promise((resolve, reject) => {
-            ffmpeg.on("error", e => reject(e))
-            ffmpeg.on("exit", () => resolve())
-          })
-        )
-        log(1, performance.now().toFixed(2), "Added promise")
-        ffmpeg.stdin.write(stdoutHeader)
-        readStream.pipe(ffmpeg.stdin)
-        log(1, performance.now().toFixed(2), "Done setting up mp3 outFile")
-        break;
-      }
-      case /^.*\.(?:s16le|s32le|pcm)$/.test(outFile): {
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile, createNewFileNameAnyway);
-        
-        const pcm = fs.createWriteStream(outFile);
-        readStream.pipe(pcm)
-        log(1, performance.now().toFixed(2), "Done setting up pcm outFile")
-        break;
-      }
-    }
+    await formatManager({
+      readStream,
+      effects, index,
+      newFileName, createNewFileNameAnyway,
+      fileOutputs,
+      stdoutHeader,
+      promisesOfPrograms, outFile
+    })
   }
   return [
     fileOutputs,
