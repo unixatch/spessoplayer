@@ -57,7 +57,8 @@ let spawn,
 if (listOfOptions?.toStdout) {
   const filesList = listOfOptions.files,
         lengthOfFiles = [],
-        listOfPromises = [];
+        listOfPromises = [],
+        { getWavHeader } = await import("./audioBuffer.mjs");
   for (const group of filesList) {
     if (!group) continue;
     const soundfont = group.getIndex(0);
@@ -73,7 +74,7 @@ if (listOfOptions?.toStdout) {
   const sumOfLengths = (index, previous) => index + previous;
   const stdoutHeader = getWavHeader({
     length: lengthOfFiles.reduce(sumOfLengths),
-    channels: 2
+    numChannels: 2
   }, listOfOptions?.sampleRate ?? 48000);
   process.stdout.write(stdoutHeader)
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
@@ -176,7 +177,7 @@ async function formatManager({
   promisesOfPrograms,
   outFile
 }) {
-  if (format !== "wave" || format !== ""
+  if (format !== "wave" && format !== ""
       && !/^.*(?:\.wav|\.wave)$/.test(outFile)
       && !/^.*\.(?:s16le|s32le|pcm)$/.test(outFile)) {
     if (!spawn) ({ spawn } = await import("child_process"));
@@ -700,6 +701,7 @@ function createReadable(Readable, isStdout = false, {
  * Reads the generated samples from spessasynth_core
  * and spits them out to stdout
  * @param {Object} obj1 - the number of loops to do
+ * @param {Number} obj1.index - index of the song
  * @param {(undefined|Number)} [obj1.loopAmount] - the number of loops to do
  * @param {(undefined|Number)} [obj1.loopStart] - start of loop
  * @param {(undefined|Number)} [obj1.loopEnd] - end of loop
@@ -720,6 +722,7 @@ function createReadable(Readable, isStdout = false, {
  */
 async function toStdout(
   {
+    index,
     loopAmount,
     loopStart, loopEnd,
     sampleRate,
