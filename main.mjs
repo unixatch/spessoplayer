@@ -184,11 +184,9 @@ async function formatManager({
   }
   let toFileFormat;
   switch (format) {
-    case "flac":
     case /^.*\.flac$/.test(outFile):
       toFileFormat = "flac";
       break;
-    case "mp3":
     case /^.*\.mp3$/.test(outFile):
       toFileFormat = "mp3";
       break;
@@ -813,10 +811,7 @@ async function toStdout(
     })
   }
   log(1, performance.now().toFixed(2), "Added event exit")
-  const {
-    getWavHeader,
-    getData
-  } = await import("./audioBuffer.mjs")
+  const { getData } = await import("./audioBuffer.mjs")
   const { Readable } = await import("node:stream");
   
   const BUFFER_SIZE = 128;
@@ -850,11 +845,13 @@ async function toStdout(
           resolve()
         })
       }),
-      (isStartPlayer) ? new Promise((resolve, reject) => {
-        mpv.on("error", e => reject(e))
-        mpv.on("exit", () => resolve())
-        mpv.on("end", () => resolve())
-      }) : undefined,
+      (isStartPlayer)
+        ? new Promise((resolve, reject) => {
+          mpv.on("error", e => reject(e))
+          mpv.on("exit", () => resolve())
+          mpv.on("end", () => resolve())
+        })
+        : undefined,
       ...promisesOfPrograms // If there are any
     ])
   ];
