@@ -19,6 +19,7 @@
 import { log } from "./utils.mjs"
 
 addEvent({ eventType: "SIGINT" })
+process.on("unhandledRejection", i => console.error(i))
 log(1, performance.now().toFixed(2), "Added SIGINT event")
 // In case the user passes some arguments
 const {
