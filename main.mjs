@@ -739,7 +739,7 @@ function createReadable(Readable, isStdout = false, {
  * and spits them out to stdout
  * @param {Object} obj1 - the number of loops to do
  * @param {Number} obj1.index - index of the song
- * @param {(undefined|Number)} [obj1.loopAmount] - the number of loops to do
+ * @param {(undefined|Number)} [obj1.loopN] - the number of loops to do
  * @param {(undefined|Number)} [obj1.loopStart] - start of loop
  * @param {(undefined|Number)} [obj1.loopEnd] - end of loop
  * @param {(undefined|Number)} [obj1.sampleRate] - sample rate
