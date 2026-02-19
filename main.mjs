@@ -760,7 +760,7 @@ function createReadable(Readable, isStdout = false, {
 async function toStdout(
   {
     index,
-    loopAmount,
+    loopN: loopAmount,
     loopStart, loopEnd,
     sampleRate,
     volume = 100/100,
