@@ -57,28 +57,47 @@ let spawn,
 if (listOfOptions?.toStdout) {
   const filesList = listOfOptions.files,
         lengthOfFiles = [],
+        listOfFunctions = [],
         listOfPromises = [],
         { getWavHeader } = await import("./audioBuffer.mjs");
+  let indexOfSong = 0;
   for (const group of filesList) {
     if (!group) continue;
     const soundfont = group.getIndex(0);
     const midis = [...group.values()];
     midis.shift()
     for (const [i, midi] of midis.entries()) {
+      indexOfSong++;
       const options = Options.getOptionsOfSong(i, midi);
-      const [ length, promise ] = await toStdout(options);
+      const [ length, func, promise ] = await toStdout({
+        index: indexOfSong,
+        ...options
+      });
       lengthOfFiles.push(length)
+      listOfFunctions.push(func)
       listOfPromises.push(promise)
     }
   }
+  const processToRun = (listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null)
+                        ? spawn("ffmpeg",
+                          ffmpegArgs()[listOfOptions?.format],
+                          {stdio: ["pipe", process.stdout, "pipe"]}
+                        ).stdin
+                        : process.stdout;
   const sumOfLengths = (index, previous) => index + previous;
   const stdoutHeader = getWavHeader({
     length: lengthOfFiles.reduce(sumOfLengths),
     numChannels: 2
   }, listOfOptions?.sampleRate ?? 48000);
-  process.stdout.write(stdoutHeader)
+  processToRun.write(stdoutHeader)
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
-  for (const promise of listOfPromises) {
+  for (const [i, promise] of listOfPromises.entries()) {
+    if (listOfFunctions[i]) {
+      await listOfFunctions[i](
+        processToRun,
+        i === listOfPromises.length - 1
+      )
+    }
     await promise
   }
   process.exit()
@@ -191,8 +210,14 @@ async function formatManager({
       toFileFormat = "mp3";
       break;
   }
+  
   const isStdout = format !== true,
         isToFile = format === true;
+  let pipingFunction,
+      promiseOfPiping;
+  function addPromiseOfPiping(func) {
+    promiseOfPiping = new Promise(func)
+  }
   switch (format) {
     case "wave":
     case /^.*(?:\.wav|\.wave)$/.test(outFile): {
@@ -223,33 +248,38 @@ async function formatManager({
         break;
       }
       const output = (isToFile) ? fs.createWriteStream(outFile) : process.stdout;
-      if (isToFile) output.write(stdoutHeader)
-      readStream.pipe(output)
+      if (isToFile) {
+        addPromiseOfPiping(resolve => {
+          output.write(stdoutHeader ?? "")
+          readStream.pipe(output)
+          resolve()
+        })
+      } else {
+        pipingFunction = (whereToConnect, end) => {
+          readStream.pipe(whereToConnect, { end })
+        }
+      }
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
     }
     case "flac":
-    case /^.*\.flac$/.test(outFile):
-    case "mp3":
-    case /^.*\.mp3$/.test(outFile): {
-      let doneSettingUpMsg = "Done setting up";
-      if (isToFile) {
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile, createNewFileNameAnyway);
-        doneSettingUpMsg = `Done setting up ${toFileFormat} outFile`;
-      }
+    case "mp3": {
+      const doneSettingUpMsg = `Done setting up ${format} format`;
       
-      const ffmpeg = spawn("ffmpeg",
-        ffmpegArgs(outFile)[toFileFormat],
-        (isStdout)
-          ? {stdio: [
-            "pipe",
-            (!isStartPlayer) ? process.stdout : mpv.stdin,
-            "pipe"
-          ], detached: true}
-          : {}
-      );
+      pipingFunction = (whereToConnect, end) => {
+        readStream.pipe(whereToConnect, { end })
+      };
+      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      break;
+    }
+    case /^.*\.flac$/.test(outFile):
+    case /^.*\.mp3$/.test(outFile): {
+      const doneSettingUpMsg = `Done setting up ${toFileFormat} outFile`;
+      const newName = newFileName(outFile, createNewFileNameAnyway);
+      fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+      outFile = newFileName(outFile, createNewFileNameAnyway);
+      
+      const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile)[toFileFormat]);
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (effects) {
         await applyEffects({
@@ -269,8 +299,11 @@ async function formatManager({
         })
       )
       log(1, performance.now().toFixed(2), "Added promise")
-      ffmpeg.stdin.write(stdoutHeader)
-      readStream.pipe(ffmpeg.stdin)
+      addPromiseOfPiping(resolve => {
+        ffmpeg.stdin.write(stdoutHeader)
+        readStream.pipe(ffmpeg.stdin)
+        resolve()
+      })
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
     }
@@ -288,13 +321,16 @@ async function formatManager({
       } else {
         output = (!isStartPlayer) ? process.stdout : mpv.stdin;
       }
-      readStream.pipe(output)
       log(1,
         performance.now().toFixed(2),
         (isStdout)
           ? "Done setting up"
           : "Done setting up pcm outFile"
       )
+      addPromiseOfPiping(resolve => {
+        readStream.pipe(output)
+        resolve()
+      })
       break;
     }
     
@@ -320,11 +356,14 @@ async function formatManager({
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
-      process.stdout.write(stdoutHeader)
-      readStream.pipe(process.stdout)
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      addPromiseOfPiping(resolve => {
+        readStream.pipe(process.stdout)
+        resolve()
+      })
     }
   }
+  return [pipingFunction, promiseOfPiping];
 }
 /**
  * Calculates the sample count to use
@@ -828,16 +867,18 @@ async function toStdout(
   });
 
   const promisesOfPrograms = [];
-  await formatManager({
+  const [ pipingFunction, promiseOfPiping ] = await formatManager({
     format: format ?? "",
     readStream, index,
     effects, isStartPlayer,
     mpv, promisesOfPrograms
-  })
+  });
   log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Finished creating the stdout promise" : "Finished creating the promise for mpv's process")
   return [
     sampleCount,
+    pipingFunction,
     Promise.all([
+      promiseOfPiping,
       new Promise((resolve, reject) => {
         readStream.on("error", e => reject(e))
         readStream.on("end", () => {
@@ -924,20 +965,23 @@ async function toFile({
     progress, clearLastLines
   });
   const { newFileName } = await import("./utils.mjs");
-  const promisesOfPrograms = [];
+  const promisesOfPrograms = [],
+        promisesOfPiping = [];
   for (let outFile of fileOutputs) {
-    await formatManager({
+    const [ _, promise ] = await formatManager({
       readStream,
       effects, index,
       newFileName, createNewFileNameAnyway,
       fileOutputs,
       stdoutHeader,
       promisesOfPrograms, outFile
-    })
+    });
+    promisesOfPiping.push(promise)
   }
   return [
     fileOutputs,
     Promise.all([
+      ...promisesOfPiping,
       new Promise((resolve, reject) => {
         readStream.on("error", e => reject(e))
         readStream.on("end", () => resolve())
