@@ -146,6 +146,11 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     renderedAmount: [],
     amountToRender: 0,
     percentageDone: [],
+    /**
+     * Do the sum of all numbers in the array
+     * @param {Array} array - list of numbers
+     * @return {Number} - the sum
+     */
     _sum: function (array) {
       let sumOfAll = 0;
       if (!this.amountOfSongs) this.amountOfSongs = array.length;
@@ -155,9 +160,17 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       }
       return sumOfAll;
     },
+    /**
+     * Gives the percentage done
+     * @type {String}
+     */
     get percentageText() {
       return yellow+(this._sum(this.percentageDone).toFixed(2))+normal+"%";
     },
+    /**
+     * Gives the amount of minutes rendered alongside the total to do
+     * @type {String}
+     */
     get minutesRenderedText() {
       return `${magenta}`
               // Gets the ISO format and then gets mm:ss.sss
@@ -223,6 +236,7 @@ await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
  * @param {Uint8Array} [formatObj.stdoutHeader] - header of the file
  * @param {Promise[]} formatObj.promisesOfPrograms - list of promises for ffmpeg and SoX
  * @param {String} [formatObj.outFile] - file name to output
+ * @return {Array} - Either a piping function or a promise for piping
  */
 async function formatManager({
   format = true,
@@ -553,7 +567,7 @@ async function initSpessaSynth({
  * @param {Stream} [obj.stdout=process.stdout] - the destination
  * @param {String} [obj.destination="-"] - the destination path
  * @param {string[]} obj.effects - all effects to pass to SoX
- * @return {Array} array of promises of ffmpeg and SoX processes
+ * @return {Array} array containing SoX's process and the array of promises for both ffmpeg and SoX processes
  * 
  * @example
  * applyEffects({ program: "sox", stdoutHeader, readStream })
@@ -792,7 +806,10 @@ function createReadable(Readable, isStdout = false, {
  * @param {class} obj2.synth - spessasynth_core's processor
  * @param {Number} obj2.sampleCount - sample count of the song
  * @param {Number} obj2.sampleRate - sample rate of the song
- * @return {Array} array that contains the sample count and a promise
+ * @return {Array} array that contains:
+ *                 - the sample count;
+ *                 - a function for piping readStream later on;
+ *                 - a promise;
  */
 async function toStdout(
   {
