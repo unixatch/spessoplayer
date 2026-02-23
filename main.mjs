@@ -59,6 +59,7 @@ if (listOfOptions?.toStdout) {
         lengthOfFiles = [],
         listOfFunctions = [],
         listOfPromises = [],
+        promisesOfPrograms = [],
         { getWavHeader } = await import("./audioBuffer.mjs");
   let indexOfSong = 0;
   for (const group of filesList) {
@@ -78,28 +79,66 @@ if (listOfOptions?.toStdout) {
       listOfPromises.push(promise)
     }
   }
-  const processToRun = (listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null)
-                        ? spawn("ffmpeg",
-                          ffmpegArgs()[listOfOptions?.format],
-                          {stdio: ["pipe", process.stdout, "pipe"]}
-                        ).stdin
-                        : process.stdout;
+  let effectsProcess,
+      converterProcess;
+  // Creating the header
   const sumOfLengths = (index, previous) => index + previous;
   const stdoutHeader = getWavHeader({
     length: lengthOfFiles.reduce(sumOfLengths),
     numChannels: 2
   }, listOfOptions?.sampleRate ?? 48000);
-  processToRun.write(stdoutHeader)
+  
+  // If it needs to be converted
+  const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
+  if (needsConvertion) {
+    converterProcess = spawn("ffmpeg",
+      ffmpegArgs()[listOfOptions?.format],
+      {stdio: ["pipe", process.stdout, "pipe"]}
+    );
+  }
+  // If it needs effects
+  if (listOfOptions?.effects
+      && (listOfOptions?.format?.match(/(?:pcm|s16le|s32le)/) === null
+      || !listOfOptions?.format)) {
+    [effectsProcess] = await applyEffects({
+      program: "sox",
+      stdoutHeader,
+      stdout: (converterProcess) ? converterProcess.stdin : undefined,
+      promisesOfPrograms,
+      // TODO: effects system needs to overhauled
+      //effects: listOfOptions?.effects[0]
+    });
+    log(1, performance.now().toFixed(2), "Done setting up SoX")
+  } else if (needsConvertion) {
+    // Or just a convertion/normal processing
+    converterProcess.stdin.write(stdoutHeader)
+  }
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
+  
+  let destination;
+  // When SoX exists
+  if (effectsProcess) {
+    destination = effectsProcess.stdin;
+  }
+  // When only ffmpeg exists
+  if (converterProcess && !effectsProcess) {
+    destination = converterProcess.stdin;
+  }
+  // When neither of child_processes exist
+  if (!effectsProcess && !converterProcess) {
+    process.stdout.write(stdoutHeader)
+    destination = process.stdout;
+  }
   for (const [i, promise] of listOfPromises.entries()) {
     if (listOfFunctions[i]) {
       await listOfFunctions[i](
-        processToRun,
-        i === listOfPromises.length - 1
+        destination,
+        i === listOfFunctions.length - 1
       )
     }
     await promise
   }
+  await Promise.all(promisesOfPrograms)
   process.exit()
 }
 if (listOfOptions?.fileOutputs?.length > 0) {
@@ -196,6 +235,9 @@ async function formatManager({
   promisesOfPrograms,
   outFile
 }) {
+  const connectToEffectsProcess = (whereToConnect, end) => {
+    readStream.pipe(whereToConnect, { end })
+  };
   if (format !== "wave" && format !== ""
       && !/^.*(?:\.wav|\.wave)$/.test(outFile)
       && !/^.*\.(?:s16le|s32le|pcm)$/.test(outFile)) {
@@ -230,14 +272,17 @@ async function formatManager({
       }
       
       if (effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader, readStream,
-          promisesOfPrograms,
-          destination: outFile,
-          stdout: (isStartPlayer) ? mpv.stdin : undefined,
-          effects: (Array.isArray(effects)) ? effects[index] : undefined
-        })
+        if (isStdout) {
+          pipingFunction = connectToEffectsProcess;
+        } else {
+          await applyEffects({
+            program: "sox",
+            stdoutHeader, readStream,
+            promisesOfPrograms,
+            destination: outFile,
+            effects: (Array.isArray(effects)) ? effects[index] : undefined
+          })
+        }
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
@@ -255,9 +300,7 @@ async function formatManager({
           resolve()
         })
       } else {
-        pipingFunction = (whereToConnect, end) => {
-          readStream.pipe(whereToConnect, { end })
-        }
+        pipingFunction = connectToEffectsProcess;
       }
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
@@ -340,13 +383,7 @@ async function formatManager({
       
       const doneSettingUpMsg = "Done setting up";
       if (effects) {
-        await applyEffects({
-          program: "sox",
-          stdoutHeader, readStream,
-          promisesOfPrograms,
-          stdout: (isStartPlayer) ? mpv.stdin : undefined,
-          effects: (Array.isArray(effects)) ? effects : undefined
-        })
+        pipingFunction = connectToEffectsProcess;
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
@@ -527,7 +564,7 @@ async function applyEffects({
   promisesOfPrograms,
   stdout = process.stdout,
   destination = "-",
-  effects = ["reverb", (global?.reverbVolume) ? global.reverbVolume : "0", "36", "100", "100", "10", "10"]
+  effects = ["reverb", (listOfOptions?.reverbVolume) ? listOfOptions.reverbVolume : "0", "36", "100", "100", "10", "10"]
 }) {
   /*
     ffmpeg 
@@ -602,9 +639,9 @@ async function applyEffects({
     })
   )
   sox.stdin.write(stdoutHeader)
-  readStream.pipe(sox.stdin)
+  readStream?.pipe(sox.stdin)
   log(1, performance.now().toFixed(2), "Finished setting up SoX")
-  return promisesOfPrograms;
+  return [sox, promisesOfPrograms];
 }
 /**
  * Adds events to process
