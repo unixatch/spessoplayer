@@ -16,7 +16,11 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { log } from "./utils.mjs"
+import {
+  log,
+  newFileName,
+  clearLastLines
+} from "./utils.mjs"
 
 addEvent({ eventType: "SIGINT" })
 process.on("unhandledRejection", i => console.error(i))
@@ -998,7 +1002,6 @@ async function toFile({
     getData
   } = await import("./audioBuffer.mjs");
   const { Readable } = await import("node:stream");
-  const { clearLastLines } = await import("./utils.mjs");
   
   let i = 0;
   const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
@@ -1018,7 +1021,6 @@ async function toFile({
     index, i, durationRounded,
     progress, clearLastLines
   });
-  const { newFileName } = await import("./utils.mjs");
   const promisesOfPrograms = [],
         promisesOfPiping = [];
   for (let outFile of fileOutputs) {
