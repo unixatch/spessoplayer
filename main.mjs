@@ -909,7 +909,10 @@ async function toStdout(
   }
   log(1, performance.now().toFixed(2), "Added event exit")
   const { getData } = await import("./audioBuffer.mjs")
-  const { Readable } = await import("node:stream");
+  const {
+    promises: { finished },
+    Readable
+  } = await import("node:stream");
   
   const BUFFER_SIZE = 128;
   let filledSamples = 0;
@@ -937,19 +940,13 @@ async function toStdout(
     pipingFunction,
     Promise.all([
       promiseOfPiping,
-      new Promise((resolve, reject) => {
-        readStream.on("error", e => reject(e))
-        readStream.on("end", () => {
-          doneStreaming = true;
-          resolve()
-        })
+      new Promise(async (resolve, reject) => {
+        await finished(readStream, { cleanup: true })
+        doneStreaming = true;
+        resolve()
       }),
       (isStartPlayer)
-        ? new Promise((resolve, reject) => {
-          mpv.on("error", e => reject(e))
-          mpv.on("exit", () => resolve())
-          mpv.on("end", () => resolve())
-        })
+        ? await finished(mpv, { cleanup: true })
         : undefined,
       ...promisesOfPrograms // If there are any
     ])
@@ -979,7 +976,7 @@ async function toFile({
   loopN: loopAmount, loopStart, loopEnd,
   volume = 100/100,
   midiFile, soundfontFile, fileOutputs,
-  sampleRate,
+  sampleRate = 48000,
   effects
 }) {
   if (!midiFile || !soundfontFile || fileOutputs.length === 0) {
@@ -1001,7 +998,10 @@ async function toFile({
     getWavHeader,
     getData
   } = await import("./audioBuffer.mjs");
-  const { Readable } = await import("node:stream");
+  const {
+    promises: { finished },
+    Readable
+  } = await import("node:stream");
   
   let i = 0;
   const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
@@ -1038,10 +1038,7 @@ async function toFile({
     fileOutputs,
     Promise.all([
       ...promisesOfPiping,
-      new Promise((resolve, reject) => {
-        readStream.on("error", e => reject(e))
-        readStream.on("end", () => resolve())
-      }),
+      finished(readStream, { cleanup: true }),
       ...promisesOfPrograms // if there are any
     ])
   ];
