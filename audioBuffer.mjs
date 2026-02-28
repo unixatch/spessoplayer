@@ -180,7 +180,7 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
   const dataSize = length * numChannels * bytesPerSample;
   const fileSize = headerSize + dataSize + infoChunk.length + cueChunk.length - 8;
   const header = new Uint8Array(headerSize);
-  header.set([82, 73, 70, 70], 0);
+  header.set([82, 73, 70, 70], 0); // "RIFF"
   header.set(
     new Uint8Array([
       fileSize & 255,
@@ -190,10 +190,10 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
     ]),
     4
   );
-  header.set([87, 65, 86, 69], 8);
-  header.set([102, 109, 116, 32], 12);
-  header.set([16, 0, 0, 0], 16);
-  header.set([1, 0], 20);
+  header.set([87, 65, 86, 69], 8);     // "WAVE"
+  header.set([102, 109, 116, 32], 12); // "fmt "
+  header.set([16, 0, 0, 0], 16);       // BlocSize
+  header.set([1, 0], 20);              // AudioFormat: PCM Integer
   header.set([numChannels & 255, numChannels >> 8], 22);
   header.set(
     new Uint8Array([
@@ -214,9 +214,9 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
     ]),
     28
   );
-  header.set([numChannels * bytesPerSample, 0], 32);
-  header.set([16, 0], 34);
-  header.set([100, 97, 116, 97], 36);
+  header.set([numChannels * bytesPerSample, 0], 32); // BytePerBloc
+  header.set([16, 0], 34);                           // BitsPerSample
+  header.set([100, 97, 116, 97], 36);                // "data"
   header.set(
     new Uint8Array([
       dataSize & 255,
