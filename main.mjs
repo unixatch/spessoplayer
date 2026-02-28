@@ -231,8 +231,6 @@ await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
  * @param {(String|Boolean)} [formatObj.format=true] - type of format
  * @param {Readable} formatObj.readStream - ReadStream for piping
  * @param {Object[]} [formatObj.effects] - list of effects to apply
- * @param {Boolean} [formatObj.isStartPlayer] - if it's from startPlayer
- * @param {ChildProcess} [formatObj.mpv] - child_process of mpv
  * @param {Number} formatObj.index - index of the song
  * @param {Function} [formatObj.newFileName] - function newFileName
  * @param {Boolean} [formatObj.createNewFileNameAnyway] - if it's necessary to create a new file name
@@ -245,8 +243,8 @@ await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
 async function formatManager({
   format = true,
   readStream,
-  effects, isStartPlayer,
-  mpv, index,
+  effects,
+  index,
   newFileName, createNewFileNameAnyway,
   fileOutputs,
   stdoutHeader,
@@ -301,12 +299,6 @@ async function formatManager({
             effects: (Array.isArray(effects)) ? effects[index] : undefined
           })
         }
-        log(1, performance.now().toFixed(2), doneSettingUpMsg)
-        break;
-      }
-      if (isStartPlayer) {
-        mpv.stdin.write(stdoutHeader)
-        readStream.pipe(mpv.stdin)
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
@@ -380,7 +372,7 @@ async function formatManager({
       if (isToFile) {
         output = fs.createWriteStream(outFile);
       } else {
-        output = (!isStartPlayer) ? process.stdout : mpv.stdin;
+        output = process.stdout;
       }
       log(1,
         performance.now().toFixed(2),
@@ -402,12 +394,6 @@ async function formatManager({
       const doneSettingUpMsg = "Done setting up";
       if (effects) {
         pipingFunction = connectToEffectsProcess;
-        log(1, performance.now().toFixed(2), doneSettingUpMsg)
-        break;
-      }
-      if (isStartPlayer) {
-        mpv.stdin.write(stdoutHeader)
-        readStream.pipe(mpv.stdin)
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
@@ -803,13 +789,6 @@ function createReadable(Readable, isStdout = false, {
  * @param {String} obj1.soundfontFile - soundfont file
  * @param {(undefined|String)} [obj1.format] - format of the somg
  * @param {(undefined|Object[])} [obj1.effects] - effects for the song
- * @param {Object} [obj2={}] - object for additional options
- * @param {ChildProcess} obj2.mpv - mpv's process
- * @param {Boolean} obj2.isStartPlayer - if it's from startPlayer
- * @param {class} obj2.seq - spessasynth_core's sequencer
- * @param {class} obj2.synth - spessasynth_core's processor
- * @param {Number} obj2.sampleCount - sample count of the song
- * @param {Number} obj2.sampleRate - sample rate of the song
  * @return {Array} array that contains:
  *                 - the sample count;
  *                 - a function for piping readStream later on;
@@ -820,93 +799,84 @@ async function toStdout(
     index,
     loopN: loopAmount,
     loopStart, loopEnd,
-    sampleRate,
+    sampleRate = 48000,
     volume = 100/100,
     midiFile, soundfontFile,
     format, effects
-  },
-  {
-    mpv,
-    isStartPlayer,
-    seq, synth,
-    sampleCount
-  } = {}
+  }
 ) {
   if (!midiFile || !soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
-  if (!isStartPlayer) {
-    ({
-      seq, synth,
-      sampleCount, sampleRate
-    } = await initSpessaSynth({
-      loopAmount,
-      volume,
-      midiFile, soundfontFile,
-      sampleRate,
-      loopStart, loopEnd
-    }));
-  }
+  let seq, synth, sampleCount;
+  ({
+    seq, synth,
+    sampleCount, sampleRate
+  } = await initSpessaSynth({
+    loopAmount,
+    volume,
+    midiFile, soundfontFile,
+    sampleRate,
+    loopStart, loopEnd
+  }));
   
   ({ spawn, spawnSync } = await import("child_process"));
-  if (!isStartPlayer) {
-    addEvent({ eventType: "exit",
-      func: () => {
-        // Necessary for programs like mpv
-        if (doneStreaming) {
-          let command,
-              commandToSend,
-              argumentsForCommand,
-              regexForCommand;
-          const arrayOfProgramsWinVersion = ["mpv.exe"];
-          const arrayOfPrograms = ["mpv"];
+  addEvent({ eventType: "exit",
+    func: () => {
+      // Necessary for programs like mpv
+      if (doneStreaming) {
+        let command,
+            commandToSend,
+            argumentsForCommand,
+            regexForCommand;
+        const arrayOfProgramsWinVersion = ["mpv.exe"];
+        const arrayOfPrograms = ["mpv"];
+        
+        switch (process.platform) {
+          case "win32":
+            command = "tasklist";
+            argumentsForCommand = [];
+            regexForCommand = new RegExp(
+              `(?:${arrayOfProgramsWinVersion.join("|")})\\s*(?<pid>\\d+)`,
+              "g"
+            );
+            commandToSend = () => spawnSync("taskkill", [
+              "/PID", process.pid, "/T", "/F"
+            ]);
+            break;
           
-          switch (process.platform) {
-            case "win32":
-              command = "tasklist";
-              argumentsForCommand = [];
-              regexForCommand = new RegExp(
-                `(?:${arrayOfProgramsWinVersion.join("|")})\\s*(?<pid>\\d+)`,
-                "g"
-              );
-              commandToSend = () => spawnSync("taskkill", [
-                "/PID", process.pid, "/T", "/F"
-              ]);
-              break;
-            
-            case "linux":
-            case "android":
-            case "darwin":
-              command = "ps";
-              argumentsForCommand = [
-                "-o", "pid,comm",
-                "-C", "node,"+arrayOfPrograms.join(",")
-              ];
-              regexForCommand = new RegExp(
-                `(?<pid>\\d+) (?:${arrayOfPrograms.join("|")})`,
-                "g"
-              );
-              commandToSend = () => process.kill(process.pid, "SIGKILL");
-              break;
-          }
-          
-          // Get PIDs by group name ?<pid>
-          const iteratorObject = spawnSync(command, argumentsForCommand)
-                                   .stdout.toString()
-                                   .matchAll(regexForCommand)
-                                   .map(i => i.groups);
-          // If it matches something,
-          // check whether it's a connected pipe to the program before SIGKILLing
-          for (const foundProgram of iteratorObject) {
-            if (Number(foundProgram.pid) >= process.pid
-                && Number(foundProgram.pid) <= process.pid+20) commandToSend()
-            if (process.platform === "win32") commandToSend()
-          }
+          case "linux":
+          case "android":
+          case "darwin":
+            command = "ps";
+            argumentsForCommand = [
+              "-o", "pid,comm",
+              "-C", "node,"+arrayOfPrograms.join(",")
+            ];
+            regexForCommand = new RegExp(
+              `(?<pid>\\d+) (?:${arrayOfPrograms.join("|")})`,
+              "g"
+            );
+            commandToSend = () => process.kill(process.pid, "SIGKILL");
+            break;
+        }
+        
+        // Get PIDs by group name ?<pid>
+        const iteratorObject = spawnSync(command, argumentsForCommand)
+                                 .stdout.toString()
+                                 .matchAll(regexForCommand)
+                                 .map(i => i.groups);
+        // If it matches something,
+        // check whether it's a connected pipe to the program before SIGKILLing
+        for (const foundProgram of iteratorObject) {
+          if (Number(foundProgram.pid) >= process.pid
+              && Number(foundProgram.pid) <= process.pid+20) commandToSend()
+          if (process.platform === "win32") commandToSend()
         }
       }
-    })
-  }
+    }
+  })
   log(1, performance.now().toFixed(2), "Added event exit")
   const { getData } = await import("./audioBuffer.mjs")
   const {
@@ -931,10 +901,10 @@ async function toStdout(
   const [ pipingFunction, promiseOfPiping ] = await formatManager({
     format: format ?? "",
     readStream, index,
-    effects, isStartPlayer,
-    mpv, promisesOfPrograms
+    effects,
+    promisesOfPrograms
   });
-  log(1, performance.now().toFixed(2), (!isStartPlayer) ? "Finished creating the stdout promise" : "Finished creating the promise for mpv's process")
+  log(1, performance.now().toFixed(2), "Finished creating the stdout promise")
   return [
     sampleCount,
     pipingFunction,
@@ -945,9 +915,6 @@ async function toStdout(
         doneStreaming = true;
         resolve()
       }),
-      (isStartPlayer)
-        ? await finished(mpv, { cleanup: true })
-        : undefined,
       ...promisesOfPrograms // If there are any
     ])
   ];
