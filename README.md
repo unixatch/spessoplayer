@@ -27,3 +27,4 @@ $ spessoplayer midi.mid soundfont.sf2 out.wav
 ```
 
 for a more comprehensive look at all the options go to [COMMAND-LINE-OPTIONS](./COMMAND-LINE-OPTIONS.md)
+

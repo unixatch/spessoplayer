@@ -57,3 +57,4 @@ Shows this help message
 
 ### --version, /version:
 Shows the installed version
+
