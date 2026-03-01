@@ -223,7 +223,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }
-await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
+await startPlayer()
 
 /**
  * Manager for all type of formats
@@ -242,7 +242,7 @@ await startPlayer(listOfOptions.loopN, listOfOptions?.volume)
  */
 async function formatManager({
   format = true,
-  readStream,
+  readStream, res,
   effects,
   index,
   newFileName, createNewFileNameAnyway,
@@ -399,7 +399,7 @@ async function formatManager({
       }
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       addPromiseOfPiping(resolve => {
-        readStream.pipe(process.stdout)
+        readStream.pipe((res) ? res : process.stdout)
         resolve()
       })
     }
@@ -794,17 +794,15 @@ function createReadable(Readable, isStdout = false, {
  *                 - a function for piping readStream later on;
  *                 - a promise;
  */
-async function toStdout(
-  {
-    index,
-    loopN: loopAmount,
-    loopStart, loopEnd,
-    sampleRate = 48000,
-    volume = 100/100,
-    midiFile, soundfontFile,
-    format, effects
-  }
-) {
+async function toStdout({
+  index, res,
+  loopN: loopAmount,
+  loopStart, loopEnd,
+  sampleRate = 48000,
+  volume = 100/100,
+  midiFile, soundfontFile,
+  format, effects
+}) {
   if (!midiFile || !soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
@@ -825,7 +823,7 @@ async function toStdout(
   addEvent({ eventType: "exit",
     func: () => {
       // Necessary for programs like mpv
-      if (doneStreaming) {
+      if (doneStreaming && !res) {
         let command,
             commandToSend,
             argumentsForCommand,
@@ -900,7 +898,7 @@ async function toStdout(
   const promisesOfPrograms = [];
   const [ pipingFunction, promiseOfPiping ] = await formatManager({
     format: format ?? "",
-    readStream, index,
+    readStream, index, res,
     effects,
     promisesOfPrograms
   });
@@ -1014,33 +1012,114 @@ async function toFile({
 /**
  * Reads the generated samples from spessasynth_core
  * and plays them using mpv
- * @param {Number} loopAmount - the number of loops to do
- * @param {Number} volume - the volume of the song
  */
-async function startPlayer(loopAmount, volume = 100/100) {
+async function startPlayer() {
   ({ spawn, spawnSync } = await import("child_process"));
-  const {
-    seq, synth,
-    sampleCount, sampleRate
-  } = await initSpessaSynth(loopAmount, volume);
-  const isRawAudio = (global?.format === "pcm") ? [
+  const { createServer } = await import("http");
+  
+  const port = 3000,
+        server = createServer(),
+        filesList = listOfOptions.files,
+        listOfURLs = [],
+        promisesOfPrograms = [],
+        { getWavHeader } = await import("./audioBuffer.mjs");
+  server.on("request", async (req, res) => {
+    const fullUrl = new URL(req.url, `http://localhost:${port}`),
+          index = fullUrl.searchParams.get("index"),
+          path = fullUrl.searchParams.get("path");
+
+    if (fullUrl.pathname !== "/song"
+        && (index === null
+        || path === null)) {
+      return res.end();
+    }
+    const realIndex = Number(index),
+          options = Options.getOptionsOfSong(realIndex, path);
+    const [ length, func, promise ] = await toStdout({
+      index: indexOfSong, res,
+      ...options
+    });
+    
+    let effectsProcess,
+        converterProcess;
+    // Creating the header
+    const stdoutHeader = getWavHeader({ length, numChannels: 2 }, listOfOptions?.sampleRate ?? 48000);
+    
+    // If it needs to be converted
+    const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
+    if (needsConvertion) {
+      converterProcess = spawn("ffmpeg",
+        ffmpegArgs()[listOfOptions?.format],
+        {stdio: ["pipe", socket, "pipe"]}
+      );
+    }
+    // If it needs effects
+    if (listOfOptions?.effects
+        && (listOfOptions?.format?.match(/(?:pcm|s16le|s32le)/) === null
+        || !listOfOptions?.format)) {
+      [effectsProcess] = await applyEffects({
+        program: "sox",
+        stdoutHeader,
+        stdout: (converterProcess) ? converterProcess.stdin : undefined,
+        promisesOfPrograms,
+        // TODO: effects system needs to overhauled
+        //effects: listOfOptions?.effects[0]
+      });
+      log(1, performance.now().toFixed(2), "Done setting up SoX")
+    } else if (needsConvertion) {
+      // Or just a convertion/normal processing
+      converterProcess.stdin.write(stdoutHeader)
+    }
+    log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
+    
+    let destination;
+    // When SoX exists
+    if (effectsProcess) {
+      destination = effectsProcess.stdin;
+    }
+    // When only ffmpeg exists
+    if (converterProcess && !effectsProcess) {
+      destination = converterProcess.stdin;
+    }
+    // When neither of child_processes exist
+    if (!effectsProcess && !converterProcess) {
+      res.write(stdoutHeader)
+      destination = res;
+    }
+    if (func) await func(destination, true)
+    await promise
+    await Promise.all(promisesOfPrograms)
+    
+    return res.end();
+  })
+  let indexOfSong = 0;
+  for (const group of filesList) {
+    if (!group) continue;
+    const soundfont = group.getIndex(0);
+    const midis = [...group.values()];
+    midis.shift()
+    for (const [i, midi] of midis.entries()) {
+      indexOfSong++;
+      listOfURLs[indexOfSong] = `http://localhost:${port}/song?index=${indexOfSong}&path=${midi}`
+    }
+  }
+  server.listen({ host: "localhost", port })
+  
+  const isRawAudio = (listOfOptions?.format === "pcm") ? [
     "--demuxer=rawaudio",
     "--demuxer-rawaudio-format=s16le",
     "--demuxer-rawaudio-rate="+sampleRate,
     "--demuxer-rawaudio-channels=2"
   ] : "";
   const mpv = spawn("mpv", [
-      ...isRawAudio,
-      "-"
-    ],
-    {stdio: ["pipe", "inherit", "inherit"]}
-  );
-  await toStdout(loopAmount, volume, {
-    mpv,
-    isStartPlayer: true,
-    seq, synth,
-    sampleCount, sampleRate
+    ...isRawAudio,
+    //            Clears empty elements
+    ...listOfURLs.filter(i => i)
+  ], { stdio: "inherit" });
+  await new Promise((resolve, reject) => {
+    mpv.on("error", e => reject(e))
+    mpv.on("exit", () => resolve())
   })
-  // Required because some child_processes sometimes blocks node from exiting
+  // Required because otherwise it can't exit
   process.exit()
 }
