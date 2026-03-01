@@ -78,3 +78,4 @@ await runCheck(
   "Continuing uninstallation, keeping mpv"
 )
 export { runCheck }
+
