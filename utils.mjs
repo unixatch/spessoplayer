@@ -550,14 +550,14 @@ class Options {
         continue;
       }
       if (key === "fileOutputs") {
-        simplifiedOptionsObject[key] = this.#options[key];
+        simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
         continue;
       }
       if (Array.isArray(this.#options[key])) {
         simplifiedOptionsObject[key] = this.#options[key][index];
         continue;
       }
-      simplifiedOptionsObject[key] = this.#options[key];
+      simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
     }
     return simplifiedOptionsObject;
   }

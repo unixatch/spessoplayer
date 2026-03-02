@@ -68,7 +68,6 @@ if (listOfOptions?.toStdout) {
   let indexOfSong = 0;
   for (const group of filesList) {
     if (!group) continue;
-    const soundfont = group.getIndex(0);
     const midis = [...group.values()];
     midis.shift()
     for (const [i, midi] of midis.entries()) {
@@ -155,7 +154,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
      * @param {Array} array - list of numbers
      * @return {Number} - the sum
      */
-    _sum: function (array) {
+    _sum(array) {
       let sumOfAll = 0;
       if (!this.amountOfSongs) this.amountOfSongs = array.length;
       for (let i = 0; i <= this.amountOfSongs; i++) {
@@ -201,7 +200,6 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       promiseToAdd;
   for (const group of filesList) {
     if (!group) continue;
-    const soundfont = group.getIndex(0);
     const midis = [...group.values()];
     midis.shift()
     for (const [i, midi] of midis.entries()) {
@@ -210,7 +208,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       if (fileOutputs) options.fileOutputs = fileOutputs;
       
       [fileOutputs, promiseToAdd] = await toFile({
-        createNewFileNameAnyway: (i > 0 || filesList.length > 1) ? true : false,
+        createNewFileNameAnyway: (i > 0 || filesList.length > 1),
         index: indexOfSong, progress,
         ...options
       });
@@ -232,7 +230,6 @@ await startPlayer()
  * @param {Readable} formatObj.readStream - ReadStream for piping
  * @param {Object[]} [formatObj.effects] - list of effects to apply
  * @param {Number} formatObj.index - index of the song
- * @param {Function} [formatObj.newFileName] - function newFileName
  * @param {Boolean} [formatObj.createNewFileNameAnyway] - if it's necessary to create a new file name
  * @param {String[]} [formatObj.fileOutputs] - list of file outputs
  * @param {Uint8Array} [formatObj.stdoutHeader] - header of the file
@@ -245,7 +242,7 @@ async function formatManager({
   readStream, res,
   effects,
   index,
-  newFileName, createNewFileNameAnyway,
+  createNewFileNameAnyway,
   fileOutputs,
   stdoutHeader,
   promisesOfPrograms,
@@ -302,8 +299,8 @@ async function formatManager({
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
-      const output = (isToFile) ? fs.createWriteStream(outFile) : process.stdout;
       if (isToFile) {
+        const output = fs.createWriteStream(outFile);
         addPromiseOfPiping(resolve => {
           output.write(stdoutHeader ?? "")
           readStream.pipe(output)
@@ -317,12 +314,10 @@ async function formatManager({
     }
     case "flac":
     case "mp3": {
-      const doneSettingUpMsg = `Done setting up ${format} format`;
-      
       pipingFunction = (whereToConnect, end) => {
         readStream.pipe(whereToConnect, { end })
       };
-      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      log(1, performance.now().toFixed(2), `Done setting up ${format} format`)
       break;
     }
     case /^.*\.flac$/.test(outFile):
@@ -684,7 +679,7 @@ function addEvent({ eventType, func }) {
     }
     case "renderTexts": {
       const hasBeenAdded = process.stdout.on("renderTexts",
-        (progress, clearLastLines) => {
+        (progress) => {
           clearLastLines([0, -1])
           console.info(
             progress.minutesRenderedText,
@@ -717,7 +712,6 @@ function addEvent({ eventType, func }) {
  * @param {Number} obj.i - counter for the progress
  * @param {Number} obj.durationRounded - duration of the song rounded by percentage
  * @param {Object} obj.progress - progress information object
- * @param {Function} obj.clearLastLines - util function to clear lines, see utils.mjs
  * @param {class} obj.seq - spessasynth_core' sequencer
  * @param {class} obj.synth - spessasynth_core's processor
  * @param {Function} obj.getData - translator: Float32Arrays → Uint8Arrays
@@ -729,7 +723,6 @@ function createReadable(Readable, isStdout = false, {
   sampleCount, sampleRate,
   index, i, durationRounded,
   progress,
-  clearLastLines,
   seq, synth,
   getData
 }) {
@@ -759,7 +752,7 @@ function createReadable(Readable, isStdout = false, {
           } else {
             progress.renderedAmount[index] = seq.currentTime;
             progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
-            process.stdout.emit("renderTexts", progress, clearLastLines)
+            process.stdout.emit("renderTexts", progress)
           }
         }
       }
@@ -819,7 +812,9 @@ async function toStdout({
     loopStart, loopEnd
   }));
   
-  ({ spawn, spawnSync } = await import("child_process"));
+  if (!spawn || !spawnSync) {
+    ({ spawn, spawnSync } = await import("child_process"));
+  }
   addEvent({ eventType: "exit",
     func: () => {
       // Necessary for programs like mpv
@@ -908,11 +903,8 @@ async function toStdout({
     pipingFunction,
     Promise.all([
       promiseOfPiping,
-      new Promise(async (resolve, reject) => {
-        await finished(readStream, { cleanup: true })
-        doneStreaming = true;
-        resolve()
-      }),
+      finished(readStream, { cleanup: true })
+        .then(() => doneStreaming = true),
       ...promisesOfPrograms // If there are any
     ])
   ];
@@ -1015,14 +1007,15 @@ async function toFile({
  */
 async function startPlayer() {
   ({ spawn, spawnSync } = await import("child_process"));
-  const { createServer } = await import("http");
+  const { createServer } = await import("http"),
+        { getWavHeader } = await import("./audioBuffer.mjs");
   
   const port = 3000,
         server = createServer(),
         filesList = listOfOptions.files,
         listOfURLs = [],
-        promisesOfPrograms = [],
-        { getWavHeader } = await import("./audioBuffer.mjs");
+        promisesOfPrograms = [];
+
   server.on("request", async (req, res) => {
     const fullUrl = new URL(req.url, `http://localhost:${port}`),
           index = fullUrl.searchParams.get("index"),
@@ -1095,12 +1088,11 @@ async function startPlayer() {
   let indexOfSong = 0;
   for (const group of filesList) {
     if (!group) continue;
-    const soundfont = group.getIndex(0);
     const midis = [...group.values()];
     midis.shift()
     for (const [i, midi] of midis.entries()) {
       indexOfSong++;
-      listOfURLs[indexOfSong] = `http://localhost:${port}/song?index=${indexOfSong}&path=${midi}`
+      listOfURLs[indexOfSong] = `http://localhost:${port}/song?index=${i}&path=${midi}`
     }
   }
   server.listen({ host: "localhost", port })
@@ -1108,7 +1100,7 @@ async function startPlayer() {
   const isRawAudio = (listOfOptions?.format === "pcm") ? [
     "--demuxer=rawaudio",
     "--demuxer-rawaudio-format=s16le",
-    "--demuxer-rawaudio-rate="+sampleRate,
+    "--demuxer-rawaudio-rate="+(listOfOptions?.sampleRate ?? 48000),
     "--demuxer-rawaudio-channels=2"
   ] : "";
   const mpv = spawn("mpv", [
