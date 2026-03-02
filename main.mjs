@@ -367,7 +367,7 @@ async function formatManager({
       if (isToFile) {
         output = fs.createWriteStream(outFile);
       } else {
-        output = process.stdout;
+        output = (res) ? res : process.stdout;
       }
       log(1,
         performance.now().toFixed(2),
@@ -1037,13 +1037,21 @@ async function startPlayer() {
         converterProcess;
     // Creating the header
     const stdoutHeader = getWavHeader({ length, numChannels: 2 }, listOfOptions?.sampleRate ?? 48000);
+
+    // Needed even if it's wrong because
+    // otherwise mpv gives out a fatal error
+    // only if it's a flac convertion (buggy ffmpeg?)
+    if (listOfOptions?.format === "flac") {
+      res.setHeader("Content-Length", length << 4)
+      res.flushHeaders()
+    }
     
     // If it needs to be converted
     const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
     if (needsConvertion) {
       converterProcess = spawn("ffmpeg",
         ffmpegArgs()[listOfOptions?.format],
-        {stdio: ["pipe", socket, "pipe"]}
+        {stdio: ["pipe", res.socket, "pipe"]}
       );
     }
     // If it needs effects
@@ -1053,7 +1061,7 @@ async function startPlayer() {
       [effectsProcess] = await applyEffects({
         program: "sox",
         stdoutHeader,
-        stdout: (converterProcess) ? converterProcess.stdin : undefined,
+        stdout: (converterProcess) ? converterProcess.stdin : res.socket,
         promisesOfPrograms,
         // TODO: effects system needs to overhauled
         //effects: listOfOptions?.effects[0]
@@ -1103,7 +1111,12 @@ async function startPlayer() {
     "--demuxer-rawaudio-rate="+(listOfOptions?.sampleRate ?? 48000),
     "--demuxer-rawaudio-channels=2"
   ] : "";
+  const msgLevel = (!listOfOptions?.format?.match(/wave|pcm/))
+                      // Hide Content-Length mismatch error
+                    ? ["--msg-level=ffmpeg=fatal"]
+                    : [];
   const mpv = spawn("mpv", [
+    ...msgLevel,
     ...isRawAudio,
     //            Clears empty elements
     ...listOfURLs.filter(i => i)
