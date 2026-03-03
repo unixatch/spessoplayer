@@ -18,7 +18,7 @@
   "main": "main.js",
   "preferGlobal": true,
   "engines": {
-    "node": ">=18.19.0"
+    "node": ">=20.11.0"
   },
   "bin": {
     "spessoplayer": "main.mjs"
