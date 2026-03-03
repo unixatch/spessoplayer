@@ -44,13 +44,13 @@ async function runCheck(program, noInstallMsg = "") {
       if (program === "sox") {
         return tryToUninstall(program, spawnSync, { stdout, stderr })
       }
-      return console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
+      return console.warn(normalYellow + noInstallMsg + normal)
     }
     //                               ↓ In case it's neither y or n
     if (/(?:y|yes)/i.test(answer)) {
       tryToUninstall(program, spawnSync, { stdout, stderr })
     } else if (/(?:n|no)/.test(answer)) {
-      console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
+      console.warn(normalYellow + noInstallMsg + normal)
     }
   } catch (e) {
     if (e.name === "AbortError") {
