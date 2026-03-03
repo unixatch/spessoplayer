@@ -65,22 +65,17 @@ if (listOfOptions?.toStdout) {
         listOfPromises = [],
         promisesOfPrograms = [],
         { getWavHeader } = await import("./audioBuffer.mjs");
-  let indexOfSong = 0;
-  for (const group of filesList) {
-    if (!group) continue;
-    const midis = [...group.values()];
-    midis.shift()
-    for (const [i, midi] of midis.entries()) {
-      indexOfSong++;
-      const options = Options.getOptionsOfSong(i, midi);
-      const [ length, func, promise ] = await toStdout({
-        index: indexOfSong,
-        ...options
-      });
-      lengthOfFiles.push(length)
-      listOfFunctions.push(func)
-      listOfPromises.push(promise)
-    }
+  const amountOfSongs = Options.amountOfSongs;
+  for (let i = 0; i < amountOfSongs; i++) {
+    const options = Options.getOptionsOfSong(i);
+    if (!options) continue;
+    const [ length, func, promise ] = await toStdout({
+      index: i,
+      ...options
+    });
+    lengthOfFiles.push(length)
+    listOfFunctions.push(func)
+    listOfPromises.push(promise)
   }
   let effectsProcess,
       converterProcess;
@@ -193,28 +188,22 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     }
   };
   const filesList = listOfOptions.files,
+        amountOfSongs = Options.amountOfSongs,
         finalFileOutputs = [],
         listOfPromises = [];
-  let indexOfSong = 0,
-      fileOutputs,
+  let fileOutputs,
       promiseToAdd;
-  for (const group of filesList) {
-    if (!group) continue;
-    const midis = [...group.values()];
-    midis.shift()
-    for (const [i, midi] of midis.entries()) {
-      indexOfSong++;
-      const options = Options.getOptionsOfSong(i, midi);
-      if (fileOutputs) options.fileOutputs = fileOutputs;
-      
-      [fileOutputs, promiseToAdd] = await toFile({
-        createNewFileNameAnyway: (i > 0 || filesList.length > 1),
-        index: indexOfSong, progress,
-        ...options
-      });
-      finalFileOutputs.push(...fileOutputs)
-      listOfPromises.push(promiseToAdd)
-    }
+  for (let i = 0; i < amountOfSongs; i++) {
+    const options = Options.getOptionsOfSong(i);
+    if (fileOutputs) options.fileOutputs = fileOutputs;
+    
+    [fileOutputs, promiseToAdd] = await toFile({
+      createNewFileNameAnyway: (i > 0 || filesList.length > 1),
+      index: i, progress,
+      ...options
+    });
+    finalFileOutputs.push(...fileOutputs)
+    listOfPromises.push(promiseToAdd)
   }
   await Promise.all(listOfPromises)
   console.log("Written", finalFileOutputs.filter(ifil => ifil));
@@ -1017,19 +1006,16 @@ async function startPlayer() {
         promisesOfPrograms = [];
 
   server.on("request", async (req, res) => {
-    const fullUrl = new URL(req.url, `http://localhost:${port}`),
-          index = fullUrl.searchParams.get("index"),
-          path = fullUrl.searchParams.get("path");
+    const fullUrl = new URL(req.url, `http://localhost:${port}`);
+    const index = fullUrl.searchParams.get("index");
 
-    if (fullUrl.pathname !== "/song"
-        && (index === null
-        || path === null)) {
+    if (fullUrl.pathname !== "/song" && index === null) {
       return res.end();
     }
     const realIndex = Number(index),
-          options = Options.getOptionsOfSong(realIndex, path);
+          options = Options.getOptionsOfSong(realIndex);
     const [ length, func, promise ] = await toStdout({
-      index: indexOfSong, res,
+      index: realIndex, res,
       ...options
     });
     
@@ -1093,15 +1079,9 @@ async function startPlayer() {
     
     return res.end();
   })
-  let indexOfSong = 0;
-  for (const group of filesList) {
-    if (!group) continue;
-    const midis = [...group.values()];
-    midis.shift()
-    for (const [i, midi] of midis.entries()) {
-      indexOfSong++;
-      listOfURLs[indexOfSong] = `http://localhost:${port}/song?index=${i}&path=${midi}`
-    }
+  const amountOfSongs = Options.amountOfSongs;
+  for (let i = 0; i < amountOfSongs; i++) {
+    listOfURLs.push(`http://localhost:${port}/song?index=${i}`)
   }
   server.listen({ host: "localhost", port })
   
@@ -1118,8 +1098,7 @@ async function startPlayer() {
   const mpv = spawn("mpv", [
     ...msgLevel,
     ...isRawAudio,
-    //            Clears empty elements
-    ...listOfURLs.filter(i => i)
+    ...listOfURLs
   ], { stdio: "inherit" });
   await new Promise((resolve, reject) => {
     mpv.on("error", e => reject(e))

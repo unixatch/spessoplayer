@@ -340,9 +340,11 @@ Set.prototype.get = function (valueToFind) {
 /**
  * A class that represents options interpreted by cli.mjs
  * @property {Object} options - main private object that contains the data
+ * @property {Array[]} listOfSongs - list of [the group index, filename] for all songs
  */
 class Options {
   static #options = {};
+  static #listOfSongs = [];
 
   /**
    * @function #checkValueAndExistence
@@ -525,45 +527,48 @@ class Options {
       group[index].addLeft(string)
     } else {
       group[index].add(string)
+      this.#listOfSongs.push([index, string])
     }
+  }
+  /**
+   * Gives the amount of songs to do
+   * @return {Number} the amount
+   */
+  static get amountOfSongs() {
+    return this.#listOfSongs.length;
   }
   /**
    * Creates a new Object similar to this.#options but with only
    * the songs' options included
    * @param {Number} index - index of the song
-   * @param {String} string - song
    * @return {Object} an object containing the song's options
    */
-  static getOptionsOfSong(index, string) {
+  static getOptionsOfSong(index) {
     this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(string, "string")
-    const allOptions = Object.keys(this.#options);
-    const allOptionsLength = allOptions.length;
-    const simplifiedOptionsObject = {};
+    const allOptions = Object.keys(this.#options),
+          allOptionsLength = allOptions.length,
+          simplifiedOptionsObject = {};
+    const [indexOfGroup, songFile] = this.#listOfSongs[index];
+    const group = this.#options.files[indexOfGroup];
+    
+    simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
+    simplifiedOptionsObject["midiFile"] = group.get(songFile);
+    
     for (let i = 0; i < allOptionsLength; i++) {
       const key = allOptions[i];
-      if (key === "files") {
-        const filesLength = this.#options[key].length;
-        for (let i2 = 0; i2 < filesLength; i2++) {
-          const currentSet = this.#options[key][i2];
-          if (currentSet instanceof Set && currentSet.has(string)) {
-            simplifiedOptionsObject["soundfontFile"] = currentSet.getIndex(0);
-            simplifiedOptionsObject["midiFile"] = currentSet.get(string);
-            break;
-          }
-        }
-        if (!simplifiedOptionsObject[key]) simplifiedOptionsObject[key] = undefined;
-        continue;
-      }
       if (key === "fileOutputs") {
         simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
         continue;
       }
       if (Array.isArray(this.#options[key])) {
+        if (this.#options[key].length === 1) {
+          simplifiedOptionsObject[key] = this.#options[key][0];
+          continue;
+        }
         simplifiedOptionsObject[key] = this.#options[key][index];
         continue;
       }
-      simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
+      simplifiedOptionsObject[key] = this.#options[key];
     }
     return simplifiedOptionsObject;
   }
