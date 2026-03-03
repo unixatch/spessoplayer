@@ -45,6 +45,9 @@ declareColors()
 /**
  * Clears lines from the last line up
  * @param {Number[]} lines - two numbers, x and y values
+ * @throws {TypeError} - if the passed argument isn't an array,
+ *                       if one of its values is a string or
+ *                       it can't be converted to an integer
  * @example
  * // Clears only the last line
  * clearLastLines([0, -1])
@@ -67,12 +70,13 @@ const clearLastLines = lines => {
     .clearScreenDown();
 }
 /**
- * Runs program synchronously and throws a ReferenceError if it doesn't find it
+ * Checks program existance synchronously
  * @param {Object} obj - the obj passed
  * @param {Function} obj.spawnSync - child_process.spawnSync
  * @param {String} obj.program - program to find
  * @param {string[]} obj.args - optional arguments
  * @param {(string|string[])} obj.stdioArray - stdio to set for the process
+ * @throws {ReferenceError} - if it can't find the program requested
  */
 function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) {
   const code = spawnSync(
@@ -325,7 +329,6 @@ Set.prototype.getIndex = function (index) {
     if (i === index) return v;
   }
 }
-}
 /**
  * Adds value retrieval functionality to Set
  * @param {*} value - value to search
@@ -355,6 +358,7 @@ class Options {
    * @param {Boolean} isObject - if the property should be an object
    * @memberof Options
    * @private
+   * @throws {TypeError} - if it's not of valid type
    */
   static #checkValueAndExistence(value, requiredType, property, isObject) {
     if (requiredType !== "array" || !Array.isArray(value)) {

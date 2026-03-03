@@ -771,6 +771,7 @@ function createReadable(Readable, isStdout = false, {
  * @param {String} obj1.soundfontFile - soundfont file
  * @param {(undefined|String)} [obj1.format] - format of the somg
  * @param {(undefined|Object[])} [obj1.effects] - effects for the song
+ * @throws {ReferenceError} - if some required files are missing
  * @return {Array} array that contains:
  *                 - the sample count;
  *                 - a function for piping readStream later on;
@@ -915,6 +916,7 @@ async function toStdout({
  * @param {(undefined|Number)} [toFileObj.sampleRate] - sample rate
  * @param {Object[]} [toFileObj.effects] - optional list of effects to add
  * @param {Number} toFileObj.volume - the volume of the song
+ * @throws {ReferenceError} - if some required files are missing
  * @return {Array} array that contains the fileOutputs array and a promise
  */
 async function toFile({

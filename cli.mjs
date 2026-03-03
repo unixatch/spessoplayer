@@ -127,6 +127,7 @@ async function get20BytesFromFile(path) {
 /**
  * Sets necessary variables in Options class for main.mjs
  * @param {Array} args - The process.argv to analyse
+ * @throws {ReferenceError} - if the next argument doesn't exist
  */
 const actUpOnPassedArgs = async (args) => {
   let lastParam,
