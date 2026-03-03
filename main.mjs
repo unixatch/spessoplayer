@@ -20,7 +20,7 @@ import {
   log,
   newFileName,
   clearLastLines
-} from "./utils.mjs"
+} from "./utils/utils.mjs"
 
 addEvent({ eventType: "SIGINT" })
 process.on("unhandledRejection", i => console.error(i))

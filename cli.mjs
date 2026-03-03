@@ -16,7 +16,7 @@
 */
 
 import { join, basename, parse } from "path"
-import { _dirname_, log, Options } from "./utils.mjs"
+import { log, Options } from "./utils/utils.mjs"
 
 const regexes = {
   help: /^(?:--help|\/help|-h|\/h|\/\?)$/,
@@ -761,7 +761,7 @@ const setLogFilePath = arg => {
  */
 const uninstall = async () => {
   const { execSync } = await import("child_process");
-  const uninstallScriptPath = join(_dirname_, "uninstall.mjs");
+  const uninstallScriptPath = join(import.meta.dirname, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
   
   log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
@@ -875,8 +875,8 @@ const help = async ({ errorText } = "") => {
  */
 const version = async () => {
   const fs = await import("node:fs");
-  const packageJSONPath = join(_dirname_, "package.json");
-  const { versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
+  const packageJSONPath = join(import.meta.dirname, "package.json");
+  const { version: versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
   
   log(1, performance.now().toFixed(2), `Taken version number from ${packageJSONPath}`)
   console.log(`${green + versionNumber + normal}`)

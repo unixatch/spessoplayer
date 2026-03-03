@@ -17,7 +17,7 @@
 */
 
 const { spawnSync } = await import("child_process");
-const { runProgramSync, tryToInstall } = await import("./utils.mjs");
+const { runProgramSync, tryToInstall } = await import("./utils/install_uninstall.mjs");
 
 let readline,
     stdin,
