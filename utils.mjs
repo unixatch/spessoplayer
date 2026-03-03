@@ -311,25 +311,31 @@ Set.prototype.addLeft = function (value) {
   return this;
 }
 /**
- * Adds index retrieval functionality to Set
+ * Adds value retrieval from given index functionality to Set
  * @param {Number} index - index to get
+ * @throws {TypeError} - if it's not a number
  * @return {*} - the value at the specified index in the Set
  */
 Set.prototype.getIndex = function (index) {
   if (typeof index !== "number") {
     throw new TypeError(`${index} is not a number`)
   }
-  const array = [...this.values()];
-  return array[index];
+  const helper = this.values().map((v, i) => [i, v]);
+  for (const [i, v] of helper) {
+    if (i === index) return v;
+  }
+}
 }
 /**
  * Adds value retrieval functionality to Set
  * @param {*} value - value to search
  * @return {*} found value or undefined
  */
-Set.prototype.get = function (value) {
-  const array = [...this.values()];
-  return array.find(i => i === value);
+Set.prototype.get = function (valueToFind) {
+  for (const value of this.values()) {
+    if (!valueToFind) return value;
+    if (value === valueToFind) return value;
+  }
 }
 /**
  * A class that represents options interpreted by cli.mjs
