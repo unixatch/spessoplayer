@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  Copyright (C) 2025  unixatch
+  Copyright (C) 2026  unixatch
 
     it under the terms of the GNU General Public License as published by
     This program is free software: you can redistribute it and/or modify
