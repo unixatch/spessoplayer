@@ -151,8 +151,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
      */
     _sum(array) {
       let sumOfAll = 0;
-      if (!this.amountOfSongs) this.amountOfSongs = array.length;
-      for (let i = 0; i <= this.amountOfSongs; i++) {
+      for (let i = 0; i <= Options.amountOfSongs; i++) {
         const number = array[i];
         if (number) sumOfAll += array[i];
       }
@@ -414,9 +413,10 @@ function getSampleCount({
     loopEnd = midi.midiTicksToSeconds(midi.loop.end);
   }
   const possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
-  let sampleCount;
+  let sampleCount,
+      durationInSeconds = midi.duration;
   if ((loopAmount ?? 0) === 0) {
-    sampleCount = Math.ceil(sampleRate * midi.duration);
+    sampleCount = Math.ceil(sampleRate * durationInSeconds);
   } else {
     let end;
     if (loopEnd === undefined && !loopDetectedInMidi) {
@@ -425,17 +425,13 @@ function getSampleCount({
       end = midi.duration - loopEnd;
     } else end = loopEnd;
 
-    sampleCount = Math.ceil(
-      sampleRate * 
-      (
-        midi.duration +
-        ((end - loopStart) * possibleLoopAmount)
-      )
-    );
+    durationInSeconds = midi.duration + ((end - loopStart) * possibleLoopAmount);
+    sampleCount = Math.ceil(sampleRate * durationInSeconds);
   }
   log(1, performance.now().toFixed(2), "Sample count set to " + sampleCount)
   return {
     loopDetectedInMidi,
+    durationInSeconds,
     sampleCount
   };
 }
@@ -491,6 +487,7 @@ async function initSpessaSynth({
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const {
     sampleCount,
+    durationInSeconds,
     loopDetectedInMidi
   } = getSampleCount({
     midi,
@@ -528,7 +525,8 @@ async function initSpessaSynth({
     audioToWav,
     seq, synth,
     midi,
-    sampleCount, sampleRate
+    sampleCount, sampleRate,
+    durationInSeconds
   }
 }
 /**
@@ -715,7 +713,23 @@ function createReadable(Readable, isStdout = false, {
   seq, synth,
   getData
 }) {
-  let hasBeenAdded = false;
+  let hasBeenAdded = false,
+      lastCompletelyRenderedSeconds,
+      lastLoopCount;
+  function calculateRenderedAmount() {
+    if (lastLoopCount !== seq.loopCount) {
+      lastCompletelyRenderedSeconds = progress.renderedAmount[index];
+      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + seq.currentTime;
+      lastLoopCount = seq.loopCount;
+      return;
+    }
+    if (lastCompletelyRenderedSeconds) {
+      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + seq.currentTime;
+      return;
+    }
+
+    progress.renderedAmount[index] = seq.currentTime;
+  }
   const readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
@@ -738,8 +752,9 @@ function createReadable(Readable, isStdout = false, {
           if (!hasBeenAdded) {
             progress.amountToRender += durationRounded;
             hasBeenAdded = true;
+            lastLoopCount = seq.loopCount;
           } else {
-            progress.renderedAmount[index] = seq.currentTime;
+            calculateRenderedAmount()
             progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
             process.stdout.emit("renderTexts", progress)
           }
@@ -933,7 +948,8 @@ async function toFile({
   log(1, performance.now().toFixed(2), "Started toFile")
   const {
     seq, synth,
-    sampleCount
+    sampleCount,
+    durationInSeconds
   } = await initSpessaSynth({
     loopAmount,
     volume,
@@ -952,7 +968,7 @@ async function toFile({
   } = await import("node:stream");
   
   let i = 0;
-  const durationRounded = Math.floor(seq.midiData.duration * 100) / 100;
+  const durationRounded = Math.floor(durationInSeconds * 100) / 100;
   
   const BUFFER_SIZE = 128;
   let filledSamples = 0;
