@@ -15,6 +15,10 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * @module utils
+ */
+
 import { join, parse } from "path"
 
 function declareColors() {
@@ -171,11 +175,26 @@ Set.prototype.get = function (valueToFind) {
 }
 /**
  * A class that represents options interpreted by cli.mjs
- * @property {Object} options - main private object that contains the data
- * @property {Array[]} listOfSongs - list of [the group index, filename] for all songs
  */
 class Options {
+  /**
+   * Main private object that contains the data
+   * @type {Object}
+   * @private
+   */
   static #options = {};
+  /**
+   * @typedef list_Of_Songs
+   * @type {Array[]}
+   * @property {Number} 0 - group index
+   * @property {String} 1 - filename of song
+   * @private
+   */
+  /**
+   * List of all songs
+   * @type {list_Of_Songs}
+   * @private
+   */
   static #listOfSongs = [];
 
   /**

@@ -16,6 +16,10 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * @module main
+ */
+
 import {
   log,
   newFileName,
@@ -716,6 +720,14 @@ function createReadable(Readable, isStdout = false, {
   let hasBeenAdded = false,
       lastCompletelyRenderedSeconds,
       lastLoopCount;
+  /**
+   * Calculates the rendered amount of seconds
+   * with loops accounted for when they start
+   * @type {Function}
+   * @inner
+   * @private
+   * @memberof module:main
+   */
   function calculateRenderedAmount() {
     if (lastLoopCount !== seq.loopCount) {
       lastCompletelyRenderedSeconds = progress.renderedAmount[index];

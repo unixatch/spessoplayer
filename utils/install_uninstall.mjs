@@ -15,6 +15,10 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * @module install_uninstall
+ */
+
 function declareColors() {
   // Custom formatting
   global.normal= "\x1b[0m"

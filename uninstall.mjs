@@ -16,6 +16,10 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * @module uninstall
+ */
+
 const { spawnSync } = await import("child_process");
 const { tryToUninstall } = await import("./utils/install_uninstall.mjs");
 

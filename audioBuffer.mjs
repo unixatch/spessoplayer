@@ -15,6 +15,10 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * @module audioBuffer
+ */
+
 import {
   IndexedByteArray,
   DEFAULT_WAV_WRITE_OPTIONS

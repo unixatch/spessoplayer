@@ -15,6 +15,10 @@
     along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/**
+ * @module cli
+ */
+
 import { join, basename, parse } from "path"
 import { log, Options } from "./utils/utils.mjs"
 
