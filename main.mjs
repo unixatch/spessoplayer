@@ -512,10 +512,6 @@ async function initSpessaSynth({
     enableEventSystem: false,
     enableEffects: false
   });
-  // Makes the master parameters unique to each new instance
-  synth.synthCore.masterParameters = {
-    ...synth.synthCore.masterParameters
-  };
   synth.setMasterParameter("masterGain", volume)
   synth.soundBankManager.addSoundBank(
     SoundBankLoader.fromArrayBuffer(sf),
