@@ -512,6 +512,10 @@ async function initSpessaSynth({
     enableEventSystem: false,
     enableEffects: false
   });
+  // Makes the master parameters unique to each new instance
+  synth.privateProps.masterParameters = {
+    ...synth.privateProps.masterParameters
+  };
   synth.setMasterParameter("masterGain", volume)
   synth.soundBankManager.addSoundBank(
     SoundBankLoader.fromArrayBuffer(sf),
@@ -921,7 +925,10 @@ async function toStdout({
     Promise.all([
       promiseOfPiping,
       finished(readStream, { cleanup: true })
-        .then(() => doneStreaming = true),
+        .then(() => {
+          doneStreaming = true
+          synth.destroySynthProcessor()
+        }),
       ...promisesOfPrograms // If there are any
     ])
   ];
@@ -1014,7 +1021,8 @@ async function toFile({
     fileOutputs,
     Promise.all([
       ...promisesOfPiping,
-      finished(readStream, { cleanup: true }),
+      finished(readStream, { cleanup: true })
+        .then(() => synth.destroySynthProcessor()),
       ...promisesOfPrograms // if there are any
     ])
   ];
