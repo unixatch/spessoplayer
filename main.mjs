@@ -36,7 +36,12 @@ const {
 } = await import("./cli.mjs");
 log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
-const listOfOptions = Options.all;
+const listOfOptions = Options.all,
+      soundFontList = [];
+let BasicMIDI,
+    SoundBankLoader,
+    SpessaSynthProcessor,
+    SpessaSynthSequencer;
 
 
 /**
@@ -449,9 +454,8 @@ function getSampleCount({
  * @param {Number} [initObj.sampleRate=48000] - sample rate
  * @param {Number} initObj.loopStart - start of loop
  * @param {Number} initObj.loopEnd - end of loop
- * @param {Boolean} [isToFile=false] - defines or not audioToWav
+ * @param {Number} initObj.indexOfGroup - index of the Set/group the song is in
  * @return {Object} object containing:
- *                  - audioToWav;
  *                  - seq;
  *                  - synth;
  *                  - midi;
@@ -463,31 +467,19 @@ async function initSpessaSynth({
   volume = 100/100,
   midiFile, soundfontFile,
   sampleRate = 48000,
-  loopStart, loopEnd
-}, isToFile = false) {
-  let audioToWav,
-      BasicMIDI,
-      SoundBankLoader,
-      SpessaSynthProcessor,
-      SpessaSynthSequencer;
-  if (isToFile) {
-    ({
-      audioToWav,
-      BasicMIDI,
-      SoundBankLoader,
-      SpessaSynthProcessor,
-      SpessaSynthSequencer
-    } = await import("spessasynth_core"))
-  } else {
+  loopStart, loopEnd,
+  indexOfGroup
+}) {
+  if (!SpessaSynthProcessor) {
     ({
       BasicMIDI,
       SoundBankLoader,
       SpessaSynthProcessor,
       SpessaSynthSequencer
-    } = await import("spessasynth_core"))
+    } = await import("spessasynth_core"));
   }
   const mid = fs.readFileSync(midiFile);
-  const sf = fs.readFileSync(soundfontFile);
+  const sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const {
     sampleCount,
@@ -526,7 +518,6 @@ async function initSpessaSynth({
   addEvent({ eventType: "uncaughtException" })
   log(1, performance.now().toFixed(2), "Finished setting up SpessaSynth")
   return {
-    audioToWav,
     seq, synth,
     midi,
     sampleCount, sampleRate,
@@ -798,6 +789,7 @@ function createReadable(Readable, isStdout = false, {
  * @param {String} obj1.soundfontFile - soundfont file
  * @param {(undefined|String)} [obj1.format] - format of the somg
  * @param {(undefined|Object[])} [obj1.effects] - effects for the song
+ * @param {Number} obj1.indexOfGroup - index of the Set/group the song is in
  * @throws {ReferenceError} - if some required files are missing
  * @return {Array} array that contains:
  *                 - the sample count;
@@ -811,7 +803,8 @@ async function toStdout({
   sampleRate = 48000,
   volume = 100/100,
   midiFile, soundfontFile,
-  format, effects
+  format, effects,
+  indexOfGroup
 }) {
   if (!midiFile || !soundfontFile) {
     throw new ReferenceError("Missing some required files")
@@ -826,7 +819,8 @@ async function toStdout({
     volume,
     midiFile, soundfontFile,
     sampleRate,
-    loopStart, loopEnd
+    loopStart, loopEnd,
+    indexOfGroup
   }));
   
   if (!spawn || !spawnSync) {
@@ -945,6 +939,7 @@ async function toStdout({
  * @param {String[]} toFileObj.fileOutputs - list of file output names
  * @param {(undefined|Number)} [toFileObj.sampleRate] - sample rate
  * @param {Object[]} [toFileObj.effects] - optional list of effects to add
+ * @param {Number} toFileObj.indexOfGroup - index of the Set/group the song is in
  * @param {Number} toFileObj.volume - the volume of the song
  * @throws {ReferenceError} - if some required files are missing
  * @return {Array} array that contains the fileOutputs array and a promise
@@ -955,7 +950,7 @@ async function toFile({
   volume = 100/100,
   midiFile, soundfontFile, fileOutputs,
   sampleRate = 48000,
-  effects
+  effects, indexOfGroup
 }) {
   if (!midiFile || !soundfontFile || fileOutputs.length === 0) {
     throw new ReferenceError("Missing some required files")
@@ -970,8 +965,9 @@ async function toFile({
     volume,
     midiFile, soundfontFile,
     sampleRate,
-    loopStart, loopEnd
-  }, true);
+    loopStart, loopEnd,
+    indexOfGroup
+  });
 
   const {
     getWavHeader,
