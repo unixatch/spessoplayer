@@ -513,8 +513,8 @@ async function initSpessaSynth({
     enableEffects: false
   });
   // Makes the master parameters unique to each new instance
-  synth.privateProps.masterParameters = {
-    ...synth.privateProps.masterParameters
+  synth.synthCore.masterParameters = {
+    ...synth.synthCore.masterParameters
   };
   synth.setMasterParameter("masterGain", volume)
   synth.soundBankManager.addSoundBank(
