@@ -41,7 +41,8 @@ const listOfOptions = Options.all,
 let BasicMIDI,
     SoundBankLoader,
     SpessaSynthProcessor,
-    SpessaSynthSequencer;
+    SpessaSynthSequencer,
+    lastIndexOfGroup;
 
 
 /**
@@ -479,6 +480,7 @@ async function initSpessaSynth({
     } = await import("spessasynth_core"));
   }
   const mid = fs.readFileSync(midiFile);
+  if (lastIndexOfGroup !== indexOfGroup) delete soundFontList[lastIndexOfGroup];
   const sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const {
@@ -810,6 +812,7 @@ async function toStdout({
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
+  if (lastIndexOfGroup !== indexOfGroup) lastIndexOfGroup = indexOfGroup;
   let seq, synth, sampleCount;
   ({
     seq, synth,
@@ -956,6 +959,7 @@ async function toFile({
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toFile")
+  if (lastIndexOfGroup !== indexOfGroup) lastIndexOfGroup = indexOfGroup;
   const {
     seq, synth,
     sampleCount,
