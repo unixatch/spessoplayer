@@ -405,9 +405,11 @@ class Options {
     
     simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
     simplifiedOptionsObject["midiFile"] = group.get(songFile);
+    simplifiedOptionsObject["indexOfGroup"] = indexOfGroup;
     
     for (let i = 0; i < allOptionsLength; i++) {
       const key = allOptions[i];
+      if (key === "files") continue;
       if (key === "fileOutputs") {
         simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
         continue;
