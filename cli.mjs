@@ -112,6 +112,14 @@ const regexes = {
   isPercentage: /^[\d.]+%$/,
   percentageNumber: /^([\d.]+)%$/
 };
+const testFunctions = {
+  help: i => regexes.help.test(i),
+  stdout: i => regexes.stdout.test(i),
+  version: i => regexes.version.test(i),
+  uninstall: i => regexes.uninstall.test(i),
+  verboseLevel: i => regexes.verboseLevel.test(i),
+  logFile: i => regexes.logFile.test(i)
+};
 
 async function get20BytesFromFile(path) {
   let fileMagicNumber;
@@ -141,20 +149,20 @@ const actUpOnPassedArgs = async (args) => {
     await help()
     process.exit()
   }
-  if (newArguments.filter(i => regexes.help.test(i)).length > 0) {
+  if (newArguments.find(testFunctions.help)) {
     await help()
     process.exit()
   }
-  if (newArguments.filter(i => regexes.version.test(i)).length > 0) {
+  if (newArguments.find(testFunctions.version)) {
     await version()
     process.exit()
   }
-  if (newArguments.filter(i => regexes.uninstall.test(i)).length > 0) {
+  if (newArguments.find(testFunctions.uninstall)) {
     await uninstall()
     process.exit()
   }
   
-  const isVerboseLevelSet = newArguments.find(i => regexes.verboseLevel.test(i));
+  const isVerboseLevelSet = newArguments.find(testFunctions.verboseLevel);
   if (isVerboseLevelSet) {
     let verboseOptionNumber = isVerboseLevelSet.match(regexes.verboseLevel).groups.number;
     const verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
@@ -169,7 +177,7 @@ const actUpOnPassedArgs = async (args) => {
   } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
     log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
   }
-  const isPathOfLogFileSet = newArguments.find(i => regexes.logFile.test(i));
+  const isPathOfLogFileSet = newArguments.find(testFunctions.logFile);
   if (isPathOfLogFileSet
       && !isVerboseLevelSet
       && !process.env["DEBUG_LEVEL_SPESSO"]) {
@@ -526,7 +534,7 @@ const setLoop = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
       && !regexes.infinity.test(arg)) {
     Options.loopN(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set loop amount to ${Options.all.loopN.find(i => i === Number(arg))}`)
+    log(1, performance.now().toFixed(2), `Set loop amount to ${Number(arg)} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.infinity.test(arg)) {
@@ -546,11 +554,11 @@ const setLoopStart = (arg, lastIndex) => {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       Options.loopStart(Number(lastIndex?.index), seconds);
-      log(1, performance.now().toFixed(2), `Set loop-start to ${Options.all.loopStart.find(i => i === seconds)}`)
+      log(1, performance.now().toFixed(2), `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
     Options.loopStart(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set loop-start to ${Options.all.loopStart.find(i => i === Number(arg))}`)
+    log(1, performance.now().toFixed(2), `Set loop-start to ${Number(arg)} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
@@ -566,11 +574,11 @@ const setLoopEnd = (arg, lastIndex) => {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       Options.loopEnd(Number(lastIndex?.index), seconds);
-      log(1, performance.now().toFixed(2), `Set loop-end to ${Options.all.loopEnd.find(i => i === seconds)}`)
+      log(1, performance.now().toFixed(2), `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
     Options.loopEnd(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set loop-end to ${Options.all.loopEnd.find(i => i === Number(arg))}`)
+    log(1, performance.now().toFixed(2), `Set loop-end to ${Number(arg)} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
@@ -582,14 +590,13 @@ const setLoopEnd = (arg, lastIndex) => {
  */
 const setSampleRate = (arg, lastIndex, newArguments) => {
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
-    const isStdout = newArguments.filter(i => regexes.stdout.test(i));
-    if (isStdout.length > 0) {
+    if (newArguments.find(testFunctions.stdout)) {
       Options.stdoutSampleRate = Number(arg);
-      log(1, performance.now().toFixed(2), `Set sample rate for all to ${Options.all.sampleRate} because output is stdout`)
+      log(1, performance.now().toFixed(2), `Set sample rate for all to ${Number(arg)} because output is stdout`)
       return;
     }
     Options.sampleRate(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set sample rate to ${Options.all.sampleRate.find(i => i === Number(arg))}`)
+    log(1, performance.now().toFixed(2), `Set sample rate to ${Number(arg)} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
@@ -623,22 +630,22 @@ const setFormat = arg => {
   switch (arg) {
     case regexes.wavFormat.test(arg) && arg: {
       Options.format = "wave";
-      log(1, performance.now().toFixed(2), `Set stdout format to ${Options.all.format}`)
+      log(1, performance.now().toFixed(2), `Set stdout format to "wave"`)
       return;
     }
     case "flac": {
       Options.format = "flac";
-      log(1, performance.now().toFixed(2), `Set stdout format to ${Options.all.format}`)
+      log(1, performance.now().toFixed(2), `Set stdout format to "flac"`)
       return;
     }
     case "mp3": {
       Options.format = "mp3";
-      log(1, performance.now().toFixed(2), `Set stdout format to ${Options.all.format}`)
+      log(1, performance.now().toFixed(2), `Set stdout format to "mp3"`)
       return;
     }
     case regexes.rawFormat.test(arg) && arg: {
       Options.format = "pcm";
-      log(1, performance.now().toFixed(2), `Set stdout format to ${Options.all.format}`)
+      log(1, performance.now().toFixed(2), `Set stdout format to "pcm"`)
       return;
     }
   }
@@ -650,7 +657,7 @@ const setFormat = arg => {
  * @param {String} arg - the comma-separeted string to parse
  */
 const setEffects = (arg, lastIndex) => {
-  const regexListOfEffects =
+  const regexListOfEffects = (
     "allpass|band|bandpass|bandreject|bass|bend|biquad" +
     "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
     "|dither|divide|downsample|earwax|echo|echos|equalizer" +
@@ -659,7 +666,8 @@ const setEffects = (arg, lastIndex) => {
     "|norm|oops|output|overdrive|pad|phaser|pitch|rate|remix" +
     "|repeat|reverb|reverse|riaa|silence|sinc|spectrogram" +
     "|speed|splice|stat|stats|stretch|swap|synth|tempo" +
-    "|treble|tremolo|trim|upsample|vad|vol";
+    "|treble|tremolo|trim|upsample|vad|vol"
+  );
   const regexGroupListGetter = /([a-z]+) ?([-a-z\d ]+)?/gm;
   const regexTests = {
     // is it a list structured like
@@ -706,18 +714,18 @@ const setVolume = (arg, lastIndex) => {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
     Options.volume(Number(lastIndex?.index), toPercentage);
-    log(1, performance.now().toFixed(2), `Set volume to ${Options.all.volume.find(i => i === toPercentage)}`)
+    log(1, performance.now().toFixed(2), `Set volume to ${toPercentage} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     Options.volume(Number(lastIndex?.index), percentage / 100);
-    log(1, performance.now().toFixed(2), `Set volume to ${Options.all.volume.find(i => i === percentage / 100)}`)
+    log(1, performance.now().toFixed(2), `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
     return;
   }
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     Options.volume(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set volume to ${Options.all.volume.find(i => i === Number(arg))}`)
+    log(1, performance.now().toFixed(2), `Set volume to ${Number(arg)} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
@@ -758,7 +766,7 @@ const setReverb = (arg, lastIndex) => {
  */
 const setLogFilePath = arg => {
   Options.logFilePath(arg ?? "./spesso.log");
-  log(1, performance.now().toFixed(2), `Set log file path to ${Options.all.logFilePath}`)
+  log(1, performance.now().toFixed(2), `Set log file path to ${arg ?? "./spesso.log"}`)
 }
 /**
  * Runs uninstall.mjs and uninstall spessoplayer
