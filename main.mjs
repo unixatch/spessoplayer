@@ -831,10 +831,10 @@ async function toStdout({
   if (!spawn || !spawnSync) {
     ({ spawn, spawnSync } = await import("child_process"));
   }
-  addEvent({ eventType: "exit",
+  if (!res && !process.listenerCount("exit")) addEvent({ eventType: "exit",
     func: () => {
       // Necessary for programs like mpv
-      if (doneStreaming && !res) {
+      if (doneStreaming) {
         let command,
             commandToSend,
             argumentsForCommand,
@@ -921,7 +921,8 @@ async function toStdout({
       promiseOfPiping,
       finished(readStream, { cleanup: true })
         .then(() => {
-          doneStreaming = true
+          doneStreaming = true;
+          if (res) return;
           synth.destroySynthProcessor()
         }),
       ...promisesOfPrograms // If there are any
