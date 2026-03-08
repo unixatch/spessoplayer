@@ -144,7 +144,7 @@ function newFileName(path, createAnyway = false) {
 Set.prototype.addLeft = function (value) {
   const newValue = new Set([value]).union(this);
   this.clear()
-  newValue.values().forEach(i => this.add(i))
+  for (const value of newValue) this.add(value)
   return this;
 }
 /**
@@ -371,16 +371,19 @@ class Options {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(string, "string", "files")
     this.#checkValueAndExistence(isSoundfont, "boolean")
+    this.#checkValueAndExistence(replace, "boolean")
     const group = this.#options.files;
     if (!group[index]) group[index] = new Set();
     if (isSoundfont) {
-      const indexZero = group[index].getIndex(0);
-      if (replace) group[index].delete(indexZero)
+      if (replace) {
+        const indexZero = group[index].getIndex(0);
+        group[index].delete(indexZero)
+      }
       group[index].addLeft(string)
-    } else {
-      group[index].add(string)
-      this.#listOfSongs.push([index, string])
+      return;
     }
+    group[index].add(string)
+    this.#listOfSongs.push([index, string])
   }
   /**
    * Gives the amount of songs to do
@@ -414,11 +417,12 @@ class Options {
         simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
         continue;
       }
-      if (Array.isArray(this.#options[key])) {
-        if (this.#options[key].length === 1) {
-          simplifiedOptionsObject[key] = this.#options[key][0];
-          continue;
-        }
+      const isArray = Array.isArray(this.#options[key]);
+      if (isArray && this.#options[key].length === 1) {
+        simplifiedOptionsObject[key] = this.#options[key][0];
+        continue;
+      }
+      if (isArray) {
         simplifiedOptionsObject[key] = this.#options[key][index];
         continue;
       }
