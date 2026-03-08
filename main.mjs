@@ -922,7 +922,7 @@ async function toStdout({
       finished(readStream, { cleanup: true })
         .then(() => {
           doneStreaming = true;
-          if (res) return;
+          if (res) return synth.clearCache();
           synth.destroySynthProcessor()
         }),
       ...promisesOfPrograms // If there are any
