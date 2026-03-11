@@ -308,6 +308,10 @@ const actUpOnPassedArgs = async (args) => {
       case (lastParam === "input" || lastParam === undefined)
             && regexes.fileCheck.test(basename(arg))
             && arg: {
+        if (!global.fs) {
+          const fs = await import("node:fs");
+          global.fs = fs;
+        }
         setFilePromises.push(
           setFile({
             lastParam, lastIndex,
@@ -386,14 +390,6 @@ const setFile = async ({
   lastParam, lastIndex,
   newArguments, arg
 }) => {
-  function doesSetHave(setOfFiles, path, isMidi = true) {
-    const pathUpToName = join(parse(path).dir, parse(path).name);
-    if (isMidi) {
-      return setOfFiles?.has(pathUpToName+".sf2")
-             || setOfFiles?.has(pathUpToName+".dls");
-    }
-    return setOfFiles?.has(pathUpToName+".mid");
-  }
   function checkForIdenticalNames(path, isMidi = true) {
     const pathUpToName = join(parse(path).dir, parse(path).name);
     if (isMidi) {
@@ -404,123 +400,102 @@ const setFile = async ({
   }
   if (lastParam !== undefined && lastParam !== "input") return;
   
-  if (!global.fs) {
-    const fs = await import("node:fs");
-    global.fs = fs;
-  }
   const fileMagicNumber = await get20BytesFromFile(arg);
+  let typeOfFile;
+  switch (true) {
+    case fileMagicNumber.includes("MThd"):
+      typeOfFile = true;
+      break;
+    case fileMagicNumber.includes("sfbk"):
+    case fileMagicNumber.includes("DLS"):
+      typeOfFile = false;
+      break;
+  }
   
-  // -- MIDI files --
-  if (fileMagicNumber.includes("MThd")) {
-    const inputIndex = Number(lastIndex?.index ?? 0);
-    const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
-    for (const infos of indexesAndKeys) {
-      let index, setOfFiles;
-      if (infos) {
-        [index, setOfFiles] = infos;
-      } else continue;
-      
-      if (setOfFiles instanceof Set
-          && doesSetHave(setOfFiles, arg)
-          && !lastIndex?.index && !lastParam) {
-        Options.files(index, arg);
-        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index}`)
-        return;
-      }
+  const inputIndex = Number(lastIndex?.index ?? 0);
+  const logMessages = {
+    getMessage(type, arg, index) {
+      return (type)
+        ? `Set midi file to "${arg}" at index ${index}`
+        : `Set soundfont file to "${arg}" at index ${index}`;
+    },
+    getReplacedSoundfont(original, newOne, index) {
+      return `Replaced soundfont file from "${original}" to "${newOne}" at index ${index}`;
     }
-    for (const infos of indexesAndKeys) {
-      let index, setOfFiles;
-      if (infos) {
-        [index, setOfFiles] = infos;
-      } else continue;
-      
-      if (index === indexesAndKeys.length-1
-          && inputIndex !== index) {
-        if (checkForIdenticalNames(arg)
-            && !lastIndex?.index && !lastParam) {
-          Options.files(indexesAndKeys.length, arg)
-          log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${indexesAndKeys.length}`)
-          return;
-        }
-        Options.files(inputIndex, arg)
-        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${inputIndex}`)
-        return;
-      }
-      if (index !== inputIndex) continue;
-      
-      if (checkForIdenticalNames(arg)
-          && !lastIndex?.index && !lastParam) {
-        Options.files(indexesAndKeys.length, arg)
-        log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${indexesAndKeys.length}`)
-        return;
-      }
-      Options.files(index, arg);
-      log(1, performance.now().toFixed(2), `Set midi file to "${arg}" at index ${index}`)
+  };
+  if (lastIndex?.index || lastParam) {
+    Options.files(inputIndex, arg, !typeOfFile)
+    log(1,
+      performance.now().toFixed(2),
+      logMessages.getMessage(typeOfFile, arg, inputIndex)
+    )
+    return;
+  }
+  
+  // --- Automatic addition of files section ---
+  const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
+  /* 
+    ⏳ if one group inside Options.all
+       has the same basename as arg,
+       then it adds arg to that group
+    ❌ Otherwise it runs the next for loop below it
+    (e.g. index 2 and he needs to add to that,
+     that's why it's seperated otherwise it creates
+     a new Set when it already exists)
+  */
+  const pathUpToName = join(parse(arg).dir, parse(arg).name);
+  const foundIndex = Options.search(pathUpToName, typeOfFile);
+  if (foundIndex) {
+    Options.files(foundIndex, arg, !typeOfFile);
+    log(1,
+      performance.now().toFixed(2),
+      logMessages.getMessage(typeOfFile, arg, foundIndex)
+    )
+    return;
+  }
+  /*
+    Creates new Sets for identical basename files
+    or replaces soundfonts
+    or just adds to the first Set it can reach
+  */
+  for (const infos of indexesAndKeys) {
+    if (!infos) continue;
+    let [index, setOfFiles] = infos;
+    
+    if (checkForIdenticalNames(arg, typeOfFile)) {
+      Options.files(indexesAndKeys.length, arg, !typeOfFile)
+      log(1,
+        performance.now().toFixed(2),
+        logMessages.getMessage(typeOfFile, arg, indexesAndKeys.length)
+      )
       return;
     }
-  }
-  // -- End of MIDI files --
-
-  // Soundfont and downloadable sounds files
-  if (fileMagicNumber.includes("sfbk")
-      || fileMagicNumber.includes("DLS")) {
-    const inputIndex = Number(lastIndex?.index ?? 0);
-    const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
-    for (const infos of indexesAndKeys) {
-      let index, setOfFiles;
-      if (infos) {
-        [index, setOfFiles] = infos;
-      } else continue;
-      
-      if (setOfFiles instanceof Set
-          && doesSetHave(setOfFiles, arg, false)
-          && !lastIndex?.index && !lastParam) {
-        Options.files(index, arg, true);
-        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index}`)
-        return;
-      }
-    }
-    for (const infos of indexesAndKeys) {
-      let index, setOfFiles;
-      if (infos) {
-        [index, setOfFiles] = infos;
-      } else continue;
-      
-      if (index === indexesAndKeys.length-1
-          && index !== inputIndex) {
-        if (checkForIdenticalNames(arg, false)
-            && !lastIndex?.index && !lastParam) {
-          Options.files(indexesAndKeys.length, arg, true)
-          log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${indexesAndKeys.length}`)
-          return;
-        }
-        Options.files(inputIndex, arg, true);
-        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${inputIndex}`)
-        return;
-      }
-      if (index !== inputIndex) continue;
-      
-      if (checkForIdenticalNames(arg, false)
-          && !lastIndex?.index && !lastParam) {
-        Options.files(indexesAndKeys.length, arg, true)
-        log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${indexesAndKeys.length}`)
-        return;
-      }
+    // Soundfont replacer
+    if (!typeOfFile) {
       const fileMagicNumber = (setOfFiles instanceof Set)
         ? await get20BytesFromFile(setOfFiles.getIndex(0))
         : [];
       if (fileMagicNumber.includes("sfbk")
           || fileMagicNumber.includes("DLS")) {
-        log(1, performance.now().toFixed(2), `Replaced soundfont file from "${setOfFiles.getIndex(0)}" to "${arg}" at index ${index}`)
         Options.files(index, arg, true, true);
+        log(1,
+          performance.now().toFixed(2),
+          logMessages.getReplacedSoundfont(
+            setOfFiles.getIndex(0),
+            arg, index
+          )
+        )
         return;
       }
-      Options.files(index, arg, true);
-      log(1, performance.now().toFixed(2), `Set soundfont file to "${arg}" at index ${index}`)
-      return;
     }
+    Options.files(index, arg, !typeOfFile);
+    log(1,
+      performance.now().toFixed(2),
+      logMessages.getMessage(typeOfFile, arg, index)
+    )
+    return;
   }
-  // End of soundfont and downloadable sounds files
+  // --- END of automatic addition of files section ---
 }
 /**
  * Sets the Options.loopN variable

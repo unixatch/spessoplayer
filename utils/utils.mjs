@@ -196,6 +196,19 @@ class Options {
    * @private
    */
   static #listOfSongs = [];
+  /**
+   * @typedef list_Of_Soundfonts
+   * @type {Array[]}
+   * @property {Number} 0 - group index
+   * @property {String} 1 - filename of soundfont
+   * @private
+   */
+  /**
+   * List of all soundfonts
+   * @type {list_Of_Soundfonts}
+   * @private
+   */
+  static #listOfSoundfonts = new Map();
 
   /**
    * @function #checkValueAndExistence
@@ -380,6 +393,7 @@ class Options {
         group[index].delete(indexZero)
       }
       group[index].addLeft(string)
+      this.#listOfSoundfonts.set(string, index)
       return;
     }
     group[index].add(string)
@@ -391,6 +405,27 @@ class Options {
    */
   static get amountOfSongs() {
     return this.#listOfSongs.length;
+  }
+  /**
+   * Checks if there's a file somewhere
+   * that has exactly the same name as the user needs
+   * @param {String} name - basename to search for
+   * @param {Boolean} isAMidiSearching - if arg inside setFiles is a midi
+   * @return {(Number|false)} the index of the group or false if it didn't find any match
+   */
+  static search(name, isAMidiSearching) {
+    if (isAMidiSearching) {
+      // Inside soundfonts list
+      return this.#listOfSoundfonts.get(name+".sf2")
+             || this.#listOfSoundfonts.get(name+".dls")
+             || false;
+    }
+    // Inside midis list
+    const flattenMidis = [].concat(...this.#listOfSongs);
+    
+    const indexOfIndexOfGroup = flattenMidis.indexOf(name+".mid");
+    if (indexOfIndexOfGroup !== -1) return flattenMidis[indexOfIndexOfGroup-1];
+    return false;
   }
   /**
    * Creates a new Object similar to this.#options but with only
