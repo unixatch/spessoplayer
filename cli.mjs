@@ -390,6 +390,16 @@ const setFile = async ({
   lastParam, lastIndex,
   newArguments, arg
 }) => {
+  /**
+   * Checks for the same basename as the path given inside process.argv
+   * @param {String} path - full file path to compare with another one
+   * @param {Boolean} isMidi - if the given path is a midi file or not
+   * @type {Function}
+   * @inner
+   * @private
+   * @memberof module:main
+   * @return {Boolean} - whether or not it has found a similar file inside process.argv
+   */
   function checkForIdenticalNames(path, isMidi = true) {
     const pathUpToName = join(parse(path).dir, parse(path).name);
     if (isMidi) {
