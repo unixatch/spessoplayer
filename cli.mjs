@@ -141,6 +141,7 @@ async function get20BytesFromFile(path) {
  * @param {Array} args - The process.argv to analyse
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
+const setFilePromises = [];
 const actUpOnPassedArgs = async (args) => {
   let lastParam,
       lastIndex;
@@ -198,7 +199,7 @@ const actUpOnPassedArgs = async (args) => {
     log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
   }
 
-  let setFilePromises = [];
+  let indexOfSetFile = 0;
   for (const arg of newArguments) {
     switch (arg) {
       case regexes.wav.test(arg) && arg: {
@@ -314,6 +315,7 @@ const actUpOnPassedArgs = async (args) => {
         }
         setFilePromises.push(
           setFile({
+            indexOfSetFile: indexOfSetFile++,
             lastParam, lastIndex,
             newArguments, arg
           })
@@ -369,8 +371,20 @@ const actUpOnPassedArgs = async (args) => {
         }
     }
   }
-  // Adds files to the list asynchronously/in parallel
-  await Promise.all(setFilePromises)
+  /*
+    Adds files to the list asynchronously/in parallel
+    by chaining each function to the previous one
+    so that they stay syncronized and up to date.
+    
+    This means there's no performance loss because of
+    the async nature of them and it remains in
+    a sequential order regardless of execution timings.
+    
+    (e.g. sort order is the same like in process.argv
+     because each returned Promise waits before
+     actually adding the file)
+  */
+  await Promise.all(await Promise.all(setFilePromises))
   if (!Object.keys(Options.all.files ?? []).length) {
     console.error(`${red}Missing required files${normal}`);
     process.exit(1)
@@ -380,6 +394,7 @@ const actUpOnPassedArgs = async (args) => {
 /**
  * Sets a supported file inside a group in Options class
  * @param {Object} passedVariables - variables injected with this object
+ * @param {String} passedVariables.indexOfSetFile - index of the current function inside setFilePromises
  * @param {String} passedVariables.lastParam - last parameter that has been used last time
  * @param {String} passedVariables.lastIndex - last index that has been set last time
  * @param {String} passedVariables.newArguments - arguments passed from the terminal
@@ -387,6 +402,7 @@ const actUpOnPassedArgs = async (args) => {
  * @return {undefined}
  */
 const setFile = async ({
+  indexOfSetFile,
   lastParam, lastIndex,
   newArguments, arg
 }) => {
@@ -407,6 +423,22 @@ const setFile = async ({
              || newArguments.includes(pathUpToName+".dls");
     }
     return newArguments.includes(pathUpToName+".mid");
+  }
+  /**
+   * Returns either a new Promise or attaches a .then Promise to an older one
+   * @param {Function} - function to run within a Promise
+   * @type {Function}
+   * @inner
+   * @private
+   * @memberof module:main
+   * @return {Promise} - a new Promise that'll fulfill when the given function returns
+   */
+  function createPromise(func) {
+    const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
+    if (!lastSetFilePromise) {
+      return new Promise(resolve => resolve(func()));
+    }
+    return lastSetFilePromise.then(() => func());
   }
   if (lastParam !== undefined && lastParam !== "input") return;
   
@@ -434,16 +466,16 @@ const setFile = async ({
     }
   };
   if (lastIndex?.index || lastParam) {
-    Options.files(inputIndex, arg, !typeOfFile)
-    log(1,
-      performance.now().toFixed(2),
-      logMessages.getMessage(typeOfFile, arg, inputIndex)
-    )
-    return;
+    return createPromise(() => {
+      Options.files(inputIndex, arg, !typeOfFile)
+      log(1,
+        performance.now().toFixed(2),
+        logMessages.getMessage(typeOfFile, arg, inputIndex)
+      )
+    });
   }
   
   // --- Automatic addition of files section ---
-  const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
   /* 
     ⏳ if one group inside Options.all
        has the same basename as arg,
@@ -454,23 +486,27 @@ const setFile = async ({
      a new Set when it already exists)
   */
   const pathUpToName = join(parse(arg).dir, parse(arg).name);
-  const foundIndex = Options.search(pathUpToName, typeOfFile);
-  if (foundIndex) {
-    Options.files(foundIndex, arg, !typeOfFile);
-    log(1,
-      performance.now().toFixed(2),
-      logMessages.getMessage(typeOfFile, arg, foundIndex)
-    )
-    return;
+  const foundIndex = Options.searchFile(pathUpToName, typeOfFile);
+  if (typeof foundIndex === "number") {
+    return createPromise(() => {
+      Options.files(foundIndex, arg, !typeOfFile);
+      log(1,
+        performance.now().toFixed(2),
+        logMessages.getMessage(typeOfFile, arg, foundIndex)
+      )
+    });
   }
   if (checkForIdenticalNames(arg, typeOfFile)) {
-    Options.files(indexesAndKeys.length, arg, !typeOfFile)
-    log(1,
-      performance.now().toFixed(2),
-      logMessages.getMessage(typeOfFile, arg, indexesAndKeys.length)
-    )
-    return;
+    return createPromise(() => {
+      const indexesAndKeys = Options.all.files ?? [];
+      Options.files(indexesAndKeys.length, arg, !typeOfFile)
+      log(1,
+        performance.now().toFixed(2),
+        logMessages.getMessage(typeOfFile, arg, indexesAndKeys.length)
+      )
+    });
   }
+  const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
   /*
     Creates new Sets for identical basename files
     or replaces soundfonts
@@ -487,23 +523,25 @@ const setFile = async ({
         : [];
       if (fileMagicNumber.includes("sfbk")
           || fileMagicNumber.includes("DLS")) {
-        Options.files(index, arg, true, true);
-        log(1,
-          performance.now().toFixed(2),
-          logMessages.getReplacedSoundfont(
-            setOfFiles.getIndex(0),
-            arg, index
+        return createPromise(() => {
+          Options.files(index, arg, true, true);
+          log(1,
+            performance.now().toFixed(2),
+            logMessages.getReplacedSoundfont(
+              setOfFiles.getIndex(0),
+              arg, index
+            )
           )
-        )
-        return;
+        });
       }
     }
-    Options.files(index, arg, !typeOfFile);
-    log(1,
-      performance.now().toFixed(2),
-      logMessages.getMessage(typeOfFile, arg, index)
-    )
-    return;
+    return createPromise(() => {
+      Options.files(index, arg, !typeOfFile);
+      log(1,
+        performance.now().toFixed(2),
+        logMessages.getMessage(typeOfFile, arg, index)
+      )
+    });
   }
   // --- END of automatic addition of files section ---
 }

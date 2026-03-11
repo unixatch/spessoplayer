@@ -413,12 +413,17 @@ class Options {
    * @param {Boolean} isAMidiSearching - if arg inside setFiles is a midi
    * @return {(Number|false)} the index of the group or false if it didn't find any match
    */
-  static search(name, isAMidiSearching) {
+  static searchFile(name, isAMidiSearching) {
     if (isAMidiSearching) {
       // Inside soundfonts list
-      return this.#listOfSoundfonts.get(name+".sf2")
-             || this.#listOfSoundfonts.get(name+".dls")
-             || false;
+      const indexOfGroup = [
+        this.#listOfSoundfonts.get(name+".sf2"),
+        this.#listOfSoundfonts.get(name+".dls")
+      ];
+      for (const typeOfFile of indexOfGroup) {
+        if (typeOfFile !== undefined) return typeOfFile;
+      }
+      return false;
     }
     // Inside midis list
     const flattenMidis = [].concat(...this.#listOfSongs);
