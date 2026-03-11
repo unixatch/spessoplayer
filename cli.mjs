@@ -453,6 +453,14 @@ const setFile = async ({
     )
     return;
   }
+  if (checkForIdenticalNames(arg, typeOfFile)) {
+    Options.files(indexesAndKeys.length, arg, !typeOfFile)
+    log(1,
+      performance.now().toFixed(2),
+      logMessages.getMessage(typeOfFile, arg, indexesAndKeys.length)
+    )
+    return;
+  }
   /*
     Creates new Sets for identical basename files
     or replaces soundfonts
@@ -462,14 +470,6 @@ const setFile = async ({
     if (!infos) continue;
     let [index, setOfFiles] = infos;
     
-    if (checkForIdenticalNames(arg, typeOfFile)) {
-      Options.files(indexesAndKeys.length, arg, !typeOfFile)
-      log(1,
-        performance.now().toFixed(2),
-        logMessages.getMessage(typeOfFile, arg, indexesAndKeys.length)
-      )
-      return;
-    }
     // Soundfont replacer
     if (!typeOfFile) {
       const fileMagicNumber = (setOfFiles instanceof Set)
