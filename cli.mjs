@@ -518,7 +518,7 @@ const setFile = async ({
       return;
     }
     // It just adds to the last Set it can reach
-    const lastKnownGroupIndex = Options.lastKnownGroupIndex() ?? 0;
+    const lastKnownGroupIndex = Options.lastKnownGroupIndex ?? 0;
     Options.files(lastKnownGroupIndex, arg, !typeOfFile);
     log(1,
       performance.now().toFixed(2),
