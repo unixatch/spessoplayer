@@ -407,6 +407,34 @@ class Options {
     return this.#listOfSongs.length;
   }
   /**
+   * Gives the amount of groups
+   * @return {Number} the amount
+   */
+  static get amountOfGroups() {
+    return this.#options.files?.length ?? 0;
+  }
+  /**
+   * Gives the last known group's index that has been added
+   * @param {Number} [index=this.amountOfGroups] starting index
+   * @return {(Number|undefined)} index of the group
+   * @throws {RangeError} if the index is below 0
+   */
+  static lastKnownGroupIndex(index = this.amountOfGroups) {
+    if (index < 0) throw new RangeError("Can't use a negative number");
+
+    if (!this.#options.files
+        || !this.#options.files.length) return;
+
+    if (index === 0) {
+      if (this.#options.files[index]) {
+        return 0;
+      } else return;
+    }
+
+    if (!this.#options.files[index]) return this.lastKnownGroupIndex(index-1);
+    return index;
+  }
+  /**
    * Checks if there's a file somewhere
    * that has exactly the same name as the user needs
    * @param {String} name - basename to search for

@@ -466,8 +466,19 @@ const setFile = async ({
     }
   };
   if (lastIndex?.index || lastParam) {
-    return createPromise(() => {
-      Options.files(inputIndex, arg, !typeOfFile)
+    return createPromise(async () => {
+      let needsToBeReplaced = false;
+
+      // Replaces the last soundfont it can reach if it needs to
+      if (!typeOfFile) {
+        const setOfFiles = Options.all.files[inputIndex];
+        const fileMagicNumber = (setOfFiles instanceof Set)
+          ? await get20BytesFromFile(setOfFiles.getIndex(0))
+          : [];
+        if (fileMagicNumber.includes("sfbk")
+            || fileMagicNumber.includes("DLS")) needsToBeReplaced = true;
+      }
+      Options.files(inputIndex, arg, !typeOfFile, needsToBeReplaced)
       log(1,
         performance.now().toFixed(2),
         logMessages.getMessage(typeOfFile, arg, inputIndex)
@@ -476,73 +487,44 @@ const setFile = async ({
   }
   
   // --- Automatic addition of files section ---
-  /* 
-    ⏳ if one group inside Options.all
-       has the same basename as arg,
-       then it adds arg to that group
-    ❌ Otherwise it runs the next for loop below it
-    (e.g. index 2 and he needs to add to that,
-     that's why it's seperated otherwise it creates
-     a new Set when it already exists)
-  */
-  const pathUpToName = join(parse(arg).dir, parse(arg).name);
-  const foundIndex = Options.searchFile(pathUpToName, typeOfFile);
-  if (typeof foundIndex === "number") {
-    return createPromise(() => {
+  return createPromise(() => {
+    /* 
+      ⏳ if one group inside Options.all
+         has the same basename as arg,
+         then it adds arg to that group
+      ❌ Otherwise it runs the next check below it
+      (e.g. index 2 and he needs to add to that,
+       that's why it's seperated otherwise it creates
+       a new Set when it already exists)
+    */
+    const pathUpToName = join(parse(arg).dir, parse(arg).name);
+    const foundIndex = Options.searchFile(pathUpToName, typeOfFile);
+    if (typeof foundIndex === "number") {
       Options.files(foundIndex, arg, !typeOfFile);
       log(1,
         performance.now().toFixed(2),
         logMessages.getMessage(typeOfFile, arg, foundIndex)
       )
-    });
-  }
-  if (checkForIdenticalNames(arg, typeOfFile)) {
-    return createPromise(() => {
-      const indexesAndKeys = Options.all.files ?? [];
-      Options.files(indexesAndKeys.length, arg, !typeOfFile)
-      log(1,
-        performance.now().toFixed(2),
-        logMessages.getMessage(typeOfFile, arg, indexesAndKeys.length)
-      )
-    });
-  }
-  const indexesAndKeys = (Options.all.files ?? [[]]).map((e, i) => [i, e]);
-  /*
-    Creates new Sets for identical basename files
-    or replaces soundfonts
-    or just adds to the first Set it can reach
-  */
-  for (const infos of indexesAndKeys) {
-    if (!infos) continue;
-    let [index, setOfFiles] = infos;
-    
-    // Soundfont replacer
-    if (!typeOfFile) {
-      const fileMagicNumber = (setOfFiles instanceof Set)
-        ? await get20BytesFromFile(setOfFiles.getIndex(0))
-        : [];
-      if (fileMagicNumber.includes("sfbk")
-          || fileMagicNumber.includes("DLS")) {
-        return createPromise(() => {
-          Options.files(index, arg, true, true);
-          log(1,
-            performance.now().toFixed(2),
-            logMessages.getReplacedSoundfont(
-              setOfFiles.getIndex(0),
-              arg, index
-            )
-          )
-        });
-      }
+      return;
     }
-    return createPromise(() => {
-      Options.files(index, arg, !typeOfFile);
+    // Creates new Sets for identical basename files
+    if (checkForIdenticalNames(arg, typeOfFile)) {
+      const amountOfGroups = Options.amountOfGroups;
+      Options.files(amountOfGroups, arg, !typeOfFile)
       log(1,
         performance.now().toFixed(2),
-        logMessages.getMessage(typeOfFile, arg, index)
+        logMessages.getMessage(typeOfFile, arg, amountOfGroups)
       )
-    });
-  }
+      return;
+    }
+    // It just adds to the last Set it can reach
+    const lastKnownGroupIndex = Options.lastKnownGroupIndex() ?? 0;
+    Options.files(lastKnownGroupIndex, arg, !typeOfFile);
+    log(1,
+      performance.now().toFixed(2),
+      logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex)
+    )
+  });
   // --- END of automatic addition of files section ---
 }
 /**
