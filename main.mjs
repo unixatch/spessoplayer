@@ -70,22 +70,20 @@ let spawn,
 if (listOfOptions?.toStdout) {
   const filesList = listOfOptions.files,
         lengthOfFiles = [],
-        listOfFunctions = [],
-        listOfPromises = [],
         promisesOfPrograms = [],
         { getWavHeader } = await import("./audioBuffer.mjs");
   const amountOfSongs = Options.amountOfSongs;
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
     if (!options) continue;
-    const [ length, func, promise ] = await toStdout({
+    const length = await initSpessaSynth({
       index: i,
-      ...options
+      ...options,
+      onlySampleCount: true
     });
     lengthOfFiles.push(length)
-    listOfFunctions.push(func)
-    listOfPromises.push(promise)
   }
+  
   let effectsProcess,
       converterProcess;
   // Creating the header
@@ -98,6 +96,7 @@ if (listOfOptions?.toStdout) {
   // If it needs to be converted
   const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
   if (needsConvertion) {
+    if (!spawn) ({ spawn } = await import("child_process"));
     converterProcess = spawn("ffmpeg",
       ffmpegArgs()[listOfOptions?.format],
       {stdio: ["pipe", process.stdout, "pipe"]}
@@ -136,13 +135,15 @@ if (listOfOptions?.toStdout) {
     process.stdout.write(stdoutHeader)
     destination = process.stdout;
   }
-  for (const [i, promise] of listOfPromises.entries()) {
-    if (listOfFunctions[i]) {
-      await listOfFunctions[i](
-        destination,
-        i === listOfFunctions.length - 1
-      )
-    }
+  for (let i = 0; i < amountOfSongs; i++) {
+    const options = Options.getOptionsOfSong(i);
+    if (!options) continue;
+    const [ func, promise ] = await toStdout({
+      index: i,
+      ...options
+    });
+
+    if (func) func(destination, i === amountOfSongs-1)
     await promise
   }
   await Promise.all(promisesOfPrograms)
@@ -200,16 +201,18 @@ if (listOfOptions?.fileOutputs?.length > 0) {
         finalFileOutputs = [],
         listOfPromises = [];
   let fileOutputs,
+      pipingFunctions,
       promiseToAdd;
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
     if (fileOutputs) options.fileOutputs = fileOutputs;
     
-    [fileOutputs, promiseToAdd] = await toFile({
+    [fileOutputs, pipingFunctions, promiseToAdd] = await toFile({
       createNewFileNameAnyway: (i > 0 || filesList.length > 1),
       index: i, progress,
       ...options
     });
+    for (const func of pipingFunctions) func()
     finalFileOutputs.push(...fileOutputs)
     listOfPromises.push(promiseToAdd)
   }
@@ -245,9 +248,13 @@ async function formatManager({
   promisesOfPrograms,
   outFile
 }) {
-  const connectToEffectsProcess = (whereToConnect, end) => {
-    readStream.pipe(whereToConnect, { end })
-  };
+  function addPipingFunction(func) {
+    return (!func)
+      ? pipingFunction = (whereToConnect, end) => {
+        readStream.pipe(whereToConnect, { end })
+      }
+      : pipingFunction = func;
+  }
   if (format !== "wave" && format !== ""
       && !/^.*(?:\.wav|\.wave)$/.test(outFile)
       && !/^.*\.(?:s16le|s32le|pcm)$/.test(outFile)) {
@@ -265,11 +272,7 @@ async function formatManager({
   
   const isStdout = format !== true,
         isToFile = format === true;
-  let pipingFunction,
-      promiseOfPiping;
-  function addPromiseOfPiping(func) {
-    promiseOfPiping = new Promise(func)
-  }
+  let pipingFunction;
   switch (format) {
     case "wave":
     case /^.*(?:\.wav|\.wave)$/.test(outFile): {
@@ -283,7 +286,7 @@ async function formatManager({
       
       if (effects) {
         if (isStdout) {
-          pipingFunction = connectToEffectsProcess;
+          addPipingFunction();
         } else {
           await applyEffects({
             program: "sox",
@@ -298,14 +301,11 @@ async function formatManager({
       }
       if (isToFile) {
         const output = fs.createWriteStream(outFile);
-        addPromiseOfPiping(resolve => {
+        addPipingFunction(() => {
           output.write(stdoutHeader ?? "")
           readStream.pipe(output)
-          resolve()
         })
-      } else {
-        pipingFunction = connectToEffectsProcess;
-      }
+      } else addPipingFunction()
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
     }
@@ -344,10 +344,9 @@ async function formatManager({
         })
       )
       log(1, performance.now().toFixed(2), "Added promise")
-      addPromiseOfPiping(resolve => {
+      addPipingFunction(() => {
         ffmpeg.stdin.write(stdoutHeader)
         readStream.pipe(ffmpeg.stdin)
-        resolve()
       })
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
@@ -372,10 +371,7 @@ async function formatManager({
           ? "Done setting up"
           : "Done setting up pcm outFile"
       )
-      addPromiseOfPiping(resolve => {
-        readStream.pipe(output)
-        resolve()
-      })
+      addPipingFunction(() => readStream.pipe(output))
       break;
     }
     
@@ -385,18 +381,17 @@ async function formatManager({
       
       const doneSettingUpMsg = "Done setting up";
       if (effects) {
-        pipingFunction = connectToEffectsProcess;
+        addPipingFunction()
         log(1, performance.now().toFixed(2), doneSettingUpMsg)
         break;
       }
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
-      addPromiseOfPiping(resolve => {
+      addPipingFunction(() => {
         readStream.pipe((res) ? res : process.stdout)
-        resolve()
       })
     }
   }
-  return [pipingFunction, promiseOfPiping];
+  return pipingFunction;
 }
 /**
  * Calculates the sample count to use
@@ -455,6 +450,7 @@ function getSampleCount({
  * @param {Number} initObj.loopStart - start of loop
  * @param {Number} initObj.loopEnd - end of loop
  * @param {Number} initObj.indexOfGroup - index of the Set/group the song is in
+ * @param {Boolean} [initObj.onlySampleCount=false] - if it should return just the sample count of the song and do nothing else
  * @return {Object} object containing:
  *                  - seq;
  *                  - synth;
@@ -468,7 +464,7 @@ async function initSpessaSynth({
   midiFile, soundfontFile,
   sampleRate = 48000,
   loopStart, loopEnd,
-  indexOfGroup
+  indexOfGroup, onlySampleCount = false
 }) {
   if (!SpessaSynthProcessor) {
     ({
@@ -479,7 +475,8 @@ async function initSpessaSynth({
     } = await import("spessasynth_core"));
   }
   const mid = fs.readFileSync(midiFile);
-  const sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
+  let sf;
+  if (!onlySampleCount) sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
   const midi = BasicMIDI.fromArrayBuffer(mid);
   const {
     sampleCount,
@@ -491,6 +488,7 @@ async function initSpessaSynth({
     loopAmount,
     loopStart, loopEnd
   });
+  if (onlySampleCount) return sampleCount;
   
   if (loopStart > 0 && !loopDetectedInMidi) {
     // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * loopStart;
@@ -907,7 +905,7 @@ async function toStdout({
   });
 
   const promisesOfPrograms = [];
-  const [ pipingFunction, promiseOfPiping ] = await formatManager({
+  const pipingFunction = await formatManager({
     format: format ?? "",
     readStream, index, res,
     effects,
@@ -915,10 +913,8 @@ async function toStdout({
   });
   log(1, performance.now().toFixed(2), "Finished creating the stdout promise")
   return [
-    sampleCount,
     pipingFunction,
     Promise.all([
-      promiseOfPiping,
       finished(readStream, { cleanup: true })
         .then(() => {
           doneStreaming = true;
@@ -1003,9 +999,9 @@ async function toFile({
     progress, clearLastLines
   });
   const promisesOfPrograms = [],
-        promisesOfPiping = [];
+        pipingFunctions = [];
   for (let outFile of fileOutputs) {
-    const [ _, promise ] = await formatManager({
+    const pipingFunction = await formatManager({
       readStream,
       effects, index,
       newFileName, createNewFileNameAnyway,
@@ -1013,12 +1009,12 @@ async function toFile({
       stdoutHeader,
       promisesOfPrograms, outFile
     });
-    promisesOfPiping.push(promise)
+    pipingFunctions.push(pipingFunction)
   }
   return [
     fileOutputs,
+    pipingFunctions,
     Promise.all([
-      ...promisesOfPiping,
       finished(readStream, { cleanup: true })
         .then(() => synth.destroySynthProcessor()),
       ...promisesOfPrograms // if there are any
@@ -1050,9 +1046,10 @@ async function startPlayer() {
     }
     const realIndex = Number(index),
           options = Options.getOptionsOfSong(realIndex);
-    const [ length, func, promise ] = await toStdout({
-      index: realIndex, res,
-      ...options
+    const length = await initSpessaSynth({
+      index: realIndex,
+      ...options,
+      onlySampleCount: true
     });
     
     let effectsProcess,
@@ -1071,6 +1068,7 @@ async function startPlayer() {
     // If it needs to be converted
     const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
     if (needsConvertion) {
+      if (!spawn) ({ spawn } = await import("child_process"));
       converterProcess = spawn("ffmpeg",
         ffmpegArgs()[listOfOptions?.format],
         {stdio: ["pipe", res.socket, "pipe"]}
@@ -1109,6 +1107,10 @@ async function startPlayer() {
       res.write(stdoutHeader)
       destination = res;
     }
+    const [ func, promise ] = await toStdout({
+      index: realIndex, res,
+      ...options
+    });
     if (func) await func(destination, true)
     await promise
     await Promise.all(promisesOfPrograms)
