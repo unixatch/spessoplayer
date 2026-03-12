@@ -137,40 +137,46 @@ function newFileName(path, createAnyway = false) {
   return path;
 }
 /**
- * Adds unshift functionality to Set
- * @param {Array} value - value to add
- * @return {Set} - an updated set with the values added on the left
+ * A class that extends Set so that it works better
+ * with the other class called Options
  */
-Set.prototype.addLeft = function (value) {
-  const newValue = new Set([value]).union(this);
-  this.clear()
-  for (const value of newValue) this.add(value)
-  return this;
-}
-/**
- * Adds value retrieval from given index functionality to Set
- * @param {Number} index - index to get
- * @throws {TypeError} - if it's not a number
- * @return {*} - the value at the specified index in the Set
- */
-Set.prototype.getIndex = function (index) {
-  if (typeof index !== "number") {
-    throw new TypeError(`${index} is not a number`)
+class OptionsSet extends Set {
+  /**
+   * Adds unshift functionality to Set
+   * @param {Array} value - value to add
+   * @return {OptionsSet} - an updated set with the values added on the left
+   */
+  addLeft(value) {
+    const newValue = new Set([value]).union(this);
+    this.clear()
+    for (const value of newValue) this.add(value)
+    return this;
   }
-  const helper = this.values().map((v, i) => [i, v]);
-  for (const [i, v] of helper) {
-    if (i === index) return v;
+  /**
+   * Adds value retrieval from given index functionality to Set
+   * @param {Number} index - index to get
+   * @throws {TypeError} - if it's not a number
+   * @return {*} - the value at the specified index in the Set
+   */
+  getIndex(index) {
+    if (typeof index !== "number") {
+      throw new TypeError(`${index} is not a number`)
+    }
+    const helper = this.values().map((v, i) => [i, v]);
+    for (const [i, v] of helper) {
+      if (i === index) return v;
+    }
   }
-}
-/**
- * Adds value retrieval functionality to Set
- * @param {*} value - value to search
- * @return {*} found value or undefined
- */
-Set.prototype.get = function (valueToFind) {
-  for (const value of this.values()) {
-    if (!valueToFind) return value;
-    if (value === valueToFind) return value;
+  /**
+   * Adds value retrieval functionality to Set
+   * @param {*} value - value to search
+   * @return {*} found value or undefined
+   */
+  get(valueToFind) {
+    for (const value of this.values()) {
+      if (!valueToFind) return value;
+      if (value === valueToFind) return value;
+    }
   }
 }
 /**
@@ -386,7 +392,7 @@ class Options {
     this.#checkValueAndExistence(isSoundfont, "boolean")
     this.#checkValueAndExistence(replace, "boolean")
     const group = this.#options.files;
-    if (!group[index]) group[index] = new Set();
+    if (!group[index]) group[index] = new OptionsSet();
     if (isSoundfont) {
       if (replace) {
         const indexZero = group[index].getIndex(0);
