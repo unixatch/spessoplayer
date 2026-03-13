@@ -199,6 +199,10 @@ const actUpOnPassedArgs = async (args) => {
     log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
   }
 
+  function clearLastVariables() {
+    lastParam = undefined,
+    lastIndex = undefined;
+  }
   let indexOfSetFile = 0;
   for (const arg of newArguments) {
     switch (arg) {
@@ -320,7 +324,7 @@ const actUpOnPassedArgs = async (args) => {
             newArguments, arg
           })
         )
-        if (lastParam === "input") lastParam = undefined;
+        if (lastParam === "input") clearLastVariables()
         break;
       }
       
@@ -328,35 +332,35 @@ const actUpOnPassedArgs = async (args) => {
         switch (lastParam) {
           case "loop":
             setLoop(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "loop-start":
             setLoopStart(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "loop-end":
             setLoopEnd(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "sample-rate":
             setSampleRate(arg, lastIndex, newArguments)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "format":
             setFormat(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "volume":
             setVolume(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "reverb":
             setReverb(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           case "effects":
             setEffects(arg, lastIndex)
-            lastParam = undefined;
+            clearLastVariables()
             break;
           
           default:
