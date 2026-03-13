@@ -439,10 +439,9 @@ const setFile = async ({
    */
   function createPromise(func) {
     const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
-    if (!lastSetFilePromise) {
-      return new Promise(resolve => resolve(func()));
-    }
-    return lastSetFilePromise.then(() => func());
+    return (!lastSetFilePromise)
+            ? func()
+            : lastSetFilePromise.then(() => func());
   }
   if (lastParam !== undefined && lastParam !== "input") return;
   
@@ -456,8 +455,12 @@ const setFile = async ({
     case fileMagicNumber.includes("DLS"):
       typeOfFile = false;
       break;
+
+    default:
+      // Incompatible file
+      return;
   }
-  
+
   const inputIndex = Number(lastIndex?.index ?? 0);
   const logMessages = {
     getMessage(type, arg, index) {
