@@ -505,7 +505,7 @@ const setFile = async ({
        a new Set when it already exists)
     */
     const pathUpToName = join(parse(arg).dir, parse(arg).name);
-    const foundIndex = Options.searchFile(pathUpToName, typeOfFile);
+    const foundIndex = Options.searchAddedFile(pathUpToName, typeOfFile);
     if (typeof foundIndex === "number") {
       Options.files(foundIndex, arg, !typeOfFile);
       log(1,

@@ -430,7 +430,7 @@ class Options {
    * @param {Boolean} isAMidiSearching - if arg inside setFiles is a midi
    * @return {(Number|false)} the index of the group or false if it didn't find any match
    */
-  static searchFile(name, isAMidiSearching) {
+  static searchAddedFile(name, isAMidiSearching) {
     if (isAMidiSearching) {
       // Inside soundfonts list
       const indexOfGroup = [
