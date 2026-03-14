@@ -209,6 +209,22 @@ class Options {
    * @private
    */
   static #listOfSoundfonts = new Map();
+  /**
+   * Asynchronously creates a copy
+   * of process.argv without file extensions
+   * (See isAutomaticBasenameGroup method)
+   * @type {String[]}
+   * @private
+   */
+  static #argvWithoutFileExtensions = new Promise(resolve => {
+    const newArguments = process.argv.slice(2),
+          newArgumentsLength = newArguments.length;
+    for (let i = 0; i < newArgumentsLength; i++) {
+      const parsedElement = parse(newArguments[i]);
+      newArguments[i] = join(parsedElement.dir, parsedElement.name);
+    }
+    resolve(newArguments)
+  });
 
   /**
    * @function #checkValueAndExistence
@@ -427,12 +443,11 @@ class Options {
    * Checks if there's a file somewhere
    * that has exactly the same name as the user needs
    * @param {String} name - basename to search for
-   * @param {Boolean} isAMidiSearching - if arg inside setFiles is a midi
+   * @param {(Boolean|undefined)} isAMidiSearching - if arg inside setFiles is a midi or it needs to search everywhere
    * @return {(Number|false)} the index of the group or false if it didn't find any match
    */
   static searchAddedFile(name, isAMidiSearching) {
-    if (isAMidiSearching) {
-      // Inside soundfonts list
+    const soundfontSearch = () => {
       const indexOfGroup = [
         this.#listOfSoundfonts.get(name+".sf2"),
         this.#listOfSoundfonts.get(name+".dls")
@@ -441,13 +456,42 @@ class Options {
         if (typeOfFile !== undefined) return typeOfFile;
       }
       return false;
+    };
+    const midiSearch = () => {
+      const flattenMidis = [].concat(...this.#listOfSongs);
+      
+      const indexOfIndexOfGroup = flattenMidis.indexOf(name+".mid");
+      if (indexOfIndexOfGroup !== -1) return flattenMidis[indexOfIndexOfGroup-1];
+      return false;
+    };
+
+    if (isAMidiSearching === undefined) return midiSearch() || soundfontSearch();
+    if (isAMidiSearching) return soundfontSearch();
+    return midiSearch();
+  }
+  /**
+   * Checks if a group is an automatic basename group
+   * @param {Number} indexOfGroup - index of the group
+   * @return {(true|false)}
+   * @throws {TypeError} - if index is not a number
+   */
+  static async isAutomaticBasenameGroup(indexOfGroup) {
+    if (typeof indexOfGroup !== "number") throw new TypeError("index must be a number")
+    const group = this.#options.files[indexOfGroup];
+
+    if (group.size > 2) return false;
+    if (group.size < 2) {
+      const parsedFirstFile = parse(group.getIndex(0)),
+            pathUpToName = join(parsedFirstFile.dir, parsedFirstFile.name);
+
+      const noExtNewArguments = (await this.#argvWithoutFileExtensions).slice();
+      const indexOfFile = noExtNewArguments.indexOf(pathUpToName);
+      delete noExtNewArguments[indexOfFile]
+      return noExtNewArguments.includes(pathUpToName);
     }
-    // Inside midis list
-    const flattenMidis = [].concat(...this.#listOfSongs);
-    
-    const indexOfIndexOfGroup = flattenMidis.indexOf(name+".mid");
-    if (indexOfIndexOfGroup !== -1) return flattenMidis[indexOfIndexOfGroup-1];
-    return false;
+
+    const [soundfont, midi] = [group.getIndex(0), group.getIndex(1)];
+    return parse(soundfont).name === parse(midi).name;
   }
   /**
    * Creates a new Object similar to this.#options but with only

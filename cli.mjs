@@ -203,7 +203,8 @@ const actUpOnPassedArgs = async (args) => {
     lastParam = undefined,
     lastIndex = undefined;
   }
-  let indexOfSetFile = 0;
+  let indexOfSetFile = 0,
+      lastAutomaticFile;
   for (const arg of newArguments) {
     switch (arg) {
       case regexes.wav.test(arg) && arg: {
@@ -320,10 +321,11 @@ const actUpOnPassedArgs = async (args) => {
         setFilePromises.push(
           setFile({
             indexOfSetFile: indexOfSetFile++,
-            lastParam, lastIndex,
+            lastParam, lastIndex, lastAutomaticFile,
             newArguments, arg
           })
         )
+        if (!lastParam) lastAutomaticFile = arg;
         if (lastParam === "input") clearLastVariables()
         break;
       }
@@ -401,13 +403,14 @@ const actUpOnPassedArgs = async (args) => {
  * @param {String} passedVariables.indexOfSetFile - index of the current function inside setFilePromises
  * @param {String} passedVariables.lastParam - last parameter that has been used last time
  * @param {String} passedVariables.lastIndex - last index that has been set last time
+ * @param {String} passedVariables.lastAutomaticFile - last file that has been set automatically
  * @param {String} passedVariables.newArguments - arguments passed from the terminal
  * @param {String} passedVariables.arg - argument passed to this function that is also a file path
  * @return {undefined}
  */
 const setFile = async ({
   indexOfSetFile,
-  lastParam, lastIndex,
+  lastParam, lastIndex, lastAutomaticFile,
   newArguments, arg
 }) => {
   /**
@@ -494,7 +497,7 @@ const setFile = async ({
   }
   
   // --- Automatic addition of files section ---
-  return createPromise(() => {
+  return createPromise(async () => {
     /* 
       ⏳ if one group inside Options.all
          has the same basename as arg,
@@ -525,7 +528,20 @@ const setFile = async ({
       return;
     }
     // It just adds to the last Set it can reach
-    const lastKnownGroupIndex = Options.lastKnownGroupIndex ?? 0;
+    let lastKnownGroupIndex = Options.lastKnownGroupIndex ?? 0;
+    // or maybe to the last automatic group
+    // if a file has been added automatically last time
+    if (lastAutomaticFile) automaticFileCheck: {
+      const pathUpToName = join(parse(lastAutomaticFile).dir, parse(lastAutomaticFile).name);
+      const indexOfGroup = Options.searchAddedFile(pathUpToName);
+      if (typeof indexOfGroup !== "number") break automaticFileCheck;
+      
+      if (await Options.isAutomaticBasenameGroup(indexOfGroup)) {
+        lastKnownGroupIndex++
+      } else {
+        lastKnownGroupIndex = indexOfGroup;
+      }
+    }
     Options.files(lastKnownGroupIndex, arg, !typeOfFile);
     log(1,
       performance.now().toFixed(2),
