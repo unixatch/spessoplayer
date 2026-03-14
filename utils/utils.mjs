@@ -395,27 +395,43 @@ class Options {
    * The main method to add a file to the list of Sets
    * @param {Number} index - index of the group of files
    * @param {String} string - file to add
-   * @param {Boolean} isSoundfont - if it's a soundfont, then add as a first element
-   * @param {Boolean} replace - if it should delete the first element before adding the soundfont
+   * @param {Boolean} [isSoundfont=false] - if it's a soundfont, then add as a first element
+   * @param {Boolean} [replace=false] - if it should delete the first element before adding the soundfont
    */
   static files(index, string, isSoundfont = false, replace = false) {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(string, "string", "files")
     this.#checkValueAndExistence(isSoundfont, "boolean")
     this.#checkValueAndExistence(replace, "boolean")
-    const group = this.#options.files;
-    if (!group[index]) group[index] = new Set();
+    const groups = this.#options.files,
+          parsedPath = parse(string);
+    groups[index] ??= new Set();
+
     if (isSoundfont) {
+      const oldIndexZero = groups[index].getIndex(0);
+      if (replace) groups[index].delete(oldIndexZero)
+      groups[index].addLeft(string)
+
+      if (oldIndexZero === groups[index].getIndex(0)) return;
       if (replace) {
-        const indexZero = group[index].getIndex(0);
-        group[index].delete(indexZero)
+        const oldIndexZeroWithoutExt = join(parse(oldIndexZero).dir, parse(oldIndexZero).name);
+        this.#listOfSoundfonts.delete(oldIndexZeroWithoutExt)
       }
-      group[index].addLeft(string)
-      this.#listOfSoundfonts.set(string, index)
+      this.#listOfSoundfonts.set(
+        join(parsedPath.dir, parsedPath.name),
+        index
+      )
       return;
     }
-    group[index].add(string)
-    this.#listOfSongs.push([index, string])
+    const oldSize = groups[index].size;
+    groups[index].add(string)
+
+    if (oldSize === groups[index].size) return;
+    this.#listOfSongs.push([
+      index,
+      string,
+      join(parsedPath.dir, parsedPath.name)
+    ])
   }
   /**
    * Gives the amount of songs to do
@@ -445,31 +461,22 @@ class Options {
    * Checks if there's a file somewhere
    * that has exactly the same name as the user needs
    * @param {String} name - basename to search for
-   * @param {(Boolean|undefined)} isAMidiSearching - if arg inside setFiles is a midi or it needs to search everywhere
+   * @param {(Boolean|undefined)} [isAMidiSearching] - if arg inside setFiles is a midi or it needs to search everywhere
    * @return {(Number|false)} the index of the group or false if it didn't find any match
    */
   static searchAddedFile(name, isAMidiSearching) {
     const soundfontSearch = () => {
-      const indexOfGroup = [
-        this.#listOfSoundfonts.get(name+".sf2"),
-        this.#listOfSoundfonts.get(name+".dls")
-      ];
-      for (const typeOfFile of indexOfGroup) {
-        if (typeOfFile !== undefined) return typeOfFile;
-      }
-      return false;
+      const indexOfGroup = this.#listOfSoundfonts.get(name);
+      return (indexOfGroup !== undefined) ? indexOfGroup : false;
     };
     const midiSearch = () => {
       const flattenMidis = [].concat(...this.#listOfSongs);
-      
-      const indexOfIndexOfGroup = flattenMidis.indexOf(name+".mid");
-      if (indexOfIndexOfGroup !== -1) return flattenMidis[indexOfIndexOfGroup-1];
-      return false;
+      const indexOfName = flattenMidis.indexOf(name);
+      return (indexOfName !== -1) ? flattenMidis[indexOfName-2] : false;
     };
 
     if (isAMidiSearching === undefined) return midiSearch() || soundfontSearch();
-    if (isAMidiSearching) return soundfontSearch();
-    return midiSearch();
+    return (isAMidiSearching) ? soundfontSearch() : midiSearch();
   }
   /**
    * Checks if a group is an automatic basename group
