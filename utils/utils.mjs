@@ -157,9 +157,11 @@ Set.prototype.getIndex = function (index) {
   if (typeof index !== "number") {
     throw new TypeError(`${index} is not a number`)
   }
-  const helper = this.values().map((v, i) => [i, v]);
-  for (const [i, v] of helper) {
+  if (index === 0) return this.values().next().value;
+  let i = 0;
+  for (const v of this.values()) {
     if (i === index) return v;
+    i++;
   }
 }
 /**
@@ -503,7 +505,7 @@ class Options {
     this.#checkValueAndExistence(index, "number")
     const allOptions = Object.keys(this.#options),
           allOptionsLength = allOptions.length,
-          simplifiedOptionsObject = {};
+          simplifiedOptionsObject = Object.create(null);
     const [indexOfGroup, songFile] = this.#listOfSongs[index];
     const group = this.#options.files[indexOfGroup];
     
@@ -515,7 +517,7 @@ class Options {
       const key = allOptions[i];
       if (key === "files") continue;
       if (key === "fileOutputs") {
-        simplifiedOptionsObject[key] = structuredClone(this.#options[key]);
+        simplifiedOptionsObject[key] = [...this.#options[key]];
         continue;
       }
       const isArray = Array.isArray(this.#options[key]);
