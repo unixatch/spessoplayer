@@ -211,22 +211,6 @@ class Options {
    * @private
    */
   static #listOfSoundfonts = new Map();
-  /**
-   * Asynchronously creates a copy
-   * of process.argv without file extensions
-   * (See isAutomaticBasenameGroup method)
-   * @type {String[]}
-   * @private
-   */
-  static #argvWithoutFileExtensions = new Promise(resolve => {
-    const newArguments = process.argv.slice(2),
-          newArgumentsLength = newArguments.length;
-    for (let i = 0; i < newArgumentsLength; i++) {
-      const parsedElement = parse(newArguments[i]);
-      newArguments[i] = join(parsedElement.dir, parsedElement.name);
-    }
-    resolve(newArguments)
-  });
 
   /**
    * @function #checkValueAndExistence
@@ -480,11 +464,12 @@ class Options {
   }
   /**
    * Checks if a group is an automatic basename group
+   * @param {String[]} argvWithoutFileExts - process.argv without file extensions
    * @param {Number} indexOfGroup - index of the group
    * @return {(true|false)}
    * @throws {TypeError} - if index is not a number
    */
-  static async isAutomaticBasenameGroup(indexOfGroup) {
+  static isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup) {
     if (typeof indexOfGroup !== "number") throw new TypeError("index must be a number")
     const group = this.#options.files[indexOfGroup];
 
@@ -493,7 +478,7 @@ class Options {
       const parsedFirstFile = parse(group.getIndex(0)),
             pathUpToName = join(parsedFirstFile.dir, parsedFirstFile.name);
 
-      const noExtNewArguments = (await this.#argvWithoutFileExtensions).slice();
+      const noExtNewArguments = [...argvWithoutFileExts];
       const indexOfFile = noExtNewArguments.indexOf(pathUpToName);
       delete noExtNewArguments[indexOfFile]
       return noExtNewArguments.includes(pathUpToName);

@@ -22,6 +22,15 @@
 import { join, basename, parse } from "path"
 import { log, Options } from "./utils/utils.mjs"
 
+let argvWithoutFileExts = new Promise(resolve => {
+  const newArguments = process.argv.slice(2),
+        newArgumentsLength = newArguments.length;
+  for (let i = 0; i < newArgumentsLength; i++) {
+    const parsedElement = parse(newArguments[i]);
+    newArguments[i] = join(parsedElement.dir, parsedElement.name);
+  }
+  resolve(newArguments)
+});
 const regexes = {
   help: /^(?:--help|\/help|-h|\/h|\/\?)$/,
   version: /^(?:--version|\/version|-V|\/V)$/,
@@ -416,20 +425,19 @@ const setFile = async ({
   /**
    * Checks for the same basename as the path given inside process.argv
    * @param {String} path - full file path to compare with another one
-   * @param {Boolean} isMidi - if the given path is a midi file or not
    * @type {Function}
    * @inner
    * @private
    * @memberof module:main
    * @return {Boolean} - whether or not it has found a similar file inside process.argv
    */
-  function checkForIdenticalNames(path, isMidi = true) {
+  function checkForIdenticalName(path) {
+    const indexOfPath = newArguments.indexOf(path);
     const pathUpToName = join(parse(path).dir, parse(path).name);
-    if (isMidi) {
-      return newArguments.includes(pathUpToName+".sf2")
-             || newArguments.includes(pathUpToName+".dls");
-    }
-    return newArguments.includes(pathUpToName+".mid");
+    const noExtNewArguments = [...argvWithoutFileExts];
+    
+    delete noExtNewArguments[indexOfPath]
+    return noExtNewArguments.includes(pathUpToName);
   }
   /**
    * Returns either a new Promise or attaches a .then Promise to an older one
@@ -517,8 +525,9 @@ const setFile = async ({
       )
       return;
     }
+    if (argvWithoutFileExts instanceof Promise) argvWithoutFileExts = await argvWithoutFileExts;
     // Creates new Sets for identical basename files
-    if (checkForIdenticalNames(arg, typeOfFile)) {
+    if (checkForIdenticalName(arg)) {
       const amountOfGroups = Options.amountOfGroups;
       Options.files(amountOfGroups, arg, !typeOfFile)
       log(1,
@@ -536,7 +545,7 @@ const setFile = async ({
       const indexOfGroup = Options.searchAddedFile(pathUpToName);
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
       
-      if (await Options.isAutomaticBasenameGroup(indexOfGroup)) {
+      if (Options.isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup)) {
         lastKnownGroupIndex++
       } else {
         lastKnownGroupIndex = indexOfGroup;
