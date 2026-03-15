@@ -23,7 +23,7 @@ import { join, basename, parse } from "path"
 import { log, Options } from "./utils/utils.mjs"
 
 let argvWithoutFileExts = new Promise(resolve => {
-  const newArguments = process.argv.slice(2),
+  const newArguments = [...new Set(process.argv.slice(2)).values()],
         newArgumentsLength = newArguments.length;
   for (let i = 0; i < newArgumentsLength; i++) {
     const parsedElement = parse(newArguments[i]);
@@ -155,6 +155,10 @@ const actUpOnPassedArgs = async (args) => {
   let lastParam,
       lastIndex;
   let newArguments = args.slice(2);
+  const newArgumentsSet = new Set(newArguments),
+        noDuplicates = [...newArgumentsSet.values()],
+        doneFileList = new Map(newArgumentsSet.entries()),
+        doneSymbol = Symbol("ALREADY_DONE");
   if (newArguments.length === 0) {
     await help()
     process.exit()
@@ -323,6 +327,12 @@ const actUpOnPassedArgs = async (args) => {
       case (lastParam === "input" || lastParam === undefined)
             && regexes.fileCheck.test(basename(arg))
             && arg: {
+        if (doneFileList.get(arg) === doneSymbol) {
+          if (lastParam === "input") clearLastVariables()
+          break;
+        }
+        doneFileList.set(arg, doneSymbol)
+        
         if (!global.fs) {
           const fs = await import("node:fs");
           global.fs = fs;
@@ -331,7 +341,7 @@ const actUpOnPassedArgs = async (args) => {
           setFile({
             indexOfSetFile: indexOfSetFile++,
             lastParam, lastIndex, lastAutomaticFile,
-            newArguments, arg
+            newArguments: noDuplicates, arg
           })
         )
         if (!lastParam) lastAutomaticFile = arg;
@@ -451,8 +461,8 @@ const setFile = async ({
   function createPromise(func) {
     const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
     return (!lastSetFilePromise)
-            ? func()
-            : lastSetFilePromise.then(() => func());
+              ? func()
+              : lastSetFilePromise.then(() => func());
   }
   if (lastParam !== undefined && lastParam !== "input") return;
   
