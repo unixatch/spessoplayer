@@ -113,7 +113,7 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
  * @param {Number} audioData.length - Audio length in samples, essentially the sample count
  * @param {Number} audioData.numChannels - How many channels the audio has
  * @param {Number} sampleRate - Sample rate of the audio
- * @param {Object} options - Optional, adds loop timestamps and more
+ * @param {Object} [options=DEFAULT_WAV_WRITE_OPTIONS] - Optional, adds loop timestamps and more
  * @returns {Uint8Array} the wav header
  */
 function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {

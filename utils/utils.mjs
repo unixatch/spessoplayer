@@ -16,38 +16,41 @@
 */
 
 /**
- * @module utils
+ * @module utils/utils
  */
 
 import { join, parse } from "path"
 
-function declareColors() {
-  // Custom formatting
-  global.normal= "\x1b[0m"
-  global.bold= "\x1b[1m"
-  global.italics= "\x1b[3m"
-  global.underline= "\x1b[4m"
-  // Actual colors
-  global.yellow= "\x1b[33;1m"
-  global.normalYellow= "\x1b[33m"
-  global.magenta= "\x1b[35m"
-  global.brightMagenta= "\x1b[95m"
-  global.dimYellow = "\x1b[2;33m"
-  global.green= "\x1b[32m"
-  global.dimGreen= "\x1b[32;2m"
-  global.normalRed= "\x1b[31m"
-  global.red= "\x1b[31;1m"
-  global.normalRed= "\x1b[31m"
-  global.dimRed= "\x1b[31;2m"
-  global.gray= "\x1b[90;1m"
-  global.dimGray= "\x1b[37;2m"
-  global.dimGrayBold= "\x1b[37;2;1m"
-}
-declareColors()
+// Custom formatting
+global.normal = "\x1b[0m"           /** @global */
+global.bold = "\x1b[1m"             /** @global */
+global.italics = "\x1b[3m"          /** @global */
+global.underline = "\x1b[4m"        /** @global */
+// Actual colors
+global.yellow = "\x1b[33;1m"        /** @global */
+global.normalYellow = "\x1b[33m"    /** @global */
+global.magenta = "\x1b[35m"         /** @global */
+global.brightMagenta = "\x1b[95m"   /** @global */
+global.dimYellow = "\x1b[2;33m"     /** @global */
+global.green = "\x1b[32m"           /** @global */
+global.dimGreen = "\x1b[32;2m"      /** @global */
+global.normalRed = "\x1b[31m"       /** @global */
+global.red = "\x1b[31;1m"           /** @global */
+global.normalRed = "\x1b[31m"       /** @global */
+global.dimRed = "\x1b[31;2m"        /** @global */
+global.gray = "\x1b[90;1m"          /** @global */
+global.dimGray = "\x1b[37;2m"       /** @global */
+global.dimGrayBold = "\x1b[37;2;1m" /** @global */
 
 /**
+ * @typedef lines
+ * @type {Number[]}
+ * @property {Number} x x axis
+ * @property {Number} [y] y axis
+ */
+/**
  * Clears lines from the last line up
- * @param {Number[]} lines - two numbers, x and y values
+ * @param {lines} lines - two numbers, x and y values
  * @throws {TypeError} - if the passed argument isn't an array,
  *                       if one of its values is a string or
  *                       it can't be converted to an integer
@@ -75,8 +78,8 @@ const clearLastLines = lines => {
 /**
  * Logger
  * @param {Number} level - level of the log
- * @param {Number} time - time that it takes to creates this log
- * @param {string[]} ...messages - messages to print
+ * @param {String} time - time that it takes to creates this log
+ * @param {Array<(String|Uint8Array<ArrayBufferLike>)>} messages - messages to print
  */
 function log(level, time, ...messages) {
   const spacesAmount = new Date().toISOString().length + ((time+"").length + 7) + 2;
@@ -166,7 +169,7 @@ Set.prototype.getIndex = function (index) {
 }
 /**
  * Adds value retrieval functionality to Set
- * @param {*} value - value to search
+ * @param {*} valueToFind - value to search
  * @return {*} found value or undefined
  */
 Set.prototype.get = function (valueToFind) {
@@ -187,9 +190,9 @@ class Options {
   static #options = {};
   /**
    * @typedef list_Of_Songs
-   * @type {Array[]}
-   * @property {Number} 0 - group index
-   * @property {String} 1 - filename of song
+   * @type {Array}
+   * @property {Number} index - group index
+   * @property {String} file - filename of song
    * @private
    */
   /**
@@ -199,15 +202,8 @@ class Options {
    */
   static #listOfSongs = [];
   /**
-   * @typedef list_Of_Soundfonts
-   * @type {Array[]}
-   * @property {Number} 0 - group index
-   * @property {String} 1 - filename of soundfont
-   * @private
-   */
-  /**
    * List of all soundfonts
-   * @type {list_Of_Soundfonts}
+   * @type {Map<String, Number>}
    * @private
    */
   static #listOfSoundfonts = new Map();
@@ -217,8 +213,8 @@ class Options {
    * @desc type checker
    * @param {*} value - any kind of value to check
    * @param {String} requiredType - type that must be correct
-   * @param {String} property - any kind of property to add to #options
-   * @param {Boolean} isObject - if the property should be an object
+   * @param {String} [property] - any kind of property to add to #options
+   * @param {Boolean} [isObject] - if the property should be an object
    * @memberof Options
    * @private
    * @throws {TypeError} - if it's not of valid type

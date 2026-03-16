@@ -45,9 +45,15 @@ let BasicMIDI,
 
 
 /**
+ * @typedef ffmpegArgsObj
+ * @type {Object}
+ * @property {String[]} flac
+ * @property {String[]} mp3
+ */
+/**
  * Simply returns an object containing ffmpeg's arguments in all supported formats
  * @param {String} [outFile="pipe:1"] - file path to write to
- * @return {Object} - available formats in Object format
+ * @return {ffmpegArgsObj} - available formats in Object format
  */
 function ffmpegArgs(outFile = "pipe:1") {
   return {
@@ -228,6 +234,7 @@ await startPlayer()
  * @param {Object} formatObj - necessary object
  * @param {(String|Boolean)} [formatObj.format=true] - type of format
  * @param {Readable} formatObj.readStream - ReadStream for piping
+ * @param {ResponseServer} [formatObj.res] - optional ResponseServer
  * @param {Object[]} [formatObj.effects] - list of effects to apply
  * @param {Number} formatObj.index - index of the song
  * @param {Boolean} [formatObj.createNewFileNameAnyway] - if it's necessary to create a new file name
@@ -235,7 +242,7 @@ await startPlayer()
  * @param {Uint8Array} [formatObj.stdoutHeader] - header of the file
  * @param {Promise[]} formatObj.promisesOfPrograms - list of promises for ffmpeg and SoX
  * @param {String} [formatObj.outFile] - file name to output
- * @return {Array} - Either a piping function or a promise for piping
+ * @return {Promise<Function>} - Either a piping function or a promise for piping
  */
 async function formatManager({
   format = true,
@@ -394,14 +401,21 @@ async function formatManager({
   return pipingFunction;
 }
 /**
+ * @typedef getSampleCountObj
+ * @type {Object}
+ * @property {Boolean} loopDetectedInMidi
+ * @property {Number} durationInSeconds
+ * @property {Number} sampleCount
+ */
+/**
  * Calculates the sample count to use
- * @param {class} sampleCountObj - necessary object
- * @param {class} sampleCountObj.midi - The BasicMIDI class to use
+ * @param {Object} sampleCountObj - necessary object
+ * @param {BasicMIDI} sampleCountObj.midi - The BasicMIDI class to use
  * @param {Number} [sampleCountObj.sampleRate=48000] - The sample rate to use
- * @param {(undefined|Number)} [loopAmount] - The amount of loops to do
- * @param {Number} [loopStart=midi.midiTicksToSeconds(midi.loop.start)] - start of loop
- * @param {(undefined|Number)} [loopEnd] - end of loop
- * @return {Object} object containing loopDetectedInMidi and sampleCount
+ * @param {Number} [sampleCountObj.loopAmount] - The amount of loops to do
+ * @param {Number} [sampleCountObj.loopStart=midi.midiTicksToSeconds(midi.loop.start)] - start of loop
+ * @param {Number} [sampleCountObj.loopEnd] - end of loop
+ * @return {getSampleCountObj} object containing loopDetectedInMidi and sampleCount
  */
 function getSampleCount({
   midi,
@@ -440,9 +454,19 @@ function getSampleCount({
   };
 }
 /**
+ * @typedef initSpessaSynthObj
+ * @type {Object}
+ * @property {SpessaSynthSequencer} seq
+ * @property {SpessaSynthProcessor} synth
+ * @property {BasicMIDI} midi
+ * @property {Number} sampleCount
+ * @property {Number} sampleRate
+ * @property {Number} durationInSeconds
+ */
+/**
  * Initializes all the required variables for spessasynth_core usage
  * @param {Object} initObj - necessary object
- * @param {Boolean} [initObj.loopAmount=0] - the loop amount
+ * @param {Number} [initObj.loopAmount=0] - the loop amount
  * @param {Number} [initObj.volume=100/100] - the volume to set
  * @param {String} initObj.midiFile - midi file
  * @param {String} initObj.soundfontFile - soundfont file
@@ -451,12 +475,7 @@ function getSampleCount({
  * @param {Number} initObj.loopEnd - end of loop
  * @param {Number} initObj.indexOfGroup - index of the Set/group the song is in
  * @param {Boolean} [initObj.onlySampleCount=false] - if it should return just the sample count of the song and do nothing else
- * @return {Object} object containing:
- *                  - seq;
- *                  - synth;
- *                  - midi;
- *                  - sampleCount;
- *                  - sampleRate;
+ * @return {Promise<initSpessaSynthObj|Number>} initSpessaSynthObj
  */
 async function initSpessaSynth({
   loopAmount = 0,
@@ -532,12 +551,12 @@ async function initSpessaSynth({
  * @param {Object} obj - the object passed
  * @param {String} obj.program - the process to spawn, sox usually
  * @param {Stream} obj.stdoutHeader - the header to process
- * @param {Stream} obj.readStream - the data to process
+ * @param {Stream} [obj.readStream] - the data to process
  * @param {Promise[]} obj.promisesOfPrograms - list of promises for ffmpeg and SoX
  * @param {Stream} [obj.stdout=process.stdout] - the destination
  * @param {String} [obj.destination="-"] - the destination path
- * @param {string[]} obj.effects - all effects to pass to SoX
- * @return {Array} array containing SoX's process and the array of promises for both ffmpeg and SoX processes
+ * @param {(String[]|Object[])} [obj.effects=String[]] - all effects to pass to SoX
+ * @return {Promise<Array<ChildProcess,Array>>} array containing SoX's process and the array of promises for both ffmpeg and SoX processes
  * 
  * @example
  * applyEffects({ program: "sox", stdoutHeader, readStream })
@@ -693,12 +712,12 @@ function addEvent({ eventType, func }) {
  * @param {Boolean} obj.lastBytes - check if it's the last sample
  * @param {Number} obj.sampleCount - sample count
  * @param {Number} obj.sampleRate - sample rate
- * @param {Number} obj.index - index of the song
- * @param {Number} obj.i - counter for the progress
- * @param {Number} obj.durationRounded - duration of the song rounded by percentage
- * @param {Object} obj.progress - progress information object
- * @param {class} obj.seq - spessasynth_core' sequencer
- * @param {class} obj.synth - spessasynth_core's processor
+ * @param {Number} [obj.index] - index of the song
+ * @param {Number} [obj.i] - counter for the progress
+ * @param {Number} [obj.durationRounded] - duration of the song rounded by percentage
+ * @param {Object} [obj.progress] - progress information object
+ * @param {SpessaSynthSequencer} obj.seq - spessasynth_core' sequencer
+ * @param {SpessaSynthProcessor} obj.synth - spessasynth_core's processor
  * @param {Function} obj.getData - translator: Float32Arrays → Uint8Arrays
  * @return {Readable} a Readable
  */
@@ -717,7 +736,6 @@ function createReadable(Readable, isStdout = false, {
   /**
    * Calculates the rendered amount of seconds
    * with loops accounted for when they start
-   * @type {Function}
    * @inner
    * @private
    * @memberof module:main
@@ -779,25 +797,30 @@ function createReadable(Readable, isStdout = false, {
   return readStream;
 }
 /**
+ * @typedef toStdoutArray
+ * @type {Array}
+ * @property {Number} sampleCount
+ * @property {Function} pipingFunction
+ * @property {Promise<Array>} sampleCount
+ */
+/**
  * Reads the generated samples from spessasynth_core
  * and spits them out to stdout
- * @param {Object} obj1 - the number of loops to do
+ * @param {Object} obj1
  * @param {Number} obj1.index - index of the song
- * @param {(undefined|Number)} [obj1.loopN] - the number of loops to do
- * @param {(undefined|Number)} [obj1.loopStart] - start of loop
- * @param {(undefined|Number)} [obj1.loopEnd] - end of loop
- * @param {(undefined|Number)} [obj1.sampleRate] - sample rate
+ * @param {ResponseServer} [obj1.res] - optional ResponseServer
+ * @param {Number} [obj1.loopN] - the number of loops to do
+ * @param {Number} [obj1.loopStart] - start of loop
+ * @param {Number} [obj1.loopEnd] - end of loop
+ * @param {Number} [obj1.sampleRate] - sample rate
  * @param {Number} [obj1.volume=100/100] - the volume of the song
  * @param {String} obj1.midiFile - midi file
  * @param {String} obj1.soundfontFile - soundfont file
- * @param {(undefined|String)} [obj1.format] - format of the somg
- * @param {(undefined|Object[])} [obj1.effects] - effects for the song
+ * @param {String} [obj1.format] - format of the somg
+ * @param {Object[]} [obj1.effects] - effects for the song
  * @param {Number} obj1.indexOfGroup - index of the Set/group the song is in
  * @throws {ReferenceError} - if some required files are missing
- * @return {Array} array that contains:
- *                 - the sample count;
- *                 - a function for piping readStream later on;
- *                 - a promise;
+ * @return {Promise<toStdoutArray>} toStdoutArray
  */
 async function toStdout({
   index, res,
@@ -926,24 +949,31 @@ async function toStdout({
 }
 
 /**
+ * @typedef toFileArray
+ * @type {Array}
+ * @property {String[]} fileOutputs
+ * @property {pipingFunction} pipingFunction
+ * @property {Promise<Array>} Promise
+ */
+/**
  * Reads the generated samples from spessasynth_core
  * and renders them to a wav file
  * @param {Object} toFileObj - necessary object
  * @param {Boolean} toFileObj.createNewFileNameAnyway - if it's necessary to create a new file name
  * @param {Object} toFileObj.index - index of the song
  * @param {Object} toFileObj.progress - progress information object
- * @param {(undefined|Number)} [toFileObj.loopN] - loop amount
- * @param {(undefined|Number)} [toFileObj.loopStart] - start of loop
- * @param {(undefined|Number)} [toFileObj.loopEnd] - end of loop
+ * @param {Number} [toFileObj.loopN] - loop amount
+ * @param {Number} [toFileObj.loopStart] - start of loop
+ * @param {Number} [toFileObj.loopEnd] - end of loop
  * @param {String} toFileObj.midiFile - midi file
  * @param {String} toFileObj.soundfontFile - soundfont file
  * @param {String[]} toFileObj.fileOutputs - list of file output names
- * @param {(undefined|Number)} [toFileObj.sampleRate] - sample rate
+ * @param {Number} [toFileObj.sampleRate] - sample rate
  * @param {Object[]} [toFileObj.effects] - optional list of effects to add
  * @param {Number} toFileObj.indexOfGroup - index of the Set/group the song is in
  * @param {Number} toFileObj.volume - the volume of the song
  * @throws {ReferenceError} - if some required files are missing
- * @return {Array} array that contains the fileOutputs array and a promise
+ * @return {Promise<toFileArray>} array that contains the fileOutputs array and a promise
  */
 async function toFile({
   createNewFileNameAnyway, index, progress,

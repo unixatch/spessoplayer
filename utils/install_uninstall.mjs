@@ -16,32 +16,29 @@
 */
 
 /**
- * @module install_uninstall
+ * @module utils/install_uninstall
  */
 
-function declareColors() {
-  // Custom formatting
-  global.normal= "\x1b[0m"
-  global.bold= "\x1b[1m"
-  global.italics= "\x1b[3m"
-  global.underline= "\x1b[4m"
-  // Actual colors
-  global.yellow= "\x1b[33;1m"
-  global.normalYellow= "\x1b[33m"
-  global.magenta= "\x1b[35m"
-  global.brightMagenta= "\x1b[95m"
-  global.dimYellow = "\x1b[2;33m"
-  global.green= "\x1b[32m"
-  global.dimGreen= "\x1b[32;2m"
-  global.normalRed= "\x1b[31m"
-  global.red= "\x1b[31;1m"
-  global.normalRed= "\x1b[31m"
-  global.dimRed= "\x1b[31;2m"
-  global.gray= "\x1b[90;1m"
-  global.dimGray= "\x1b[37;2m"
-  global.dimGrayBold= "\x1b[37;2;1m"
-}
-declareColors()
+// Custom formatting
+global.normal = "\x1b[0m"           /** @global */   
+global.bold = "\x1b[1m"             /** @global */
+global.italics = "\x1b[3m"          /** @global */
+global.underline = "\x1b[4m"        /** @global */
+// Actual colors
+global.yellow = "\x1b[33;1m"        /** @global */
+global.normalYellow = "\x1b[33m"    /** @global */
+global.magenta = "\x1b[35m"         /** @global */
+global.brightMagenta = "\x1b[95m"   /** @global */
+global.dimYellow = "\x1b[2;33m"     /** @global */
+global.green = "\x1b[32m"           /** @global */
+global.dimGreen = "\x1b[32;2m"      /** @global */
+global.normalRed = "\x1b[31m"       /** @global */
+global.red = "\x1b[31;1m"           /** @global */
+global.normalRed = "\x1b[31m"       /** @global */
+global.dimRed = "\x1b[31;2m"        /** @global */
+global.gray = "\x1b[90;1m"          /** @global */
+global.dimGray = "\x1b[37;2m"       /** @global */
+global.dimGrayBold = "\x1b[37;2;1m" /** @global */
 
 /**
  * Checks program existance synchronously

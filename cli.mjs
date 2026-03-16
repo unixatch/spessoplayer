@@ -22,6 +22,7 @@
 import { join, basename, parse } from "path"
 import { log, Options } from "./utils/utils.mjs"
 
+/** @type {(Promise<String[]>|String[])} */
 let argvWithoutFileExts = new Promise(resolve => {
   const newArguments = [...new Set(process.argv.slice(2)).values()],
         newArgumentsLength = newArguments.length;
@@ -130,6 +131,11 @@ const testFunctions = {
   logFile: i => regexes.logFile.test(i)
 };
 
+/**
+ * Retrieves the first 20 bytes of a file
+ * @param {String} path path of file
+ * @return {Promise<String>} - first 20 bytes of file
+ */
 async function get20BytesFromFile(path) {
   let fileMagicNumber;
   await new Promise(resolve => {
@@ -145,18 +151,19 @@ async function get20BytesFromFile(path) {
   })
   return fileMagicNumber;
 }
+const setFilePromises = [];
 /**
  * Sets necessary variables in Options class for main.mjs
- * @param {Array} args - The process.argv to analyse
+ * @param {String[]} args - The process.argv to analyse
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
-const setFilePromises = [];
 const actUpOnPassedArgs = async (args) => {
   let lastParam,
       lastIndex;
   let newArguments = args.slice(2);
   const newArgumentsSet = new Set(newArguments),
         noDuplicates = [...newArgumentsSet.values()],
+        /** @type {Map<String, (String|Symbol)>} */
         doneFileList = new Map(newArgumentsSet.entries()),
         doneSymbol = Symbol("ALREADY_DONE");
   if (newArguments.length === 0) {
@@ -419,13 +426,14 @@ const actUpOnPassedArgs = async (args) => {
 /**
  * Sets a supported file inside a group in Options class
  * @param {Object} passedVariables - variables injected with this object
- * @param {String} passedVariables.indexOfSetFile - index of the current function inside setFilePromises
+ * @param {Number} passedVariables.indexOfSetFile - index of the current function inside setFilePromises
  * @param {String} passedVariables.lastParam - last parameter that has been used last time
- * @param {String} passedVariables.lastIndex - last index that has been set last time
+ * @param {Object} passedVariables.lastIndex - last index object
+ * @param {String} [passedVariables.lastIndex.index] - last index that has been set last time
  * @param {String} passedVariables.lastAutomaticFile - last file that has been set automatically
- * @param {String} passedVariables.newArguments - arguments passed from the terminal
+ * @param {String[]} passedVariables.newArguments - arguments passed from the terminal
  * @param {String} passedVariables.arg - argument passed to this function that is also a file path
- * @return {undefined}
+ * @return {Promise<Promise|undefined>}
  */
 const setFile = async ({
   indexOfSetFile,
@@ -435,10 +443,9 @@ const setFile = async ({
   /**
    * Checks for the same basename as the path given inside process.argv
    * @param {String} path - full file path to compare with another one
-   * @type {Function}
    * @inner
    * @private
-   * @memberof module:main
+   * @memberof module:cli
    * @return {Boolean} - whether or not it has found a similar file inside process.argv
    */
   function checkForIdenticalName(path) {
@@ -451,12 +458,11 @@ const setFile = async ({
   }
   /**
    * Returns either a new Promise or attaches a .then Promise to an older one
-   * @param {Function} - function to run within a Promise
-   * @type {Function}
+   * @param {Function} func function to run within a Promise
    * @inner
    * @private
-   * @memberof module:main
-   * @return {Promise} - a new Promise that'll fulfill when the given function returns
+   * @memberof module:cli
+   * @return {(Promise|undefined)} - a new Promise that'll fulfill when the given function returns
    */
   function createPromise(func) {
     const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
@@ -572,6 +578,8 @@ const setFile = async ({
 /**
  * Sets the Options.loopN variable
  * @param {String} arg - the loop amount
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
  */
 const setLoop = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
@@ -590,6 +598,8 @@ const setLoop = (arg, lastIndex) => {
 /**
  * Sets the Options.loopStart variable
  * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
  */
 const setLoopStart = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
@@ -610,6 +620,8 @@ const setLoopStart = (arg, lastIndex) => {
 /**
  * Sets the Options.loopEnd variable
  * @param {String} arg - the end of the loop in seconds or in HH:MM:SS:ms format
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
  */
 const setLoopEnd = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
@@ -630,6 +642,9 @@ const setLoopEnd = (arg, lastIndex) => {
 /**
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {String[]} newArguments - process.argv without 2 starting indexes
  */
 const setSampleRate = (arg, lastIndex, newArguments) => {
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
@@ -647,7 +662,7 @@ const setSampleRate = (arg, lastIndex, newArguments) => {
 }
 /**
  * Simply changes how the program should log
- * @param {Number} arg - the level of how much it should log
+ * @param {String} arg - the level of how much it should log
  */
 const setVerboseLevel = async (arg) => {
   const isFromUser = arg !== undefined;
@@ -698,6 +713,8 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
  */
 const setEffects = (arg, lastIndex) => {
   const regexListOfEffects = (
@@ -751,6 +768,8 @@ const setEffects = (arg, lastIndex) => {
 /**
  * Sets the Options.volume variable for the masterGain
  * @param {String} arg - the volume in either percentage, decibels or decimals
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
  */
 const setVolume = (arg, lastIndex) => {
   if (regexes.areDecibels.test(arg)) {
@@ -777,6 +796,8 @@ const setVolume = (arg, lastIndex) => {
 /**
  * Sets the Options.reverb variable
  * @param {String} arg - the volume in either percentage, decibels or decimals
+ * @param {Object} lastIndex - last index object
+ * @param {String} [lastIndex.index] - last index that has been set last time
  */
 const setReverb = (arg, lastIndex) => {
   if (regexes.areDecibels.test(arg)) {
@@ -834,8 +855,8 @@ const uninstall = async () => {
 }
 /**
  * Shows the help text
- * @param {Object} errorObject - an object containing additional info that should be printed alongside help
- * @param {String} errorObject.errorText - error text that should be printed before helpText
+ * @param {Object} [errorObject=""] - an object containing additional info that should be printed alongside help
+ * @param {String} [errorObject.errorText] - error text that should be printed before helpText
  */
 const help = async ({ errorText } = "") => {
   const optionalIndex = `${normal}[${dimGray}n${normal}]`;
