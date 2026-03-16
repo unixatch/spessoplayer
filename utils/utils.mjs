@@ -82,36 +82,37 @@ const clearLastLines = lines => {
  * @param {Array<(String|Uint8Array<ArrayBufferLike>)>} messages - messages to print
  */
 function log(level, time, ...messages) {
-  const spacesAmount = new Date().toISOString().length + ((time+"").length + 7) + 2;
-  const debugLevelSpesso = process.env["DEBUG_LEVEL_SPESSO"];
+  const spacesAmount = new Date().toISOString().length + (time.length + 7) + 2;
+  const debugLevelSpesso = Number(process.env["DEBUG_LEVEL_SPESSO"]);
   const debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
-  if (debugLevelSpesso
-      && debugLevelSpesso <= level
-      || Options.verboseLevel <= level) {
-    const message = [
-      new Date(),
-      "["+time+" ms]",
-      messages
-        .join("")
-        // Place the header data on a new line with padding
-        .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(spacesAmount)+"$1")
-        // Place the SoX arguments on a new line with padding
-        .replace(/with (sox -t.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
-        // Place the ffmpeg arguments on a new line with padding
-        .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
-        // Add dimmed gray to the output
-        .replace(/(.*)/s, `${dimGray}$1${normal}`)
-    ];
-    if (messages[0] === "Finished printing to stdout") message.unshift("\n")
-    console.error(...message);
-    const path = debugFileSpesso || Options.logFilePath;
-    if (path) {
-      message[0] = message[0].toISOString();
-      message[message.length-1] = message[message.length-1].replace(/\x1b\[.{1,10}m/, "")
-      message.push("\n")
-      fs.appendFileSync(path, message.join(" "))
-    }
-  }
+  if (Number.isNaN(debugLevelSpesso)
+      && Options.verboseLevel === undefined) return;
+  if (debugLevelSpesso > level
+      || Options.verboseLevel > level) return;
+    
+  const message = [
+    new Date(),
+    "["+time+" ms]",
+    messages
+      .join("")
+      // Place the header data on a new line with padding
+      .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(spacesAmount)+"$1")
+      // Place the SoX arguments on a new line with padding
+      .replace(/with (sox -t.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
+      // Place the ffmpeg arguments on a new line with padding
+      .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
+      // Add dimmed gray to the output
+      .replace(/(.*)/s, `${dimGray}$1${normal}`)
+  ];
+  if (messages[0] === "Finished printing to stdout") message.unshift("\n")
+  console.error(...message);
+
+  const path = debugFileSpesso || Options.logFilePath;
+  if (!path) return;
+  message[0] = message[0].toISOString();
+  message[message.length-1] = message[message.length-1].replace(/\x1b\[.{1,10}m/, "")
+  message.push("\n")
+  fs.appendFileSync(path, message.join(" "))
 }
 /**
  * Returns a new path with a new number (adds 1) at the end of the filename

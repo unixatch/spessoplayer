@@ -662,7 +662,7 @@ function addEvent({ eventType, func }) {
       const oldUncaughtException = process.rawListeners("uncaughtException")[0];
       process.removeListener("uncaughtException", oldUncaughtException)
       const hasBeenAdded = process.on("uncaughtException",
-        async (error) => {
+        async (error, origin) => {
           if (global.SIGINT) return process.exit();
           if (error?.code === "EPIPE") {
             // Needed so that SoX can show its stderr
@@ -672,7 +672,7 @@ function addEvent({ eventType, func }) {
             console.error(`${gray}Closed the program before finishing to render${normal}`);
             return process.exit(2);
           }
-          oldUncaughtException(error)
+          oldUncaughtException(error, origin)
         }
       ).listeners("uncaughtException").length > 0;
       return hasBeenAdded;
@@ -1025,7 +1025,7 @@ async function toFile({
     seq, synth,
     getData,
     index, i, durationRounded,
-    progress, clearLastLines
+    progress
   });
   const promisesOfPrograms = [],
         pipingFunctions = [];
@@ -1033,7 +1033,7 @@ async function toFile({
     const pipingFunction = await formatManager({
       readStream,
       effects, index,
-      newFileName, createNewFileNameAnyway,
+      createNewFileNameAnyway,
       fileOutputs,
       stdoutHeader,
       promisesOfPrograms, outFile

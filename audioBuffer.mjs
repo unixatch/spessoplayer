@@ -51,6 +51,9 @@ function writeLittleEndianIndexed(dataArray, number, byteTarget) {
     dataArray[dataArray.currentIndex++] = number >> i * 8 & 255;
   }
 }
+function writeDword(dataArray, dword) {
+  writeLittleEndianIndexed(dataArray, dword, 4);
+}
 function writeRIFFChunkParts(header, chunks, isList = false) {
   let dataOffset = 8;
   let headerWritten = header;

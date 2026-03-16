@@ -375,7 +375,7 @@ const actUpOnPassedArgs = async (args) => {
             clearLastVariables()
             break;
           case "format":
-            setFormat(arg, lastIndex)
+            setFormat(arg)
             clearLastVariables()
             break;
           case "volume":
@@ -829,7 +829,7 @@ const setReverb = (arg, lastIndex) => {
  * @param {String} arg - Path to the log file
  */
 const setLogFilePath = arg => {
-  Options.logFilePath(arg ?? "./spesso.log");
+  Options.logFilePath = arg ?? "./spesso.log";
   log(1, performance.now().toFixed(2), `Set log file path to ${arg ?? "./spesso.log"}`)
 }
 /**
@@ -929,10 +929,10 @@ const help = async ({ errorText } = "") => {
   `
   if (process.env.PAGER) {
     const { spawnSync } = await import("child_process");
-    const PAGERCommand = process.env.PAGER.split(" ").slice(0, 1),
+    const PAGERCommand = process.env.PAGER.split(" ").slice(0, 1)[0],
           PAGERArguments = process.env.PAGER.split(" ").slice(1);
     spawnSync(
-      ...PAGERCommand,
+      PAGERCommand,
       [...PAGERArguments],
       {
         stdio: ["pipe", "inherit", "inherit"],
