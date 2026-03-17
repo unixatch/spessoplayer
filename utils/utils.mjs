@@ -467,6 +467,7 @@ class Options {
    * @throws {TypeError} - if index is not a number
    */
   static isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup) {
+    if (!Array.isArray(argvWithoutFileExts)) throw new TypeError("argvWithoutFileExts must be an array")
     if (typeof indexOfGroup !== "number") throw new TypeError("index must be a number")
     const group = this.#options.files[indexOfGroup];
 
