@@ -344,11 +344,11 @@ class Options {
    * @param {Number} index - index of the file
    * @param {Number} number - how many loops to do
    */
-  static loopN(index, number) {
+  static loopAmount(index, number) {
     this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "loopN")
-    if (!Number.isNaN(index)) return this.#options.loopN[index] = number;
-    this.#options.loopN.push(number);
+    this.#checkValueAndExistence(number, "number", "loopAmount")
+    if (!Number.isNaN(index)) return this.#options.loopAmount[index] = number;
+    this.#options.loopAmount.push(number);
   }
   /**
    * Sets when the loop starts for a specific file

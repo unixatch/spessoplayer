@@ -809,7 +809,7 @@ function createReadable(Readable, isStdout = false, {
  * @param {Object} obj1
  * @param {Number} obj1.index - index of the song
  * @param {ResponseServer} [obj1.res] - optional ResponseServer
- * @param {Number} [obj1.loopN] - the number of loops to do
+ * @param {Number} [obj1.loopAmount] - the number of loops to do
  * @param {Number} [obj1.loopStart] - start of loop
  * @param {Number} [obj1.loopEnd] - end of loop
  * @param {Number} [obj1.sampleRate] - sample rate
@@ -824,7 +824,7 @@ function createReadable(Readable, isStdout = false, {
  */
 async function toStdout({
   index, res,
-  loopN: loopAmount,
+  loopAmount,
   loopStart, loopEnd,
   sampleRate = 48000,
   volume = 100/100,
@@ -962,7 +962,7 @@ async function toStdout({
  * @param {Boolean} toFileObj.createNewFileNameAnyway - if it's necessary to create a new file name
  * @param {Object} toFileObj.index - index of the song
  * @param {Object} toFileObj.progress - progress information object
- * @param {Number} [toFileObj.loopN] - loop amount
+ * @param {Number} [toFileObj.loopAmount] - loop amount
  * @param {Number} [toFileObj.loopStart] - start of loop
  * @param {Number} [toFileObj.loopEnd] - end of loop
  * @param {String} toFileObj.midiFile - midi file
@@ -977,7 +977,7 @@ async function toStdout({
  */
 async function toFile({
   createNewFileNameAnyway, index, progress,
-  loopN: loopAmount, loopStart, loopEnd,
+  loopAmount, loopStart, loopEnd,
   volume = 100/100,
   midiFile, soundfontFile, fileOutputs,
   sampleRate = 48000,

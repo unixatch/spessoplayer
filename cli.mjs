@@ -576,7 +576,7 @@ const setFile = async ({
   // --- END of automatic addition of files section ---
 }
 /**
- * Sets the Options.loopN variable
+ * Sets the Options.loopAmount variable
  * @param {String} arg - the loop amount
  * @param {Object} lastIndex - last index object
  * @param {String} [lastIndex.index] - last index that has been set last time
@@ -584,7 +584,7 @@ const setFile = async ({
 const setLoop = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
       && !regexes.infinity.test(arg)) {
-    Options.loopN(Number(lastIndex?.index), Number(arg));
+    Options.loopAmount(Number(lastIndex?.index), Number(arg));
     log(1, performance.now().toFixed(2), `Set loop amount to ${Number(arg)} at ${lastIndex?.index} index`)
     return;
   }
