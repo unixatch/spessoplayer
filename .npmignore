@@ -1,0 +1,10 @@
+tests/
+node_modules/
+*.sf2
+*.mid
+*.wav
+*.flac
+*.mp3
+*.pcm
+*.s16le
+*.s32le
