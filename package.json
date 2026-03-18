@@ -24,7 +24,10 @@
     "spessoplayer": "main.mjs"
   },
   "scripts": {
-    "test": "node main.js",
+    "testCliArguments": "node tests/checkCliArguments.mjs",
+    "testCliArguments_stdout": "node tests/checkCliArguments.mjs -",
+    "testCliArguments_fileOutputs": "node tests/checkCliArguments.mjs -fo",
+    "testCliArguments_logFilePath": "node tests/checkCliArguments.mjs -lf",
     "postinstall": "node install.mjs"
   },
   "dependencies": {
