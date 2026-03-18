@@ -1,6 +1,6 @@
 {
   "name": "spessoplayer",
-  "version": "0.7.6-beta",
+  "version": "0.7.8-beta",
   "description": "A midi converter that uses spessasynth_core to generate the data",
   "keywords": [
     "midi", "soundfont",
