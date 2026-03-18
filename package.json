@@ -28,6 +28,7 @@
     "testCliArguments_stdout": "node tests/checkCliArguments.mjs -",
     "testCliArguments_fileOutputs": "node tests/checkCliArguments.mjs -fo",
     "testCliArguments_logFilePath": "node tests/checkCliArguments.mjs -lf",
+    "prepublishOnly": "node prepublish.mjs",
     "postinstall": "node install.mjs"
   },
   "dependencies": {
