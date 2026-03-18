@@ -456,7 +456,12 @@ class Options {
       return (indexOfName !== -1) ? flattenMidis[indexOfName-2] : false;
     };
 
-    if (isAMidiSearching === undefined) return midiSearch() || soundfontSearch();
+    if (isAMidiSearching === undefined) {
+      const midiSearchResult = midiSearch();
+      return (midiSearchResult !== false)
+                ? midiSearchResult
+                : soundfontSearch();
+    }
     return (isAMidiSearching) ? soundfontSearch() : midiSearch();
   }
   /**
