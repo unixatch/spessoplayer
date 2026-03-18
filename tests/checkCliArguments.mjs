@@ -1,9 +1,9 @@
+import { globSync } from "fs"
 
 // Main thread/process
 if (!process.argv.includes("--verbose")
     && !process.argv.includes("-h")) {
-  const {fork} = await import("child_process")
-  const {globSync} = await import("fs")
+  const { fork } = await import("child_process");
 
   const globs = {
     midis: globSync("*.mid"),
@@ -57,7 +57,13 @@ if (!process.argv.includes("--verbose")
   process.exit()
 }
 // Forked process
-const {actUpOnPassedArgs, Options} = await import("../cli.mjs")
+const { parse } = await import("path");
+const parsedScriptPath = parse(process.argv[1]);
+const CLI_PATH = globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
+                    .find(i => i.includes("cli.mjs"));
+const {
+  actUpOnPassedArgs, Options
+} = await import(CLI_PATH);
 
 await actUpOnPassedArgs(process.argv)
 console.log(Options.all)
