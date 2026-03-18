@@ -110,7 +110,7 @@ function log(level, time, ...messages) {
   const path = debugFileSpesso || Options.logFilePath;
   if (!path) return;
   message[0] = message[0].toISOString();
-  message[message.length-1] = message[message.length-1].replace(/\x1b\[.{1,10}m/, "")
+  message[message.length-1] = message[message.length-1].replaceAll(/\x1b\[.{1,10}m/g, "")
   message.push("\n")
   fs.appendFileSync(path, message.join(" "))
 }

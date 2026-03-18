@@ -169,7 +169,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       let sumOfAll = 0;
       for (let i = 0; i <= Options.amountOfSongs; i++) {
         const number = array[i];
-        if (number) sumOfAll += array[i];
+        if (number) sumOfAll += number;
       }
       return sumOfAll;
     },

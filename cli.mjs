@@ -804,7 +804,7 @@ const setReverb = (arg, lastIndex) => {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     Options.reverbVolume(Number(lastIndex?.index), dBNumber);
     Options.effects(Number(lastIndex?.index), []);
-    log(1, performance.now().toFixed(2), `Set reverb volume to ${Options.all.reverbVolume.find(i => i === dBNumber)} and effects variable to ${global.effects}`)
+    log(1, performance.now().toFixed(2), `Set reverb volume to ${Options.all.reverbVolume.find(i => i === dBNumber)} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
@@ -812,13 +812,13 @@ const setReverb = (arg, lastIndex) => {
     const toDB = 10 * 10**(percentage/100);
     Options.reverbVolume(Number(lastIndex?.index), toDB);
     Options.effects(Number(lastIndex?.index), []);
-    log(1, performance.now().toFixed(2), `Set reverb volume to ${Options.all.reverbVolume.find(i => i === toDB)} and effects variable to ${global.effects}`)
+    log(1, performance.now().toFixed(2), `Set reverb volume to ${Options.all.reverbVolume.find(i => i === toDB)} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
     Options.reverbVolume(Number(lastIndex?.index), Number(arg));
     Options.effects(Number(lastIndex?.index), []);
-    log(1, performance.now().toFixed(2), `Set reverb volume to ${Options.all.reverbVolume.find(i => i === Number(arg))} and effects variable to ${global.effects}`)
+    log(1, performance.now().toFixed(2), `Set reverb volume to ${Options.all.reverbVolume.find(i => i === Number(arg))} and effects variable to ${lastIndex?.index}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
