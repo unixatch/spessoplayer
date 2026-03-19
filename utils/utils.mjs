@@ -20,6 +20,7 @@
  */
 
 import { join, parse } from "path"
+import { classes } from "./classes.mjs"
 
 // Custom formatting
 global.normal = "\x1b[0m"           /** @global */
@@ -251,7 +252,6 @@ function Mixin(base, mixins) {
 
   return aggregate
 }
-const { classes } = await import("./classes.mjs");
 /**
  * A class that represents options interpreted by cli.mjs
  */
