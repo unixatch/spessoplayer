@@ -179,10 +179,83 @@ Set.prototype.get = function (valueToFind) {
     if (value === valueToFind) return value;
   }
 }
+/*
+  Author's copyright/license:
+    https://github.com/rse/aggregation?tab=readme-ov-file#license
+
+    Copyright (c) 2015-2021 Dr. Ralf S. Engelschall (http://engelschall.com/)
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+  Only modifications include:
+  - propsToIgnore variable;
+  - new lines inside copyProps;
+ */
+function Mixin(base, mixins) {
+  /*  create aggregation class  */
+  let aggregate = class __Aggregate extends base {
+    constructor (...args) {
+      /*  call base class constructor  */
+      super(...args)
+
+      /*  call mixin's initializer  */
+      mixins.forEach((mixin) => {
+        if (typeof mixin.prototype.initializer === "function")
+          mixin.prototype.initializer.apply(this, args)
+      })
+    }
+  };
+
+  const propsToIgnore = "initializer|constructor|prototype|"+
+                        "arguments|caller|name|"+
+                        "bind|call|apply|"+
+                        "toString|"+
+                        "length";
+  /*  copy properties  */
+  let copyProps = (target, source) => {
+    Object.getOwnPropertyNames(source)
+      .concat(Object.getOwnPropertySymbols(source))
+      .forEach((prop) => {
+        if (prop.match(new RegExp(`^(?:${propsToIgnore})$`)))
+            return;
+        Object.defineProperty(
+          target,
+          prop,
+          Object.getOwnPropertyDescriptor(source, prop)
+        )
+      })
+  }
+
+  /*  copy all properties of all mixins into aggregation class  */
+  mixins.forEach((mixin) => {
+    copyProps(aggregate.prototype, mixin.prototype)
+    copyProps(aggregate, mixin)
+  })
+
+  return aggregate
+}
+const { classes } = await import("./classes.mjs");
 /**
  * A class that represents options interpreted by cli.mjs
  */
-class Options {
+class Options extends Mixin(classes[0], classes.slice(1)) {
   /**
    * Main private object that contains the data
    * @type {Object}
@@ -220,157 +293,96 @@ class Options {
    * @private
    * @throws {TypeError} - if it's not of valid type
    */
-  static #checkValueAndExistence(value, requiredType, property, isObject) {
+  static #checkValueAndExistence(value, requiredType, property) {
     if (requiredType !== "array" || !Array.isArray(value)) {
       if (typeof value !== requiredType) {
         throw new TypeError(`${value} is not of type ${requiredType}`)
       }
     }
-    if (property && !this.#options[property]) {
-      if (isObject) return this.#options[property] = {};
-      this.#options[property] = [];
+    if (property && !this.#options[property]) this.#options[property] = [];
+  }
+  static _manageOption(
+    {property, index, value, setter = false},
+    needsToBeSet = true, needsAnArray = false 
+  ) {
+    this.#checkValueAndExistence(property, "string")
+    if (index) this.#checkValueAndExistence(index, "number")
+    const setValue = () => this.#options[property] = value;
+    const setIndex = () => this.#options[property][index] = value;
+    const pushValue = () => this.#options[property].push(value)
+    switch (property) {
+      // Getters
+      case "verboseLevel":
+      case "logFilePath": {
+        if (!needsToBeSet) return this.#options[property];
+        
+        this.#checkValueAndExistence(
+          value, (property === "verboseLevel") ? "number" : "string"
+        )
+        setValue()
+        break;
+      }
+      // Numbers
+      case "verboseLevel":
+      case "reverbVolume":
+      case "volume":
+      case "sampleRate":
+      case "loopN":
+      case "loopAmount":
+      case "loopStart":
+      case "loopEnd": {
+        if (!needsToBeSet) return;
+
+        this.#checkValueAndExistence(
+          value, "number", (needsAnArray) ? property : undefined
+        )
+        if (setter) {
+          setValue()
+          break;
+        }
+        if (Number.isInteger(index)) setIndex(); else pushValue()
+        break;
+      }
+      // Boolean
+      case "toStdout": {
+        this.#checkValueAndExistence(value, "boolean")
+        setValue()
+        break;
+      }
+      // Strings
+      case "fileOutputs":
+      case "logFilePath":
+      case "format": {
+        if (!needsToBeSet) return;
+
+        this.#checkValueAndExistence(
+          value, "string", (needsAnArray) ? property : undefined
+        )
+        if (Number.isInteger(index)) setIndex(); else setValue()
+        break;
+      }
+      // Array of objects
+      case "effects": {
+        if (!needsToBeSet) return;
+
+        this.#checkValueAndExistence(
+          value, "array", (needsAnArray) ? property : undefined
+        )
+        for (const effectObj of value) {
+          if (typeof effectObj.effect !== "string") throw new TypeError("effect property is not a string")
+          // Array of strings or undefined
+          if (effectObj.values === undefined) continue;
+          for (const string of effectObj.values) {
+            if (typeof string !== "string") throw new TypeError("effect property is not a string")
+          }
+        }
+        if (Number.isInteger(index)) setIndex(); else pushValue()
+        break;
+      }
+
+      default:
+        throw new Error(property+" doesn't exist")
     }
-  }
-  /**
-   * Sets verboseLevel
-   * @param {Number} number - verboseLevel's number
-   */
-  static set verboseLevel(number) {
-    this.#checkValueAndExistence(number, "number")
-    this.#options.verboseLevel = number;
-  }
-  /**
-   * Gives verboseLevel's number
-   * @return {Number} verboseLevel's number
-   */
-  static get verboseLevel() {
-    return this.#options.verboseLevel;
-  }
-  /**
-   * Sets logFilePath
-   * @param {String} path - path to write to
-   */
-  static set logFilePath(path) {
-    this.#checkValueAndExistence(path, "string")
-    this.#options.logFilePath = path;
-  }
-  /**
-   * Gives logFilePath
-   * @return {String} logFilePath
-   */
-  static get logFilePath() {
-    return this.#options.logFilePath;
-  }
-  /**
-   * Sets toStdout boolean
-   * @param {Boolean} value - enable or disable printing to stdout
-   */
-  static set toStdout(value) {
-    this.#checkValueAndExistence(value, "boolean")
-    this.#options.toStdout = value;
-  }
-  /**
-   * Sets the stdout format
-   * @param {String} string - a string representing the format
-   */
-  static set format(string) {
-    this.#checkValueAndExistence(string, "string")
-    this.#options.format = string;
-  }
-  /**
-   * Adds a path to write to in a particular format
-   * @param {Number} index - index of the internal array
-   * @param {String} string - string to add to the specified index
-   */
-  static fileOutputs(index, string) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(string, "string", "fileOutputs")
-    this.#options.fileOutputs[index] = string;
-  }
-  /**
-   * Change reverb's volume of a specific file
-   * @param {Number} index - index of the file's option
-   * @param {Number} number - the volume value as a float or integer
-   */
-  static reverbVolume(index, number) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "reverbVolume")
-    if (!Number.isNaN(index)) return this.#options.reverbVolume[index] = number;
-    this.#options.reverbVolume.push(number)
-  }
-  /**
-   * Adds a list of effects to a specific file
-   * @param {Number} index - index of the file
-   * @param {Array} arrayOfObjects - an array of object effects
-   */
-  static effects(index, arrayOfObjects) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(arrayOfObjects, "array", "effects")
-    if (Number.isNaN(index)) return this.#options.effects.push(arrayOfObjects);
-    this.#options.effects[index] = arrayOfObjects;
-  }
-  /**
-   * Change general volume of a specific file
-   * @param {Number} index - index of the file
-   * @param {Number} number - volume value as a float or integer
-   */
-  static volume(index, number) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "volume")
-    if (!Number.isNaN(index)) return this.#options.volume[index] = number;
-    this.#options.volume.push(number);
-  }
-  /**
-   * Sets the sample rate of the stdout output
-   * @param {Number} number - sample rate to set for all files in stdout
-   */
-  static set stdoutSampleRate(number) {
-    this.#checkValueAndExistence(number, "number")
-    this.#options.sampleRate = number;
-  }
-  /**
-   * Sets the sample rate of a specific file
-   * @param {Number} index - index of the file
-   * @param {Number} number - sample rate to set
-   */
-  static sampleRate(index, number) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "sampleRate")
-    if (!Number.isNaN(index)) return this.#options.sampleRate[index] = number;
-    this.#options.sampleRate.push(number);
-  }
-  /**
-   * Sets the amount of loops to do for a specific file
-   * @param {Number} index - index of the file
-   * @param {Number} number - how many loops to do
-   */
-  static loopAmount(index, number) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "loopAmount")
-    if (!Number.isNaN(index)) return this.#options.loopAmount[index] = number;
-    this.#options.loopAmount.push(number);
-  }
-  /**
-   * Sets when the loop starts for a specific file
-   * @param {Number} index - index of the file
-   * @param {Number} number - start of the loop as a float or integer
-   */
-  static loopStart(index, number) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "loopStart")
-    if (!Number.isNaN(index)) return this.#options.loopStart[index] = number;
-    this.#options.loopStart.push(number);
-  }
-  /**
-   * Sets when the loop ends for a specific file
-   * @param {Number} index - index of the file
-   * @param {Number} number - end of the loop as a float
-   */
-  static loopEnd(index, number) {
-    this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(number, "number", "loopEnd")
-    if (!Number.isNaN(index)) return this.#options.loopEnd[index] = number;
-    this.#options.loopEnd.push(number);
   }
   /**
    * The main method to add a file to the list of Sets
