@@ -81,5 +81,4 @@ await runCheck(
   "mpv",
   "Continuing uninstallation, keeping mpv"
 )
-export { runCheck }
 

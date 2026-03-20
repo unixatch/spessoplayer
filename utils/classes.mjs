@@ -191,4 +191,5 @@ class EffectsOptions {
 
 export let classes = [
   MainOptions, EffectsOptions
-]
+];
+

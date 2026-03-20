@@ -98,3 +98,4 @@ console.log(
   process.argv
     .slice(process.argv.lastIndexOf("-i"+indexOfParameter)+2)
 )
+

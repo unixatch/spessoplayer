@@ -216,3 +216,4 @@ export {
   tryToInstall,
   tryToUninstall
 }
+
