@@ -288,7 +288,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {*} value - any kind of value to check
    * @param {String} requiredType - type that must be correct
    * @param {String} [property] - any kind of property to add to #options
-   * @param {Boolean} [isObject] - if the property should be an object
    * @memberof Options
    * @private
    * @throws {TypeError} - if it's not of valid type
@@ -299,11 +298,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         throw new TypeError(`${value} is not of type ${requiredType}`)
       }
     }
-    if (property && !this.#options[property]) this.#options[property] = [];
+    if (property) this.#options[property] ??= [];
   }
   static _manageOption(
     {property, index, value, setter = false},
-    needsToBeSet = true, needsAnArray = false 
+    needsToBeSet = true, needsAnArray = false
   ) {
     this.#checkValueAndExistence(property, "string")
     if (index) this.#checkValueAndExistence(index, "number")
