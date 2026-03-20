@@ -41,6 +41,39 @@ global.dimGray = "\x1b[37;2m"       /** @global */
 global.dimGrayBold = "\x1b[37;2;1m" /** @global */
 
 /**
+ * @typedef lines
+ * @type {Number[]}
+ * @property {Number} x x axis
+ * @property {Number} [y] y axis
+ */
+/**
+ * Clears lines from the last line up
+ * @param {lines} lines - two numbers, x and y values
+ * @throws {TypeError} - if the passed argument isn't an array,
+ *                       if one of its values is a string or
+ *                       it can't be converted to an integer
+ * @example
+ * // Clears only the last line
+ * clearLastLines([0, -1])
+ */
+const clearLastLines = lines => {
+  if (!Array.isArray(lines)) throw new TypeError("Didn't give an array");
+  let lineX, lineY;
+  lines
+    .forEach((line, i) => {
+      if (typeof line === "string") throw new TypeError(`Gave string "${line}", numbers only allowed`)
+      const int = parseInt(line);
+      if (isNaN(int)) throw new TypeError("Didn't give a number")
+      if (i === 0) {
+        lineX = line;
+      } else lineY = line;
+    })
+  process.stdout
+    .moveCursor(lineX, lineY);
+  process.stdout
+    .clearScreenDown();
+}
+/**
  * Checks program existance synchronously
  * @param {Object} obj - the obj passed
  * @param {Function} obj.spawnSync - child_process.spawnSync

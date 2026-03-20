@@ -21,7 +21,11 @@
  */
 
 const { spawnSync } = await import("child_process");
-const { runProgramSync, tryToInstall } = await import("./utils/install_uninstall.mjs");
+const {
+  clearLastLines,
+  runProgramSync,
+  tryToInstall
+} = await import("./utils/install_uninstall.mjs");
 
 let readline,
     stdin,
@@ -48,23 +52,29 @@ async function runCheck(program, noInstallMsg = "") {
       ({ stdin, stdout, stderr } = await import ("process"));
     }
     
-    let answer;
-    try {
-      const rl = readline.createInterface({ input: stdin, output: stdout });
-      answer = await rl.question("Do you want to install it [Y|n]? ");
-      rl.close()
-    } catch (e2) {
-      if (e2.name === "AbortError") {
-        console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`);
-        process.exit(2)
+    async function question() {
+      let answer;
+      try {
+        const rl = readline.createInterface({ input: stdin, output: stdout });
+        answer = await rl.question("Do you want to install it [Y|n]? ");
+        rl.close()
+      } catch (e2) {
+        if (e2.name === "AbortError") {
+          console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`);
+          process.exit(2)
+        }
       }
+      //                                    ↓ In case it's empty
+      if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) {
+        return tryToInstall(program, spawnSync, { stdout, stderr })
+      }
+      if (/^(?:n|no)$/i.test(answer)) {
+        console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
+      }
+      clearLastLines([0, -1])
+      return await question();
     }
-    //                               ↓ In case it's neither y or n
-    if (/(?:y|yes)/i.test(answer) || !/(?:n|no)/.test(answer)) {
-      tryToInstall(program, spawnSync, { stdout, stderr })
-    } else if (/(?:n|no)/.test(answer)) {
-      console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
-    }
+    await question();
   }
 }
 // ffmpeg check
