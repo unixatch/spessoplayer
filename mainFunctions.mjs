@@ -539,9 +539,6 @@ function addEvent({ eventType, func }) {
  * @param {Readable} Readable - Readable stream function
  * @param {Boolean} [isStdout=false] - if it's for toStdout or not
  * @param {Object} obj - the object passed
- * @param {Number} obj.BUFFER_SIZE - static size of the buffer
- * @param {Number} obj.filledSamples - how many samples have been rendered
- * @param {Boolean} obj.lastBytes - check if it's the last sample
  * @param {Number} obj.sampleCount - sample count
  * @param {Number} obj.sampleRate - sample rate
  * @param {Number} [obj.index] - index of the song
@@ -554,17 +551,12 @@ function addEvent({ eventType, func }) {
  * @return {Readable} a Readable
  */
 function createReadable(Readable, isStdout = false, {
-  BUFFER_SIZE, filledSamples,
-  lastBytes,
   sampleCount, sampleRate,
   index, i, durationRounded,
   progress,
   seq, synth,
   getData
 }) {
-  let hasBeenAdded = false,
-      lastCompletelyRenderedSeconds,
-      lastLoopCount;
   /**
    * Calculates the rendered amount of seconds
    * with loops accounted for when they start
@@ -586,18 +578,25 @@ function createReadable(Readable, isStdout = false, {
 
     progress.renderedAmount[index] = seq.currentTime;
   }
+
+  let hasBeenAdded = false,
+      lastBytes = false,
+      filledSamples = 0,
+      lastCompletelyRenderedSeconds,
+      lastLoopCount;
+  const BUFFER_SIZE = 128,
+        left = new Float32Array(BUFFER_SIZE),
+        right = new Float32Array(BUFFER_SIZE),
+        arr = [left, right];
   const readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
-      const left = new Float32Array(bufferSize);
-      const right = new Float32Array(bufferSize);
-      const arr = [left, right]
-      seq.processTick();
+      seq.processTick()
       synth.renderAudio(
         arr, [], [],
         0,
         bufferSize
-      );
+      )
       filledSamples += bufferSize;
       if (!isStdout) {
         i++;
@@ -620,6 +619,9 @@ function createReadable(Readable, isStdout = false, {
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
         const data = getData(arr, sampleRate);
+        // Clean up old data for both channels
+        left.fill(0, 0, BUFFER_SIZE)
+        right.fill(0, 0, BUFFER_SIZE)
         return this.push(data)
       }
       this.push(null)
@@ -746,14 +748,8 @@ async function toStdout({
     Readable
   } = await import("node:stream");
   
-  const BUFFER_SIZE = 128;
-  let filledSamples = 0;
-  let lastBytes = false;
   let doneStreaming = false;
-
   const readStream = createReadable(Readable, true, {
-    BUFFER_SIZE, filledSamples,
-    lastBytes,
     sampleCount, sampleRate,
     seq, synth,
     getData
@@ -844,15 +840,10 @@ async function toFile({
   let i = 0;
   const durationRounded = Math.floor(durationInSeconds * 100) / 100;
   
-  const BUFFER_SIZE = 128;
-  let filledSamples = 0;
-  let lastBytes = false;
   const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
   const readStream = createReadable(Readable, false, {
-    BUFFER_SIZE, filledSamples,
-    lastBytes,
     sampleCount, sampleRate,
     seq, synth,
     getData,
