@@ -20,7 +20,7 @@
  * @module main
  */
 
-import { log } from "./utils/utils.mjs"
+import { log, clearLastLines } from "./utils/utils.mjs"
 import {
   initSpessaSynth,
   applyEffects,
@@ -42,6 +42,29 @@ log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
 const listOfOptions = Options.all;
 
+if (listOfOptions?.confirmation) {
+  const infos = Options.getConfirmationTable();
+  if (listOfOptions?.noTable) {
+    for (const i of infos) console.log(i)
+  } else console.table(Options.getConfirmationTable())
+
+  const readline = await import("readline/promises");
+  async function question() {
+    let answer;
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    answer = await rl.question("Is this setup correct [Y|n]? ");
+    rl.close()
+
+    if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) return;
+    if (/^(?:n|no)$/i.test(answer)) {
+      console.warn(`${gray}Closing then...${normal}`)
+      process.exit()
+    }
+    clearLastLines([0, -1])
+    return await question();
+  }
+  await question()
+}
 if (listOfOptions?.toStdout) {
   const filesList = listOfOptions.files,
         lengthOfFiles = [],

@@ -71,6 +71,20 @@ class MainOptions {
     this._manageOption({property: "toStdout", value})
   }
   /**
+   * Sets confirmation boolean
+   * @param {Boolean} value - enable or disable confirmation
+   */
+  static set confirmation(value) {
+    this._manageOption({property: "confirmation", value})
+  }
+  /**
+   * Sets noTable boolean
+   * @param {Boolean} value - enable or disable tabling the confirmation prompt
+   */
+  static set noTable(value) {
+    this._manageOption({property: "noTable", value})
+  }
+  /**
    * Sets the stdout format
    * @param {String} string - a string representing the format
    */

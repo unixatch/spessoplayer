@@ -19,7 +19,7 @@
  * @module utils/utils
  */
 
-import { join, parse } from "path"
+import { join, parse, sep } from "path"
 import { classes } from "./classes.mjs"
 
 // Custom formatting
@@ -344,6 +344,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Boolean
+      case "confirmation":
+      case "noTable":
       case "toStdout": {
         this.#checkValueAndExistence(value, "boolean")
         setValue()
@@ -449,6 +451,50 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         || !this.#options.files.length) return;
 
     return this.amountOfGroups-1;
+  }
+  /**
+   * Gives a compatible list of
+   * this.#options.files for console.table
+   * @return {(undefined|Object[])} - undefined if it's undefined or empty,
+   *                                  an array of objects that contain a soundfont and its midis
+   */
+  static getConfirmationTable() {
+    if (!this.#options.files
+        || !this.#options.files.length) return;
+
+    const table = [],
+          listOfFiles = this.#options.files;
+    let indexOfSets = 0;
+    for (const setOfFiles of listOfFiles) {
+      if (!setOfFiles) {
+        indexOfSets++
+        continue;
+      }
+      const values = [...setOfFiles],
+            parsedValues = [],
+            MAX_DEEP_LEVEL = 3;
+
+      // Truncate after MAX_DEEP_LEVEL folders deep
+      let indexInsideSet = 0;
+      for (const v of values) {
+        const parsedPath = parse(v);
+
+        if (!parsedPath.dir) {
+          parsedValues[indexInsideSet] = v;
+          indexInsideSet++
+          continue;
+        }
+        const splitDir = parsedPath.dir.split(sep).slice(0, MAX_DEEP_LEVEL);
+        parsedValues[indexInsideSet] = join(splitDir.join(sep), "...") + parsedPath.base;
+        indexInsideSet++
+      }
+
+      const soundfont = parsedValues[0],
+            midis = parsedValues.slice(1);
+      table[indexOfSets] = { soundfont, midis };
+      indexOfSets++
+    }
+    return table;
   }
   /**
    * Checks if there's a file somewhere

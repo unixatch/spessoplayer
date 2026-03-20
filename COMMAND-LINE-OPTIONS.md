@@ -45,6 +45,13 @@ Available formats:
 - **flac**;
 - **pcm (s32le)**;
 
+### --ask, /ask, --confirm, /confirm, -a, /a, -c, /c:
+Asks for confirmation before proceeding
+
+### --no-table, /no-table, -nt, /nt:
+When asking for confirmation,
+it'll show the information in a JSON-like format instead of a table
+
 ### --verbose, /verbose, -v, /v:
 Sets the verbosity (*default: 2*)
 

@@ -50,6 +50,8 @@ const regexes = {
     "|-lf(?:=(?<path>\\w+))*",           // -lf[=n]
     "|\\/lf(?:=(?<path>\\w+))*)$"        // /lf[=n]
   ].join("")),
+  ask: /^(?:--ask|\/ask|--confirm|\/confirm|-a|\/a|-c|\/c)$/,
+  noTable: /^(?:--no-table|\/no-table|-nt|\/nt)$/,
 
   stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
@@ -249,6 +251,14 @@ const actUpOnPassedArgs = async (args) => {
       }
       case regexes.stdout.test(arg) && arg: {
         Options.toStdout = true;
+        break;
+      }
+      case regexes.ask.test(arg) && arg: {
+        Options.confirmation = true;
+        break;
+      }
+      case regexes.noTable.test(arg) && arg: {
+        Options.noTable = true;
         break;
       }
       case regexes.input.test(arg) && arg: {
@@ -911,6 +921,13 @@ const help = async ({ errorText } = "") => {
       ${dimGray+italics}- flac${normal}
       ${dimGray+italics}- pcm (s32le)${normal}
       
+    ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal}, ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:
+      ${dimGray+italics}Asks for confirmation before proceeding${normal}
+
+    ${green}--no-table${normal}, ${green}/no-table${normal}, ${green}-nt${normal}, ${green}/nt${normal}:
+      ${dimGray+italics}When asking for confirmation,
+      ${dimGray+italics}it'll show the information in a JSON-like format instead of a table${normal}
+
     ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex}, ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
       ${dimGray+italics}Sets the verbosity (default: 2)${normal}
       
