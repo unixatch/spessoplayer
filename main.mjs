@@ -179,7 +179,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     get minutesRenderedText() {
       return `${magenta}`
               // Gets the ISO format and then gets mm:ss.sss
-              +  new Date(
+              + new Date(
                   (Math.floor(this._sum(this.renderedAmount) * 100) / 100) * 1000
                 )
                   .toISOString()
@@ -188,7 +188,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
               + " / "
               + `${brightMagenta}`
                 // Same down here
-              +  new Date(this.amountToRender * 1000)
+              + new Date(this.amountToRender * 1000)
                   .toISOString()
                   .replace(/.*T...(.*)Z/, "$1")
               + `${normal}`;

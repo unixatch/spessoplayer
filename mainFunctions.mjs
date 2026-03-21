@@ -565,29 +565,44 @@ function createReadable(Readable, isStdout = false, {
    * @memberof module:main
    */
   function calculateRenderedAmount() {
+    // Change in loopCount
     if (lastLoopCount !== seq.loopCount) {
       lastCompletelyRenderedSeconds = progress.renderedAmount[index];
-      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + seq.currentTime;
+
+      const loopStart = seq.midiData.loop.start;
+      const currentTime = seq.currentTime - seq.midiData.midiTicksToSeconds(loopStart);
+      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + currentTime;
+
       lastLoopCount = seq.loopCount;
       return;
     }
+    // Use the last completely rendered seconds
+    // since the last completed loop
     if (lastCompletelyRenderedSeconds) {
-      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + seq.currentTime;
+      const loopStart = seq.midiData.loop.start;
+      const currentTime = seq.currentTime - seq.midiData.midiTicksToSeconds(loopStart);
+      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + currentTime;
       return;
     }
 
     progress.renderedAmount[index] = seq.currentTime;
   }
 
-  let hasBeenAdded = false,
-      lastBytes = false,
+  let lastBytes = false,
       filledSamples = 0,
       lastCompletelyRenderedSeconds,
-      lastLoopCount;
+      lastLoopCount = seq.loopCount;
   const BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
         right = new Float32Array(BUFFER_SIZE),
         arr = [left, right];
+  if (progress) {
+    if (!process.stdout.listeners("renderTexts").length > 0) {
+      addEvent({ eventType: "renderTexts" })
+    }
+    progress.amountToRender += durationRounded;
+  }
+
   const readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
@@ -598,22 +613,13 @@ function createReadable(Readable, isStdout = false, {
         bufferSize
       )
       filledSamples += bufferSize;
-      if (!isStdout) {
-        i++;
-        if (i % 100 === 0) {
-          if (!process.stdout.listeners("renderTexts").length > 0) {
-            addEvent({ eventType: "renderTexts" })
-          }
-          if (!hasBeenAdded) {
-            progress.amountToRender += durationRounded;
-            hasBeenAdded = true;
-            lastLoopCount = seq.loopCount;
-          } else {
-            calculateRenderedAmount()
-            progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
-            process.stdout.emit("renderTexts", progress)
-          }
-        }
+      if (!isStdout) toFileRendering: {
+        i++
+        if (i % 100 !== 0) break toFileRendering;
+
+        calculateRenderedAmount()
+        progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
+        process.stdout.emit("renderTexts", progress)
       }
       
       if (filledSamples <= sampleCount && !lastBytes) {
