@@ -542,7 +542,6 @@ function addEvent({ eventType, func }) {
  * @param {Number} obj.sampleCount - sample count
  * @param {Number} obj.sampleRate - sample rate
  * @param {Number} [obj.index] - index of the song
- * @param {Number} [obj.i] - counter for the progress
  * @param {Number} [obj.durationRounded] - duration of the song rounded by percentage
  * @param {Object} [obj.progress] - progress information object
  * @param {SpessaSynthSequencer} obj.seq - spessasynth_core' sequencer
@@ -552,19 +551,19 @@ function addEvent({ eventType, func }) {
  */
 function createReadable(Readable, isStdout = false, {
   sampleCount, sampleRate,
-  index, i, durationRounded,
+  index, durationRounded,
   progress,
   seq, synth,
   getData
 }) {
   /**
-   * Calculates the rendered amount of seconds
+   * Sets the rendered amount of seconds
    * with loops accounted for when they start
    * @inner
    * @private
    * @memberof module:main
    */
-  function calculateRenderedAmount() {
+  function setRenderedAmount() {
     // Change in loopCount
     if (lastLoopCount !== seq.loopCount) {
       lastCompletelyRenderedSeconds = progress.renderedAmount[index];
@@ -588,7 +587,8 @@ function createReadable(Readable, isStdout = false, {
     progress.renderedAmount[index] = seq.currentTime;
   }
 
-  let lastBytes = false,
+  let textRenderingIndex = 0,
+      lastBytes = false,
       filledSamples = 0,
       lastCompletelyRenderedSeconds,
       lastLoopCount = seq.loopCount;
@@ -613,11 +613,13 @@ function createReadable(Readable, isStdout = false, {
         bufferSize
       )
       filledSamples += bufferSize;
-      if (!isStdout) toFileRendering: {
-        i++
-        if (i % 100 !== 0) break toFileRendering;
+      if (!isStdout) toFileTextRendering: {
+        textRenderingIndex++
+        if (!lastBytes) {
+          if (textRenderingIndex % 100 !== 0) break toFileTextRendering;
+        }
 
-        calculateRenderedAmount()
+        setRenderedAmount()
         progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
         process.stdout.emit("renderTexts", progress)
       }
@@ -843,7 +845,6 @@ async function toFile({
     Readable
   } = await import("node:stream");
   
-  let i = 0;
   const durationRounded = Math.floor(durationInSeconds * 100) / 100;
   
   const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
@@ -853,7 +854,7 @@ async function toFile({
     sampleCount, sampleRate,
     seq, synth,
     getData,
-    index, i, durationRounded,
+    index, durationRounded,
     progress
   });
   const promisesOfPrograms = [],
