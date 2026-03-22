@@ -595,7 +595,7 @@ function createReadable(Readable, isStdout = false, {
   const BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
         right = new Float32Array(BUFFER_SIZE),
-        arr = [left, right];
+        stereoChannels = [left, right];
   if (progress) {
     if (!process.stdout.listeners("renderTexts").length > 0) {
       addEvent({ eventType: "renderTexts" })
@@ -608,7 +608,7 @@ function createReadable(Readable, isStdout = false, {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
       seq.processTick()
       synth.renderAudio(
-        arr, [], [],
+        stereoChannels, [], [],
         0,
         bufferSize
       )
@@ -626,7 +626,7 @@ function createReadable(Readable, isStdout = false, {
       
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        const data = getData(arr, sampleRate);
+        const data = getData(stereoChannels, sampleRate);
         // Clean up old data for both channels
         left.fill(0, 0, BUFFER_SIZE)
         right.fill(0, 0, BUFFER_SIZE)
