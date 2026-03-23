@@ -626,7 +626,7 @@ function createReadable(Readable, isStdout = false, {
       
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        const data = getData(stereoChannels, sampleRate);
+        const data = getData(stereoChannels);
         // Clean up old data for both channels
         left.fill(0, 0, BUFFER_SIZE)
         right.fill(0, 0, BUFFER_SIZE)

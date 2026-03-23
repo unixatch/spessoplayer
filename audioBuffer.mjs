@@ -196,7 +196,7 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
       fileSize >> 24 & 255
     ]),
     4
-  );
+  )
   header.set([87, 65, 86, 69], 8);     // "WAVE"
   header.set([102, 109, 116, 32], 12); // "fmt "
   header.set([16, 0, 0, 0], 16);       // BlocSize
@@ -210,7 +210,7 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
       sampleRate >> 24 & 255
     ]),
     24
-  );
+  )
   const byteRate = sampleRate * numChannels * bytesPerSample;
   header.set(
     new Uint8Array([
@@ -220,7 +220,7 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
       byteRate >> 24 & 255
     ]),
     28
-  );
+  )
   header.set([numChannels * bytesPerSample, 0], 32); // BytePerBloc
   header.set([16, 0], 34);                           // BitsPerSample
   header.set([100, 97, 116, 97], 36);                // "data"
@@ -232,31 +232,28 @@ function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV
       dataSize >> 24 & 255
     ]),
     40
-  );
+  )
   return header;
 }
 
 /**
- * Translates to PCM data
+ * Translates to audible PCM data
  * @param {Array} audioData - An array that contains the audio buffers
- * @param {Number} sampleRate - Sample rate of the audio
  * @param {Object} options - Optional, adds loop timestamps and more
  * @returns {Uint8Array} the translated data
  */
-function getData(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
-  const length = audioData[0].length;
-  const numChannels = audioData.length;
-  const fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS);
-  const headerSize = 44;
-  const bytesPerSample = 2;
+function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
+  const length = audioData[0].length,
+        numChannels = audioData.length,
+        fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS),
+        bytesPerSample = 2;
 
-  const dataSize = length * numChannels * bytesPerSample;
-  const fileSize = dataSize;
-  
-  const Data = new Uint8Array(fileSize);
-  let offset = 0;
+  const fileSize = length * numChannels * bytesPerSample,
+        Data = new Uint8Array(fileSize);
+
+  let offset = 0,
+      multiplier = 32767;
   // Volume
-  let multiplier = 32767;
   /*if (fullOptions.normalizeAudio) {
     const numSamples = audioData[0].length;
     let maxAbsValue = 0;
@@ -275,11 +272,11 @@ function getData(audioData, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
       : 1;
   }*/
   for (let i = 0; i < length; i++) {
-    audioData.forEach((d) => {
+    for (const d of audioData) {
       const sample = Math.min(32767, Math.max(-32768, d[i] * multiplier));
       Data[offset++] = sample & 255;
       Data[offset++] = sample >> 8 & 255;
-    });
+    }
   }
   return Data;
 }
