@@ -350,10 +350,7 @@ const actUpOnPassedArgs = async (args) => {
         }
         doneFileList.set(arg, doneSymbol)
         
-        if (!global.fs) {
-          const fs = await import("node:fs");
-          global.fs = fs;
-        }
+        global.fs ??= await import("node:fs");
         setFilePromises.push(
           setFile({
             indexOfSetFile: indexOfSetFile++,
