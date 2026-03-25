@@ -545,18 +545,21 @@ function addEvent({ eventType, func }) {
  * @param {Number} obj.sampleRate - sample rate
  * @param {Number} [obj.index] - index of the song
  * @param {Number} [obj.durationRounded] - duration of the song rounded by percentage
- * @param {Object} [obj.progress] - progress information object
  * @param {SpessaSynthSequencer} obj.seq - spessasynth_core' sequencer
  * @param {SpessaSynthProcessor} obj.synth - spessasynth_core's processor
  * @param {Function} obj.getData - translator: Float32Arrays → Uint8Arrays
+ * @param {Number} obj.amountOfSongs - total of songs
+ * @param {MessagePort} obj.parentPort - port of the main thread
+ * @param {Object} obj.progressBuffers - Object that contains SharedArrayBuffers
  * @return {Readable} a Readable
  */
 function createReadable(Readable, isStdout = false, {
   sampleCount, sampleRate,
   index, durationRounded,
-  progress,
   seq, synth,
-  getData
+  getData,
+  amountOfSongs,
+  parentPort, progressBuffers
 }) {
   /**
    * Sets the rendered amount of seconds
@@ -568,11 +571,11 @@ function createReadable(Readable, isStdout = false, {
   function setRenderedAmount() {
     // Change in loopCount
     if (lastLoopCount !== seq.loopCount) {
-      lastCompletelyRenderedSeconds = progress.renderedAmount[index];
+      lastCompletelyRenderedSeconds = progress.renderedAmount;
 
       const loopStart = seq.midiData.loop.start;
       const currentTime = seq.currentTime - seq.midiData.midiTicksToSeconds(loopStart);
-      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + currentTime;
+      progress.updateProgress(lastCompletelyRenderedSeconds + currentTime)
 
       lastLoopCount = seq.loopCount;
       return;
@@ -582,27 +585,26 @@ function createReadable(Readable, isStdout = false, {
     if (lastCompletelyRenderedSeconds) {
       const loopStart = seq.midiData.loop.start;
       const currentTime = seq.currentTime - seq.midiData.midiTicksToSeconds(loopStart);
-      progress.renderedAmount[index] = lastCompletelyRenderedSeconds + currentTime;
+      progress.updateProgress(lastCompletelyRenderedSeconds + currentTime)
       return;
     }
 
-    progress.renderedAmount[index] = seq.currentTime;
+    progress.updateProgress(seq.currentTime)
   }
 
   let textRenderingIndex = 0,
       lastBytes = false,
       filledSamples = 0,
       lastCompletelyRenderedSeconds,
-      lastLoopCount = seq.loopCount;
+      lastLoopCount = seq.loopCount,
+      progress;
   const BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
         right = new Float32Array(BUFFER_SIZE),
         stereoChannels = [left, right];
-  if (progress) {
-    if (!process.stdout.listeners("renderTexts").length > 0) {
-      addEvent({ eventType: "renderTexts" })
-    }
-    progress.amountToRender += durationRounded;
+  if (parentPort) {
+    progress = new Progress(amountOfSongs, index, progressBuffers);
+    progress.addToAmountToRender(durationRounded)
   }
 
   const readStream = new Readable({
@@ -622,8 +624,11 @@ function createReadable(Readable, isStdout = false, {
         }
 
         setRenderedAmount()
-        progress.percentageDone[index] = (progress.renderedAmount[index] / progress.amountToRender) * 100;
-        process.stdout.emit("renderTexts", progress)
+        progress.updateProgress(
+          (progress.renderedAmount / progress.amountToRender) * 100,
+          "percentageDone"
+        )
+        parentPort.postMessage(null)
       }
       
       if (filledSamples <= sampleCount && !lastBytes) {
@@ -798,8 +803,10 @@ async function toStdout({
  * and renders them to a wav file
  * @param {Object} toFileObj - necessary object
  * @param {Boolean} toFileObj.createNewFileNameAnyway - if it's necessary to create a new file name
- * @param {Object} toFileObj.index - index of the song
- * @param {Object} toFileObj.progress - progress information object
+ * @param {Number} toFileObj.index - index of the song
+ * @param {MessagePort} toFileObj.parentPort - port of the main thread
+ * @param {Object} toFileObj.progressBuffers - progress shared buffers used by Progress class
+ * @param {Number} toFileObj.amountOfSongs - total of songs
  * @param {Number} [toFileObj.loopAmount] - loop amount
  * @param {Number} [toFileObj.loopStart] - start of loop
  * @param {Number} [toFileObj.loopEnd] - end of loop
@@ -814,7 +821,9 @@ async function toStdout({
  * @return {Promise<toFileArray>} array that contains the fileOutputs array and a promise
  */
 async function toFile({
-  createNewFileNameAnyway, index, progress,
+  createNewFileNameAnyway, index,
+  parentPort, progressBuffers,
+  amountOfSongs,
   loopAmount, loopStart, loopEnd,
   volume = 100/100,
   midiFile, soundfontFile, fileOutputs,
@@ -857,7 +866,7 @@ async function toFile({
     seq, synth,
     getData,
     index, durationRounded,
-    progress
+    parentPort, progressBuffers
   });
   const promisesOfPrograms = [],
         pipingFunctions = [];
@@ -882,7 +891,120 @@ async function toFile({
     ])
   ];
 }
+class Progress {
+  #renderedAmount;
+  #amountToRender;
+  #percentageDone;
+  #index;
 
+  /**
+   * Creates a partial or complete Progress class
+   * @param {Number} amountOfSongs
+   * @param {Number} [index]
+   * @param {Object} sharedBuffers
+   * @param {SharedArrayBuffer} sharedBuffers.amountToRender
+   * @param {SharedArrayBuffer} sharedBuffers.renderedAmount
+   * @param {SharedArrayBuffer} sharedBuffers.percentageDone
+   */
+  constructor(
+    amountOfSongs, index,
+    {amountToRender, renderedAmount, percentageDone}
+  ) {
+    this.amountOfSongs = amountOfSongs;
+    if (typeof index === "number") this.#index = index;
+
+    this.#amountToRender = new Float32Array(amountToRender);
+    this.#renderedAmount = new Float32Array(renderedAmount);
+    this.#percentageDone = new Float32Array(percentageDone);
+  }
+  /**
+   * Do the sum of all numbers in the array
+   * @param {Float32Array} array - list of numbers
+   * @return {(undefined|Number)} - the sum
+   */
+  #sum(array) {
+    if (this.#index !== undefined) return;
+    let sumOfAll = 0;
+    for (let i = 0; i <= this.amountOfSongs; i++) {
+      const number = array[i];
+      if (number) sumOfAll += number;
+    }
+    return sumOfAll;
+  }
+  /**
+   * Gives the percentage done only
+   * if it has the necessary informations
+   * @type {(undefined|String)}
+   */
+  get percentageText() {
+    if (this.#index !== undefined) return;
+    return yellow+(this.#sum(this.#percentageDone).toFixed(2))+normal+"%";
+  }
+  /**
+   * Gives the amount of minutes rendered
+   * alongside the total to do only if it has the necessary informations 
+   * @type {(undefined|String)}
+   */
+  get minutesRenderedText() {
+    if (this.#index !== undefined) return;
+    return `${magenta}`
+            // Gets the ISO format and then gets mm:ss.sss
+            + new Date(
+                (Math.floor(this.#sum(this.#renderedAmount) * 100) / 100) * 1000
+              )
+                .toISOString()
+                .replace(/.*T...(.*)Z/, "$1")
+            + `${normal}`
+            + " / "
+            + `${brightMagenta}`
+              // Same down here
+            + new Date(this.#amountToRender * 1000)
+                .toISOString()
+                .replace(/.*T...(.*)Z/, "$1")
+            + `${normal}`;
+  }
+  /**
+   * Updates the progress number of renderedAmount
+   * by the provided index passed to the constructor
+   * @param {Number} newNumber - new value to replace with
+   * @param {String} typeOfArray - type of array to update
+   * @throws {TypeError} - if trying to update with a full shared array
+   */
+  updateProgress(newNumber, typeOfArray = "renderedAmount") {
+    if (this.#index === undefined) throw new TypeError("Can't update with full shared array")
+
+    switch (typeOfArray) {
+      case "renderedAmount":
+        this.#renderedAmount[this.#index] = newNumber;
+        break;
+      case "percentageDone":
+        this.#percentageDone[this.#index] = newNumber;
+        break;
+    }
+  }
+  /**
+   * Adds to amountToRender
+   * @param {Number} newNumber - new value to replace with
+   */
+  addToAmountToRender(newNumber) {
+    this.#amountToRender[0] += newNumber;
+  }
+  /**
+   * Gives the amount of minutes to render
+   * @type {Number}
+   */
+  get amountToRender() {
+    return this.#amountToRender[0];
+  }
+  /**
+   * Gives the amount of minutes rendered
+   * @type {Number}
+   */
+  get renderedAmount() {
+    if (this.#index === undefined) return;
+    return this.#renderedAmount[this.#index];
+  }
+}
 /**
  * Reads the generated samples from spessasynth_core
  * and plays them using mpv
@@ -1015,6 +1137,7 @@ export {
   addEvent,
   toStdout,
   toFile,
+  Progress,
   startPlayer
 }
 

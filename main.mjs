@@ -27,6 +27,7 @@ import {
   addEvent,
   toStdout,
   toFile,
+  Progress,
   startPlayer
 } from "./mainFunctions.mjs"
 
@@ -148,75 +149,68 @@ if (listOfOptions?.toStdout) {
   process.exit()
 }
 if (listOfOptions?.fileOutputs?.length > 0) {
-  const progress = {
-    renderedAmount: [],
-    amountToRender: 0,
-    percentageDone: [],
-    /**
-     * Do the sum of all numbers in the array
-     * @param {Array} array - list of numbers
-     * @return {Number} - the sum
-     */
-    _sum(array) {
-      let sumOfAll = 0;
-      for (let i = 0; i <= Options.amountOfSongs; i++) {
-        const number = array[i];
-        if (number) sumOfAll += number;
-      }
-      return sumOfAll;
-    },
-    /**
-     * Gives the percentage done
-     * @type {String}
-     */
-    get percentageText() {
-      return yellow+(this._sum(this.percentageDone).toFixed(2))+normal+"%";
-    },
-    /**
-     * Gives the amount of minutes rendered alongside the total to do
-     * @type {String}
-     */
-    get minutesRenderedText() {
-      return `${magenta}`
-              // Gets the ISO format and then gets mm:ss.sss
-              + new Date(
-                  (Math.floor(this._sum(this.renderedAmount) * 100) / 100) * 1000
-                )
-                  .toISOString()
-                  .replace(/.*T...(.*)Z/, "$1")
-              + `${normal}`
-              + " / "
-              + `${brightMagenta}`
-                // Same down here
-              + new Date(this.amountToRender * 1000)
-                  .toISOString()
-                  .replace(/.*T...(.*)Z/, "$1")
-              + `${normal}`;
-    }
-  };
-  const filesList = listOfOptions.files,
+  addEvent({ eventType: "renderTexts" })
+  const filesListLength = listOfOptions.files.length,
         amountOfSongs = Options.amountOfSongs,
         finalFileOutputs = [],
-        listOfPromises = [];
-  let fileOutputs,
-      pipingFunctions,
-      promiseToAdd;
+        listOfPromises = new Map();
+  const { Worker } = await import("worker_threads"),
+        { availableParallelism } = await import("os"),
+        maxThreads = availableParallelism() * 2,
+        workers = [];
+  const progressBuffers = {
+          amountToRender: new SharedArrayBuffer(4),
+          renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
+          percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
+        },
+        progress = new Progress(amountOfSongs, undefined, progressBuffers);
+  let fileOutputs;
+
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
     if (fileOutputs) options.fileOutputs = fileOutputs;
     
-    [fileOutputs, pipingFunctions, promiseToAdd] = await toFile({
-      createNewFileNameAnyway: (i > 0 || filesList.length > 1),
-      index: i, progress,
-      ...options
-    });
-    for (const func of pipingFunctions) if (func) func()
-    finalFileOutputs.push(...fileOutputs)
-    listOfPromises.push(promiseToAdd)
+    // Waits for all workers to finish
+    // if the max of available threads
+    // at once has been reached
+    const currentThread = i % maxThreads;
+    if (i !== 0 && !(currentThread)) await Promise.all(listOfPromises.values())
+
+    const workerDataObject = {
+      amountOfSongs, progressBuffers,
+      options, index: i, filesListLength
+    };
+    workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData: { ...workerDataObject } });
+
+    listOfPromises.set(currentThread, (
+      new Promise((resolve, reject) => {
+        const hasErrorEvent = workers[currentThread].listeners("error");
+        const hasExitEvent = workers[currentThread].listeners("exit");
+        if (!hasErrorEvent.length) workers[currentThread].on("error", error => reject(error))
+        if (!hasExitEvent.length) workers[currentThread].on("exit", () => resolve())
+
+        workers[currentThread].on("message", (message) => {
+          if (message === "DONE_RENDERING") {
+            workers[currentThread].removeAllListeners("message")
+            return resolve();
+          }
+          if (Array.isArray(message)) {
+            finalFileOutputs.push(...message)
+            return;
+          }
+          process.stdout.emit("renderTexts", progress)
+        })
+      })
+    ))
+    if (i >= maxThreads) workers[currentThread].postMessage(workerDataObject)
   }
-  await Promise.all(listOfPromises)
+  await Promise.all(listOfPromises.values())
+  // Close workers before continuing
+  // otherwise it gets stuck
+  for (const worker of workers) worker.terminate()
   console.log("Written", finalFileOutputs.filter(ifil => ifil));
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }
 await startPlayer(Options)
+
