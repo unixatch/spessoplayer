@@ -119,6 +119,7 @@ function log(level, time, ...messages) {
  * Returns a new path with a new number (adds 1) at the end of the filename
  * if necessary otherwise it returns the given path
  * @param {String} path - The path to parse and modify if needed
+ * @param {Boolean} createAnyway - If it should
  * @example
  * // It'll return out1.wav
  *    newFileName("out.wav")
