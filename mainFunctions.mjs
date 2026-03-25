@@ -516,11 +516,13 @@ function addEvent({ eventType, func }) {
     case "renderTexts": {
       const hasBeenAdded = process.stdout.on("renderTexts",
         (progress) => {
-          clearLastLines([0, -1])
-          console.info(
-            progress.minutesRenderedText,
-            "| " + progress.percentageText
-          )
+          setImmediate(() => {
+            clearLastLines([0, -1])
+            console.info(
+              progress.minutesRenderedText,
+              "| " + progress.percentageText
+            )
+          })
         }
       ).listeners("renderTexts").length > 0;
       return hasBeenAdded;
