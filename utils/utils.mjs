@@ -131,12 +131,42 @@ function log(level, time, ...messages) {
 function newFileName(path, createAnyway = false) {
   if (!fs.existsSync(path) && !createAnyway) return path;
 
-  const pathDir = parse(path).dir;
-  const pathFileName = (parse(path).name.match(/[0-9]+$/g)?.length > 0)
-    ? parse(path).name.replace(/[0-9]+$/, "")
-    + (Number(parse(path).name.match(/[0-9]+$/g)[0]) + 1)
-    : parse(path).name.replace(/[0-9]+$/, "") + 1;
-  const pathExt = parse(path).ext;
+  const LIMIT = 900;
+  const randomCharCode = () => {
+    const randomInteger = Math.floor(Math.random() * LIMIT);
+
+    switch (randomInteger) {
+      case randomInteger < 33 && randomInteger:
+      //     ↑ whitespace characters ↑
+      case 34:  // "
+      case 37:  // %
+      case 42:  // *
+      case 44:  // ,
+      case 46:  // .
+      case 47:  // /
+      case 58:  // :
+      case 59:  // ;
+      case 60:  // >
+      case 61:  // =
+      case 62:  // <
+      case 63:  // ?
+      case 92:  // \
+      case 124: // |
+        return randomCharCode();
+
+      default:
+        return String.fromCharCode(randomInteger);
+    }
+  };
+  const MAX_LENGTH = 8,
+        parsedPath = parse(path),
+        pathDir = parsedPath.dir,
+        pathExt = parsedPath.ext;
+  let newString = "",
+      pathFileName = parsedPath.name;
+  for (let i = 0; i < MAX_LENGTH; i++) newString += randomCharCode();
+
+  pathFileName += "_"+newString;
   path = join(pathDir, pathFileName + pathExt);
 
   if (fs.existsSync(path)) return newFileName(path, createAnyway);
