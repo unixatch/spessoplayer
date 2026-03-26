@@ -22,8 +22,7 @@ async function runTask({
   const [fileOutputs, pipingFunctions, promiseToWait] = await toFile({
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
     amountOfSongs, progressBuffers,
-    parentPort, index,
-    ...options
+    parentPort, index, options
   })
   parentPort.postMessage(fileOutputs)
   for (const func of pipingFunctions) if (func) func()

@@ -76,8 +76,7 @@ if (listOfOptions?.toStdout) {
     const options = Options.getOptionsOfSong(i);
     if (!options) continue;
     const length = await initSpessaSynth({
-      index: i,
-      ...options,
+      index: i, ...options,
       onlySampleCount: true
     });
     lengthOfFiles.push(length)
@@ -137,10 +136,7 @@ if (listOfOptions?.toStdout) {
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
     if (!options) continue;
-    const [ func, promise ] = await toStdout({
-      index: i,
-      ...options
-    });
+    const [ func, promise ] = await toStdout({ index: i, options });
 
     if (func) func(destination, i === amountOfSongs-1)
     await promise

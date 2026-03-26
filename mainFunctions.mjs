@@ -327,8 +327,7 @@ async function initSpessaSynth({
   return {
     seq, synth,
     midi,
-    sampleCount, sampleRate,
-    durationInSeconds
+    sampleCount, durationInSeconds
   }
 }
 /**
@@ -594,29 +593,22 @@ function createReadable(Readable, isStdout = false, {
  */
 async function toStdout({
   index, res,
-  loopAmount,
-  loopStart, loopEnd,
-  sampleRate = 48000,
-  volume = 100/100,
-  midiFile, soundfontFile,
-  format, effects,
-  indexOfGroup
+  options, options: {
+    sampleRate = 48000,
+    volume = 100/100,
+    format = ""
+  }
 }) {
-  if (!midiFile || !soundfontFile) {
+  if (!options.midiFile || !options.soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
   let seq, synth, sampleCount;
   ({
-    seq, synth,
-    sampleCount, sampleRate
+    seq, synth, sampleCount
   } = await initSpessaSynth({
-    loopAmount,
-    volume,
-    midiFile, soundfontFile,
-    sampleRate,
-    loopStart, loopEnd,
-    indexOfGroup
+    volume, sampleRate,
+    ...options
   }));
 
   if (!spawn || !spawnSync) {
@@ -693,9 +685,9 @@ async function toStdout({
 
   const promisesOfPrograms = [];
   const pipingFunction = await formatManager({
-    format: format ?? "",
-    readStream, index, res,
-    effects,
+    format, readStream,
+    index, res,
+    ...options,
     promisesOfPrograms
   });
   log(1, performance.now().toFixed(2), "Finished creating the stdout promise")
@@ -730,13 +722,14 @@ async function toFile({
   createNewFileNameAnyway, index,
   parentPort, progressBuffers,
   amountOfSongs,
-  loopAmount, loopStart, loopEnd,
-  volume = 100/100,
-  midiFile, soundfontFile, fileOutputs,
-  sampleRate = 48000,
-  effects, indexOfGroup
+  options, options: {
+    volume = 100/100,
+    sampleRate = 48000
+  }
 }) {
-  if (!midiFile || !soundfontFile || fileOutputs.length === 0) {
+  if (!options.midiFile
+      || !options.soundfontFile
+      || options.fileOutputs.length === 0) {
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toFile")
@@ -745,12 +738,8 @@ async function toFile({
     sampleCount,
     durationInSeconds
   } = await initSpessaSynth({
-    loopAmount,
-    volume,
-    midiFile, soundfontFile,
-    sampleRate,
-    loopStart, loopEnd,
-    indexOfGroup
+    volume, sampleRate,
+    ...options
   });
 
   const {
@@ -779,9 +768,8 @@ async function toFile({
   for (let outFile of fileOutputs) {
     const pipingFunction = await formatManager({
       readStream,
-      effects, index,
+      index, ...options,
       createNewFileNameAnyway,
-      fileOutputs,
       stdoutHeader,
       promisesOfPrograms, outFile
     });
@@ -941,8 +929,7 @@ async function startPlayer(Options) {
     const realIndex = Number(index),
           options = Options.getOptionsOfSong(realIndex);
     const length = await initSpessaSynth({
-      index: realIndex,
-      ...options,
+      index: realIndex, ...options,
       onlySampleCount: true
     });
 
@@ -1002,8 +989,8 @@ async function startPlayer(Options) {
       destination = res;
     }
     const [ func, promise ] = await toStdout({
-      index: realIndex, res,
-      ...options
+      index: realIndex,
+      options, res
     });
     if (func) await func(destination, true)
     await promise
