@@ -34,6 +34,10 @@ function checkValue(value, requiredType) {
   }
 }
 
+/**
+ * Main options class that contains general options
+ * @mixin MainOptions
+ */
 class MainOptions {
   /**
    * Sets verboseLevel
@@ -174,6 +178,11 @@ class MainOptions {
   }
 }
 
+/**
+ * An options class that
+ * manages options regarding effects and more
+ * @mixin EffectsOptions
+ */
 class EffectsOptions {
   /**
    * Adds a list of effects to a specific file

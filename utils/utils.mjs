@@ -209,6 +209,13 @@ Set.prototype.get = function (valueToFind) {
   Only modifications include:
   - propsToIgnore variable;
   - new lines inside copyProps;
+*/
+/**
+ * Mixes a base class with other classes
+ * so that it can be used to extend from all of them
+ * @param {class} base
+ * @param {class[]} mixins
+ * @return {class}
  */
 function Mixin(base, mixins) {
   /*  create aggregation class  */
@@ -255,6 +262,7 @@ function Mixin(base, mixins) {
 }
 /**
  * A class that represents options interpreted by cli.mjs
+ * @mixes (module:classes~MainOptions|module:classes~EffectsOptions)
  */
 class Options extends Mixin(classes[0], classes.slice(1)) {
   /**
@@ -301,6 +309,19 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     }
     if (property) this.#options[property] ??= [];
   }
+  /**
+   * Manages the addition/getters/setters
+   * of options from other classes
+   * @param {Object}  manageOptionObjectParameters
+   * @param {String}  manageOptionObjectParameters.property
+   * @param {Number}  manageOptionObjectParameters.index
+   * @param {*}       manageOptionObjectParameters.value
+   * @param {Boolean} manageOptionObjectParameters.setter
+   * @param {Boolean} needsToBeSet
+   * @param {Boolean} needsAnArray
+   * @return {(undefined|Number|String)}
+   * @throws {(TypeError|Error)} if a value is not the right type or the property doesn't exist
+   */
   static _manageOption(
     {property, index, value, setter = false},
     needsToBeSet = true, needsAnArray = false
