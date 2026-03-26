@@ -166,7 +166,7 @@ function newFileName(path, createAnyway = false) {
       pathFileName = parsedPath.name;
   for (let i = 0; i < MAX_LENGTH; i++) newString += randomCharCode();
 
-  pathFileName += "_"+newString;
+  pathFileName += "__"+newString+"__";
   path = join(pathDir, pathFileName + pathExt);
 
   if (fs.existsSync(path)) return newFileName(path, createAnyway);
