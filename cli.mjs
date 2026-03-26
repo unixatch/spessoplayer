@@ -432,14 +432,7 @@ const actUpOnPassedArgs = async (args) => {
 
 /**
  * Sets a supported file inside a group in Options class
- * @param {Object} passedVariables - variables injected with this object
- * @param {Number} passedVariables.indexOfSetFile - index of the current function inside setFilePromises
- * @param {String} passedVariables.lastParam - last parameter that has been used last time
- * @param {Object} passedVariables.lastIndex - last index object
- * @param {String} [passedVariables.lastIndex.index] - last index that has been set last time
- * @param {String} passedVariables.lastAutomaticFile - last file that has been set automatically
- * @param {String[]} passedVariables.newArguments - arguments passed from the terminal
- * @param {String} passedVariables.arg - argument passed to this function that is also a file path
+ * @param {module:typeDefinitions~setFileObjectParameters} setFileObjectParameters
  * @return {Promise<Promise|undefined>}
  */
 const setFile = async ({
@@ -585,8 +578,7 @@ const setFile = async ({
 /**
  * Sets the Options.loopAmount variable
  * @param {String} arg - the loop amount
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoop = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
@@ -605,8 +597,7 @@ const setLoop = (arg, lastIndex) => {
 /**
  * Sets the Options.loopStart variable
  * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopStart = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
@@ -627,8 +618,7 @@ const setLoopStart = (arg, lastIndex) => {
 /**
  * Sets the Options.loopEnd variable
  * @param {String} arg - the end of the loop in seconds or in HH:MM:SS:ms format
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopEnd = (arg, lastIndex) => {
   if (typeof Number(arg) === "number"
@@ -649,8 +639,7 @@ const setLoopEnd = (arg, lastIndex) => {
 /**
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  * @param {String[]} newArguments - process.argv without 2 starting indexes
  */
 const setSampleRate = (arg, lastIndex, newArguments) => {
@@ -720,8 +709,7 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setEffects = (arg, lastIndex) => {
   const regexListOfEffects = (
@@ -775,8 +763,7 @@ const setEffects = (arg, lastIndex) => {
 /**
  * Sets the Options.volume variable for the masterGain
  * @param {String} arg - the volume in either percentage, decibels or decimals
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setVolume = (arg, lastIndex) => {
   if (regexes.areDecibels.test(arg)) {
@@ -803,8 +790,7 @@ const setVolume = (arg, lastIndex) => {
 /**
  * Sets the Options.reverb variable
  * @param {String} arg - the volume in either percentage, decibels or decimals
- * @param {Object} lastIndex - last index object
- * @param {String} [lastIndex.index] - last index that has been set last time
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setReverb = (arg, lastIndex) => {
   if (regexes.areDecibels.test(arg)) {

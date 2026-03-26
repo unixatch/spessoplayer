@@ -112,9 +112,7 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
 
 /**
  * WAV Header Generator
- * @param {Object} audioData - An object that contains infos about the audio
- * @param {Number} audioData.length - Audio length in samples, essentially the sample count
- * @param {Number} audioData.numChannels - How many channels the audio has
+ * @param {module:typeDefinitions~getWavHeaderObjectParameters} audioData - An object that contains infos about the audio
  * @param {Number} sampleRate - Sample rate of the audio
  * @param {Object} [options=DEFAULT_WAV_WRITE_OPTIONS] - Optional, adds loop timestamps and more
  * @returns {Uint8Array} the wav header

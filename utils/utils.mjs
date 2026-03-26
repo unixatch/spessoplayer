@@ -213,7 +213,7 @@ Set.prototype.get = function (valueToFind) {
 /**
  * Mixes a base class with other classes
  * so that it can be used to extend from all of them
- * @param {class} base
+ * @param {class}   base
  * @param {class[]} mixins
  * @return {class}
  */

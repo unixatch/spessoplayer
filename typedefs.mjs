@@ -5,52 +5,76 @@
 /*
   ——— PARAMETERS OBJECTS ———
 */
+  //-| mainFunctions.mjs |-//
 /**
  * @typedef formatObjectParameters
  * @type {Object}
- * @property {(String|Boolean)} [formatObj.format=true]             type of format
- * @property {Readable}         formatObj.readStream                ReadStream for piping
- * @property {ResponseServer}   [formatObj.res]                     optional ResponseServer
- * @property {Object[]}         [formatObj.effects]                 list of effects to apply
- * @property {Number}           formatObj.index                     index of the song
- * @property {Boolean}          [formatObj.createNewFileNameAnyway] if it's necessary to create a new file name
- * @property {String[]}         [formatObj.fileOutputs]             list of file outputs
- * @property {Uint8Array}       [formatObj.stdoutHeader]            header of the file
- * @property {Promise[]}        formatObj.promisesOfPrograms        list of promises for ffmpeg and SoX
- * @property {String}           [formatObj.outFile]                 file name to output
+ * @property {(String|Boolean)} [format=true]             type of format
+ * @property {Readable}         readStream                ReadStream for piping
+ * @property {ResponseServer}   [res]                     optional ResponseServer
+ * @property {Object[]}         [effects]                 list of effects to apply
+ * @property {Number}           index                     index of the song
+ * @property {Boolean}          [createNewFileNameAnyway] if it's necessary to create a new file name
+ * @property {String[]}         [fileOutputs]             list of file outputs
+ * @property {Uint8Array}       [stdoutHeader]            header of the file
+ * @property {Promise[]}        promisesOfPrograms        list of promises for ffmpeg and SoX
+ * @property {String}           [outFile]                 file name to output
  */
 /**
  * @typedef sampleCountObjectParameters
  * @type {Object}
- * @property {BasicMIDI} sampleCountObj.midi               The BasicMIDI class to use
- * @property {Number}    [sampleCountObj.sampleRate=48000] The sample rate to use
- * @property {Number}    [sampleCountObj.loopAmount]       The amount of loops to do
- * @property {Number}    [sampleCountObj.loopStart=midi.midiTicksToSeconds(midi.loop.start)] start of loop
- * @property {Number}    [sampleCountObj.loopEnd]          end of loop
+ * @property {BasicMIDI} midi               The BasicMIDI class to use
+ * @property {Number}    [sampleRate=48000] The sample rate to use
+ * @property {Number}    [loopAmount]       The amount of loops to do
+ * @property {Number}    [loopStart=midi.midiTicksToSeconds(midi.loop.start)] start of loop
+ * @property {Number}    [loopEnd]          end of loop
  */
 /**
  * @typedef initObjectParameters
  * @type {Object}
- * @property {Number}  [initObjParams.loopAmount=0]          the loop amount
- * @property {Number}  [initObjParams.volume=100/100]        the volume to set
- * @property {String}  initObjParams.midiFile                midi file
- * @property {String}  initObjParams.soundfontFile           soundfont file
- * @property {Number}  [initObjParams.sampleRate=48000]      sample rate
- * @property {Number}  initObjParams.loopStart               start of loop
- * @property {Number}  initObjParams.loopEnd                 end of loop
- * @property {Number}  initObjParams.indexOfGroup            index of the Set/group the song is in
- * @property {Boolean} [initObjParams.onlySampleCount=false] if it should return just the sample count of the song and do nothing else
+ * @property {Number}  [loopAmount=0]          the loop amount
+ * @property {Number}  [volume=100/100]        the volume to set
+ * @property {String}  midiFile                midi file
+ * @property {String}  soundfontFile           soundfont file
+ * @property {Number}  [sampleRate=48000]      sample rate
+ * @property {Number}  loopStart               start of loop
+ * @property {Number}  loopEnd                 end of loop
+ * @property {Number}  indexOfGroup            index of the Set/group the song is in
+ * @property {Boolean} [onlySampleCount=false] if it should return just the sample count of the song and do nothing else
  */
 /**
  * @typedef effectsObjectParams
  * @type {Object}
- * @param {String}              obj.program                 the process to spawn, sox usually
- * @param {Stream}              obj.stdoutHeader            the header to process
- * @param {Stream}              [obj.readStream]            the data to process
- * @param {Promise[]}           obj.promisesOfPrograms      list of promises for ffmpeg and SoX
- * @param {Stream}              [obj.stdout=process.stdout] the destination
- * @param {String}              [obj.destination="-"]       the destination path
- * @param {(String[]|Object[])} [obj.effects=String[]]      all effects to pass to SoX
+ * @param {String}              program                 the process to spawn, sox usually
+ * @param {Stream}              stdoutHeader            the header to process
+ * @param {Stream}              [readStream]            the data to process
+ * @param {Promise[]}           promisesOfPrograms      list of promises for ffmpeg and SoX
+ * @param {Stream}              [stdout=process.stdout] the destination
+ * @param {String}              [destination="-"]       the destination path
+ * @param {(String[]|Object[])} [effects=String[]]      all effects to pass to SoX
+ */
+  //-| cli.mjs |-//
+/**
+ * @typedef lastIndexGroupObject
+ * @type {Object}
+ * @property {String} [index] - last index that has been set last time
+ */
+/**
+ * @typedef setFileObjectParameters
+ * @type {Object}
+ * @property {Number}               indexOfSetFile    index of the current function inside setFilePromises
+ * @property {String}               lastParam         last parameter that has been used last time
+ * @property {lastIndexGroupObject} lastIndex         last index object
+ * @property {String}               lastAutomaticFile last file that has been set automatically
+ * @property {String[]}             newArguments      arguments passed from the terminal
+ * @property {String}               arg               argument passed to this function that is also a file path
+ */
+  //-| audioBuffer.mjs |-//
+/**
+ * @typedef getWavHeaderObjectParameters
+ * @type {Object}
+ * @property {Number} length      Audio length in samples, essentially the sample count
+ * @property {Number} numChannels How many channels the audio has
  */
 
 /*
