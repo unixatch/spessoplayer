@@ -176,7 +176,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       amountOfSongs, progressBuffers,
       options, index: i, filesListLength
     };
-    workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData: { ...workerDataObject } });
+    workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData: workerDataObject });
 
     listOfPromises.set(currentThread, (
       new Promise((resolve, reject) => {

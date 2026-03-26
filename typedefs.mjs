@@ -86,8 +86,8 @@
  * @property  {Number}   [loopAmount]       the number of loops to do
  * @property  {Number}   [loopStart]        start of loop
  * @property  {Number}   [loopEnd]          end of loop
- * @property  {Number}   [sampleRate=48000] sample rate
- * @property  {Number}   [volume=100/100]   the volume of the song
+ * @property  {Number}   [sampleRate]       sample rate
+ * @property  {Number}   [volume]           the volume of the song
  * @property  {String}   [format=""]        format of the song
  * @property  {String}   midiFile           midi file
  * @property  {String}   soundfontFile      soundfont file
@@ -102,16 +102,16 @@
 /**
  * @typedef createReadableObjectParameters
  * @type {Object}
- * @property {Number}               sampleCount       sample count
- * @property {Number}               sampleRate        sample rate
- * @property {Number}               [index]           index of the song
- * @property {Number}               [durationRounded] duration of the song rounded by percentage
- * @property {SpessaSynthSequencer} seq               spessasynth_core' sequencer
- * @property {SpessaSynthProcessor} synth             spessasynth_core's processor
- * @property {Function}             getData           translator: Float32Arrays → Uint8Arrays
- * @property {Number}               amountOfSongs     total of songs
- * @property {MessagePort}          parentPort        port of the main thread
- * @property {Object}               progressBuffers   Object that contains SharedArrayBuffers
+ * @property {Number}               sampleCount        sample count
+ * @property {Number}               [sampleRate=48000] sample rate
+ * @property {Number}               [index]            index of the song
+ * @property {Number}               [durationRounded]  duration of the song rounded by percentage
+ * @property {SpessaSynthSequencer} seq                spessasynth_core' sequencer
+ * @property {SpessaSynthProcessor} synth              spessasynth_core's processor
+ * @property {Function}             getData            translator: Float32Arrays → Uint8Arrays
+ * @property {Number}               amountOfSongs      total of songs
+ * @property {MessagePort}          parentPort         port of the main thread
+ * @property {Object}               progressBuffers    Object that contains SharedArrayBuffers
  */
 
 /*

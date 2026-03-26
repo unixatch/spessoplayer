@@ -489,7 +489,7 @@ function addEvent({ eventType, func }) {
  * @return {Readable} a Readable
  */
 function createReadable(Readable, isStdout = false, {
-  sampleCount, sampleRate,
+  sampleCount, sampleRate = 48000,
   index, durationRounded,
   seq, synth,
   getData,
@@ -587,17 +587,12 @@ function createReadable(Readable, isStdout = false, {
  * @param {Number}         toStdoutObjectParameters.index        index of the song
  * @param {ResponseServer} [toStdoutObjectParameters.res]        optional ResponseServer
  * @param {module:typeDefinitions~toStdoutOptionsObject}  toStdoutObjectParameters.toStdoutOptionsObject
- * @param {Number}         toStdoutObjectParameters.indexOfGroup index of the Set/group the song is in
  * @throws {ReferenceError} if some required files are missing
  * @return {Promise<module:typeDefinitions~toStdoutArray>} toStdoutArray
  */
 async function toStdout({
   index, res,
-  options, options: {
-    sampleRate = 48000,
-    volume = 100/100,
-    format = ""
-  }
+  options, options: { format = "" }
 }) {
   if (!options.midiFile || !options.soundfontFile) {
     throw new ReferenceError("Missing some required files")
@@ -606,10 +601,7 @@ async function toStdout({
   let seq, synth, sampleCount;
   ({
     seq, synth, sampleCount
-  } = await initSpessaSynth({
-    volume, sampleRate,
-    ...options
-  }));
+  } = await initSpessaSynth(options));
 
   if (!spawn || !spawnSync) {
     ({ spawn, spawnSync } = await import("child_process"));
@@ -678,7 +670,7 @@ async function toStdout({
 
   let doneStreaming = false;
   const readStream = createReadable(Readable, true, {
-    sampleCount, sampleRate,
+    sampleCount, sampleRate: options.sampleRate,
     seq, synth,
     getData
   });
@@ -714,18 +706,13 @@ async function toStdout({
  * @param {Object}      toFileObjectParameters.progressBuffers         progress shared buffers used by Progress class
  * @param {Number}      toFileObjectParameters.amountOfSongs           total of songs
  * @param {module:typeDefinitions~toFileOptionsObject} toFileObjectParameters.toFileOptionsObject
- * @param {Number}      toFileObjectParameters.indexOfGroup            index of the Set/group the song is in
  * @throws {ReferenceError} - if some required files are missing
  * @return {Promise<module:typeDefinitions~toFileArray>} array that contains the fileOutputs array and a promise
  */
 async function toFile({
   createNewFileNameAnyway, index,
   parentPort, progressBuffers,
-  amountOfSongs,
-  options, options: {
-    volume = 100/100,
-    sampleRate = 48000
-  }
+  amountOfSongs, options
 }) {
   if (!options.midiFile
       || !options.soundfontFile
@@ -737,10 +724,7 @@ async function toFile({
     seq, synth,
     sampleCount,
     durationInSeconds
-  } = await initSpessaSynth({
-    volume, sampleRate,
-    ...options
-  });
+  } = await initSpessaSynth(options);
 
   const {
     getWavHeader,
@@ -753,11 +737,11 @@ async function toFile({
 
   const durationRounded = Math.floor(durationInSeconds * 100) / 100;
 
-  const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
+  const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
   const readStream = createReadable(Readable, false, {
-    sampleCount, sampleRate,
+    sampleCount, sampleRate: options.sampleRate,
     seq, synth,
     getData,
     index, durationRounded,
@@ -765,7 +749,7 @@ async function toFile({
   });
   const promisesOfPrograms = [],
         pipingFunctions = [];
-  for (let outFile of fileOutputs) {
+  for (let outFile of options.fileOutputs) {
     const pipingFunction = await formatManager({
       readStream,
       index, ...options,
@@ -776,7 +760,7 @@ async function toFile({
     pipingFunctions.push(pipingFunction)
   }
   return [
-    fileOutputs,
+    options.fileOutputs,
     pipingFunctions,
     Promise.all([
       finished(readStream, { cleanup: true })

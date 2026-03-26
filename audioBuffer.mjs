@@ -113,11 +113,13 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
 /**
  * WAV Header Generator
  * @param {module:typeDefinitions~getWavHeaderObjectParameters} audioData - An object that contains infos about the audio
- * @param {Number} sampleRate - Sample rate of the audio
+ * @param {Number} [sampleRate=48000] - Sample rate of the audio
  * @param {Object} [options=DEFAULT_WAV_WRITE_OPTIONS] - Optional, adds loop timestamps and more
  * @returns {Uint8Array} the wav header
  */
-function getWavHeader({ length, numChannels }, sampleRate, options = DEFAULT_WAV_WRITE_OPTIONS) {
+function getWavHeader({ length, numChannels },
+  sampleRate = 48000, options = DEFAULT_WAV_WRITE_OPTIONS
+) {
   const bytesPerSample = 2;
   const fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS);
   const loop = fullOptions.loop;
