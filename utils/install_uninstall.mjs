@@ -20,7 +20,7 @@
  */
 
 // Custom formatting
-global.normal = "\x1b[0m"           /** @global */   
+global.normal = "\x1b[0m"           /** @global */
 global.bold = "\x1b[1m"             /** @global */
 global.italics = "\x1b[3m"          /** @global */
 global.underline = "\x1b[4m"        /** @global */

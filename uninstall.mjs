@@ -45,7 +45,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
       readline = await import("readline/promises");
       ({ stdin, stdout, stderr } = await import ("process"));
     }
-    
+
     const rl = readline.createInterface({ input: stdin, output: stdout });
     const isSox = (program === "sox") ? "[Y|n]" : "[y|N]";
     const answer = await rl.question("Do you want to uninstall it " + isSox + "? ");

@@ -90,7 +90,7 @@ function log(level, time, ...messages) {
       && Options.verboseLevel === undefined) return;
   if (debugLevelSpesso > level
       || Options.verboseLevel > level) return;
-    
+
   const message = [
     new Date(),
     "["+time+" ms]",
@@ -130,7 +130,7 @@ function log(level, time, ...messages) {
  */
 function newFileName(path, createAnyway = false) {
   if (!fs.existsSync(path) && !createAnyway) return path;
-  
+
   const pathDir = parse(path).dir;
   const pathFileName = (parse(path).name.match(/[0-9]+$/g)?.length > 0)
     ? parse(path).name.replace(/[0-9]+$/, "")
@@ -138,7 +138,7 @@ function newFileName(path, createAnyway = false) {
     : parse(path).name.replace(/[0-9]+$/, "") + 1;
   const pathExt = parse(path).ext;
   path = join(pathDir, pathFileName + pathExt);
-  
+
   if (fs.existsSync(path)) return newFileName(path, createAnyway);
   return path;
 }
@@ -315,7 +315,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "verboseLevel":
       case "logFilePath": {
         if (!needsToBeSet) return this.#options[property];
-        
+
         this.#checkValueAndExistence(
           value, (property === "verboseLevel") ? "number" : "string"
         )
@@ -561,11 +561,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           simplifiedOptionsObject = Object.create(null);
     const [indexOfGroup, songFile] = this.#listOfSongs[index];
     const group = this.#options.files[indexOfGroup];
-    
+
     simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
     simplifiedOptionsObject["midiFile"] = group.get(songFile);
     simplifiedOptionsObject["indexOfGroup"] = indexOfGroup;
-    
+
     for (let i = 0; i < allOptionsLength; i++) {
       const key = allOptions[i];
       if (key === "files") continue;
@@ -586,7 +586,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     }
     return simplifiedOptionsObject;
   }
-  
+
   /**
    * Gives all the data
    * @return {Object} the deep cloned #options object

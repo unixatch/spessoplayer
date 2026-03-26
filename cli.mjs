@@ -184,16 +184,16 @@ const actUpOnPassedArgs = async (args) => {
     await uninstall()
     process.exit()
   }
-  
+
   const isVerboseLevelSet = newArguments.find(testFunctions.verboseLevel);
   if (isVerboseLevelSet) {
     let verboseOptionNumber = isVerboseLevelSet.match(regexes.verboseLevel).groups.number;
     const verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
-    
+
     if (!verboseOptionNumber) verboseOptionNumber = "1";
     // Delete verbose-level from newArguments
     newArguments.splice(verboseOptionPosition, 1)
-    
+
     if (!process.env["DEBUG_LEVEL_SPESSO"]) {
       await setVerboseLevel(verboseOptionNumber)
     } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
@@ -206,14 +206,14 @@ const actUpOnPassedArgs = async (args) => {
       && !process.env["DEBUG_LEVEL_SPESSO"]) {
     await setVerboseLevel("1")
   }
-  
+
   if (isPathOfLogFileSet) {
     const pathOfLogFile = isPathOfLogFileSet.match(regexes.logFile).groups.path;
     const pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
-    
+
     // Delete verbose-level from newArguments
     newArguments.splice(pathOfLogFilePosition, 1)
-    
+
     if (!process.env["DEBUG_FILE_SPESSO"]) {
       setLogFilePath(pathOfLogFile)
     } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
@@ -265,7 +265,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "input";
         lastIndex = arg.match(regexes.input)?.groups;
         break;
@@ -274,7 +274,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "reverb";
         lastIndex = arg.match(regexes.reverbVolume)?.groups;
         break;
@@ -283,7 +283,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "volume";
         lastIndex = arg.match(regexes.volume)?.groups;
         break;
@@ -292,7 +292,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "effects";
         lastIndex = arg.match(regexes.effects)?.groups;
         break;
@@ -301,7 +301,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "format";
         break;
       }
@@ -309,7 +309,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "sample-rate";
         lastIndex = arg.match(regexes.sampleRate)?.groups;
         break;
@@ -318,7 +318,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "loop-start";
         lastIndex = arg.match(regexes.loopStart)?.groups;
         break;
@@ -327,7 +327,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "loop-end";
         lastIndex = arg.match(regexes.loopEnd)?.groups;
         break;
@@ -336,7 +336,7 @@ const actUpOnPassedArgs = async (args) => {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
         if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-        
+
         lastParam = "loop";
         lastIndex = arg.match(regexes.loop)?.groups;
         break;
@@ -349,7 +349,7 @@ const actUpOnPassedArgs = async (args) => {
           break;
         }
         doneFileList.set(arg, doneSymbol)
-        
+
         global.fs ??= await import("node:fs");
         setFilePromises.push(
           setFile({
@@ -362,7 +362,7 @@ const actUpOnPassedArgs = async (args) => {
         if (lastParam === "input") clearLastVariables()
         break;
       }
-      
+
       default:
         switch (lastParam) {
           case "loop":
@@ -397,7 +397,7 @@ const actUpOnPassedArgs = async (args) => {
             setEffects(arg, lastIndex)
             clearLastVariables()
             break;
-          
+
           default:
             await help({
               errorText: red+`'${
@@ -414,11 +414,11 @@ const actUpOnPassedArgs = async (args) => {
     Adds files to the list asynchronously/in parallel
     by chaining each function to the previous one
     so that they stay syncronized and up to date.
-    
+
     This means there's no performance loss because of
     the async nature of them and it remains in
     a sequential order regardless of execution timings.
-    
+
     (e.g. sort order is the same like in process.argv
      because each returned Promise waits before
      actually adding the file)
@@ -459,7 +459,7 @@ const setFile = async ({
     const indexOfPath = newArguments.indexOf(path);
     const pathUpToName = join(parse(path).dir, parse(path).name);
     const noExtNewArguments = [...argvWithoutFileExts];
-    
+
     delete noExtNewArguments[indexOfPath]
     return noExtNewArguments.includes(pathUpToName);
   }
@@ -478,7 +478,7 @@ const setFile = async ({
               : lastSetFilePromise.then(() => func());
   }
   if (lastParam !== undefined && lastParam !== "input") return;
-  
+
   const fileMagicNumber = await get20BytesFromFile(arg);
   let typeOfFile;
   switch (true) {
@@ -526,10 +526,10 @@ const setFile = async ({
       )
     });
   }
-  
+
   // --- Automatic addition of files section ---
   return createPromise(async () => {
-    /* 
+    /*
       ⏳ if one group inside Options.all
          has the same basename as arg,
          then it adds arg to that group
@@ -567,7 +567,7 @@ const setFile = async ({
       const pathUpToName = join(parse(lastAutomaticFile).dir, parse(lastAutomaticFile).name);
       const indexOfGroup = Options.searchAddedFile(pathUpToName);
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
-      
+
       if (Options.isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup)) {
         lastKnownGroupIndex++
       } else {
@@ -757,14 +757,14 @@ const setEffects = (arg, lastIndex) => {
             : undefined
         }) )
     ];
-    
+
     if (!list
           .every(i => new RegExp(regexListOfEffects).test(i.effect))
     ) {
       console.error(`${normalRed}One effect that you passed doesn't exist in SoX${normal}`);
       process.exit(1);
     }
-    
+
     Options.effects(Number(lastIndex?.index), list);
     log(1, performance.now().toFixed(2), `Set list of SoX effects as ${global.effects}`)
     return;
@@ -846,7 +846,7 @@ const uninstall = async () => {
   const { execSync } = await import("child_process");
   const uninstallScriptPath = join(import.meta.dirname, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
-  
+
   log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
   try {
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
@@ -868,56 +868,56 @@ const uninstall = async () => {
 const help = async ({ errorText } = "") => {
   const optionalIndex = `${normal}[${dimGray}n${normal}]`;
   const optionalVerboseIndex = `${normal}[${dimGray}=n${normal}]`;
-  
+
   const helpText = `${underline}spessoplayer${normal}
   ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
-  
+
   Usage:
     ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
-  
+
   Available parameters:
     ${green}--input${optionalIndex}, ${green}/input${optionalIndex}, ${green}-i${optionalIndex}, ${green}/i${optionalIndex}:
       ${dimGray+italics}Takes the next file and puts it in the list by index${normal}
-      
+
     ${green}--volume${optionalIndex}, ${green}/volume${optionalIndex}, ${green}-vol${optionalIndex}, ${green}/vol${optionalIndex}:
       ${dimGray+italics}Volume to set (default: 100%)${normal}
-      
+
       ${dimGray+italics}Available formats:${normal}
       ${dimGray+italics}- dB (example -10dB)${normal}
       ${dimGray+italics}- percentages (example 70%)${normal}
       ${dimGray+italics}- decimals (example 0.9)${normal}
-      
+
     ${green}--reverb-volume${optionalIndex}, ${green}/reverb-volume${optionalIndex}, ${green}-rvb${optionalIndex}, ${green}/rvb${optionalIndex}:
       ${dimGray+italics}Volume to set for reverb (default: none)${normal}
       ${dimGray+italics}Same formats as volume${normal}
-      
+
     ${green}--effects${optionalIndex}, ${green}/effects${optionalIndex}, ${green}-e${optionalIndex}, ${green}/e${optionalIndex}:
       ${dimGray+italics}Adds any effects that SoX provides (e.g "reverb,fade 1")${normal}
-    
+
     ${green}--loop${optionalIndex}, ${green}/loop${optionalIndex}, ${green}-l${optionalIndex}, ${green}/l${optionalIndex}:
       ${dimGray+italics}Loop x amount of times (default: 0)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers)${normal}
-      
+
     ${green}--loop-start${optionalIndex}, ${green}/loop-start${optionalIndex}, ${green}-ls${optionalIndex}, ${green}/ls${optionalIndex}:
       ${dimGray+italics}When the loop starts${normal}
-      
+
     ${green}--loop-end${optionalIndex}, ${green}/loop-end${optionalIndex}, ${green}-le${optionalIndex}, ${green}/le${optionalIndex}:
       ${dimGray+italics}When the loop ends${normal}
-      
+
     ${green}--sample-rate${optionalIndex}, ${green}/sample-rate${optionalIndex}, ${green}-r${optionalIndex}, ${green}/r${optionalIndex}:
       ${dimGray+italics}Sample rate to use (default: 48000)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
         ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
-      
+
     ${green}--format${normal}, ${green}/format${normal}, ${green}-f${normal}, ${green}/f${normal}:
       ${dimGray+italics}Format to use for stdout (default: wav)${normal}
-      
+
       ${dimGray+italics}Available formats:${normal}
       ${dimGray+italics}- wav${normal}
       ${dimGray+italics}- mp3${normal}
       ${dimGray+italics}- flac${normal}
       ${dimGray+italics}- pcm (s32le)${normal}
-      
+
     ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal}, ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:
       ${dimGray+italics}Asks for confirmation before proceeding${normal}
 
@@ -927,17 +927,17 @@ const help = async ({ errorText } = "") => {
 
     ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex}, ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
       ${dimGray+italics}Sets the verbosity (default: 2)${normal}
-      
+
     ${green}--log-file${normal}, ${green}/log-file${normal}, ${green}-lf${normal}, ${green}/lf${normal}:
       ${dimGray+italics}Sets path to the log file (default: ./spesso.log)${normal}
         ${dimGray+italics}(Meanwhile it writes to file, it also prints to stderr)${normal}
-      
+
     ${green}--uninstall${normal}, ${green}/uninstall${normal}, ${green}-u${normal}, ${green}/u${normal}:
       ${dimGray+italics}Uninstalls dependencies with confirmation and the entire program${normal}
-      
+
     ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
-    
+
     ${green}--version${normal}, ${green}/version${normal}:
       ${dimGray+italics}Shows the installed version${normal}
   `
@@ -967,7 +967,7 @@ const version = async () => {
   const fs = await import("node:fs");
   const packageJSONPath = join(import.meta.dirname, "package.json");
   const { version: versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
-  
+
   log(1, performance.now().toFixed(2), `Taken version number from ${packageJSONPath}`)
   console.log(`${green + versionNumber + normal}`)
 }

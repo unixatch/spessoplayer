@@ -82,7 +82,7 @@ if (listOfOptions?.toStdout) {
     });
     lengthOfFiles.push(length)
   }
-  
+
   let effectsProcess,
       converterProcess;
   // Creating the header
@@ -91,7 +91,7 @@ if (listOfOptions?.toStdout) {
     length: lengthOfFiles.reduce(sumOfLengths),
     numChannels: 2
   }, listOfOptions?.sampleRate ?? 48000);
-  
+
   // If it needs to be converted
   const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
   if (needsConvertion) {
@@ -119,7 +119,7 @@ if (listOfOptions?.toStdout) {
     converterProcess.stdin.write(stdoutHeader)
   }
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
-  
+
   let destination;
   // When SoX exists
   if (effectsProcess) {
@@ -169,7 +169,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
     if (fileOutputs) options.fileOutputs = fileOutputs;
-    
+
     // Waits for all workers to finish
     // if the max of available threads
     // at once has been reached

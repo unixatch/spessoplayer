@@ -259,7 +259,7 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
     let maxAbsValue = 0;
     for (let ch = 0; ch < numChannels; ch++) {
       const data = audioData[ch];
-      
+
       for (let i = 0; i < numSamples; i++) {
         const sample = Math.abs(data[i]);
         if (sample > maxAbsValue) {
@@ -267,8 +267,8 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
         }
       }
     }
-    multiplier = maxAbsValue > 0 
-      ? 32767 / maxAbsValue 
+    multiplier = maxAbsValue > 0
+      ? 32767 / maxAbsValue
       : 1;
   }*/
   for (let i = 0; i < length; i++) {
@@ -282,7 +282,7 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
 }
 
 
-export { 
+export {
   getWavHeader,
   getData
 }

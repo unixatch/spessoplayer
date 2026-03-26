@@ -108,7 +108,7 @@ async function formatManager({
       toFileFormat = "mp3";
       break;
   }
-  
+
   const isStdout = format !== true,
         isToFile = format === true;
   let pipingFunction;
@@ -122,7 +122,7 @@ async function formatManager({
         outFile = newName;
         doneSettingUpMsg = "Done setting up wav outFile";
       }
-      
+
       if (effects) {
         if (isStdout) {
           addPipingFunction();
@@ -162,7 +162,7 @@ async function formatManager({
       const newName = newFileName(outFile, createNewFileNameAnyway);
       fileOutputs[fileOutputs.indexOf(outFile)] = newName;
       outFile = newFileName(outFile, createNewFileNameAnyway);
-      
+
       const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile)[toFileFormat]);
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (effects) {
@@ -197,7 +197,7 @@ async function formatManager({
         fileOutputs[fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile, createNewFileNameAnyway);
       }
-      
+
       let output;
       if (isToFile) {
         output = fs.createWriteStream(outFile);
@@ -213,11 +213,11 @@ async function formatManager({
       addPipingFunction(() => readStream.pipe(output))
       break;
     }
-    
+
     // default is only used for toStdout
     default: {
       if (isToFile) break;
-      
+
       const doneSettingUpMsg = "Done setting up";
       if (effects) {
         addPipingFunction()
@@ -340,7 +340,7 @@ async function initSpessaSynth({
     loopStart, loopEnd
   });
   if (onlySampleCount) return sampleCount;
-  
+
   if (loopStart > 0 && !loopDetectedInMidi) {
     // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * loopStart;
     midi.loop.start = midi.secondsToMIDITicks(loopStart);
@@ -368,7 +368,7 @@ async function initSpessaSynth({
   seq.loadNewSongList([midi])
   seq.loopCount = loopAmount;
   seq.play();
-  
+
   addEvent({ eventType: "uncaughtException" })
   log(1, performance.now().toFixed(2), "Finished setting up SpessaSynth")
   return {
@@ -389,7 +389,7 @@ async function initSpessaSynth({
  * @param {String} [obj.destination="-"] - the destination path
  * @param {(String[]|Object[])} [obj.effects=String[]] - all effects to pass to SoX
  * @return {Promise<Array<ChildProcess,Array>>} array containing SoX's process and the array of promises for both ffmpeg and SoX processes
- * 
+ *
  * @example
  * applyEffects({ program: "sox", stdoutHeader, readStream })
  */
@@ -402,11 +402,11 @@ async function applyEffects({
   effects = ["reverb", "20", "36", "100", "100", "10", "10"]
 }) {
   /*
-    ffmpeg 
-      -i - 
-      -i parking-garage-response.wav 
-      -lavfi "afir,volume=70" 
-      -f wav 
+    ffmpeg
+      -i -
+      -i parking-garage-response.wav
+      -lavfi "afir,volume=70"
+      -f wav
         pipe:1
   */
   if (!spawn) ({ spawn } = await import("child_process"));
@@ -431,7 +431,7 @@ async function applyEffects({
   ], {stdio: ["pipe", stdout, "pipe"], detached: true})
   //  For SIGINT event to work, sometimes... ↑
   log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs.join(" "))
-  
+
   promisesOfPrograms.push(
     new Promise(resolve => {
       sox.stderr.on("data", (data) => {
@@ -439,10 +439,10 @@ async function applyEffects({
         // Do not print if these match stringOfError
         if (stringOfError.match(/sox FAIL sox: `-' error writing output file: Connection reset by peer\n/g)
             || stringOfError.match(/\n*sox WARN \w*:.*can't seek.*\n*/g)) return;
-        
+
         const modifiedString = stringOfError
           .replace( // Adds yellow to numbers
-            /(-*[0-9]+(?:ms|dB|%|q)*)/g, 
+            /(-*[0-9]+(?:ms|dB|%|q)*)/g,
             `${normalYellow}$1${normal}`
           )
           .replace( // Adds bold gray to the default parameters that can be overriden
@@ -467,7 +467,7 @@ async function applyEffects({
           )
           // Patch for the regex above
           .replace(/m\[0m/g, "\x1b[0m");
-        
+
         console.error(modifiedString);
       })
       sox.on("exit", () => resolve())
@@ -630,7 +630,7 @@ function createReadable(Readable, isStdout = false, {
         )
         parentPort.postMessage(null)
       }
-      
+
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
         const data = getData(stereoChannels);
@@ -697,7 +697,7 @@ async function toStdout({
     loopStart, loopEnd,
     indexOfGroup
   }));
-  
+
   if (!spawn || !spawnSync) {
     ({ spawn, spawnSync } = await import("child_process"));
   }
@@ -711,7 +711,7 @@ async function toStdout({
             regexForCommand;
         const arrayOfProgramsWinVersion = ["mpv.exe"];
         const arrayOfPrograms = ["mpv"];
-        
+
         switch (process.platform) {
           case "win32":
             command = "tasklist";
@@ -724,7 +724,7 @@ async function toStdout({
               "/PID", process.pid, "/T", "/F"
             ]);
             break;
-          
+
           case "linux":
           case "android":
           case "darwin":
@@ -740,7 +740,7 @@ async function toStdout({
             commandToSend = () => process.kill(process.pid, "SIGKILL");
             break;
         }
-        
+
         // Get PIDs by group name ?<pid>
         const iteratorObject = spawnSync(command, argumentsForCommand)
                                  .stdout.toString()
@@ -762,7 +762,7 @@ async function toStdout({
     promises: { finished },
     Readable
   } = await import("node:stream");
-  
+
   let doneStreaming = false;
   const readStream = createReadable(Readable, true, {
     sampleCount, sampleRate,
@@ -855,9 +855,9 @@ async function toFile({
     promises: { finished },
     Readable
   } = await import("node:stream");
-  
+
   const durationRounded = Math.floor(durationInSeconds * 100) / 100;
-  
+
   const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
@@ -1015,7 +1015,7 @@ async function startPlayer(Options) {
   ({ spawn, spawnSync } = await import("child_process"));
   const { createServer } = await import("http"),
         { getWavHeader } = await import("./audioBuffer.mjs");
-  
+
   const port = 3000,
         server = createServer(),
         filesList = listOfOptions.files,
@@ -1036,7 +1036,7 @@ async function startPlayer(Options) {
       ...options,
       onlySampleCount: true
     });
-    
+
     let effectsProcess,
         converterProcess;
     // Creating the header
@@ -1049,7 +1049,7 @@ async function startPlayer(Options) {
       res.setHeader("Content-Length", length << 4)
       res.flushHeaders()
     }
-    
+
     // If it needs to be converted
     const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
     if (needsConvertion) {
@@ -1077,7 +1077,7 @@ async function startPlayer(Options) {
       converterProcess.stdin.write(stdoutHeader)
     }
     log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
-    
+
     let destination;
     // When SoX exists
     if (effectsProcess) {
@@ -1099,7 +1099,7 @@ async function startPlayer(Options) {
     if (func) await func(destination, true)
     await promise
     await Promise.all(promisesOfPrograms)
-    
+
     return res.end();
   })
   const amountOfSongs = Options.amountOfSongs;
@@ -1107,7 +1107,7 @@ async function startPlayer(Options) {
     listOfURLs.push(`http://localhost:${port}/song?index=${i}`)
   }
   server.listen({ host: "localhost", port })
-  
+
   const isRawAudio = (listOfOptions?.format === "pcm") ? [
     "--demuxer=rawaudio",
     "--demuxer-rawaudio-format=s16le",
