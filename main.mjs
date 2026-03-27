@@ -148,7 +148,6 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   addEvent({ eventType: "renderTexts" })
   const filesListLength = listOfOptions.files.length,
         amountOfSongs = Options.amountOfSongs,
-        finalFileOutputs = [],
         listOfPromises = new Map();
   const { Worker } = await import("worker_threads"),
         { availableParallelism } = await import("os"),
@@ -160,7 +159,8 @@ if (listOfOptions?.fileOutputs?.length > 0) {
           percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
         },
         progress = new Progress(amountOfSongs, undefined, progressBuffers);
-  let fileOutputs;
+  let fileOutputs,
+      finalFileOutputs = [];
 
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
@@ -190,10 +190,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
             workers[currentThread].removeAllListeners("message")
             return resolve();
           }
-          if (Array.isArray(message)) {
-            finalFileOutputs.push(...message)
-            return;
-          }
+          if (typeof message === "object") return finalFileOutputs.push(message);
           process.stdout.emit("renderTexts", progress)
         })
       })
@@ -204,7 +201,13 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   // Close workers before continuing
   // otherwise it gets stuck
   for (const worker of workers) worker.terminate()
-  console.log("Written", finalFileOutputs.filter(ifil => ifil));
+
+  finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
+  // Sorts them after being asynchronously unorganized
+  const compareAscendingly = (p, i) => p.index - i.index;
+  finalFileOutputs.sort(compareAscendingly)
+
+  console.log("Written", finalFileOutputs);
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }

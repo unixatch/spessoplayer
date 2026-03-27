@@ -24,7 +24,7 @@ async function runTask({
     amountOfSongs, progressBuffers,
     parentPort, index, options
   })
-  parentPort.postMessage(fileOutputs)
+  parentPort.postMessage({index, files: fileOutputs})
   for (const func of pipingFunctions) if (func) func()
 
   await promiseToWait

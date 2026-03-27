@@ -764,7 +764,7 @@ async function toFile({
     pipingFunctions,
     Promise.all([
       finished(readStream, { cleanup: true })
-        .then(() => synth.destroySynthProcessor()),
+        .then(() => synth.clearCache()),
       ...promisesOfPrograms // if there are any
     ])
   ];
