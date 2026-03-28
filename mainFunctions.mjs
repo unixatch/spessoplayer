@@ -26,12 +26,9 @@ import {
   clearLastLines
 } from "./utils/utils.mjs"
 
-let spawn,
-    spawnSync,
-    BasicMIDI,
-    SoundBankLoader,
-    SpessaSynthProcessor,
-    SpessaSynthSequencer;
+let audioBuffer,
+    SpessaSynth,
+    child_process;
 const soundFontList = [];
 
 /**
@@ -78,10 +75,11 @@ async function formatManager({
       }
       : pipingFunction = func;
   }
+  let spawn;
   if (format !== "wave" && format !== ""
       && !/^.*(?:\.wav|\.wave)$/.test(outFile)
       && !/^.*\.(?:s16le|s32le|pcm)$/.test(outFile)) {
-    if (!spawn) ({ spawn } = await import("child_process"));
+    ({ spawn } = child_process ??= await import("child_process"));
   }
   let toFileFormat;
   switch (format) {
@@ -270,14 +268,13 @@ async function initSpessaSynth({
   loopStart, loopEnd,
   indexOfGroup, onlySampleCount = false
 }) {
-  if (!SpessaSynthProcessor) {
-    ({
-      BasicMIDI,
-      SoundBankLoader,
-      SpessaSynthProcessor,
-      SpessaSynthSequencer
-    } = await import("spessasynth_core"));
-  }
+  const {
+    BasicMIDI,
+    SoundBankLoader,
+    SpessaSynthProcessor,
+    SpessaSynthSequencer
+  } = SpessaSynth ??= await import("spessasynth_core");
+
   const mid = fs.readFileSync(midiFile);
   let sf;
   if (!onlySampleCount) sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
@@ -354,7 +351,7 @@ async function applyEffects({
       -f wav
         pipe:1
   */
-  if (!spawn) ({ spawn } = await import("child_process"));
+  const { spawn } = child_process ??= await import("child_process");
   // In case it's custom
   if (effects[0]?.effect) {
     // cloning the effects array so that it can be unpacked
@@ -603,9 +600,7 @@ async function toStdout({
     seq, synth, sampleCount
   } = await initSpessaSynth(options));
 
-  if (!spawn || !spawnSync) {
-    ({ spawn, spawnSync } = await import("child_process"));
-  }
+  const { spawn, spawnSync } = child_process ??= await import("child_process");
   if (!res && !process.listenerCount("exit")) addEvent({ eventType: "exit",
     func: () => {
       // Necessary for programs like mpv
@@ -662,7 +657,7 @@ async function toStdout({
     }
   })
   log(1, performance.now().toFixed(2), "Added event exit")
-  const { getData } = await import("./audioBuffer.mjs")
+  const { getData } = audioBuffer ??= await import("./audioBuffer.mjs");
   const {
     promises: { finished },
     Readable
@@ -730,7 +725,7 @@ async function toFile({
   const {
     getWavHeader,
     getData
-  } = await import("./audioBuffer.mjs");
+  } = audioBuffer ??= await import("./audioBuffer.mjs");
   const {
     promises: { finished },
     Readable
@@ -897,9 +892,9 @@ class Progress {
  */
 async function startPlayer(Options) {
   const listOfOptions = Options.all;
-  ({ spawn, spawnSync } = await import("child_process"));
-  const { createServer } = await import("http"),
-        { getWavHeader } = await import("./audioBuffer.mjs");
+  const { getWavHeader }     = await import("./audioBuffer.mjs"),
+        { spawn }            = child_process ??= await import("child_process"),
+        { createServer }     = await import("http");
 
   const port = 3000,
         server = createServer(),
@@ -937,7 +932,7 @@ async function startPlayer(Options) {
     // If it needs to be converted
     const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
     if (needsConvertion) {
-      if (!spawn) ({ spawn } = await import("child_process"));
+      const { spawn } = child_process ??= await import("child_process");
       converterProcess = spawn("ffmpeg",
         ffmpegArgs()[listOfOptions?.format],
         {stdio: ["pipe", res.socket, "pipe"]}
