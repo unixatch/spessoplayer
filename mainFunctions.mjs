@@ -689,7 +689,8 @@ async function toStdout({
       finished(readStream, { cleanup: true })
         .then(() => {
           doneStreaming = true;
-          return synth.clearCache();
+          synth.soundBankManager.soundBankList.splice(0)
+          return synth.destroySynthProcessor();
         }),
       ...promisesOfPrograms // If there are any
     ])
@@ -764,7 +765,10 @@ async function toFile({
     pipingFunctions,
     Promise.all([
       finished(readStream, { cleanup: true })
-        .then(() => synth.clearCache()),
+        .then(() => {
+          synth.soundBankManager.soundBankList.splice(0)
+          return synth.destroySynthProcessor();
+        }),
       ...promisesOfPrograms // if there are any
     ])
   ];
