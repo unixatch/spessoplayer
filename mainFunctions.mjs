@@ -68,10 +68,29 @@ async function formatManager({
   promisesOfPrograms,
   outFile
 }) {
+  async function streamErrorHandling(error) {
+    const { code, errno } = error;
+
+    if ((process.argv.includes("-") || fileOutputs)
+        && code === "EPIPE") {
+      // Needed so that SoX can show its stderr
+      await new Promise(resolve => {
+        setTimeout(() => resolve(), 4);
+      })
+      if (global.SIGINT) process.exit(errno)
+      console.error(`${gray}Closed the program before finishing to render${normal}`)
+      process.exit(errno)
+    }
+    if (code !== "EPIPE") {
+      console.error(error, "\n")
+      process.exit(errno)
+    }
+  }
   function addPipingFunction(func) {
     return (!func)
       ? pipingFunction = (whereToConnect, end) => {
         readStream.pipe(whereToConnect, { end })
+          .on("error", streamErrorHandling)
       }
       : pipingFunction = func;
   }
@@ -125,6 +144,7 @@ async function formatManager({
         addPipingFunction(() => {
           output.write(stdoutHeader ?? "")
           readStream.pipe(output)
+            .on("error", streamErrorHandling)
         })
       } else addPipingFunction()
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
@@ -132,9 +152,7 @@ async function formatManager({
     }
     case "flac":
     case "mp3": {
-      pipingFunction = (whereToConnect, end) => {
-        readStream.pipe(whereToConnect, { end })
-      };
+      addPipingFunction()
       log(1, performance.now().toFixed(2), `Done setting up ${format} format`)
       break;
     }
@@ -168,6 +186,7 @@ async function formatManager({
       addPipingFunction(() => {
         ffmpeg.stdin.write(stdoutHeader)
         readStream.pipe(ffmpeg.stdin)
+          .on("error", streamErrorHandling)
       })
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
@@ -192,7 +211,10 @@ async function formatManager({
           ? "Done setting up"
           : "Done setting up pcm outFile"
       )
-      addPipingFunction(() => readStream.pipe(output))
+      addPipingFunction(() => {
+        readStream.pipe(output)
+          .on("error", streamErrorHandling)
+      })
       break;
     }
 
@@ -209,6 +231,7 @@ async function formatManager({
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       addPipingFunction(() => {
         readStream.pipe((res) ? res : process.stdout)
+          .on("error", streamErrorHandling)
       })
     }
   }
@@ -431,26 +454,6 @@ async function applyEffects({
  */
 function addEvent({ eventType, func }) {
   switch (eventType) {
-    case "uncaughtException": {
-      // Adds on top of spessasynth_core's uncaughtException
-      const oldUncaughtException = process.rawListeners("uncaughtException")[0];
-      process.removeListener("uncaughtException", oldUncaughtException)
-      const hasBeenAdded = process.on("uncaughtException",
-        async (error, origin) => {
-          if (global.SIGINT) return process.exit();
-          if (error?.code === "EPIPE") {
-            // Needed so that SoX can show its stderr
-            await new Promise(resolve => {
-              setTimeout(() => resolve(), 4);
-            })
-            console.error(`${gray}Closed the program before finishing to render${normal}`);
-            return process.exit(2);
-          }
-          oldUncaughtException(error, origin)
-        }
-      ).listeners("uncaughtException").length > 0;
-      return hasBeenAdded;
-    }
     case "exit": {
       const hasBeenAdded = process.on("exit", func).listeners("exit").length > 0;
       return hasBeenAdded;
@@ -470,6 +473,10 @@ function addEvent({ eventType, func }) {
       return hasBeenAdded;
     }
     case "SIGINT": {
+      if (func) {
+        const hasBeenAdded = process.on("SIGINT", func).listeners("SIGINT").length > 0;
+        return hasBeenAdded;
+      }
       const hasBeenAdded = process.on("SIGINT", () => {
         console.error(`${gray}Closed with Ctrl+c${normal}`);
         global.SIGINT = true;
@@ -975,9 +982,8 @@ async function startPlayer(Options) {
       index: realIndex,
       options, res
     });
-    if (func) await func(destination, true)
-    await promise
-    await Promise.all(promisesOfPrograms)
+    if (func) func(destination, true)
+    await Promise.all([promise, promisesOfPrograms])
 
     return res.end();
   })
@@ -1003,11 +1009,33 @@ async function startPlayer(Options) {
     ...listOfURLs
   ], { stdio: "inherit" });
   await new Promise((resolve, reject) => {
-    mpv.on("error", e => reject(e))
-    mpv.on("exit", () => resolve())
+    mpv.on("exit", (code, signal) => {
+      switch (code) {
+        case 0:
+        case 4:
+        case code === null && signal === "SIGINT" && code:
+          resolve(code, signal)
+          break;
+
+        case 2:
+        default:
+          reject(code, signal)
+      }
+    })
   })
-  // Required because otherwise it can't exit
-  process.exit()
+    .then(code => {
+      // Required because otherwise it can't exit
+      process.exit(code)
+    })
+    .catch(async (code, signal) => {
+      const errno = (code === null)
+        ? (await import("util")).convertProcessSignalToExitCode(signal)
+        : code;
+      console.error(
+        `${red}mpv exited with ${errno}/${signal+normal}`
+      )
+      process.exit(errno)
+    })
 }
 
 export {

@@ -162,6 +162,23 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   let fileOutputs,
       finalFileOutputs = [];
 
+  addEvent({ eventType: "SIGINT",
+    func: () => {
+      for (const worker of workers) worker.terminate()
+      finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
+
+      // Try to cleanup abandoned files
+      for (const {files} of finalFileOutputs) {
+        for (const file of files) {
+          try {
+            fs.unlinkSync(file)
+          } catch (error) {
+            if (error.code !== "ENOENT") console.error(error)
+          }
+        }
+      }
+    }
+  })
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
     if (fileOutputs) options.fileOutputs = fileOutputs;
@@ -198,6 +215,8 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     if (i >= maxThreads) workers[currentThread].postMessage(workerDataObject)
   }
   await Promise.all(listOfPromises.values())
+  if (global.SIGINT) process.exit(2)
+
   // Close workers before continuing
   // otherwise it gets stuck
   for (const worker of workers) worker.terminate()
