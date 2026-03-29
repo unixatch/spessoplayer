@@ -22,6 +22,7 @@
 
 import { log, clearLastLines } from "./utils/utils.mjs"
 import {
+  ffmpegArgs,
   initSpessaSynth,
   applyEffects,
   addEvent,
@@ -94,7 +95,7 @@ if (listOfOptions?.toStdout) {
   // If it needs to be converted
   const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
   if (needsConvertion) {
-    if (!spawn) ({ spawn } = await import("child_process"));
+    const { spawn } = await import("child_process");
     converterProcess = spawn("ffmpeg",
       ffmpegArgs()[listOfOptions?.format],
       {stdio: ["pipe", process.stdout, "pipe"]}

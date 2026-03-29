@@ -1039,6 +1039,7 @@ async function startPlayer(Options) {
 }
 
 export {
+  ffmpegArgs,
   initSpessaSynth,
   applyEffects,
   addEvent,
