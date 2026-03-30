@@ -163,7 +163,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   let fileOutputs,
       finalFileOutputs = [];
 
-  addEvent({ eventType: "SIGINT",
+  addEvent({ eventType: "toFileSIGINT",
     func: () => {
       for (const worker of workers) worker.terminate()
       finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
