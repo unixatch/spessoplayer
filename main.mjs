@@ -152,7 +152,8 @@ if (listOfOptions?.fileOutputs?.length > 0) {
         listOfPromises = new Map();
   const { Worker } = await import("worker_threads"),
         { availableParallelism } = await import("os"),
-        maxThreads = availableParallelism() * 2,
+        cores = availableParallelism(),
+        maxThreads = (amountOfSongs > cores * 2) ? cores * 2 : cores,
         workers = [];
   const progressBuffers = {
           amountToRender: new SharedArrayBuffer(4),
