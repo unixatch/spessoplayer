@@ -30,7 +30,8 @@ let audioBuffer,
     SpessaSynth,
     child_process,
     doneStreaming = false;
-const soundFontList = [];
+const midiList = [],
+      soundFontList = [];
 
 /**
  * Simply returns an object containing ffmpeg's arguments in all supported formats
@@ -290,7 +291,8 @@ async function initSpessaSynth({
   midiFile, soundfontFile,
   sampleRate = 48000,
   loopStart, loopEnd,
-  indexOfGroup, onlySampleCount = false
+  index, indexOfGroup,
+  onlySampleCount = false
 }) {
   const {
     BasicMIDI,
@@ -299,10 +301,9 @@ async function initSpessaSynth({
     SpessaSynthSequencer
   } = SpessaSynth ??= await import("spessasynth_core");
 
-  const mid = fs.readFileSync(midiFile);
   let sf;
+  const midi = midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile));
   if (!onlySampleCount) sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
-  const midi = BasicMIDI.fromArrayBuffer(mid);
   const {
     sampleCount,
     durationInSeconds,
@@ -660,10 +661,9 @@ async function toStdout({
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
-  let seq, synth, sampleCount;
-  ({
+  const {
     seq, synth, sampleCount
-  } = await initSpessaSynth(options));
+  } = await initSpessaSynth({ index, ...options });
 
   if (!res && !process.listenerCount("exit")) addEvent({ eventType: "stdoutExit" })
   log(1, performance.now().toFixed(2), "Added event exit")
@@ -730,7 +730,7 @@ async function toFile({
     seq, synth,
     sampleCount,
     durationInSeconds
-  } = await initSpessaSynth(options);
+  } = await initSpessaSynth({ index, ...options });
 
   const {
     getWavHeader,
