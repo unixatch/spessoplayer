@@ -146,9 +146,9 @@ if (listOfOptions?.toStdout) {
   process.exit()
 }
 if (listOfOptions?.fileOutputs?.length > 0) {
-  addEvent({ eventType: "renderTexts" })
   const filesListLength = listOfOptions.files.length,
         amountOfSongs = Options.amountOfSongs,
+        RENDER_TEXTS_DELAY = 50,
         listOfPromises = new Map();
   const { Worker } = await import("worker_threads"),
         { availableParallelism } = await import("os"),
@@ -161,6 +161,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
         },
         progress = new Progress(amountOfSongs, undefined, progressBuffers);
   let fileOutputs,
+      renderTextsInterval,
       finalFileOutputs = [];
 
   addEvent({ eventType: "toFileSIGINT",
@@ -204,18 +205,25 @@ if (listOfOptions?.fileOutputs?.length > 0) {
         if (!hasExitEvent.length) workers[currentThread].on("exit", () => resolve())
 
         workers[currentThread].on("message", (message) => {
+          renderTextsInterval ??= setInterval(progress => {
+            clearLastLines([0, -1])
+            console.error(
+              progress.minutesRenderedText,
+              "|", progress.percentageText
+            )
+          }, RENDER_TEXTS_DELAY, progress);
           if (message === "DONE_RENDERING") {
             workers[currentThread].removeAllListeners("message")
             return resolve();
           }
           if (typeof message === "object") return finalFileOutputs.push(message);
-          process.stdout.emit("renderTexts", progress)
         })
       })
     ))
     if (i >= maxThreads) workers[currentThread].postMessage(workerDataObject)
   }
   await Promise.all(listOfPromises.values())
+  clearInterval(renderTextsInterval)
   if (global.SIGINT) process.exit(2)
 
   // Close workers before continuing
