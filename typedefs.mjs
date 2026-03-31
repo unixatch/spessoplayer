@@ -110,7 +110,6 @@
  * @property {SpessaSynthProcessor} synth              spessasynth_core's processor
  * @property {Function}             getData            translator: Float32Arrays → Uint8Arrays
  * @property {Number}               amountOfSongs      total of songs
- * @property {MessagePort}          parentPort         port of the main thread
  * @property {Object}               progressBuffers    Object that contains SharedArrayBuffers
  */
 

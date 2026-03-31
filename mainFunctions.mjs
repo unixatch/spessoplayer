@@ -557,8 +557,7 @@ function createReadable(Readable, isStdout = false, {
   index, durationRounded,
   seq, synth,
   getData,
-  amountOfSongs,
-  parentPort, progressBuffers
+  amountOfSongs, progressBuffers
 }) {
   /**
    * Sets the rendered amount of seconds
@@ -601,7 +600,7 @@ function createReadable(Readable, isStdout = false, {
         left = new Float32Array(BUFFER_SIZE),
         right = new Float32Array(BUFFER_SIZE),
         stereoChannels = [left, right];
-  if (parentPort) {
+  if (progressBuffers) {
     progress = new Progress(amountOfSongs, index, progressBuffers);
     progress.addToAmountToRender(durationRounded)
   }
@@ -627,7 +626,6 @@ function createReadable(Readable, isStdout = false, {
           (progress.renderedAmount / progress.amountToRender) * 100,
           "percentageDone"
         )
-        parentPort.postMessage(null)
       }
 
       if (filledSamples <= sampleCount && !lastBytes) {
@@ -753,7 +751,7 @@ async function toFile({
     seq, synth,
     getData,
     index, durationRounded,
-    parentPort, progressBuffers
+    progressBuffers
   });
   const promisesOfPrograms = [],
         pipingFunctions = [];
