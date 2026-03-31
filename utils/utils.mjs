@@ -60,21 +60,18 @@ global.dimGrayBold = "\x1b[37;2;1m" /** @global */
  * clearLastLines([0, -1])
  */
 const clearLastLines = lines => {
-  if (!Array.isArray(lines)) throw new TypeError("Didn't give an array");
-  let lineX, lineY;
-  lines
-    .forEach((line, i) => {
-      if (typeof line === "string") throw new TypeError(`Gave string "${line}", numbers only allowed`)
-      const int = parseInt(line);
-      if (isNaN(int)) throw new TypeError("Didn't give a number")
-      if (i === 0) {
-        lineX = line;
-      } else lineY = line;
-    })
+  if (!Array.isArray(lines)) throw new TypeError("Didn't give an array")
+
+  let [lineX, lineY] = lines;
+  if (
+    typeof lineX !== "number" || typeof lineY !== "number"
+    || isNaN(lineX) || isNaN(lineY)
+  ) throw new TypeError("Didn't give a valid number")
+
   process.stdout
-    .moveCursor(lineX, lineY);
+    .moveCursor(lineX, lineY)
   process.stdout
-    .clearScreenDown();
+    .clearScreenDown()
 }
 /**
  * Logger
