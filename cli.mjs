@@ -139,19 +139,20 @@ const testFunctions = {
  * @return {Promise<String>} - first 20 bytes of file
  */
 async function get20BytesFromFile(path) {
-  let fileMagicNumber;
-  await new Promise(resolve => {
-    const readStream = fs.createReadStream(path, { start: 0, end: 20 });
-    readStream.on("data", (data) => {
-      fileMagicNumber = data.toString();
-      resolve()
+  return (
+    await new Promise((resolve, reject) => {
+      const readStream = fs.createReadStream(path, { start: 0, end: 20 });
+      readStream.on("data", resolve)
+      readStream.on("error", ({code, message, errno}) => {
+        console.error(
+          (code === "ENOENT")
+            ? `${red}Can't open '${path}' because it doesn't exist${normal}`
+            : `${red}Quitting because ${underline+message+normal}`
+        )
+        reject(process.exit(errno))
+      })
     })
-    readStream.on("error", (e) => {
-      if (e.code === "ENOENT") console.error(`${red}Can't open '${path}' because it doesn't exist${normal}`)
-      process.exit(1)
-    })
-  })
-  return fileMagicNumber;
+  )?.toString();
 }
 const setFilePromises = [];
 /**

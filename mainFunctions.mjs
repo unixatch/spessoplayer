@@ -181,8 +181,8 @@ async function formatManager({
       }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
-          ffmpeg.on("error", e => reject(e))
-          ffmpeg.on("exit", () => resolve())
+          ffmpeg.on("error", reject)
+          ffmpeg.on("exit", resolve)
         })
       )
       log(1, performance.now().toFixed(2), "Added promise")
@@ -443,7 +443,7 @@ async function applyEffects({
 
         console.error(modifiedString);
       })
-      sox.on("exit", () => resolve())
+      sox.on("exit", resolve)
     })
   )
   sox.stdin.write(stdoutHeader)
@@ -1028,10 +1028,8 @@ async function startPlayer(Options) {
       }
     })
   })
-    .then(code => {
-      // Required because otherwise it can't exit
-      process.exit(code)
-    })
+    // Required because otherwise it can't exit
+    .then(process.exit)
     .catch(async (code, signal) => {
       const errno = (code === null)
         ? (await import("util")).convertProcessSignalToExitCode(signal)

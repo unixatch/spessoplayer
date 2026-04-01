@@ -73,8 +73,8 @@ if (!process.argv.includes("--verbose")
   // Start the test for real
   const realTest = fork(process.argv[1], args.concat(positionalArgs));
   await new Promise((resolve, reject) => {
-    realTest.on("exit", () => resolve())
-    realTest.on("error", error => reject(error))
+    realTest.on("exit", resolve)
+    realTest.on("error", reject)
   })
   process.exit()
 }

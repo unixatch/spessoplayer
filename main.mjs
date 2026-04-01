@@ -204,7 +204,11 @@ if (listOfOptions?.fileOutputs?.length > 0) {
     // if the max of available threads
     // at once has been reached
     const currentThread = i % maxThreads;
-    if (i !== 0 && !(currentThread)) await Promise.all(listOfPromises.values())
+    if (i !== 0 && !(currentThread)) {
+      const results = await Promise.all(listOfPromises.values());
+      // Don't continue if SIGINT was sent
+      if (results.join("").includes("1".repeat(maxThreads))) break;
+    }
 
     const workerDataObject = {
       amountOfSongs, progressBuffers,
@@ -216,8 +220,8 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       new Promise((resolve, reject) => {
         const hasErrorEvent = workers[currentThread].listeners("error");
         const hasExitEvent = workers[currentThread].listeners("exit");
-        if (!hasErrorEvent.length) workers[currentThread].on("error", error => reject(error))
-        if (!hasExitEvent.length) workers[currentThread].on("exit", () => resolve())
+        if (!hasErrorEvent.length) workers[currentThread].on("error", reject)
+        if (!hasExitEvent.length) workers[currentThread].on("exit", resolve)
 
         workers[currentThread].on("message", (message) => {
           renderTextsInterval ??= setInterval(progress => {
