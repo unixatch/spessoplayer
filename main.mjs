@@ -180,6 +180,7 @@ if (listOfOptions?.fileOutputs?.length > 0) {
 
   addEvent({ eventType: "toFileSIGINT",
     func: () => {
+      clearInterval(renderTextsInterval)
       for (const worker of workers) worker.terminate()
       finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
 

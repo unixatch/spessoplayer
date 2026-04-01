@@ -292,6 +292,7 @@ async function initSpessaSynth({
   sampleRate = 48000,
   loopStart, loopEnd,
   index, indexOfGroup,
+  isToFile = false,
   onlySampleCount = false, onlyDuration = false
 }) {
   const {
@@ -301,8 +302,12 @@ async function initSpessaSynth({
     SpessaSynthSequencer
   } = SpessaSynth ??= await import("spessasynth_core");
 
+  const midi = (
+    (onlyDuration || isToFile)
+      ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
+      : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
+  );
   let sf;
-  const midi = midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile));
   if (!onlySampleCount) sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
   const {
     sampleCount,
@@ -729,7 +734,7 @@ async function toFile({
   log(1, performance.now().toFixed(2), "Started toFile")
   const {
     seq, synth, sampleCount
-  } = await initSpessaSynth({ index, ...options });
+  } = await initSpessaSynth({ index, ...options, isToFile: true });
 
   const {
     getWavHeader,
