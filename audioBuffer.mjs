@@ -25,16 +25,11 @@ import {
 } from "spessasynth_core"
 // This section is identical to what's inside spessasynth_core but not being exported, that's why it's here
 function fillWithDefaults(obj, defObj) {
-  return {
-    ...defObj,
-    ...obj ?? {}
-  };
+  return { ...defObj, ...obj ?? {} };
 }
 function writeBinaryStringIndexed(outArray, string, padLength = 0) {
   if (padLength > 0) {
-    if (string.length > padLength) {
-      string = string.slice(0, padLength);
-    }
+    if (string.length > padLength) string = string.slice(0, padLength)
   }
   for (let i = 0; i < string.length; i++) {
     outArray[outArray.currentIndex++] = string.charCodeAt(i);
@@ -52,7 +47,7 @@ function writeLittleEndianIndexed(dataArray, number, byteTarget) {
   }
 }
 function writeDword(dataArray, dword) {
-  writeLittleEndianIndexed(dataArray, dword, 4);
+  writeLittleEndianIndexed(dataArray, dword, 4)
 }
 function writeRIFFChunkParts(header, chunks, isList = false) {
   let dataOffset = 8;
@@ -65,31 +60,26 @@ function writeRIFFChunkParts(header, chunks, isList = false) {
     headerWritten = "LIST";
   }
   let finalSize = dataOffset + dataLength;
-  if (finalSize % 2 !== 0) {
-    finalSize++;
-  }
+  if (finalSize % 2 !== 0) finalSize++
+
   const outArray = new IndexedByteArray(finalSize);
   writeBinaryStringIndexed(outArray, headerWritten);
   writeDword(outArray, writtenSize);
-  if (isList) {
-    writeBinaryStringIndexed(outArray, header);
-  }
-  chunks.forEach((c) => {
-    outArray.set(c, dataOffset);
+  if (isList) writeBinaryStringIndexed(outArray, header);
+
+  chunks.forEach(c => {
+    outArray.set(c, dataOffset)
     dataOffset += c.length;
-  });
+  })
   return outArray;
 }
 function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
-  if (header.length !== 4) {
-    throw new Error(`Invalid header length: ${header}`);
-  }
+  if (header.length !== 4) throw new Error(`Invalid header length: ${header}`)
   let dataStartOffset = 8;
   let headerWritten = header;
   let dataLength = data.length;
-  if (addZeroByte) {
-    dataLength++;
-  }
+
+  if (addZeroByte) dataLength++
   let writtenSize = dataLength;
   if (isList) {
     dataStartOffset += 4;
@@ -97,15 +87,13 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
     headerWritten = "LIST";
   }
   let finalSize = dataStartOffset + dataLength;
-  if (finalSize % 2 !== 0) {
-    finalSize++;
-  }
+  if (finalSize % 2 !== 0) finalSize++
+
   const outArray = new IndexedByteArray(finalSize);
   writeBinaryStringIndexed(outArray, headerWritten);
   writeDword(outArray, writtenSize);
-  if (isList) {
-    writeBinaryStringIndexed(outArray, header);
-  }
+
+  if (isList) writeBinaryStringIndexed(outArray, header);
   outArray.set(data, dataStartOffset);
   return outArray;
 }
@@ -162,6 +150,7 @@ function getWavHeader({ length, numChannels },
   if (cueOn) {
     const loopStartSamples = Math.floor(loop.start * sampleRate);
     const loopEndSamples = Math.floor(loop.end * sampleRate);
+
     const cueStart = new IndexedByteArray(24);
     writeLittleEndianIndexed(cueStart, 0, 4);
     writeLittleEndianIndexed(cueStart, 0, 4);
@@ -169,6 +158,7 @@ function getWavHeader({ length, numChannels },
     writeLittleEndianIndexed(cueStart, 0, 4);
     writeLittleEndianIndexed(cueStart, 0, 4);
     writeLittleEndianIndexed(cueStart, loopStartSamples, 4);
+
     const cueEnd = new IndexedByteArray(24);
     writeLittleEndianIndexed(cueEnd, 1, 4);
     writeLittleEndianIndexed(cueEnd, 0, 4);
@@ -176,6 +166,7 @@ function getWavHeader({ length, numChannels },
     writeLittleEndianIndexed(cueEnd, 0, 4);
     writeLittleEndianIndexed(cueEnd, 0, 4);
     writeLittleEndianIndexed(cueEnd, loopEndSamples, 4);
+
     cueChunk = writeRIFFChunkParts("cue ", [
       new IndexedByteArray([2, 0, 0, 0]),
       // Cue points count
