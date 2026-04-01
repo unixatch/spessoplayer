@@ -26,7 +26,8 @@ import {
   clearLastLines
 } from "./utils/utils.mjs"
 
-let audioBuffer,
+let stream,
+    audioBuffer,
     SpessaSynth,
     child_process,
     doneStreaming = false;
@@ -677,7 +678,7 @@ async function toStdout({
   const {
     promises: { finished },
     Readable
-  } = await import("node:stream");
+  } = stream ??= await import("node:stream");
 
   doneStreaming &&= false;
   const readStream = createReadable(Readable, true, {
@@ -743,7 +744,7 @@ async function toFile({
   const {
     promises: { finished },
     Readable
-  } = await import("node:stream");
+  } = stream ??= await import("node:stream");
 
   const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
