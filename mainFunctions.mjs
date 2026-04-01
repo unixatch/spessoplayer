@@ -292,7 +292,7 @@ async function initSpessaSynth({
   sampleRate = 48000,
   loopStart, loopEnd,
   index, indexOfGroup,
-  onlySampleCount = false
+  onlySampleCount = false, onlyDuration = false
 }) {
   const {
     BasicMIDI,
@@ -315,6 +315,7 @@ async function initSpessaSynth({
     loopStart, loopEnd
   });
   if (onlySampleCount) return sampleCount;
+  if (onlyDuration) return durationInSeconds;
 
   if (loopStart > 0 && !loopDetectedInMidi) {
     // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * loopStart;
@@ -555,7 +556,7 @@ function addEvent({ eventType, func }) {
  */
 function createReadable(Readable, isStdout = false, {
   sampleCount, sampleRate = 48000,
-  index, durationRounded,
+  index,
   seq, synth,
   getData,
   amountOfSongs, progressBuffers
@@ -595,16 +596,16 @@ function createReadable(Readable, isStdout = false, {
       lastBytes = false,
       filledSamples = 0,
       lastCompletelyRenderedSeconds,
-      lastLoopCount = seq.loopCount,
-      progress;
+      lastLoopCount = seq.loopCount;
   const BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
         right = new Float32Array(BUFFER_SIZE),
-        stereoChannels = [left, right];
-  if (progressBuffers) {
-    progress = new Progress(amountOfSongs, index, progressBuffers);
-    progress.addToAmountToRender(durationRounded)
-  }
+        stereoChannels = [left, right],
+        progress = (
+          (progressBuffers)
+            ? new Progress(amountOfSongs, index, progressBuffers)
+            : undefined
+        );
 
   const readStream = new Readable({
     read() {
@@ -727,9 +728,7 @@ async function toFile({
   }
   log(1, performance.now().toFixed(2), "Started toFile")
   const {
-    seq, synth,
-    sampleCount,
-    durationInSeconds
+    seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options });
 
   const {
@@ -741,8 +740,6 @@ async function toFile({
     Readable
   } = await import("node:stream");
 
-  const durationRounded = Math.floor(durationInSeconds * 100) / 100;
-
   const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
@@ -750,8 +747,7 @@ async function toFile({
     sampleCount, sampleRate: options.sampleRate,
     seq, synth,
     getData,
-    index, durationRounded,
-    progressBuffers
+    index, progressBuffers
   });
   const promisesOfPrograms = [],
         pipingFunctions = [];

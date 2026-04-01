@@ -146,8 +146,26 @@ if (listOfOptions?.toStdout) {
   process.exit()
 }
 if (listOfOptions?.fileOutputs?.length > 0) {
+  const amountOfSongs = Options.amountOfSongs;
+  const progressBuffers = {
+          amountToRender: new SharedArrayBuffer(4),
+          renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
+          percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
+        },
+        progress = new Progress(amountOfSongs, undefined, progressBuffers);
+  for (let i = 0; i < amountOfSongs; i++) {
+    const options = Options.getOptionsOfSong(i);
+    if (!options) continue;
+
+    const duration = await initSpessaSynth({
+      index: i, ...options,
+      onlyDuration: true
+    });
+    const durationRounded = Math.floor(duration * 100) / 100;
+    progress.addToAmountToRender(durationRounded)
+  }
+
   const filesListLength = listOfOptions.files.length,
-        amountOfSongs = Options.amountOfSongs,
         RENDER_TEXTS_DELAY = 50,
         listOfPromises = new Map();
   const { Worker } = await import("worker_threads"),
@@ -155,13 +173,8 @@ if (listOfOptions?.fileOutputs?.length > 0) {
         cores = availableParallelism(),
         maxThreads = (amountOfSongs > cores * 2) ? cores * 2 : cores,
         workers = [];
-  const progressBuffers = {
-          amountToRender: new SharedArrayBuffer(4),
-          renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
-          percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
-        },
-        progress = new Progress(amountOfSongs, undefined, progressBuffers);
   let fileOutputs,
+      firstRender = true,
       renderTextsInterval,
       finalFileOutputs = [];
 
@@ -207,11 +220,12 @@ if (listOfOptions?.fileOutputs?.length > 0) {
 
         workers[currentThread].on("message", (message) => {
           renderTextsInterval ??= setInterval(progress => {
-            clearLastLines([0, -1])
+            if (!firstRender) clearLastLines([0, -1])
             console.error(
               progress.minutesRenderedText,
               "|", progress.percentageText
             )
+            firstRender &&= false;
           }, RENDER_TEXTS_DELAY, progress);
           if (message === "DONE_RENDERING") {
             workers[currentThread].removeAllListeners("message")

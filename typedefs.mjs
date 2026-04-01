@@ -41,6 +41,7 @@
  * @property {Number}  loopEnd                 end of loop
  * @property {Number}  indexOfGroup            index of the Set/group the song is in
  * @property {Boolean} [onlySampleCount=false] if it should return just the sample count of the song and do nothing else
+ * @property {Boolean} [onlyDuration=false]    if it should return just the duration of the song and do nothing else
  */
 /**
  * @typedef effectsObjectParams
@@ -105,7 +106,6 @@
  * @property {Number}               sampleCount        sample count
  * @property {Number}               [sampleRate=48000] sample rate
  * @property {Number}               [index]            index of the song
- * @property {Number}               [durationRounded]  duration of the song rounded by percentage
  * @property {SpessaSynthSequencer} seq                spessasynth_core' sequencer
  * @property {SpessaSynthProcessor} synth              spessasynth_core's processor
  * @property {Function}             getData            translator: Float32Arrays → Uint8Arrays
