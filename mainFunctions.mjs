@@ -93,7 +93,9 @@ async function formatManager({
     return (!func)
       ? pipingFunction = (whereToConnect, end) => {
         readStream.pipe(whereToConnect, { end })
-          .on("error", streamErrorHandling)
+        if (!whereToConnect.listeners("error").length) {
+          whereToConnect.on("error", streamErrorHandling)
+        }
       }
       : pipingFunction = func;
   }
@@ -221,12 +223,14 @@ async function formatManager({
       log(1,
         performance.now().toFixed(2),
         (isStdout)
-          ? "Done setting up" + (dryRun) ? " dry run" : ""
-          : "Done setting up pcm outFile" + (dryRun) ? " in dry run mode" : ""
+          ? "Done setting up" + ((dryRun) ? " dry run" : "")
+          : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
       addPipingFunction(() => {
         readStream.pipe(output)
-          .on("error", streamErrorHandling)
+        if (!output.listeners("error").length) {
+          output.on("error", streamErrorHandling)
+        }
       })
       break;
     }
@@ -235,10 +239,14 @@ async function formatManager({
     default: {
       if (isToFile) break;
 
-      const doneSettingUpMsg = "Done setting up" + (dryRun) ? " dry run" : "";
+      const doneSettingUpMsg = "Done setting up" + ((dryRun) ? " dry run" : "");
       addPipingFunction((whereToConnect, end) => {
-        readStream.pipe((res) ? res : whereToConnect, { end })
-          .on("error", streamErrorHandling)
+        const destination = (res) ? res : whereToConnect;
+
+        readStream.pipe(destination, { end })
+        if (!destination.listeners("error").length) {
+          destination.on("error", streamErrorHandling)
+        }
       })
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
     }
