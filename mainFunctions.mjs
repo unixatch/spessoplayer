@@ -500,6 +500,7 @@ function addEvent({ eventType, func }) {
       function SIGINTFunction() {
         console.error(`${gray}Closed with Ctrl+c${normal}`);
         global.SIGINT = true;
+        if (process.argv.includes("-")) process.exit(130)
       }
       return addAndCheckEvent("SIGINT", SIGINTFunction);
     }
@@ -509,7 +510,7 @@ function addEvent({ eventType, func }) {
         resolve(spawnSync)
       }).then(spawnSync => {
         function stdoutExit() {
-          if (!doneStreaming) return;
+          if (!doneStreaming && !global.SIGINT) return;
 
           // Necessary for programs like mpv
           const commandToSend = (
