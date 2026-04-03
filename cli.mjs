@@ -875,10 +875,12 @@ const help = async ({ errorText } = "") => {
     ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
 
   Available parameters:
-    ${green}--input${optionalIndex}, ${green}/input${optionalIndex}, ${green}-i${optionalIndex}, ${green}/i${optionalIndex}:
+    ${green}--input${optionalIndex}, ${green}/input${optionalIndex},
+     ${green}-i${optionalIndex}, ${green}/i${optionalIndex}:
       ${dimGray+italics}Takes the next file and puts it in the list by index${normal}
 
-    ${green}--volume${optionalIndex}, ${green}/volume${optionalIndex}, ${green}-vol${optionalIndex}, ${green}/vol${optionalIndex}:
+    ${green}--volume${optionalIndex}, ${green}/volume${optionalIndex},
+     ${green}-vol${optionalIndex}, ${green}/vol${optionalIndex}:
       ${dimGray+italics}Volume to set (default: 100%)${normal}
 
       ${dimGray+italics}Available formats:${normal}
@@ -886,29 +888,36 @@ const help = async ({ errorText } = "") => {
       ${dimGray+italics}- percentages (example 70%)${normal}
       ${dimGray+italics}- decimals (example 0.9)${normal}
 
-    ${green}--reverb-volume${optionalIndex}, ${green}/reverb-volume${optionalIndex}, ${green}-rvb${optionalIndex}, ${green}/rvb${optionalIndex}:
+    ${green}--reverb-volume${optionalIndex}, ${green}/reverb-volume${optionalIndex},
+     ${green}-rvb${optionalIndex}, ${green}/rvb${optionalIndex}:
       ${dimGray+italics}Volume to set for reverb (default: none)${normal}
       ${dimGray+italics}Same formats as volume${normal}
 
-    ${green}--effects${optionalIndex}, ${green}/effects${optionalIndex}, ${green}-e${optionalIndex}, ${green}/e${optionalIndex}:
+    ${green}--effects${optionalIndex}, ${green}/effects${optionalIndex},
+     ${green}-e${optionalIndex}, ${green}/e${optionalIndex}:
       ${dimGray+italics}Adds any effects that SoX provides (e.g "reverb,fade 1")${normal}
 
-    ${green}--loop${optionalIndex}, ${green}/loop${optionalIndex}, ${green}-l${optionalIndex}, ${green}/l${optionalIndex}:
+    ${green}--loop${optionalIndex}, ${green}/loop${optionalIndex},
+     ${green}-l${optionalIndex}, ${green}/l${optionalIndex}:
       ${dimGray+italics}Loop x amount of times (default: 0)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers)${normal}
 
-    ${green}--loop-start${optionalIndex}, ${green}/loop-start${optionalIndex}, ${green}-ls${optionalIndex}, ${green}/ls${optionalIndex}:
+    ${green}--loop-start${optionalIndex}, ${green}/loop-start${optionalIndex},
+     ${green}-ls${optionalIndex}, ${green}/ls${optionalIndex}:
       ${dimGray+italics}When the loop starts${normal}
 
-    ${green}--loop-end${optionalIndex}, ${green}/loop-end${optionalIndex}, ${green}-le${optionalIndex}, ${green}/le${optionalIndex}:
+    ${green}--loop-end${optionalIndex}, ${green}/loop-end${optionalIndex},
+     ${green}-le${optionalIndex}, ${green}/le${optionalIndex}:
       ${dimGray+italics}When the loop ends${normal}
 
-    ${green}--sample-rate${optionalIndex}, ${green}/sample-rate${optionalIndex}, ${green}-r${optionalIndex}, ${green}/r${optionalIndex}:
+    ${green}--sample-rate${optionalIndex}, ${green}/sample-rate${optionalIndex},
+     ${green}-r${optionalIndex}, ${green}/r${optionalIndex}:
       ${dimGray+italics}Sample rate to use (default: 48000)${normal}
         ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
         ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
 
-    ${green}--format${normal}, ${green}/format${normal}, ${green}-f${normal}, ${green}/f${normal}:
+    ${green}--format${normal}, ${green}/format${normal},
+     ${green}-f${normal}, ${green}/f${normal}:
       ${dimGray+italics}Format to use for stdout (default: wav)${normal}
 
       ${dimGray+italics}Available formats:${normal}
@@ -917,34 +926,41 @@ const help = async ({ errorText } = "") => {
       ${dimGray+italics}- flac${normal}
       ${dimGray+italics}- pcm (s32le)${normal}
 
-    ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal}, ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:
+    ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal},
+     ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:
       ${dimGray+italics}Asks for confirmation before proceeding${normal}
 
-    ${green}--no-table${normal}, ${green}/no-table${normal}, ${green}-nt${normal}, ${green}/nt${normal}:
+    ${green}--no-table${normal}, ${green}/no-table${normal},
+     ${green}-nt${normal}, ${green}/nt${normal}:
       ${dimGray+italics}When asking for confirmation,
       ${dimGray+italics}it'll show the information in a JSON-like format instead of a table${normal}
 
     ${green}--dry-run${normal}, ${green}/dry-run${normal}, ${green}--test${normal}, ${green}/test${normal}, ${green}--null${normal}, ${green}/null${normal},
-    ${green}-dr${normal}, ${green}/dr${normal}, ${green}-t${normal}, ${green}/t${normal}, ${green}-0${normal}, ${green}/0${normal}:
+     ${green}-dr${normal}, ${green}/dr${normal}, ${green}-t${normal}, ${green}/t${normal}, ${green}-0${normal}, ${green}/0${normal}:
       ${dimGray+italics}Runs the program as normal but
       ${dimGray+italics}it'll write to /dev/null on unix and \\\\.\\nul on windows.${normal}
       ${dimGray+italics}Mainly used for testing purposes but
       ${dimGray+italics}can be useful when trying to debug with log options${normal}
 
-    ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex}, ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
+    ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex},
+     ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
       ${dimGray+italics}Sets the verbosity (default: 2)${normal}
 
-    ${green}--log-file${normal}, ${green}/log-file${normal}, ${green}-lf${normal}, ${green}/lf${normal}:
+    ${green}--log-file${normal}, ${green}/log-file${normal},
+     ${green}-lf${normal}, ${green}/lf${normal}:
       ${dimGray+italics}Sets path to the log file (default: ./spesso.log)${normal}
         ${dimGray+italics}(Meanwhile it writes to file, it also prints to stderr)${normal}
 
-    ${green}--uninstall${normal}, ${green}/uninstall${normal}, ${green}-u${normal}, ${green}/u${normal}:
+    ${green}--uninstall${normal}, ${green}/uninstall${normal},
+     ${green}-u${normal}, ${green}/u${normal}:
       ${dimGray+italics}Uninstalls dependencies with confirmation and the entire program${normal}
 
-    ${green}--help${normal}, ${green}/help${normal}, ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
+    ${green}--help${normal}, ${green}/help${normal},
+     ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
       ${dimGray+italics}Shows this help message${normal}
 
     ${green}--version${normal}, ${green}/version${normal}:
+     ${green}-V${normal}, ${green}/V${normal}:
       ${dimGray+italics}Shows the installed version${normal}
   `
   if (process.env.PAGER) {
