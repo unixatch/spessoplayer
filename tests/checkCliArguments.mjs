@@ -76,12 +76,18 @@ if (!process.argv.includes("--verbose")
     realTest.on("exit", resolve)
     realTest.on("error", reject)
   })
-  process.exit()
+    .then(process.exit)
+    .catch(error => {
+      console.error(e);
+      process.exit(e.errno)
+    })
 }
 // Forked process
 const parsedScriptPath = parse(process.argv[1]);
-const CLI_PATH = globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
-                    .find(i => i.includes("cli.mjs"));
+const CLI_PATH = (
+  globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
+    .find(i => i.includes("cli.mjs"))
+);
 const {
   actUpOnPassedArgs, Options
 } = await import(CLI_PATH);
