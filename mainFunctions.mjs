@@ -62,7 +62,7 @@ function ffmpegArgs(outFile = "pipe:1") {
  */
 async function formatManager({
   format = true,
-  readStream, res,
+  readStream, res, dryRun,
   effects,
   index,
   createNewFileNameAnyway,
@@ -126,6 +126,10 @@ async function formatManager({
         outFile = newName;
         doneSettingUpMsg = "Done setting up wav outFile";
       }
+      if (dryRun) {
+        outFile = dryRun;
+        doneSettingUpMsg = `Done setting up ${(isToFile) ? "wav outFile" : ""} in dry run mode`;
+      }
 
       if (effects) {
         if (isStdout) {
@@ -143,7 +147,7 @@ async function formatManager({
         break;
       }
       if (isToFile) {
-        const output = fs.createWriteStream(outFile);
+        const output = fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
         addPipingFunction(() => {
           output.write(stdoutHeader ?? "")
           readStream.pipe(output)
@@ -156,15 +160,19 @@ async function formatManager({
     case "flac":
     case "mp3": {
       addPipingFunction()
-      log(1, performance.now().toFixed(2), `Done setting up ${format} format`)
+      log(1, performance.now().toFixed(2), `Done setting up ${format} format${(dryRun) ? " in dry run mode" : ""}`)
       break;
     }
     case /^.*\.flac$/.test(outFile):
     case /^.*\.mp3$/.test(outFile): {
-      const doneSettingUpMsg = `Done setting up ${toFileFormat} outFile`;
+      let doneSettingUpMsg = `Done setting up ${toFileFormat} outFile`;
       const newName = newFileName(outFile, createNewFileNameAnyway);
       fileOutputs[fileOutputs.indexOf(outFile)] = newName;
       outFile = newFileName(outFile, createNewFileNameAnyway);
+      if (dryRun) {
+        outFile = dryRun;
+        doneSettingUpMsg = `Done setting up ${toFileFormat} outFile in dry run mode`;
+      }
 
       const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile)[toFileFormat]);
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
@@ -201,18 +209,20 @@ async function formatManager({
         fileOutputs[fileOutputs.indexOf(outFile)] = newName;
         outFile = newFileName(outFile, createNewFileNameAnyway);
       }
+      if (dryRun) outFile = dryRun;
 
       let output;
       if (isToFile) {
-        output = fs.createWriteStream(outFile);
+        output = fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
       } else {
         output = (res) ? res : process.stdout;
+        if (dryRun) output = fs.createWriteStream(dryRun, {fd: fs.openSync(dryRun, "r+")});
       }
       log(1,
         performance.now().toFixed(2),
         (isStdout)
-          ? "Done setting up"
-          : "Done setting up pcm outFile"
+          ? "Done setting up" + (dryRun) ? " dry run" : ""
+          : "Done setting up pcm outFile" + (dryRun) ? " in dry run mode" : ""
       )
       addPipingFunction(() => {
         readStream.pipe(output)
@@ -225,17 +235,12 @@ async function formatManager({
     default: {
       if (isToFile) break;
 
-      const doneSettingUpMsg = "Done setting up";
-      if (effects) {
-        addPipingFunction()
-        log(1, performance.now().toFixed(2), doneSettingUpMsg)
-        break;
-      }
-      log(1, performance.now().toFixed(2), doneSettingUpMsg)
-      addPipingFunction(() => {
-        readStream.pipe((res) ? res : process.stdout)
+      const doneSettingUpMsg = "Done setting up" + (dryRun) ? " dry run" : "";
+      addPipingFunction((whereToConnect, end) => {
+        readStream.pipe((res) ? res : whereToConnect, { end })
           .on("error", streamErrorHandling)
       })
+      log(1, performance.now().toFixed(2), doneSettingUpMsg)
     }
   }
   return pipingFunction;

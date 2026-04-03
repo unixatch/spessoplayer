@@ -52,6 +52,14 @@ const regexes = {
   ].join("")),
   ask: /^(?:--ask|\/ask|--confirm|\/confirm|-a|\/a|-c|\/c)$/,
   noTable: /^(?:--no-table|\/no-table|-nt|\/nt)$/,
+  dryRun: new RegExp([
+    "^(?:--dry-run|\/dry-run",
+    "|--test|\/test",
+    "|--null|\/null",
+    "|-dr|\/dr",
+    "|-t|\/t",
+    "|-0|\/0)$"
+  ].join("")),
 
   stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
@@ -260,6 +268,10 @@ const actUpOnPassedArgs = async (args) => {
       }
       case regexes.noTable.test(arg) && arg: {
         Options.noTable = true;
+        break;
+      }
+      case regexes.dryRun.test(arg) && arg: {
+        Options.dryRun();
         break;
       }
       case regexes.input.test(arg) && arg: {
@@ -911,6 +923,13 @@ const help = async ({ errorText } = "") => {
     ${green}--no-table${normal}, ${green}/no-table${normal}, ${green}-nt${normal}, ${green}/nt${normal}:
       ${dimGray+italics}When asking for confirmation,
       ${dimGray+italics}it'll show the information in a JSON-like format instead of a table${normal}
+
+    ${green}--dry-run${normal}, ${green}/dry-run${normal}, ${green}--test${normal}, ${green}/test${normal}, ${green}--null${normal}, ${green}/null${normal},
+    ${green}-dr${normal}, ${green}/dr${normal}, ${green}-t${normal}, ${green}/t${normal}, ${green}-0${normal}, ${green}/0${normal}:
+      ${dimGray+italics}Runs the program as normal but
+      ${dimGray+italics}it'll write to /dev/null on unix and \\\\.\\nul on windows.${normal}
+      ${dimGray+italics}Mainly used for testing purposes but
+      ${dimGray+italics}can be useful when trying to debug with log options${normal}
 
     ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex}, ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
       ${dimGray+italics}Sets the verbosity (default: 2)${normal}

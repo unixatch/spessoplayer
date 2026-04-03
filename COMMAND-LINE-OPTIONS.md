@@ -12,7 +12,7 @@
 
 ### --reverb-volume, /reverb-volume, -rvb, /rvb:
   Volume to set for reverb (*default: none*)
-  
+
   Same formats as volume
 
 ### --effects, /effects, -e, /e: 
@@ -51,6 +51,14 @@ Asks for confirmation before proceeding
 ### --no-table, /no-table, -nt, /nt:
 When asking for confirmation,
 it'll show the information in a JSON-like format instead of a table
+
+### --dry-run, /dry-run, --test, /test, --null, /null,
+### -dr, /dr, -t, /t, -0, /0:
+Runs the program as normal but
+it'll write to /dev/null on unix and \\.\nul on windows.
+
+Mainly used for testing purposes but
+can be useful when trying to debug with log options
 
 ### --verbose, /verbose, -v, /v:
 Sets the verbosity (*default: 2*)

@@ -89,6 +89,13 @@ class MainOptions {
     this._manageOption({property: "noTable", value})
   }
   /**
+   * Sets dryRun path string
+   * @param {Boolean} value - path to use for the dry run
+   */
+  static dryRun() {
+    this._manageOption({property: "dryRun", value: ""})
+  }
+  /**
    * Sets the stdout format
    * @param {String} string - a string representing the format
    */

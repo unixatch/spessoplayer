@@ -43,8 +43,13 @@ const {
 log(1, performance.now().toFixed(2), "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
 const listOfOptions = Options.all;
+const {
+  dryRun, confirmation,
+  toStdout: isToStdout,
+  fileOutputs: isToFile
+} = listOfOptions;
 
-if (listOfOptions?.confirmation) {
+if (confirmation) {
   const infos = Options.getConfirmationTable();
   if (listOfOptions?.noTable) {
     for (const i of infos) console.log(i)
@@ -67,7 +72,9 @@ if (listOfOptions?.confirmation) {
   }
   await question()
 }
-if (listOfOptions?.toStdout) {
+
+// +++ toStdout section +++
+if (isToStdout) {
   const filesList = listOfOptions.files,
         lengthOfFiles = [],
         promisesOfPrograms = [],
@@ -85,6 +92,13 @@ if (listOfOptions?.toStdout) {
 
   let effectsProcess,
       converterProcess;
+  const dryRunStream = (
+    dryRun &&
+    fs.createWriteStream(dryRun,
+      {fd: fs.openSync(dryRun, "r+")}
+    )
+  );
+
   // Creating the header
   const sumOfLengths = (index, previous) => index + previous;
   const stdoutHeader = getWavHeader({
@@ -98,7 +112,11 @@ if (listOfOptions?.toStdout) {
     const { spawn } = await import("child_process");
     converterProcess = spawn("ffmpeg",
       ffmpegArgs()[listOfOptions?.format],
-      {stdio: ["pipe", process.stdout, "pipe"]}
+      {stdio: [
+        "pipe",
+        dryRunStream ?? process.stdout,
+        "pipe"
+      ]}
     );
   }
   // If it needs effects
@@ -108,7 +126,7 @@ if (listOfOptions?.toStdout) {
     [effectsProcess] = await applyEffects({
       program: "sox",
       stdoutHeader,
-      stdout: (converterProcess) ? converterProcess.stdin : undefined,
+      stdout: converterProcess?.stdin ?? dryRunStream,
       promisesOfPrograms,
       // TODO: effects system needs to overhauled
       //effects: listOfOptions?.effects[0]
@@ -131,8 +149,8 @@ if (listOfOptions?.toStdout) {
   }
   // When neither of child_processes exist
   if (!effectsProcess && !converterProcess) {
-    process.stdout.write(stdoutHeader)
-    destination = process.stdout;
+    (dryRunStream ?? process.stdout).write(stdoutHeader)
+    destination = dryRunStream ?? process.stdout;
   }
   for (let i = 0; i < amountOfSongs; i++) {
     const options = Options.getOptionsOfSong(i);
@@ -143,9 +161,12 @@ if (listOfOptions?.toStdout) {
     await promise
   }
   await Promise.all(promisesOfPrograms)
+  if (dryRun) console.error("Done dry running")
   process.exit()
 }
-if (listOfOptions?.fileOutputs?.length > 0) {
+
+// +++ toFile section +++
+if (isToFile?.length > 0) {
   const amountOfSongs = Options.amountOfSongs;
   const progressBuffers = {
           amountToRender: new SharedArrayBuffer(4),
@@ -185,6 +206,8 @@ if (listOfOptions?.fileOutputs?.length > 0) {
       finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
 
       // Try to cleanup abandoned files
+      // only if it's not in dry run mode
+      if (dryRun) return;
       for (const {files} of finalFileOutputs) {
         for (const file of files) {
           try {
@@ -256,8 +279,14 @@ if (listOfOptions?.fileOutputs?.length > 0) {
   finalFileOutputs.sort(compareAscendingly)
 
   console.log("Written", finalFileOutputs);
+  if (dryRun) console.error("but actually nothing was written...")
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
+}
+
+if (dryRun) {
+  console.error(`${yellow}Can't dry run the player${normal}`)
+  process.exit(2)
 }
 await startPlayer(Options)
 

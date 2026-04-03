@@ -12,6 +12,7 @@
  * @property {(String|Boolean)} [format=true]             type of format
  * @property {Readable}         readStream                ReadStream for piping
  * @property {ResponseServer}   [res]                     optional ResponseServer
+ * @property {String}           [dryRun]                  dry run flag
  * @property {Object[]}         [effects]                 list of effects to apply
  * @property {Number}           index                     index of the song
  * @property {Boolean}          [createNewFileNameAnyway] if it's necessary to create a new file name

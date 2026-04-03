@@ -402,12 +402,21 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       // Strings
       case "fileOutputs":
       case "logFilePath":
+      case "dryRun":
       case "format": {
         if (!needsToBeSet) return;
 
         this.#checkValueAndExistence(
           value, "string", (needsAnArray) ? property : undefined
         )
+        if (property === "dryRun") {
+          this.#options.dryRun = (
+            (process.platform === "win32")
+              ? "\\\\.\\nul"
+              : "/dev/null"
+          );
+          break;
+        }
         if (Number.isInteger(index)) setIndex(); else setValue()
         break;
       }
