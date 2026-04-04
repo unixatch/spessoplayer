@@ -7,7 +7,7 @@ const {
   globs,
   manualMidi, manualSoundfont,
   generalCliArguments,
-  addOptionalArgumentsToStdout
+  addOptionalArgumentsToFile
 } = await import("./utils.mjs")
 
 // Other arguments and run it
@@ -16,10 +16,10 @@ const args = [
   ...globs.soundfonts,
   "-i2", manualMidi,      // Manually adding files
   "-i2", manualSoundfont,
-  ...generalCliArguments("stdout"),
-  "-"
+  ...generalCliArguments("toFile"),
+  "out.wav"
 ];
-addOptionalArgumentsToStdout(args)
+addOptionalArgumentsToFile(args)
 
 // Start the test for real
 const parsedScriptPath = parse(process.argv[1]);
