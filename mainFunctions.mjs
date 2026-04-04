@@ -80,7 +80,7 @@ async function formatManager({
       await new Promise(resolve => {
         setTimeout(() => resolve(), 4);
       })
-      if (global.SIGINT) process.exit(errno)
+      if (global.SIGINT) process.exit(130)
       console.error(`${gray}Closed the program before finishing to render${normal}`)
       process.exit(errno)
     }

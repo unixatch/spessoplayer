@@ -228,9 +228,8 @@ if (isToFile?.length > 0) {
     // at once has been reached
     const currentThread = i % maxThreads;
     if (i !== 0 && !(currentThread)) {
-      const results = await Promise.all(listOfPromises.values());
-      // Don't continue if SIGINT was sent
-      if (results.join("").includes("1".repeat(maxThreads))) break;
+      await Promise.all(listOfPromises.values())
+      if (global.SIGINT) break;
     }
 
     const workerDataObject = {
@@ -267,7 +266,7 @@ if (isToFile?.length > 0) {
   }
   await Promise.all(listOfPromises.values())
   clearInterval(renderTextsInterval)
-  if (global.SIGINT) process.exit(2)
+  if (global.SIGINT) process.exit(130)
 
   // Close workers before continuing
   // otherwise it gets stuck
