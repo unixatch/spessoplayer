@@ -78,8 +78,8 @@ if (!process.argv.includes("--verbose")
   })
     .then(process.exit)
     .catch(error => {
-      console.error(e);
-      process.exit(e.errno)
+      console.error(error);
+      process.exit(error.errno)
     })
 }
 // Forked process
