@@ -76,12 +76,13 @@ if (confirmation) {
 // +++ toStdout section +++
 if (isToStdout) {
   const filesList = listOfOptions.files,
+        perSongOptions = [],
         lengthOfFiles = [],
         promisesOfPrograms = [],
         { getWavHeader } = await import("./audioBuffer.mjs");
   const amountOfSongs = Options.amountOfSongs;
   for (let i = 0; i < amountOfSongs; i++) {
-    const options = Options.getOptionsOfSong(i);
+    const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
     const length = await initSpessaSynth({
       index: i, ...options,
@@ -153,7 +154,7 @@ if (isToStdout) {
     destination = dryRunStream ?? process.stdout;
   }
   for (let i = 0; i < amountOfSongs; i++) {
-    const options = Options.getOptionsOfSong(i);
+    const options = perSongOptions[i];
     if (!options) continue;
     const [ func, promise ] = await toStdout({ index: i, options });
 
@@ -167,7 +168,8 @@ if (isToStdout) {
 
 // +++ toFile section +++
 if (isToFile?.length > 0) {
-  const amountOfSongs = Options.amountOfSongs;
+  const amountOfSongs = Options.amountOfSongs,
+        perSongOptions = [];
   const progressBuffers = {
           amountToRender: new SharedArrayBuffer(4),
           renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
@@ -175,7 +177,7 @@ if (isToFile?.length > 0) {
         },
         progress = new Progress(amountOfSongs, undefined, progressBuffers);
   for (let i = 0; i < amountOfSongs; i++) {
-    const options = Options.getOptionsOfSong(i);
+    const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
 
     const duration = await initSpessaSynth({
@@ -220,7 +222,8 @@ if (isToFile?.length > 0) {
     }
   })
   for (let i = 0; i < amountOfSongs; i++) {
-    const options = Options.getOptionsOfSong(i);
+    const options = perSongOptions[i];
+    if (!options) continue;
     if (fileOutputs) options.fileOutputs = fileOutputs;
 
     // Waits for all workers to finish
