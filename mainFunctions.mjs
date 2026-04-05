@@ -705,8 +705,10 @@ async function toStdout({
     seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options });
 
-  if (!res && !process.listenerCount("exit")) addEvent({ eventType: "stdoutExit" })
-  log(1, performance.now().toFixed(2), "Added event exit")
+  if (!res && !process.listenerCount("exit")) {
+    addEvent({ eventType: "stdoutExit" })
+    log(1, performance.now().toFixed(2), "Added event exit")
+  }
   const { getData } = audioBuffer ??= await import("./audioBuffer.mjs");
   const {
     promises: { finished },
