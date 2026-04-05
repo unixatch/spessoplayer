@@ -92,12 +92,23 @@ async function formatManager({
   function addPipingFunction(func) {
     return (!func)
       ? pipingFunction = (whereToConnect, end) => {
-        readStream.pipe(whereToConnect, { end })
-        if (!whereToConnect.listeners("error").length) {
-          whereToConnect.on("error", streamErrorHandling)
-        }
+        addErrorEventToDest(
+          readStream
+            .on("error", streamErrorHandling)
+            .pipe(whereToConnect, { end })
+        )
       }
       : pipingFunction = func;
+  }
+  function addErrorEventToDest(dest, altThis) {
+    const finalDest = (altThis) ? altThis : dest,
+          boundFunction = streamErrorHandling.bind(finalDest),
+          reversedListOfEvents = dest.listeners("error").reverse();
+    return (
+      (reversedListOfEvents[0]?.name === boundFunction.name)
+        ? finalDest
+        : (dest.on("error", boundFunction), finalDest)
+    );
   }
   let spawn;
   if (format !== "wave" && format !== ""
@@ -150,10 +161,13 @@ async function formatManager({
       }
       if (isToFile) {
         const output = fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
-        addPipingFunction(() => {
+        addPipingFunction((whereToConnect, end) => {
           output.write(stdoutHeader ?? "")
-          readStream.pipe(output)
-            .on("error", streamErrorHandling)
+          addErrorEventToDest(
+            readStream
+              .on("error", streamErrorHandling)
+              .pipe(output, { end })
+          )
         })
       } else addPipingFunction()
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
@@ -198,8 +212,12 @@ async function formatManager({
       log(1, performance.now().toFixed(2), "Added promise")
       addPipingFunction(() => {
         ffmpeg.stdin.write(stdoutHeader)
-        readStream.pipe(ffmpeg.stdin)
-          .on("error", streamErrorHandling)
+        addErrorEventToDest(
+          readStream
+            .on("error", streamErrorHandling)
+            .pipe(ffmpeg.stdin),
+          ffmpeg
+        )
       })
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
       break;
@@ -226,11 +244,12 @@ async function formatManager({
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
-      addPipingFunction(() => {
-        readStream.pipe(output)
-        if (!output.listeners("error").length) {
-          output.on("error", streamErrorHandling)
-        }
+      addPipingFunction((whereToConnect, end) => {
+        addErrorEventToDest(
+          readStream
+            .on("error", streamErrorHandling)
+            .pipe(output, { end })
+        )
       })
       break;
     }
@@ -242,11 +261,11 @@ async function formatManager({
       const doneSettingUpMsg = "Done setting up" + ((dryRun) ? " dry run" : "");
       addPipingFunction((whereToConnect, end) => {
         const destination = (res) ? res : whereToConnect;
-
-        readStream.pipe(destination, { end })
-        if (!destination.listeners("error").length) {
-          destination.on("error", streamErrorHandling)
-        }
+        addErrorEventToDest(
+          readStream
+            .on("error", streamErrorHandling)
+            .pipe(destination, { end })
+        )
       })
       log(1, performance.now().toFixed(2), doneSettingUpMsg)
     }
