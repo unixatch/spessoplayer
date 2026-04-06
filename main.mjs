@@ -194,7 +194,10 @@ if (isToFile?.length > 0) {
   const { Worker } = await import("worker_threads"),
         { availableParallelism } = await import("os"),
         cores = availableParallelism(),
-        maxThreads = (amountOfSongs > cores * 2) ? cores * 2 : cores,
+        maxThreads = (
+          listOfOptions?.maxThreads
+          ?? ((amountOfSongs > cores * 2) ? cores * 2 : cores)
+        ),
         workers = [];
   let fileOutputs,
       firstRender = true,

@@ -96,6 +96,13 @@ class MainOptions {
     this._manageOption({property: "dryRun", value: ""})
   }
   /**
+   * Sets the maximum of threads to use in file mode
+   * @param {Boolean} value - number of threads
+   */
+  static set maxThreads(value) {
+    this._manageOption({property: "maxThreads", value, setter: true })
+  }
+  /**
    * Sets the stdout format
    * @param {String} string - a string representing the format
    */

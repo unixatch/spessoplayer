@@ -53,6 +53,11 @@ Available formats:
 - **flac**;
 - **pcm (s32le)**;
 
+### --max-threads, /max-threads, --threads, /threads,
+#### &nbsp;&nbsp;-mt, /mt, -T, /T:
+Sets the amount of threads to use when writing to files.
+Useful when you don't have much RAM
+
 ### --ask, /ask, --confirm, /confirm,
 #### &nbsp;&nbsp;-a, /a, -c, /c:
 Asks for confirmation before proceeding

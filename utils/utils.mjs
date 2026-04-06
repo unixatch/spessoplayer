@@ -378,6 +378,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "loopN":
       case "loopAmount":
       case "loopStart":
+      case "maxThreads":
       case "loopEnd": {
         if (!needsToBeSet) return;
 

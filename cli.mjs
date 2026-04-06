@@ -60,6 +60,12 @@ const regexes = {
     "|-t|\/t",
     "|-0|\/0)$"
   ].join("")),
+  maxThreads: new RegExp([
+    "^(?:--max-threads|\/max-threads",
+    "|--threads|\/threads",
+    "|-mt|\/mt",
+    "|-T|\/T)$"
+  ].join("")),
 
   stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
@@ -274,6 +280,14 @@ const actUpOnPassedArgs = async (args) => {
         Options.dryRun();
         break;
       }
+      case regexes.maxThreads.test(arg) && arg: {
+        // In case there's no other argument
+        const indexOfArg = newArguments.indexOf(arg);
+        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+
+        lastParam = "max-threads";
+        break;
+      }
       case regexes.input.test(arg) && arg: {
         // In case there's no other argument
         const indexOfArg = newArguments.indexOf(arg);
@@ -408,6 +422,10 @@ const actUpOnPassedArgs = async (args) => {
             break;
           case "effects":
             setEffects(arg, lastIndex)
+            clearLastVariables()
+            break;
+          case "max-threads":
+            setMaxThreads(arg)
             clearLastVariables()
             break;
 
@@ -831,6 +849,23 @@ const setReverb = (arg, lastIndex) => {
   process.exit(1);
 }
 /**
+ * Sets the Options.maxThreads variable
+ * @param {String} arg - number of threads to set
+ */
+const setMaxThreads = async (arg) => {
+  const number = Number(arg);
+  const { availableParallelism } = await import("os");
+  if (typeof number === "number" && !isNaN(number)
+      && number <= availableParallelism() * 2
+      && number >= 1) {
+    Options.maxThreads = number;
+    log(1, performance.now().toFixed(2), `Set max threads to ${number}`)
+    return;
+  }
+  console.error(`${normalRed}Passed something that wasn't a valid number of threads${normal}`)
+  process.exit(1);
+}
+/**
  * Sets the file path to the log file
  * @param {String} arg - Path to the log file
  */
@@ -925,6 +960,11 @@ const help = async ({ errorText } = "") => {
       ${dimGray+italics}- mp3${normal}
       ${dimGray+italics}- flac${normal}
       ${dimGray+italics}- pcm (s32le)${normal}
+
+    ${green}--max-threads${normal}, ${green}/max-threads${normal}, ${green}--threads${normal}, ${green}/threads${normal},
+     ${green}-mt${normal}, ${green}/mt${normal}, ${green}-T${normal}, ${green}/T${normal}:
+      ${dimGray+italics}Sets the amount of threads to use when writing to files.${normal}
+      ${dimGray+italics}Useful when you don't have much RAM${normal}
 
     ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal},
      ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:
