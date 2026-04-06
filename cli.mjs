@@ -612,10 +612,11 @@ const setFile = async ({
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoop = (arg, lastIndex) => {
-  if (typeof Number(arg) === "number"
-      && !regexes.infinity.test(arg)) {
-    Options.loopAmount(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set loop amount to ${Number(arg)} at ${lastIndex?.index} index`)
+  const number = Number(arg),
+        lastIndexNumber = Number(lastIndex?.index);
+  if (typeof number === "number" && !regexes.infinity.test(arg)) {
+    Options.loopAmount(lastIndexNumber, number);
+    log(1, performance.now().toFixed(2), `Set loop amount to ${number} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.infinity.test(arg)) {
@@ -631,16 +632,18 @@ const setLoop = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopStart = (arg, lastIndex) => {
-  if (typeof Number(arg) === "number"
-      || !Number.isNaN(Date.parse(`1970T${arg}Z`))) {
+  const number = Number(arg),
+        lastIndexNumber = Number(lastIndex?.index);
+  if (typeof number === "number"
+      || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      Options.loopStart(Number(lastIndex?.index), seconds);
+      Options.loopStart(lastIndexNumber, seconds);
       log(1, performance.now().toFixed(2), `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
-    Options.loopStart(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set loop-start to ${Number(arg)} at ${lastIndex?.index} index`)
+    Options.loopStart(lastIndexNumber, number);
+    log(1, performance.now().toFixed(2), `Set loop-start to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
@@ -652,16 +655,18 @@ const setLoopStart = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopEnd = (arg, lastIndex) => {
-  if (typeof Number(arg) === "number"
-      || !Number.isNaN(Date.parse(`1970T${arg}Z`))) {
+  const number = Number(arg),
+        lastIndexNumber = Number(lastIndex?.index);
+  if (typeof number === "number"
+      || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      Options.loopEnd(Number(lastIndex?.index), seconds);
+      Options.loopEnd(lastIndexNumber, seconds);
       log(1, performance.now().toFixed(2), `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
-    Options.loopEnd(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set loop-end to ${Number(arg)} at ${lastIndex?.index} index`)
+    Options.loopEnd(lastIndexNumber, number);
+    log(1, performance.now().toFixed(2), `Set loop-end to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
@@ -674,14 +679,15 @@ const setLoopEnd = (arg, lastIndex) => {
  * @param {String[]} newArguments - process.argv without 2 starting indexes
  */
 const setSampleRate = (arg, lastIndex, newArguments) => {
-  if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
+  const number = Number(arg);
+  if (typeof number === "number" && !arg.startsWith("-")) {
     if (newArguments.find(testFunctions.stdout)) {
-      Options.stdoutSampleRate = Number(arg);
-      log(1, performance.now().toFixed(2), `Set sample rate for all to ${Number(arg)} because output is stdout`)
+      Options.stdoutSampleRate = number;
+      log(1, performance.now().toFixed(2), `Set sample rate for all to ${number} because output is stdout`)
       return;
     }
-    Options.sampleRate(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set sample rate to ${Number(arg)} at ${lastIndex?.index} index`)
+    Options.sampleRate(Number(lastIndex?.index), number);
+    log(1, performance.now().toFixed(2), `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
@@ -692,16 +698,17 @@ const setSampleRate = (arg, lastIndex, newArguments) => {
  * @param {String} arg - the level of how much it should log
  */
 const setVerboseLevel = async (arg) => {
+  const number = Number(arg);
   const isFromUser = arg !== undefined;
   if (!arg) arg = "2";
   if (!global.fs) global.fs = await import("fs");
-  if (typeof Number(arg) === "number"
-      && !(Number(arg) < 0 && Number(arg) > 2)
+  if (typeof number === "number"
+      && !(number < 0 && number > 2)
       && !arg.startsWith("-")) {
-    Options.verboseLevel = Number(arg);
+    Options.verboseLevel = number;
     if (isFromUser) {
-      log(1, performance.now().toFixed(2), `Set verbose level asked by the user to ${Number(arg)}`)
-    } else log(1, performance.now().toFixed(2), `Set verbose level to ${Number(arg)}`)
+      log(1, performance.now().toFixed(2), `Set verbose level asked by the user to ${number}`)
+    } else log(1, performance.now().toFixed(2), `Set verbose level to ${number}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
@@ -797,22 +804,24 @@ const setEffects = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setVolume = (arg, lastIndex) => {
+  const number = Number(arg),
+        lastIndexNumber = Number(lastIndex?.index);
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
-    Options.volume(Number(lastIndex?.index), toPercentage);
+    Options.volume(lastIndexNumber, toPercentage);
     log(1, performance.now().toFixed(2), `Set volume to ${toPercentage} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
-    Options.volume(Number(lastIndex?.index), percentage / 100);
+    Options.volume(lastIndexNumber, percentage / 100);
     log(1, performance.now().toFixed(2), `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
     return;
   }
-  if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
-    Options.volume(Number(lastIndex?.index), Number(arg));
-    log(1, performance.now().toFixed(2), `Set volume to ${Number(arg)} at ${lastIndex?.index} index`)
+  if (typeof number === "number" && !arg.startsWith("-")) {
+    Options.volume(lastIndexNumber, number);
+    log(1, performance.now().toFixed(2), `Set volume to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
@@ -824,23 +833,25 @@ const setVolume = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setReverb = (arg, lastIndex) => {
+  const number = Number(arg),
+        lastIndexNumber = Number(lastIndex?.index);
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
-    Options.reverbVolume(Number(lastIndex?.index), dBNumber);
-    Options.effects(Number(lastIndex?.index), []);
+    Options.reverbVolume(lastIndexNumber, dBNumber);
+    Options.effects(lastIndexNumber, []);
     log(1, performance.now().toFixed(2), `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     const toDB = 10 * 10**(percentage/100);
-    Options.reverbVolume(Number(lastIndex?.index), toDB);
-    Options.effects(Number(lastIndex?.index), []);
+    Options.reverbVolume(lastIndexNumber, toDB);
+    Options.effects(lastIndexNumber, []);
     log(1, performance.now().toFixed(2), `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
   }
-  if (typeof Number(arg) === "number" && !arg.startsWith("-")) {
-    Options.reverbVolume(Number(lastIndex?.index), Number(arg));
+  if (typeof number === "number" && !arg.startsWith("-")) {
+    Options.reverbVolume(lastIndexNumber, number);
     Options.effects(Number(lastIndex?.index), []);
     log(1, performance.now().toFixed(2), `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
