@@ -40,6 +40,7 @@ function addOptionalArgumentsToFile(args) {
   )
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
   if (process.argv.includes("-l"))   args.push("-l", "1")
+  if (process.argv.includes("-T"))   args.push("-T", "4")
   return args;
 }
 function addOptionalCliArguments(args) {
@@ -64,10 +65,11 @@ function generalCliArguments(mode) {
 
     default:
       return [
-        "-f", "flac", // format
+        "-f", "flac",         // format
         "--dry-run",
-        "--confirm",  // confirmation
-        "--verbose"   // verboseLevel, must be the last
+        "--confirm",          // confirmation
+        "--max-threads", "4", // threads to use for toFile
+        "--verbose"           // verboseLevel, must be the last
       ];
   }
 }
