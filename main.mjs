@@ -235,11 +235,11 @@ if (isToFile?.length > 0) {
       if (global.SIGINT) break;
     }
 
-    const workerDataObject = {
+    const workerData = {
       amountOfSongs, progressBuffers,
       options, index: i, filesListLength
     };
-    workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData: workerDataObject });
+    workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData });
 
     listOfPromises.set(currentThread, (
       new Promise((resolve, reject) => {
@@ -265,7 +265,7 @@ if (isToFile?.length > 0) {
         })
       })
     ))
-    if (i >= maxThreads) workers[currentThread].postMessage(workerDataObject)
+    if (i >= maxThreads) workers[currentThread].postMessage(workerData)
   }
   await Promise.all(listOfPromises.values())
   clearInterval(renderTextsInterval)
@@ -281,7 +281,7 @@ if (isToFile?.length > 0) {
   finalFileOutputs.sort(compareAscendingly)
 
   console.log("Written", finalFileOutputs);
-  if (dryRun) console.error("but actually nothing was written...")
+  if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 }
