@@ -28,16 +28,16 @@ globs.midis = globs.midis.filter(i => i !== manualMidi);
 globs.soundfonts = globs.soundfonts.filter(i => i !== manualSoundfont);
 
 function addOptionalArgumentsToStdout(args) {
-  if (process.argv.includes("-f")) args.push(
-    "out.flac", "out.mp3",
-    "out.pcm"
-  )
+  if (process.argv.includes("-f"))   args.push("-f", "flac")
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
   if (process.argv.includes("-l"))   args.push("-l", "1")
   return args;
 }
 function addOptionalArgumentsToFile(args) {
-  if (process.argv.includes("-fo"))  args.push("out.flac")
+  if (process.argv.includes("-fo")) args.push(
+    "out.flac", "out.mp3",
+    "out.pcm"
+  )
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
   if (process.argv.includes("-l"))   args.push("-l", "1")
   return args;
