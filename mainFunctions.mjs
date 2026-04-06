@@ -186,11 +186,15 @@ async function formatManager({
       fileOutputs[fileOutputs.indexOf(outFile)] = newName;
       outFile = newFileName(outFile, createNewFileNameAnyway);
       if (dryRun) {
-        outFile = dryRun;
+        outFile = undefined;
         doneSettingUpMsg = `Done setting up ${toFileFormat} outFile in dry run mode`;
       }
 
-      const ffmpeg = spawn("ffmpeg", ffmpegArgs(outFile)[toFileFormat]);
+      const ffmpeg = spawn(
+        "ffmpeg",
+        ffmpegArgs(outFile)[toFileFormat],
+        { stdio: ["pipe", ((dryRun) ? "ignore" : "pipe"), "pipe"] }
+      );
       log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (effects) {
         await applyEffects({
