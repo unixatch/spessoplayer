@@ -168,6 +168,40 @@ if (isToStdout) {
 
 // +++ toFile section +++
 if (isToFile?.length > 0) {
+  let calculateMaxThreads;
+  {
+    /*
+      This is managed this way so that
+      _maxThreads is predictable
+      every time the function starts and
+      can't be changed accidentally
+    */
+    let _maxThreads,
+        _maxUsableThreads;
+    const avgCacheMB = 72;
+    calculateMaxThreads = cores => {
+      _maxUsableThreads ??= cores * 2;
+      _maxThreads ??= (
+        (amountOfSongs > _maxUsableThreads) ? _maxUsableThreads : cores
+      );
+
+      // Automatic handling of memory
+      const availableMemoryMB = process.availableMemory() / 1024 / 1024;
+      if (availableMemoryMB < avgCacheMB * _maxUsableThreads) {
+        _maxThreads -= (_maxThreads > 4) ? 4 : 1;
+      }
+      if (_maxThreads * avgCacheMB > availableMemoryMB) {
+        return calculateMaxThreads(cores);
+      }
+
+      const oldMaxThreads = _maxThreads;
+      _maxThreads = null;
+      return oldMaxThreads;
+    };
+  }
+
+  // Calculates amountToRender (length of all songs combined)
+  // before anything else so that the percentages are correct
   const amountOfSongs = Options.amountOfSongs,
         perSongOptions = [];
   const progressBuffers = {
@@ -193,11 +227,7 @@ if (isToFile?.length > 0) {
         listOfPromises = new Map();
   const { Worker } = await import("worker_threads"),
         { availableParallelism } = await import("os"),
-        cores = availableParallelism(),
-        maxThreads = (
-          listOfOptions?.maxThreads
-          ?? ((amountOfSongs > cores * 2) ? cores * 2 : cores)
-        ),
+        maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
         workers = [];
   let fileOutputs,
       firstRender = true,
