@@ -222,6 +222,28 @@ if (isToFile?.length > 0) {
     progress.addToAmountToRender(durationRounded)
   }
 
+  // Loads soundfonts before doing the work
+  // for memory usage reasons
+  const sharedFilesMap = new Map(),
+        promisesOfSharedFiles = [];
+  for (let i = 0; i < amountOfSongs; i++) {
+    const options = perSongOptions[i];
+    if (!options) continue;
+
+    promisesOfSharedFiles.push(
+      new Promise(resolve => {
+        const buffer = fs.readFileSync(options.soundfontFile);
+        const sharedBuffer = new SharedArrayBuffer(buffer.length);
+
+        new Uint8Array(sharedBuffer).set(buffer, 0)
+        sharedFilesMap.set(options.soundfontFile, sharedBuffer)
+        resolve()
+      })
+    )
+  }
+  await Promise.all(promisesOfSharedFiles)
+
+  // Starting the actual work
   const filesListLength = listOfOptions.files.length,
         RENDER_TEXTS_DELAY = 50,
         listOfPromises = new Map();
@@ -268,6 +290,7 @@ if (isToFile?.length > 0) {
       if (global.SIGINT) break;
     }
 
+    options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
     const workerData = {
       amountOfSongs, progressBuffers,
       options, index: i, filesListLength
