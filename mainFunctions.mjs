@@ -344,8 +344,13 @@ async function initSpessaSynth({
       ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
       : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
   );
-  let sf;
-  if (!onlySampleCount) sf = soundFontList[indexOfGroup] ??= fs.readFileSync(soundfontFile);
+  if (!onlySampleCount) {
+    soundFontList[indexOfGroup] ??= (
+      (isToFile)
+        ? soundfontFile
+        : fs.readFileSync(soundfontFile)
+    );
+  }
   const {
     sampleCount,
     durationInSeconds,
@@ -374,7 +379,8 @@ async function initSpessaSynth({
   synth.setMasterParameter("masterGain", volume)
   // Save the SoundFont2 class to soundFontList so that
   // it's a reference and not a copy next time
-  if (Buffer.isBuffer(sf)) {
+  if (Buffer.isBuffer(soundFontList[indexOfGroup])
+      || soundFontList[indexOfGroup] instanceof SharedArrayBuffer) {
     soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
   }
   synth.soundBankManager.addSoundBank(
