@@ -40,19 +40,22 @@ const midiList = [],
  * @return {module:typeDefinitions~ffmpegArgsObj} available formats in Object format
  */
 function ffmpegArgs(outFile = "pipe:1") {
+  const BASIC_FFMPEG_ARGS = [
+    "-loglevel", "fatal",
+    "-hide_banner",
+    "-i", "-"
+  ];
   return {
-    flac: [
-      "-i", "-",
+    flac: BASIC_FFMPEG_ARGS.concat([
       "-f", "flac",
       "-compression_level", "12",
       outFile
-    ],
-    mp3: [
-      "-i", "-",
+    ]),
+    mp3: BASIC_FFMPEG_ARGS.concat([
       "-f", "mp3",
       "-aq", "0",
       outFile
-    ]
+    ])
   };
 }
 /**
