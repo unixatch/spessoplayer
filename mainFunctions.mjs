@@ -347,7 +347,7 @@ async function initSpessaSynth({
       ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
       : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
   );
-  if (!onlySampleCount) {
+  if (!onlySampleCount && !onlyDuration) {
     soundFontList[indexOfGroup] ??= (
       (isToFile)
         ? soundfontFile
