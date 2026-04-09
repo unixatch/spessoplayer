@@ -271,7 +271,9 @@ if (isToFile?.length > 0) {
       // only if it's not in dry run mode
       if (dryRun) return;
       const notENOENT = error => (error.code !== "ENOENT") && console.error(error);
-      for (const {files} of finalFileOutputs) {
+      for (const {files, finished} of finalFileOutputs) {
+        if (finished) continue;
+
         for (const file of files) {
           unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
         }
@@ -314,11 +316,12 @@ if (isToFile?.length > 0) {
             )
             firstRender &&= false;
           }, RENDER_TEXTS_DELAY, progress);
+
           if (message === "DONE_RENDERING") {
             workers[currentThread].removeAllListeners("message")
-            return resolve();
+            return resolve(finalFileOutputs[i].finished = true);
           }
-          if (typeof message === "object") return finalFileOutputs.push(message);
+          if (typeof message === "object") finalFileOutputs[i] = message;
         })
       })
     ))
@@ -331,16 +334,11 @@ if (isToFile?.length > 0) {
     process.exit(130)
   }
 
-
   // Close workers before continuing
   // otherwise it gets stuck
   for (const worker of workers) worker.terminate()
 
-  finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
-  // Sorts them after being asynchronously unorganized
-  const compareAscendingly = (p, i) => p.index - i.index;
-  finalFileOutputs.sort(compareAscendingly)
-
+  finalFileOutputs.forEach(i => delete i.finished)
   console.log("Written", finalFileOutputs);
   if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
   // Required because some child_processes sometimes blocks node from exiting
