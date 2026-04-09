@@ -537,9 +537,14 @@ function addEvent({ eventType, func }) {
       return addAndCheckEvent("SIGINT", SIGINTFunction);
     }
     case "stdoutExit": {
-      return new Promise(async resolve => {
-        const { spawnSync } = child_process ??= await import("child_process");
-        resolve(spawnSync)
+      return new Promise(resolve => {
+        if (child_process) return resolve(child_process.spawnSync);
+
+        import("child_process")
+          .then(module => {
+            child_process ??= module;
+            resolve(module.spawnSync)
+          })
       }).then(spawnSync => {
         function stdoutExit() {
           if (!doneStreaming && !global.SIGINT) return;
