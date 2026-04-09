@@ -621,27 +621,33 @@ function createReadable(Readable, isStdout = false, {
    * @memberof module:main
    */
   function setRenderedAmount() {
+    const {
+      loopCount, currentTime: SCurrentTime,
+      midiData: {
+        midiTicksToSeconds,
+        loop: { start: loopStart }
+      }
+    } = seq;
+
     // Change in loopCount
-    if (lastLoopCount !== seq.loopCount) {
+    if (lastLoopCount !== loopCount) {
       lastCompletelyRenderedSeconds = progress.renderedAmount;
 
-      const loopStart = seq.midiData.loop.start;
-      const currentTime = seq.currentTime - seq.midiData.midiTicksToSeconds(loopStart);
+      const currentTime = SCurrentTime - midiTicksToSeconds(loopStart);
       progress.updateProgress(lastCompletelyRenderedSeconds + currentTime)
 
-      lastLoopCount = seq.loopCount;
+      lastLoopCount = loopCount;
       return;
     }
     // Use the last completely rendered seconds
     // since the last completed loop
     if (lastCompletelyRenderedSeconds) {
-      const loopStart = seq.midiData.loop.start;
-      const currentTime = seq.currentTime - seq.midiData.midiTicksToSeconds(loopStart);
+      const currentTime = SCurrentTime - midiTicksToSeconds(loopStart);
       progress.updateProgress(lastCompletelyRenderedSeconds + currentTime)
       return;
     }
 
-    progress.updateProgress(seq.currentTime)
+    progress.updateProgress(SCurrentTime)
   }
 
   let textRenderingIndex = 0,
