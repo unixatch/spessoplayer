@@ -331,6 +331,16 @@ if (isToFile?.length > 0) {
   clearInterval(renderTextsInterval)
   if (global.SIGINT) {
     await Promise.all(unlinkPromises)
+    console.log(
+      "Written only",
+      finalFileOutputs.filter(i => {
+        if (i.finished) {
+          delete i.finished;
+          return true;
+        }
+      })
+    )
+    if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
     process.exit(130)
   }
 
