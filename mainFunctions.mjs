@@ -22,8 +22,7 @@
 
 import {
   log,
-  newFileName,
-  clearLastLines
+  newFileName
 } from "./utils/utils.mjs"
 
 let stream,
@@ -612,11 +611,10 @@ function addEvent({ eventType, func }) {
  * @return {Readable} a Readable
  */
 function createReadable(Readable, isStdout = false, {
-  sampleCount, sampleRate = 48000,
-  index,
+  sampleCount, index,
   seq, synth,
   getData,
-  amountOfSongs, progressBuffers
+  progressBuffers
 }) {
   /**
    * Sets the rendered amount of seconds
@@ -666,7 +664,7 @@ function createReadable(Readable, isStdout = false, {
         stereoChannels = [left, right],
         progress = (
           (progressBuffers)
-            ? new Progress(amountOfSongs, index, progressBuffers)
+            ? new Progress(undefined, index, progressBuffers)
             : undefined
         );
 
@@ -741,7 +739,7 @@ async function toStdout({
 
   doneStreaming &&= false;
   const readStream = createReadable(Readable, true, {
-    sampleCount, sampleRate: options.sampleRate,
+    sampleCount,
     seq, synth,
     getData
   });
@@ -774,17 +772,15 @@ async function toStdout({
  * @param {Object}      toFileObjectParameters
  * @param {Boolean}     toFileObjectParameters.createNewFileNameAnyway if it's necessary to create a new file name
  * @param {Number}      toFileObjectParameters.index                   index of the song
- * @param {MessagePort} toFileObjectParameters.parentPort              port of the main thread
  * @param {Object}      toFileObjectParameters.progressBuffers         progress shared buffers used by Progress class
- * @param {Number}      toFileObjectParameters.amountOfSongs           total of songs
  * @param {module:typeDefinitions~toFileOptionsObject} toFileObjectParameters.toFileOptionsObject
  * @throws {ReferenceError} - if some required files are missing
  * @return {Promise<module:typeDefinitions~toFileArray>} array that contains the fileOutputs array and a promise
  */
 async function toFile({
   createNewFileNameAnyway, index,
-  parentPort, progressBuffers,
-  amountOfSongs, options
+  progressBuffers,
+  options
 }) {
   if (!options.midiFile
       || !options.soundfontFile
@@ -809,7 +805,7 @@ async function toFile({
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
   const readStream = createReadable(Readable, false, {
-    sampleCount, sampleRate: options.sampleRate,
+    sampleCount,
     seq, synth,
     getData,
     index, progressBuffers

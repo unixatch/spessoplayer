@@ -10,19 +10,19 @@ process.on("unhandledRejection", i => console.error(i))
  * Runs toFile with the provided data and also
  * sends the fileOutputs array back
  * @param {Object} workerDataObj
- * @param {Object} progressBuffers
- * @param {Object} options
- * @param {Number} index
- * @param {Number} filesListLength
+ * @param {Object} workerDataObj.progressBuffers
+ * @param {Object} workerDataObj.options
+ * @param {Number} workerDataObj.index
+ * @param {Number} workerDataObj.filesListLength
  */
 async function runTask({
-  amountOfSongs, progressBuffers,
+  progressBuffers,
   options, index, filesListLength
 }) {
   const [fileOutputs, pipingFunctions, promiseToWait] = await toFile({
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
-    amountOfSongs, progressBuffers,
-    parentPort, index, options
+    progressBuffers,
+    index, options
   })
   parentPort.postMessage({index, files: fileOutputs})
   for (const func of pipingFunctions) if (func) func()

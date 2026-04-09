@@ -57,9 +57,8 @@ if (confirmation) {
 
   const readline = await import("readline/promises");
   async function question() {
-    let answer;
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    answer = await rl.question("Is this setup correct [Y|n]? ");
+    const answer = await rl.question("Is this setup correct [Y|n]? ");
     rl.close()
 
     if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) return;
@@ -251,8 +250,7 @@ if (isToFile?.length > 0) {
         { availableParallelism } = await import("os"),
         maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
         workers = [];
-  let fileOutputs,
-      firstRender = true,
+  let firstRender = true,
       renderTextsInterval,
       finalFileOutputs = [];
 
@@ -279,7 +277,6 @@ if (isToFile?.length > 0) {
   for (let i = 0; i < amountOfSongs; i++) {
     const options = perSongOptions[i];
     if (!options) continue;
-    if (fileOutputs) options.fileOutputs = fileOutputs;
 
     // Waits for all workers to finish
     // if the max of available threads
@@ -292,8 +289,8 @@ if (isToFile?.length > 0) {
 
     options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
     const workerData = {
-      amountOfSongs, progressBuffers,
-      options, index: i, filesListLength
+      progressBuffers, options,
+      index: i, filesListLength
     };
     workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData });
 

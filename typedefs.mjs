@@ -106,12 +106,10 @@
  * @typedef createReadableObjectParameters
  * @type {Object}
  * @property {Number}               sampleCount        sample count
- * @property {Number}               [sampleRate=48000] sample rate
  * @property {Number}               [index]            index of the song
  * @property {SpessaSynthSequencer} seq                spessasynth_core' sequencer
  * @property {SpessaSynthProcessor} synth              spessasynth_core's processor
  * @property {Function}             getData            translator: Float32Arrays → Uint8Arrays
- * @property {Number}               amountOfSongs      total of songs
  * @property {Object}               progressBuffers    Object that contains SharedArrayBuffers
  */
 
