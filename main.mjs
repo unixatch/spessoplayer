@@ -251,7 +251,8 @@ if (isToFile?.length > 0) {
   // Starting the actual work
   const filesListLength = listOfOptions.files.length,
         RENDER_TEXTS_DELAY = 50,
-        listOfPromises = new Map();
+        listOfPromises = new Map(),
+        unlinkPromises = [];
   const { Worker } = await import("worker_threads"),
         { availableParallelism } = await import("os"),
         maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
@@ -271,7 +272,9 @@ if (isToFile?.length > 0) {
       if (dryRun) return;
       const notENOENT = error => (error.code !== "ENOENT") && console.error(error);
       for (const {files} of finalFileOutputs) {
-        for (const file of files) asyncUnlink(file).catch(notENOENT)
+        for (const file of files) {
+          unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
+        }
       }
     }
   })
@@ -323,7 +326,11 @@ if (isToFile?.length > 0) {
   }
   await Promise.all(listOfPromises.values())
   clearInterval(renderTextsInterval)
-  if (global.SIGINT) process.exit(130)
+  if (global.SIGINT) {
+    await Promise.all(unlinkPromises)
+    process.exit(130)
+  }
+
 
   // Close workers before continuing
   // otherwise it gets stuck
