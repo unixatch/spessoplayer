@@ -225,19 +225,25 @@ if (isToFile?.length > 0) {
   // for memory usage reasons
   const sharedFilesMap = new Map(),
         promisesOfSharedFiles = [];
+  const {
+    promises: {
+      stat: asyncStat,
+      readFile: asyncReadFile,
+      unlink: asyncUnlink
+    }
+  } = fs;
   for (let i = 0; i < amountOfSongs; i++) {
-    const options = perSongOptions[i];
-    if (!options) continue;
+    const { soundfontFile } = perSongOptions[i] ?? 0;
+    if (!soundfontFile) continue;
 
     promisesOfSharedFiles.push(
-      new Promise(resolve => {
-        const buffer = fs.readFileSync(options.soundfontFile);
-        const sharedBuffer = new SharedArrayBuffer(buffer.length);
+      asyncReadFile(soundfontFile)
+        .then(buffer => {
+          const sharedBuffer = new SharedArrayBuffer(buffer.length);
 
-        new Uint8Array(sharedBuffer).set(buffer, 0)
-        sharedFilesMap.set(options.soundfontFile, sharedBuffer)
-        resolve()
-      })
+          new Uint8Array(sharedBuffer).set(buffer, 0)
+          sharedFilesMap.set(soundfontFile, sharedBuffer)
+        })
     )
   }
   await Promise.all(promisesOfSharedFiles)
@@ -263,14 +269,9 @@ if (isToFile?.length > 0) {
       // Try to cleanup abandoned files
       // only if it's not in dry run mode
       if (dryRun) return;
+      const notENOENT = error => (error.code !== "ENOENT") && console.error(error);
       for (const {files} of finalFileOutputs) {
-        for (const file of files) {
-          try {
-            fs.unlinkSync(file)
-          } catch (error) {
-            if (error.code !== "ENOENT") console.error(error)
-          }
-        }
+        for (const file of files) asyncUnlink(file).catch(notENOENT)
       }
     }
   })
