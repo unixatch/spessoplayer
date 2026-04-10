@@ -723,7 +723,7 @@ async function toStdout({
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toStdout")
-  const {
+  let {
     seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options });
 
@@ -759,7 +759,9 @@ async function toStdout({
         .then(() => {
           doneStreaming = true;
           synth.soundBankManager.soundBankList.splice(0)
-          return synth.destroySynthProcessor();
+          synth.destroySynthProcessor()
+          delete seq.synth;
+          return seq = null;
         }),
       ...promisesOfPrograms // If there are any
     ])
@@ -788,7 +790,7 @@ async function toFile({
     throw new ReferenceError("Missing some required files")
   }
   log(1, performance.now().toFixed(2), "Started toFile")
-  const {
+  let {
     seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options, isToFile: true });
 
@@ -801,7 +803,7 @@ async function toFile({
     Readable
   } = stream ??= await import("node:stream");
 
-  const stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
+  let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
   const readStream = createReadable(Readable, false, {
@@ -828,8 +830,12 @@ async function toFile({
     Promise.all([
       finished(readStream, { cleanup: true })
         .then(() => {
+          stdoutHeader = null;
           synth.soundBankManager.soundBankList.splice(0)
-          return synth.destroySynthProcessor();
+          synth.destroySynthProcessor()
+          delete seq.synth;
+          seq.songs.length = 0;
+          return seq = null;
         }),
       ...promisesOfPrograms // if there are any
     ])
