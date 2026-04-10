@@ -248,7 +248,7 @@ if (isToFile?.length > 0) {
         finalSize += size * howManyTimes * 2;
         index++
       }
-      return AVG_CACHE_MB * _maxThreads + fileSizes;
+      return AVG_CACHE_MB * _maxThreads + finalSize;
     }
 
     /*
@@ -317,7 +317,7 @@ if (isToFile?.length > 0) {
     // Waits for all workers to finish
     // if the max of available threads
     // at once has been reached
-    const currentThread = i % maxThreads;
+    const currentThread = (maxThreads === 1) ? 0 : i % maxThreads;
     if (i !== 0 && !(currentThread)) {
       await Promise.all(listOfPromises.values())
       if (global.SIGINT) break;
