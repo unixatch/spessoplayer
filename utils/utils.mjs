@@ -170,6 +170,52 @@ function newFileName(path, createAnyway = false) {
   return path;
 }
 /**
+ * Gets sizes asynchronously for all soundfonts in the list
+ * @param {Set[]} filesList list of groups of files
+ * @return {Promise<Number[]>} all sizes in MB
+ */
+async function getSizes(filesList) {
+  const statPromises = [];
+  const { promises: { stat: asyncStat } } = fs;
+
+  for (const group of filesList) {
+    if (!group) continue;
+    const [soundfont] = group;
+
+    statPromises.push(
+      asyncStat(soundfont)
+        .then(({ size }) => size / 1024**2)
+    )
+  }
+  return await Promise.all(statPromises)
+}
+/**
+ * Gives an estimate of RAM usage for all threads combined
+ * @param {Set[]} filesList     list of groups of files
+ * @param {Number[]} fileSizes  list of file sizes
+ * @param {Number} threadsCount threads count
+ * @return {Number} estimate
+ */
+function getUsageEstimate(filesList, fileSizes, threadsCount) {
+  const AVG_MODULE_CACHE_MB = 12;
+  let index = 0,
+      finalSize = 0;
+  for (const group of filesList) {
+    if (!group) { index++; continue; }
+
+    const size = fileSizes[index],
+          [_, ...{ length: midisPerSoundfont }] = group;
+    const howManyTimes = (
+      (midisPerSoundfont > threadsCount)
+        ? threadsCount : midisPerSoundfont
+    );
+    finalSize += size * howManyTimes * 2;
+    index++
+  }
+  return AVG_MODULE_CACHE_MB * threadsCount + finalSize;
+}
+
+/**
  * Adds unshift functionality to Set
  * @param {Array} value - value to add
  * @return {Set} - an updated set with the values added on the left
@@ -656,6 +702,7 @@ export {
   clearLastLines,
   log,
   newFileName,
+  getSizes, getUsageEstimate,
   Options
 }
 

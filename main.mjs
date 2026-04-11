@@ -20,7 +20,11 @@
  * @module main
  */
 
-import { log, clearLastLines } from "./utils/utils.mjs"
+import {
+  log,
+  clearLastLines,
+  getSizes, getUsageEstimate
+} from "./utils/utils.mjs"
 import {
   ffmpegArgs,
   initSpessaSynth,
@@ -170,6 +174,7 @@ if (isToFile?.length > 0) {
   // Calculates amountToRender (length of all songs combined)
   // before anything else so that the percentages are correct
   const amountOfSongs = Options.amountOfSongs,
+        filesList = listOfOptions.files,
         perSongOptions = [];
   const progressBuffers = {
           amountToRender: new SharedArrayBuffer(4),
@@ -216,60 +221,24 @@ if (isToFile?.length > 0) {
   }
   await Promise.all(promisesOfSharedFiles)
 
-  // Threads count calculation
   let calculateMaxThreads;
   {
-    async function getSoundfontSizes() {
-      const statPromises = [];
-
-      for (const group of listOfOptions.files) {
-        if (!group) continue;
-        const [soundfont] = group;
-
-        statPromises.push(
-          asyncStat(soundfont)
-            .then(({ size }) => size / 1024**2)
-        )
-      }
-      return await Promise.all(statPromises)
-    }
-    function getApproximation() {
-      let index = 0,
-          finalSize = 0;
-      for (const group of listOfOptions.files) {
-        if (!group) { index++; continue; }
-
-        const size = fileSizes[index],
-              [_, ...{ length: midisPerSoundfont }] = group;
-        const howManyTimes = (
-          (midisPerSoundfont > _maxThreads)
-            ? _maxThreads : midisPerSoundfont
-        );
-        finalSize += size * howManyTimes * 2;
-        index++
-      }
-      return AVG_CACHE_MB * _maxThreads + finalSize;
-    }
-
     /*
       This is managed this way so that
       _maxThreads is predictable
       every time the function starts and
       can't be changed accidentally
     */
-    let _maxThreads,
-        fileSizes;
-    const AVG_CACHE_MB = 100,
-          OFFSET_MB = 500;
-    calculateMaxThreads = async cores => {
-      _maxThreads ??= cores,
-      fileSizes ??= await getSoundfontSizes();
+    let _maxThreads;
+    const OFFSET_MB = 100;
+    calculateMaxThreads = cores => {
+      _maxThreads ??= cores;
 
       const limitMB = (process.availableMemory() / 1024**2) - OFFSET_MB;
-      if (limitMB < getApproximation()) {
+      if (limitMB < getUsageEstimate(filesList, fileSizes, _maxThreads)) {
         _maxThreads -= (_maxThreads > 4) ? 2 : 1;
       }
-      if (getApproximation() > limitMB) {
+      if (getUsageEstimate(filesList, fileSizes, _maxThreads) > limitMB) {
         return calculateMaxThreads();
       }
 
@@ -284,8 +253,17 @@ if (isToFile?.length > 0) {
         listOfPromises = new Map(),
         unlinkPromises = [];
   const { Worker } = await import("worker_threads"),
-        { availableParallelism } = await import("os"),
-        maxThreads = listOfOptions?.maxThreads ?? await calculateMaxThreads(availableParallelism()),
+        { availableParallelism } = await import("os");
+  const fileSizes = await getSizes(filesList);
+  const resourceLimits = new function () {
+    const getSize = (index, previous) => (previous > index) ? previous : index ;
+    const biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
+    return {
+      maxOldGenerationSizeMb: biggestFileSize,
+      maxYoungGenerationSizeMb: biggestFileSize / 2
+    };
+  };
+  const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
         workers = [];
   let firstRender = true,
       renderTextsInterval,
@@ -328,7 +306,10 @@ if (isToFile?.length > 0) {
       progressBuffers, options,
       index: i, filesListLength
     };
-    const currentWorker = workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData });
+    const currentWorker = workers[currentThread] ??= new Worker(
+      "./fileWriter_worker.mjs",
+      { workerData, resourceLimits }
+    );
 
     listOfPromises.set(currentThread, (
       new Promise((resolve, reject) => {
