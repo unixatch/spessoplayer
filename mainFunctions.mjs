@@ -449,47 +449,49 @@ async function applyEffects({
   //  For SIGINT event to work, sometimes... ↑
   log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs.join(" "))
 
+  sox.stderr.on("data", (data) => {
+    const stringOfError = data.toString();
+    const connectionResetRegex = /sox FAIL sox: `-' error writing output file: Connection reset by peer\n/g,
+          noSeekWarning = /\n*sox WARN \w*:.*can't seek.*\n*/g;
+    // Do not print if these regexes match stringOfError
+    if (stringOfError.match(connectionResetRegex)
+        || stringOfError.match(noSeekWarning)) return;
+
+    const [
+      numbers,
+      overridableDefaults,
+      wrongValue,
+      failText,
+      yellowWarnText,
+      optionalParameters,
+      optionalParametersPatch
+    ] = [
+      /(-*[0-9]+(?:ms|dB|%|q)*)/g,
+      /(\] |\) )(\[)([\w-]*)/g,
+      /(parameter )(`\w*')/g,
+      /(sox FAIL \w*)/g,
+      /(sox WARN \w*)/g,
+      /(\[[ \w|-]*\])/g,
+      /m\[0m/g
+    ];
+    console.error(
+      stringOfError
+        .replace(numbers, `${normalYellow}$1${normal}`)
+        .replace(overridableDefaults, `$1$2${dimGrayBold}$3${normal}`)
+        .replace(wrongValue, `$1${green}$2${normal}`)
+        .replace(failText, `${red}$1${normal}`)
+        .replace(yellowWarnText, `\n${yellow}$1${normal}`)
+        .replace(optionalParameters,`${gray}$1${normal}`)
+        .replace(optionalParametersPatch, "\x1b[0m")
+    )
+  })
   promisesOfPrograms.push(
-    new Promise(resolve => {
-      sox.stderr.on("data", (data) => {
-        const stringOfError = data.toString();
-        // Do not print if these match stringOfError
-        if (stringOfError.match(/sox FAIL sox: `-' error writing output file: Connection reset by peer\n/g)
-            || stringOfError.match(/\n*sox WARN \w*:.*can't seek.*\n*/g)) return;
-
-        const modifiedString = stringOfError
-          .replace( // Adds yellow to numbers
-            /(-*[0-9]+(?:ms|dB|%|q)*)/g,
-            `${normalYellow}$1${normal}`
-          )
-          .replace( // Adds bold gray to the default parameters that can be overriden
-            /(\] |\) )(\[)([\w-]*)/g,
-            `$1$2${dimGrayBold}$3${normal}`
-          )
-          .replace( // Adds green to the parameter that has wrong values
-            /(parameter )(`\w*')/g,
-            `$1${green}$2${normal}`
-          )
-          .replace( // Adds red to the sox FAIL... text
-            /(sox FAIL \w*)/g,
-            `${red}$1${normal}`
-          )
-          .replace( // Adds yellow and a new line to the warn text for programs like mpv
-            /(sox WARN \w*)/g,
-            `\n${yellow}$1${normal}`
-          )
-          .replace( // Adds gray to the optional parameters for the effects
-            /(\[[ \w|-]*\])/g,
-            `${gray}$1${normal}`
-          )
-          // Patch for the regex above
-          .replace(/m\[0m/g, "\x1b[0m");
-
-        console.error(modifiedString);
-      })
+    new Promise((resolve, reject) => {
       sox.on("exit", resolve)
+      sox.on("error", reject)
     })
   )
+
   sox.stdin.write(stdoutHeader)
   readStream?.pipe(sox.stdin)
   log(1, performance.now().toFixed(2), "Finished setting up SoX")
@@ -738,14 +740,14 @@ async function toStdout({
   } = stream ??= await import("node:stream");
 
   doneStreaming &&= false;
-  const readStream = createReadable(Readable, true, {
+  let readStream = createReadable(Readable, true, {
     sampleCount,
     seq, synth,
     getData
   });
 
-  const promisesOfPrograms = [];
-  const pipingFunction = await formatManager({
+  let promisesOfPrograms = [];
+  let pipingFunction = await formatManager({
     format, readStream,
     index, res,
     ...options,
@@ -760,8 +762,11 @@ async function toStdout({
           doneStreaming = true;
           synth.soundBankManager.soundBankList.splice(0)
           synth.destroySynthProcessor()
-          delete seq.synth;
-          return seq = null;
+          return [
+            promisesOfPrograms, pipingFunction,
+            sampleCount, readStream,
+            seq, synth
+          ] = [];
         }),
       ...promisesOfPrograms // If there are any
     ])
@@ -806,14 +811,14 @@ async function toFile({
   let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
 
-  const readStream = createReadable(Readable, false, {
+  let readStream = createReadable(Readable, false, {
     sampleCount,
     seq, synth,
     getData,
     index, progressBuffers
   });
-  const promisesOfPrograms = [],
-        pipingFunctions = [];
+  let promisesOfPrograms = [],
+      pipingFunctions = [];
   for (let outFile of options.fileOutputs) {
     const pipingFunction = await formatManager({
       readStream,
@@ -830,12 +835,14 @@ async function toFile({
     Promise.all([
       finished(readStream, { cleanup: true })
         .then(() => {
-          stdoutHeader = null;
           synth.soundBankManager.soundBankList.splice(0)
           synth.destroySynthProcessor()
-          delete seq.synth;
           seq.songs.length = 0;
-          return seq = null;
+          return [
+            sampleCount, stdoutHeader,
+            readStream, seq, synth,
+            pipingFunctions, promisesOfPrograms
+          ] = [];
         }),
       ...promisesOfPrograms // if there are any
     ])
