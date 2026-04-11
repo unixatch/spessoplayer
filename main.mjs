@@ -328,16 +328,16 @@ if (isToFile?.length > 0) {
       progressBuffers, options,
       index: i, filesListLength
     };
-    workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData });
+    const currentWorker = workers[currentThread] ??= new Worker("./fileWriter_worker.mjs", { workerData });
 
     listOfPromises.set(currentThread, (
       new Promise((resolve, reject) => {
-        const hasErrorEvent = workers[currentThread].listeners("error");
-        const hasExitEvent = workers[currentThread].listeners("exit");
-        if (!hasErrorEvent.length) workers[currentThread].on("error", reject)
-        if (!hasExitEvent.length) workers[currentThread].on("exit", resolve)
+        const hasErrorEvent = currentWorker.listeners("error");
+        const hasExitEvent = currentWorker.listeners("exit");
+        if (!hasErrorEvent.length) currentWorker.on("error", reject)
+        if (!hasExitEvent.length) currentWorker.on("exit", resolve)
 
-        workers[currentThread].on("message", (message) => {
+        currentWorker.on("message", (message) => {
           renderTextsInterval ??= setInterval(progress => {
             if (!firstRender) clearLastLines([0, -1])
             console.error(
@@ -348,14 +348,14 @@ if (isToFile?.length > 0) {
           }, RENDER_TEXTS_DELAY, progress);
 
           if (message === "DONE_RENDERING") {
-            workers[currentThread].removeAllListeners("message")
+            currentWorker.removeAllListeners("message")
             return resolve(finalFileOutputs[i].finished = true);
           }
           if (typeof message === "object") finalFileOutputs[i] = message;
         })
       })
     ))
-    if (i >= maxThreads) workers[currentThread].postMessage(workerData)
+    if (i >= maxThreads) currentWorker.postMessage(workerData)
   }
   await Promise.all(listOfPromises.values())
   clearInterval(renderTextsInterval)
