@@ -174,9 +174,14 @@ if (isToStdout) {
 if (isToFile?.length > 0) {
   // Calculates amountToRender (length of all songs combined)
   // before anything else so that the percentages are correct
-  const amountOfSongs = Options.amountOfSongs,
-        filesList = listOfOptions.files,
-        perSongOptions = [];
+  const amountOfSongs = Options.amountOfSongs;
+  const {
+    files: filesList,
+    files: {
+      length: filesListLength
+    }
+  } = listOfOptions;
+  const perSongOptions = [];
   const progressBuffers = {
           amountToRender: new SharedArrayBuffer(4),
           renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
@@ -206,8 +211,8 @@ if (isToFile?.length > 0) {
       unlink: asyncUnlink
     }
   } = fs;
-  for (let i = 0; i < amountOfSongs; i++) {
-    const { soundfontFile } = perSongOptions[i] ?? 0;
+  for (let i = 0; i < filesListLength; i++) {
+    const [soundfontFile] = filesList[i] ?? 0;
     if (!soundfontFile) continue;
 
     promisesOfSharedFiles.push(
@@ -249,8 +254,7 @@ if (isToFile?.length > 0) {
     };
   }
   // Starting the actual work
-  const filesListLength = listOfOptions.files.length,
-        RENDER_TEXTS_DELAY = 50,
+  const RENDER_TEXTS_DELAY = 50,
         listOfPromises = new Map(),
         unlinkPromises = [];
   const { Worker } = await import("worker_threads"),
