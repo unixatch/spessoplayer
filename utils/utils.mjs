@@ -190,6 +190,19 @@ async function getSizes(filesList) {
   return await Promise.all(statPromises)
 }
 /**
+ * Checks whether the given promise is pending or not
+ * @param {Promise} promise
+ * @return {Promise<true|false>} if it's pending or not
+ */
+async function isPending(promise) {
+  const [promisifySymbol] = Object.getOwnPropertySymbols(setImmediate),
+        asyncSetImmediate = setImmediate[promisifySymbol];
+  return await Promise.race([
+    asyncSetImmediate(true),
+    promise.then(() => false, () => false)
+  ]);
+}
+/**
  * Gives an estimate of RAM usage for all threads combined
  * @param {Set[]} filesList     list of groups of files
  * @param {Number[]} fileSizes  list of file sizes
@@ -702,6 +715,7 @@ export {
   clearLastLines,
   log,
   newFileName,
+  isPending,
   getSizes, getUsageEstimate,
   Options
 }
