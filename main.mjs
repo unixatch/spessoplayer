@@ -23,6 +23,7 @@
 import {
   log,
   clearLastLines,
+  isPending,
   getSizes, getUsageEstimate
 } from "./utils/utils.mjs"
 import {
@@ -338,6 +339,15 @@ if (isToFile?.length > 0) {
     ))
     if (i >= maxThreads) currentWorker.postMessage(workerData)
   }
+  // Terminate last idle workers since they're unused
+  const workersEntries = workers.reverse().entries();
+  for (const [index, worker] of workersEntries) {
+    const promise = listOfPromises.get((maxThreads-1) - index);
+
+    if (await isPending(promise)) break;
+    worker.terminate()
+  }
+
   await Promise.all(listOfPromises.values())
   clearInterval(renderTextsInterval)
   if (global.SIGINT) {

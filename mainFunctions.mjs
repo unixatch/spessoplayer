@@ -29,6 +29,7 @@ let stream,
     audioBuffer,
     SpessaSynth,
     child_process,
+    lastIndexOfGroup = 0,
     doneStreaming = false;
 const midiList = [],
       soundFontList = [];
@@ -347,6 +348,17 @@ async function initSpessaSynth({
       : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
   );
   if (!onlySampleCount && !onlyDuration) {
+    if (isToFile) {
+      const {
+        [lastIndexOfGroup]: lastIndex,
+        [indexOfGroup]: currentIndex
+      } = soundFontList;
+
+      if (lastIndex !== currentIndex) {
+        delete soundFontList[lastIndexOfGroup];
+        lastIndexOfGroup = indexOfGroup;
+      }
+    }
     soundFontList[indexOfGroup] ??= (
       (isToFile)
         ? soundfontFile
