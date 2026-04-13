@@ -190,19 +190,6 @@ async function getSizes(filesList) {
   return await Promise.all(statPromises)
 }
 /**
- * Checks whether the given promise is pending or not
- * @param {Promise} promise
- * @return {Promise<true|false>} if it's pending or not
- */
-async function isPending(promise) {
-  const [promisifySymbol] = Object.getOwnPropertySymbols(setImmediate),
-        asyncSetImmediate = setImmediate[promisifySymbol];
-  return await Promise.race([
-    asyncSetImmediate(true),
-    promise.then(() => false, () => false)
-  ]);
-}
-/**
  * Gives an estimate of RAM usage for all threads combined
  * @param {Set[]} filesList     list of groups of files
  * @param {Number[]} fileSizes  list of file sizes
@@ -228,6 +215,24 @@ function getUsageEstimate(filesList, fileSizes, threadsCount) {
   return AVG_MODULE_CACHE_MB * threadsCount + finalSize;
 }
 
+/**
+ * Creates a new promise with
+ * a pending state property attached to it
+ * @param {Function} executor function that will be run just like new Promise
+ * @return {Promise} a statetable promise
+ */
+Promise.statetable = function (func) {
+  function runWithState(resolve, reject) {
+    const done = () => newPromise.pending = false;
+    func(
+      value => (done(), resolve(value)),
+      reason => (done(), reject(reason))
+    )
+  }
+  const newPromise = new Promise(runWithState);
+  newPromise.pending = true;
+  return newPromise;
+}
 /**
  * Adds unshift functionality to Set
  * @param {Array} value - value to add
@@ -715,7 +720,6 @@ export {
   clearLastLines,
   log,
   newFileName,
-  isPending,
   getSizes, getUsageEstimate,
   Options
 }

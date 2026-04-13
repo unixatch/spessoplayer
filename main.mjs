@@ -23,7 +23,6 @@
 import {
   log,
   clearLastLines,
-  isPending,
   getSizes, getUsageEstimate
 } from "./utils/utils.mjs"
 import {
@@ -317,7 +316,7 @@ if (isToFile?.length > 0) {
     );
 
     listOfPromises.set(currentThread, (
-      new Promise((resolve, reject) => {
+      Promise.statetable((resolve, reject) => {
         const hasErrorEvent = currentWorker.listeners("error");
         const hasExitEvent = currentWorker.listeners("exit");
         if (!hasErrorEvent.length) currentWorker.on("error", reject)
@@ -347,8 +346,7 @@ if (isToFile?.length > 0) {
   const workersEntries = workers.reverse().entries();
   for (const [index, worker] of workersEntries) {
     const promise = listOfPromises.get((maxThreads-1) - index);
-
-    if (await isPending(promise)) break;
+    if (promise.pending) break;
     worker.terminate()
   }
 
