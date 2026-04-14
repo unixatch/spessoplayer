@@ -528,9 +528,7 @@ const setFile = async ({
    */
   function createPromise(func) {
     const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
-    return (!lastSetFilePromise)
-              ? func()
-              : lastSetFilePromise.then(() => func());
+    return lastSetFilePromise?.then(func) ?? func();
   }
   if (lastParam !== undefined && lastParam !== "input") return;
 
@@ -553,9 +551,8 @@ const setFile = async ({
   const inputIndex = Number(lastIndex?.index ?? 0);
   const logMessages = {
     getMessage(type, arg, index) {
-      return (type)
-        ? `Set midi file to "${arg}" at index ${index}`
-        : `Set soundfont file to "${arg}" at index ${index}`;
+      const typeOfFile = type ? "midi" : "soundfont";
+      return `Set ${typeOfFile} file to "${arg}" at index ${index}`;
     },
     getReplacedSoundfont(original, newOne, index) {
       return `Replaced soundfont file from "${original}" to "${newOne}" at index ${index}`;
@@ -625,9 +622,9 @@ const setFile = async ({
 
       if (Options.isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup)) {
         lastKnownGroupIndex++
-      } else {
-        lastKnownGroupIndex = indexOfGroup;
+        break automaticFileCheck;
       }
+      lastKnownGroupIndex = indexOfGroup;
     }
     Options.files(lastKnownGroupIndex, arg, !typeOfFile);
     log(1,

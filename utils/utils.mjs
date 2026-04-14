@@ -638,9 +638,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
     if (isAMidiSearching === undefined) {
       const midiSearchResult = midiSearch();
-      return (midiSearchResult !== false)
-                ? midiSearchResult
-                : soundfontSearch();
+      return (
+        midiSearchResult !== false
+          ? midiSearchResult
+          : soundfontSearch()
+      );
     }
     return (isAMidiSearching) ? soundfontSearch() : midiSearch();
   }
