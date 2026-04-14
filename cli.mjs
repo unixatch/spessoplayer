@@ -128,7 +128,6 @@ const regexes = {
     "|-le(?<index>\\d+)*",
     "|\\/le(?<index>\\d+)*)$"
   ].join("")),
-  fileCheck: /^(?!-|\/)(?:\w|\W)*$/,
 
   infinity: /^(?:Infinity|infinity)$/,
   //                          HH:MM:SS.sss
@@ -153,20 +152,36 @@ const testFunctions = {
  * @return {Promise<String>} - first 20 bytes of file
  */
 async function get20BytesFromFile(path) {
-  return (
-    await new Promise((resolve, reject) => {
-      const readStream = fs.createReadStream(path, { start: 0, end: 20 });
-      readStream.on("data", resolve)
-      readStream.on("error", ({code, message, errno}) => {
-        console.error(
-          (code === "ENOENT")
-            ? `${red}Can't open '${path}' because it doesn't exist${normal}`
-            : `${red}Quitting because ${underline+message+normal}`
-        )
-        reject(process.exit(errno))
-      })
+  const {
+    promise: readPromise,
+    resolve, reject
+  } = Promise.withResolvers();
+
+  fs.createReadStream(path, { start: 0, end: 20 })
+    .on("data", resolve)
+    .on("error", ({code, message, errno}) => {
+      let messageToPrint;
+      switch (code) {
+        case "EACCES":
+          messageToPrint = `${red}Can't open '${path}' because permissions aren't enough${normal}`;
+          break;
+        case "EISDIR":
+          messageToPrint = `${red}Can't read a directory${normal}`;
+          break;
+        case "ENOENT":
+          messageToPrint = `${red}Can't open '${path}' because it doesn't exist${normal}`;
+          break;
+        case "EPERM":
+          messageToPrint = `${red}Can't read '${path}' because it requires elevated permissions to do so${normal}`;
+          break;
+
+        default:
+          messageToPrint = `${red}Quitting because ${underline+message+normal}`;
+      }
+      console.error(messageToPrint)
+      reject(process.exit(errno))
     })
-  )?.toString();
+  return (await readPromise)?.toString();
 }
 const setFilePromises = [];
 /**
@@ -369,7 +384,7 @@ const actUpOnPassedArgs = async (args) => {
         break;
       }
       case (lastParam === "input" || lastParam === undefined)
-            && regexes.fileCheck.test(basename(arg))
+            && (global.fs ??= await import("node:fs")).existsSync(arg)
             && arg: {
         if (doneFileList.get(arg) === doneSymbol) {
           if (lastParam === "input") clearLastVariables()
@@ -377,7 +392,6 @@ const actUpOnPassedArgs = async (args) => {
         }
         doneFileList.set(arg, doneSymbol)
 
-        global.fs ??= await import("node:fs");
         setFilePromises.push(
           setFile({
             indexOfSetFile: indexOfSetFile++,
