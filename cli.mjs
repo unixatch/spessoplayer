@@ -138,10 +138,27 @@ const regexes = {
   percentageNumber: /^([\d.]+)%$/
 };
 const testFunctions = {
-  help: i => regexes.help.test(i),
-  stdout: i => regexes.stdout.test(i),
-  version: i => regexes.version.test(i),
-  uninstall: i => regexes.uninstall.test(i),
+  stdout: set => set.has("-"),
+  help(set) {
+    return (
+      set.has("--help")
+      || set.has("/help")
+      || set.has("-h") || set.has("/h")
+      || set.has("/?")
+    );
+  },
+  version(set) {
+    return (
+      set.has("--version") || set.has("/version")
+      || set.has("-V") || set.has("/V")
+    );
+  },
+  uninstall(set) {
+    return (
+      set.has("--uninstall") || set.has("/uninstall")
+      || set.has("-u") || set.has("/u")
+    );
+  },
   verboseLevel: i => regexes.verboseLevel.test(i),
   logFile: i => regexes.logFile.test(i)
 };
@@ -202,15 +219,15 @@ const actUpOnPassedArgs = async (args) => {
     await help()
     process.exit()
   }
-  if (newArguments.find(testFunctions.help)) {
+  if (testFunctions.help(newArgumentsSet)) {
     await help()
     process.exit()
   }
-  if (newArguments.find(testFunctions.version)) {
+  if (testFunctions.version(newArgumentsSet)) {
     await version()
     process.exit()
   }
-  if (newArguments.find(testFunctions.uninstall)) {
+  if (testFunctions.uninstall(newArgumentsSet)) {
     await uninstall()
     process.exit()
   }
@@ -419,7 +436,7 @@ const actUpOnPassedArgs = async (args) => {
             clearLastVariables()
             break;
           case "sample-rate":
-            setSampleRate(arg, lastIndex, newArguments)
+            setSampleRate(arg, lastIndex, newArgumentsSet)
             clearLastVariables()
             break;
           case "format":
@@ -690,12 +707,12 @@ const setLoopEnd = (arg, lastIndex) => {
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- * @param {String[]} newArguments - process.argv without 2 starting indexes
+ * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
  */
-const setSampleRate = (arg, lastIndex, newArguments) => {
+const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   const number = Number(arg);
   if (typeof number === "number" && !arg.startsWith("-")) {
-    if (newArguments.find(testFunctions.stdout)) {
+    if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutSampleRate = number;
       log(1, performance.now().toFixed(2), `Set sample rate for all to ${number} because output is stdout`)
       return;
