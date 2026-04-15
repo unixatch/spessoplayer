@@ -315,18 +315,22 @@ const actUpOnPassedArgs = async (args) => {
       case regexes.stdout.test(arg): {
         if (Options.isFileMode()) stdoutFileModeConflictError()
         Options.toStdout = true;
+       log(1, performance.now().toFixed(2), "Set stdout mode")
         break;
       }
       case regexes.ask.test(arg): {
         Options.confirmation = true;
+        log(1, performance.now().toFixed(2), "Set confirmation flag")
         break;
       }
       case regexes.noTable.test(arg): {
         Options.noTable = true;
+        log(1, performance.now().toFixed(2), "Set no-table flag")
         break;
       }
       case regexes.dryRun.test(arg): {
         Options.dryRun();
+        log(1, performance.now().toFixed(2), "Set dry-run mode")
         break;
       }
       case regexes.maxThreads.test(arg): {
