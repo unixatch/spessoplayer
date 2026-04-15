@@ -666,8 +666,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
     if (group.size > 2) return false;
     if (group.size < 2) {
-      const parsedFirstFile = parse(group.getIndex(0)),
-            pathUpToName = join(parsedFirstFile.dir, parsedFirstFile.name);
+      const {
+        dir: fileDir, name: fileName
+      } = parse(group.getIndex(0));
+      const pathUpToName = join(fileDir, fileName);
 
       const noExtNewArguments = [...argvWithoutFileExts];
       const indexOfFile = noExtNewArguments.indexOf(pathUpToName);
