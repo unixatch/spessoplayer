@@ -562,7 +562,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {Number} the amount
    */
   static get amountOfSongs() {
-    return this.#listOfSongs.length;
+    return this.#listOfSongs.length / 3;
   }
   /**
    * Gives the amount of groups
@@ -691,7 +691,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     const allOptions = Object.keys(this.#options),
           allOptionsLength = allOptions.length,
           simplifiedOptionsObject = Object.create(null);
-    const actualIndex = index && index + 2;
+    const actualIndex = index && index * 3;
     const {
       [actualIndex]: indexOfGroup,
       [actualIndex+1]: songFile
