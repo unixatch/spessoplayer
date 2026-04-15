@@ -358,6 +358,7 @@ const actUpOnPassedArgs = async (args) => {
       }
       case regexes.effects.test(arg): {
         existsNextValueCheck(arg, newArguments)
+        lastParam = "effects";
         lastIndex = arg.match(regexes.effects)?.groups;
         break;
       }
