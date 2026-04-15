@@ -448,7 +448,9 @@ const actUpOnPassedArgs = async (args) => {
             clearLastVariables()
             break;
           case "max-threads":
-            setMaxThreads(arg)
+            if (!testFunctions.stdout(newArgumentsSet)) {
+              setMaxThreads(arg)
+            } else console.error(`${normalYellow}Ignoring this flag since stdout mode is enabled${normal}`)
             clearLastVariables()
             break;
 
@@ -565,10 +567,7 @@ const setFile = async ({
             || fileMagicNumber.includes("DLS")) needsToBeReplaced = true;
       }
       Options.files(inputIndex, arg, !typeOfFile, needsToBeReplaced)
-      log(1,
-        performance.now().toFixed(2),
-        logMessages.getMessage(typeOfFile, arg, inputIndex)
-      )
+      log(1, logMessages.getMessage(typeOfFile, arg, inputIndex))
     });
   }
 
@@ -587,10 +586,7 @@ const setFile = async ({
     const foundIndex = Options.searchAddedFile(pathUpToName, typeOfFile);
     if (typeof foundIndex === "number") {
       Options.files(foundIndex, arg, !typeOfFile);
-      log(1,
-        performance.now().toFixed(2),
-        logMessages.getMessage(typeOfFile, arg, foundIndex)
-      )
+      log(1, logMessages.getMessage(typeOfFile, arg, foundIndex))
       return;
     }
     if (argvWithoutFileExts instanceof Promise) argvWithoutFileExts = await argvWithoutFileExts;
@@ -598,10 +594,7 @@ const setFile = async ({
     if (checkForIdenticalName(arg)) {
       const amountOfGroups = Options.amountOfGroups;
       Options.files(amountOfGroups, arg, !typeOfFile)
-      log(1,
-        performance.now().toFixed(2),
-        logMessages.getMessage(typeOfFile, arg, amountOfGroups)
-      )
+      log(1, logMessages.getMessage(typeOfFile, arg, amountOfGroups))
       return;
     }
     // It just adds to the last Set it can reach
@@ -625,10 +618,7 @@ const setFile = async ({
       lastKnownGroupIndex = groupSeparator ? ++indexOfGroup : indexOfGroup;
     }
     Options.files(lastKnownGroupIndex, arg, !typeOfFile);
-    log(1,
-      performance.now().toFixed(2),
-      logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex)
-    )
+    log(1, logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex))
   });
   // --- END of automatic addition of files section ---
 }
