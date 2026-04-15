@@ -276,143 +276,116 @@ const actUpOnPassedArgs = async (args) => {
     console.error(`${red}Can't use both stdout and file mode at the same time${normal}`)
     process.exit(1)
   }
+  function existsNextValueCheck(arg, newArguments) {
+    // In case there's no other argument
+    const indexOfArg = newArguments.indexOf(arg);
+    if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+  }
   const isStdout = testFunctions.stdout(newArgumentsSet);
   let indexOfSetFile = 0,
       lastAutomaticFile;
   for (const arg of newArguments) {
-    switch (arg) {
-      case regexes.wav.test(arg) && arg: {
+    switch (true) {
+      case regexes.wav.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(0, arg);
         log(1, performance.now().toFixed(2), "Set file output to wav")
         break;
       }
-      case regexes.flac.test(arg) && arg: {
+      case regexes.flac.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(1, arg);
         log(1, performance.now().toFixed(2), "Set file output to flac")
         break;
       }
-      case regexes.mp3.test(arg) && arg: {
+      case regexes.mp3.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(2, arg);
         log(1, performance.now().toFixed(2), "Set file output to mp3")
         break;
       }
-      case regexes.raw.test(arg) && arg: {
+      case regexes.raw.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(3, arg);
         log(1, performance.now().toFixed(2), "Set file output to pcm")
         break;
       }
-      case regexes.stdout.test(arg) && arg: {
+      case regexes.stdout.test(arg): {
         if (Options.isFileMode()) stdoutFileModeConflictError()
         Options.toStdout = true;
         break;
       }
-      case regexes.ask.test(arg) && arg: {
+      case regexes.ask.test(arg): {
         Options.confirmation = true;
         break;
       }
-      case regexes.noTable.test(arg) && arg: {
+      case regexes.noTable.test(arg): {
         Options.noTable = true;
         break;
       }
-      case regexes.dryRun.test(arg) && arg: {
+      case regexes.dryRun.test(arg): {
         Options.dryRun();
         break;
       }
-      case regexes.maxThreads.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.maxThreads.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "max-threads";
         break;
       }
-      case regexes.input.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.input.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "input";
         lastIndex = arg.match(regexes.input)?.groups;
         break;
       }
-      case regexes.reverbVolume.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.reverbVolume.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "reverb";
         lastIndex = arg.match(regexes.reverbVolume)?.groups;
         break;
       }
-      case regexes.volume.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.volume.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "volume";
         lastIndex = arg.match(regexes.volume)?.groups;
         break;
       }
-      case regexes.effects.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
-        lastParam = "effects";
+      case regexes.effects.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastIndex = arg.match(regexes.effects)?.groups;
         break;
       }
-      case regexes.format.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.format.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "format";
         break;
       }
-      case regexes.sampleRate.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.sampleRate.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "sample-rate";
         lastIndex = arg.match(regexes.sampleRate)?.groups;
         break;
       }
-      case regexes.loopStart.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.loopStart.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "loop-start";
         lastIndex = arg.match(regexes.loopStart)?.groups;
         break;
       }
-      case regexes.loopEnd.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.loopEnd.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "loop-end";
         lastIndex = arg.match(regexes.loopEnd)?.groups;
         break;
       }
-      case regexes.loop.test(arg) && arg: {
-        // In case there's no other argument
-        const indexOfArg = newArguments.indexOf(arg);
-        if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
-
+      case regexes.loop.test(arg): {
+        existsNextValueCheck(arg, newArguments)
         lastParam = "loop";
         lastIndex = arg.match(regexes.loop)?.groups;
         break;
       }
       case (lastParam === "input" || lastParam === undefined)
-            && (global.fs ??= await import("node:fs")).existsSync(arg)
-            && arg: {
+            && (global.fs ??= await import("node:fs")).existsSync(arg): {
         if (doneFileList.get(arg) === doneSymbol) {
           if (lastParam === "input") clearLastVariables()
           break;
