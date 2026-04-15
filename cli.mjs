@@ -945,19 +945,40 @@ const help = async ({ errorText } = "") => {
   Usage:
     ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
 
+  Ways to add files:
+    There are 2 main ways to add files:
+      - Using the ${dimGreen}input${normal} parameter with/without an index;
+      - Using the group separator (${dimGreen}\\|${normal} or ${dimGreen}"\|"${normal});
+
+    First option is for when you need to
+    really force the order of groups
+
+    Second option is more suitable for most common cases
+    and you should it try first when
+    the automatic order is not good enough
+
+    Here some examples:
+    ${italics}  song.mid song2.mid soundfontfile.sf2
+
+    ${italics}  song.mid song2.mid soundfontfile.sf2
+    ${italics}  \\| another_song.mid another_song2.mid another_soundfont.sf2${normal}
+
+    ${italics}  -i song.mid -i song2.mid -i soundfontfile.sf2
+    ${italics}  -i2 song.mid -i2 song2.mid -i2 soundfontfile.sf2
+
   Available parameters:
     ${green}--input${optionalIndex}, ${green}/input${optionalIndex},
      ${green}-i${optionalIndex}, ${green}/i${optionalIndex}:
-      ${dimGray+italics}Takes the next file and puts it in the list by index${normal}
+      ${dimGray+italics}Takes the following file and puts it in the list by n${normal}
 
     ${green}--volume${optionalIndex}, ${green}/volume${optionalIndex},
      ${green}-vol${optionalIndex}, ${green}/vol${optionalIndex}:
       ${dimGray+italics}Volume to set (default: 100%)${normal}
 
       ${dimGray+italics}Available formats:${normal}
-      ${dimGray+italics}- dB (example -10dB)${normal}
-      ${dimGray+italics}- percentages (example 70%)${normal}
-      ${dimGray+italics}- decimals (example 0.9)${normal}
+        ${dimGray+italics}- dB (example -10dB)${normal}
+        ${dimGray+italics}- percentages (example 70%)${normal}
+        ${dimGray+italics}- decimals (example 0.9)${normal}
 
     ${green}--reverb-volume${optionalIndex}, ${green}/reverb-volume${optionalIndex},
      ${green}-rvb${optionalIndex}, ${green}/rvb${optionalIndex}:
@@ -992,10 +1013,10 @@ const help = async ({ errorText } = "") => {
       ${dimGray+italics}Format to use for stdout (default: wav)${normal}
 
       ${dimGray+italics}Available formats:${normal}
-      ${dimGray+italics}- wav${normal}
-      ${dimGray+italics}- mp3${normal}
-      ${dimGray+italics}- flac${normal}
-      ${dimGray+italics}- pcm (s32le)${normal}
+        ${dimGray+italics}- wav${normal}
+        ${dimGray+italics}- mp3${normal}
+        ${dimGray+italics}- flac${normal}
+        ${dimGray+italics}- pcm (s32le)${normal}
 
     ${green}--max-threads${normal}, ${green}/max-threads${normal}, ${green}--threads${normal}, ${green}/threads${normal},
      ${green}-mt${normal}, ${green}/mt${normal}, ${green}-T${normal}, ${green}/T${normal}:
