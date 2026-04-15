@@ -367,6 +367,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @type {Array}
    * @property {Number} index - group index
    * @property {String} file - filename of song
+   * @property {String} fileWithoutExt - filename of song without extension
    * @private
    */
   /**
@@ -550,11 +551,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     groups[index].add(string)
 
     if (oldSize === groups[index].size) return;
-    this.#listOfSongs.push([
+    this.#listOfSongs.push(
       index,
       string,
       join(parsedPath.dir, parsedPath.name)
-    ])
+    )
   }
   /**
    * Gives the amount of songs to do
@@ -637,9 +638,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       return (indexOfGroup !== undefined) ? indexOfGroup : false;
     };
     const midiSearch = () => {
-      const flattenMidis = [].concat(...this.#listOfSongs);
-      const indexOfName = flattenMidis.indexOf(name);
-      return (indexOfName !== -1) ? flattenMidis[indexOfName-2] : false;
+      const indexOfName = this.#listOfSongs.indexOf(name);
+      return (indexOfName !== -1) ? this.#listOfSongs[indexOfName-2] : false;
     };
 
     if (isAMidiSearching === undefined) {
@@ -689,7 +689,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     const allOptions = Object.keys(this.#options),
           allOptionsLength = allOptions.length,
           simplifiedOptionsObject = Object.create(null);
-    const [indexOfGroup, songFile] = this.#listOfSongs[index];
+    const actualIndex = index && index + 2;
+    const {
+      [actualIndex]: indexOfGroup,
+      [actualIndex+1]: songFile
+    } = this.#listOfSongs;
     const group = this.#options.files[indexOfGroup];
 
     simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
