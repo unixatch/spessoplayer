@@ -69,6 +69,7 @@
  * @property {String}               lastParam         last parameter that has been used last time
  * @property {lastIndexGroupObject} lastIndex         last index object
  * @property {String}               lastAutomaticFile last file that has been set automatically
+ * @property {Boolean}              groupSeparator    if the group separator has been used
  * @property {String[]}             newArguments      arguments passed from the terminal
  * @property {String}               arg               argument passed to this function that is also a file path
  */

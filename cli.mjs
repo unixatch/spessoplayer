@@ -283,9 +283,11 @@ const actUpOnPassedArgs = async (args) => {
   }
   const isStdout = testFunctions.stdout(newArgumentsSet);
   let indexOfSetFile = 0,
-      lastAutomaticFile;
+      lastAutomaticFile,
+      groupSeparator;
   for (const arg of newArguments) {
     switch (true) {
+      case arg === "|": { groupSeparator = true; break; }
       case regexes.wav.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(0, arg);
@@ -395,12 +397,14 @@ const actUpOnPassedArgs = async (args) => {
         setFilePromises.push(
           setFile({
             indexOfSetFile: indexOfSetFile++,
-            lastParam, lastIndex, lastAutomaticFile,
+            lastParam, lastIndex,
+            lastAutomaticFile, groupSeparator,
             newArguments: noDuplicates, arg
           })
         )
         if (!lastParam) lastAutomaticFile = arg;
         if (lastParam === "input") clearLastVariables()
+        groupSeparator &&= undefined;
         break;
       }
 
@@ -482,7 +486,8 @@ const actUpOnPassedArgs = async (args) => {
  */
 const setFile = async ({
   indexOfSetFile,
-  lastParam, lastIndex, lastAutomaticFile,
+  lastParam, lastIndex,
+  lastAutomaticFile, groupSeparator,
   newArguments, arg
 }) => {
   /**
@@ -599,15 +604,20 @@ const setFile = async ({
     // or maybe to the last automatic group
     // if a file has been added automatically last time
     if (lastAutomaticFile) automaticFileCheck: {
-      const pathUpToName = join(parse(lastAutomaticFile).dir, parse(lastAutomaticFile).name);
-      const indexOfGroup = Options.searchAddedFile(pathUpToName);
+      const {
+        dir: fileDir, name: fileName
+      } = parse(lastAutomaticFile);
+      const pathUpToName = join(fileDir, fileName);
+      let indexOfGroup = Options.searchAddedFile(pathUpToName);
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
 
       if (Options.isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup)) {
         lastKnownGroupIndex++
         break automaticFileCheck;
       }
-      lastKnownGroupIndex = indexOfGroup;
+      // or it creates a new group
+      // if the group separator has been used
+      lastKnownGroupIndex = groupSeparator ? ++indexOfGroup : indexOfGroup;
     }
     Options.files(lastKnownGroupIndex, arg, !typeOfFile);
     log(1,
