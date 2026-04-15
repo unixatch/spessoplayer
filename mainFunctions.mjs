@@ -159,7 +159,7 @@ async function formatManager({
             effects: (Array.isArray(effects)) ? effects[index] : undefined
           })
         }
-        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        log(1, doneSettingUpMsg)
         break;
       }
       if (isToFile) {
@@ -173,13 +173,13 @@ async function formatManager({
           )
         })
       } else addPipingFunction()
-      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      log(1, doneSettingUpMsg)
       break;
     }
     case "flac":
     case "mp3": {
       addPipingFunction()
-      log(1, performance.now().toFixed(2), `Done setting up ${format} format${(dryRun) ? " in dry run mode" : ""}`)
+      log(1, `Done setting up ${format} format${(dryRun) ? " in dry run mode" : ""}`)
       break;
     }
     case /^.*\.flac$/.test(outFile):
@@ -198,7 +198,7 @@ async function formatManager({
         ffmpegArgs(outFile)[toFileFormat],
         { stdio: ["pipe", ((dryRun) ? "ignore" : "pipe"), "pipe"] }
       );
-      log(1, performance.now().toFixed(2), "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
+      log(1, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (effects) {
         await applyEffects({
           program: "sox",
@@ -207,7 +207,7 @@ async function formatManager({
           stdout: ffmpeg.stdin,
           effects: (Array.isArray(effects)) ? effects[index] : undefined
         })
-        log(1, performance.now().toFixed(2), doneSettingUpMsg)
+        log(1, doneSettingUpMsg)
         break;
       }
       promisesOfPrograms.push(
@@ -216,7 +216,7 @@ async function formatManager({
           ffmpeg.on("exit", resolve)
         })
       )
-      log(1, performance.now().toFixed(2), "Added promise")
+      log(1, "Added promise")
       addPipingFunction(() => {
         ffmpeg.stdin.write(stdoutHeader)
         addErrorEventToDest(
@@ -226,7 +226,7 @@ async function formatManager({
           ffmpeg
         )
       })
-      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      log(1, doneSettingUpMsg)
       break;
     }
     case "pcm":
@@ -274,7 +274,7 @@ async function formatManager({
             .pipe(destination, { end })
         )
       })
-      log(1, performance.now().toFixed(2), doneSettingUpMsg)
+      log(1, doneSettingUpMsg)
     }
   }
   return pipingFunction;
@@ -313,7 +313,7 @@ function getSampleCount({
     durationInSeconds = midi.duration + ((end - loopStart) * possibleLoopAmount);
     sampleCount = Math.ceil(sampleRate * durationInSeconds);
   }
-  log(1, performance.now().toFixed(2), "Sample count set to " + sampleCount)
+  log(1, "Sample count set to " + sampleCount)
   return {
     loopDetectedInMidi,
     durationInSeconds,
@@ -407,7 +407,7 @@ async function initSpessaSynth({
   seq.loopCount = loopAmount;
   seq.play();
 
-  log(1, performance.now().toFixed(2), "Finished setting up SpessaSynth")
+  log(1, "Finished setting up SpessaSynth")
   return {
     seq, synth,
     midi,
@@ -459,7 +459,7 @@ async function applyEffects({
     ...effects
   ], {stdio: ["pipe", stdout, "pipe"], detached: true})
   //  For SIGINT event to work, sometimes... ↑
-  log(1, performance.now().toFixed(2), "Spawned SoX with " + sox.spawnargs.join(" "))
+  log(1, "Spawned SoX with " + sox.spawnargs.join(" "))
 
   sox.stderr.on("data", (data) => {
     const stringOfError = data.toString();
@@ -506,7 +506,7 @@ async function applyEffects({
 
   sox.stdin.write(stdoutHeader)
   readStream?.pipe(sox.stdin)
-  log(1, performance.now().toFixed(2), "Finished setting up SoX")
+  log(1, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
 /**
@@ -716,7 +716,7 @@ function createReadable(Readable, isStdout = false, {
       this.push(null)
     }
   });
-  log(1, performance.now().toFixed(2), `Created Readable for ${(isStdout) ? "toStdout" : "toFile"}`)
+  log(1, `Created Readable for ${(isStdout) ? "toStdout" : "toFile"}`)
   return readStream;
 }
 /**
@@ -736,14 +736,14 @@ async function toStdout({
   if (!options.midiFile || !options.soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
-  log(1, performance.now().toFixed(2), "Started toStdout")
+  log(1, "Started toStdout")
   let {
     seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options });
 
   if (!res && !process.listenerCount("exit")) {
     addEvent({ eventType: "stdoutExit" })
-    log(1, performance.now().toFixed(2), "Added event exit")
+    log(1, "Added event exit")
   }
   const { getData } = audioBuffer ??= await import("./audioBuffer.mjs");
   const {
@@ -765,7 +765,7 @@ async function toStdout({
     ...options,
     promisesOfPrograms
   });
-  log(1, performance.now().toFixed(2), "Finished creating the stdout promise")
+  log(1, "Finished creating the stdout promise")
   return [
     pipingFunction,
     Promise.all([
@@ -806,7 +806,7 @@ async function toFile({
       || options.fileOutputs.length === 0) {
     throw new ReferenceError("Missing some required files")
   }
-  log(1, performance.now().toFixed(2), "Started toFile")
+  log(1, "Started toFile")
   let {
     seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options, isToFile: true });
@@ -821,7 +821,7 @@ async function toFile({
   } = stream ??= await import("node:stream");
 
   let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
-  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
+  log(1, "Created header file ", stdoutHeader)
 
   let readStream = createReadable(Readable, false, {
     sampleCount,
@@ -1042,12 +1042,12 @@ async function startPlayer(Options) {
         // TODO: effects system needs to overhauled
         //effects: listOfOptions?.effects[0]
       });
-      log(1, performance.now().toFixed(2), "Done setting up SoX")
+      log(1, "Done setting up SoX")
     } else if (needsConvertion) {
       // Or just a convertion/normal processing
       converterProcess.stdin.write(stdoutHeader)
     }
-    log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
+    log(1, "Created header file ", stdoutHeader)
 
     let destination;
     // When SoX exists

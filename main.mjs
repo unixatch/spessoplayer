@@ -38,13 +38,13 @@ import {
 
 addEvent({ eventType: "SIGINT" })
 process.on("unhandledRejection", i => console.error(i))
-log(1, performance.now().toFixed(2), "Added SIGINT event")
+log(1, "Added SIGINT event")
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
   Options
 } = await import("./cli.mjs");
-log(1, performance.now().toFixed(2), "Checking passed args...")
+log(1, "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
 const listOfOptions = Options.all;
 const {
@@ -135,12 +135,12 @@ if (isToStdout) {
       // TODO: effects system needs to overhauled
       //effects: listOfOptions?.effects[0]
     });
-    log(1, performance.now().toFixed(2), "Done setting up SoX")
+    log(1, "Done setting up SoX")
   } else if (needsConvertion) {
     // Or just a convertion/normal processing
     converterProcess.stdin.write(stdoutHeader)
   }
-  log(1, performance.now().toFixed(2), "Created header file ", stdoutHeader)
+  log(1, "Created header file ", stdoutHeader)
 
   let destination;
   // When SoX exists

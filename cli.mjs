@@ -243,9 +243,9 @@ const actUpOnPassedArgs = async (args) => {
 
     if (!process.env["DEBUG_LEVEL_SPESSO"]) {
       await setVerboseLevel(verboseOptionNumber)
-    } else log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+    } else log(1, `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
   } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
-    log(1, performance.now().toFixed(2), `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
+    log(1, `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
   }
   const isPathOfLogFileSet = newArguments.find(testFunctions.logFile);
   if (isPathOfLogFileSet
@@ -263,9 +263,9 @@ const actUpOnPassedArgs = async (args) => {
 
     if (!process.env["DEBUG_FILE_SPESSO"]) {
       setLogFilePath(pathOfLogFile)
-    } else log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+    } else log(1, `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
   } else if (process.env["DEBUG_FILE_SPESSO"]) {
-    log(1, performance.now().toFixed(2), `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+    log(1, `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
   }
 
   function clearLastVariables() {
@@ -291,46 +291,46 @@ const actUpOnPassedArgs = async (args) => {
       case regexes.wav.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(0, arg);
-        log(1, performance.now().toFixed(2), "Set file output to wav")
+        log(1, "Set file output to wav")
         break;
       }
       case regexes.flac.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(1, arg);
-        log(1, performance.now().toFixed(2), "Set file output to flac")
+        log(1, "Set file output to flac")
         break;
       }
       case regexes.mp3.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(2, arg);
-        log(1, performance.now().toFixed(2), "Set file output to mp3")
+        log(1, "Set file output to mp3")
         break;
       }
       case regexes.raw.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(3, arg);
-        log(1, performance.now().toFixed(2), "Set file output to pcm")
+        log(1, "Set file output to pcm")
         break;
       }
       case regexes.stdout.test(arg): {
         if (Options.isFileMode()) stdoutFileModeConflictError()
         Options.toStdout = true;
-       log(1, performance.now().toFixed(2), "Set stdout mode")
+       log(1, "Set stdout mode")
         break;
       }
       case regexes.ask.test(arg): {
         Options.confirmation = true;
-        log(1, performance.now().toFixed(2), "Set confirmation flag")
+        log(1, "Set confirmation flag")
         break;
       }
       case regexes.noTable.test(arg): {
         Options.noTable = true;
-        log(1, performance.now().toFixed(2), "Set no-table flag")
+        log(1, "Set no-table flag")
         break;
       }
       case regexes.dryRun.test(arg): {
         Options.dryRun();
-        log(1, performance.now().toFixed(2), "Set dry-run mode")
+        log(1, "Set dry-run mode")
         break;
       }
       case regexes.maxThreads.test(arg): {
@@ -641,7 +641,7 @@ const setLoop = (arg, lastIndex) => {
         lastIndexNumber = Number(lastIndex?.index);
   if (typeof number === "number" && !regexes.infinity.test(arg)) {
     Options.loopAmount(lastIndexNumber, number);
-    log(1, performance.now().toFixed(2), `Set loop amount to ${number} at ${lastIndex?.index} index`)
+    log(1, `Set loop amount to ${number} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.infinity.test(arg)) {
@@ -664,11 +664,11 @@ const setLoopStart = (arg, lastIndex) => {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       Options.loopStart(lastIndexNumber, seconds);
-      log(1, performance.now().toFixed(2), `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
+      log(1, `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
     Options.loopStart(lastIndexNumber, number);
-    log(1, performance.now().toFixed(2), `Set loop-start to ${number} at ${lastIndex?.index} index`)
+    log(1, `Set loop-start to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
@@ -687,11 +687,11 @@ const setLoopEnd = (arg, lastIndex) => {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
       Options.loopEnd(lastIndexNumber, seconds);
-      log(1, performance.now().toFixed(2), `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
+      log(1, `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
     Options.loopEnd(lastIndexNumber, number);
-    log(1, performance.now().toFixed(2), `Set loop-end to ${number} at ${lastIndex?.index} index`)
+    log(1, `Set loop-end to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
@@ -708,11 +708,11 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   if (typeof number === "number" && !arg.startsWith("-")) {
     if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutSampleRate = number;
-      log(1, performance.now().toFixed(2), `Set sample rate for all to ${number} because output is stdout`)
+      log(1, `Set sample rate for all to ${number} because output is stdout`)
       return;
     }
     Options.sampleRate(Number(lastIndex?.index), number);
-    log(1, performance.now().toFixed(2), `Set sample rate to ${number} at ${lastIndex?.index} index`)
+    log(1, `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
@@ -732,8 +732,8 @@ const setVerboseLevel = async (arg) => {
       && !arg.startsWith("-")) {
     Options.verboseLevel = number;
     if (isFromUser) {
-      log(1, performance.now().toFixed(2), `Set verbose level asked by the user to ${number}`)
-    } else log(1, performance.now().toFixed(2), `Set verbose level to ${number}`)
+      log(1, `Set verbose level asked by the user to ${number}`)
+    } else log(1, `Set verbose level to ${number}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
@@ -747,22 +747,22 @@ const setFormat = arg => {
   switch (arg) {
     case regexes.wavFormat.test(arg) && arg: {
       Options.format = "wave";
-      log(1, performance.now().toFixed(2), `Set stdout format to "wave"`)
+      log(1, `Set stdout format to "wave"`)
       return;
     }
     case "flac": {
       Options.format = "flac";
-      log(1, performance.now().toFixed(2), `Set stdout format to "flac"`)
+      log(1, `Set stdout format to "flac"`)
       return;
     }
     case "mp3": {
       Options.format = "mp3";
-      log(1, performance.now().toFixed(2), `Set stdout format to "mp3"`)
+      log(1, `Set stdout format to "mp3"`)
       return;
     }
     case regexes.rawFormat.test(arg) && arg: {
       Options.format = "pcm";
-      log(1, performance.now().toFixed(2), `Set stdout format to "pcm"`)
+      log(1, `Set stdout format to "pcm"`)
       return;
     }
   }
@@ -817,7 +817,7 @@ const setEffects = (arg, lastIndex) => {
     }
 
     Options.effects(Number(lastIndex?.index), list);
-    log(1, performance.now().toFixed(2), `Set list of SoX effects as ${global.effects}`)
+    log(1, `Set list of SoX effects as ${global.effects}`)
     return;
   }
   console.error(`${normalRed}The string for SoX effects you passed is not usable${normal}`);
@@ -835,18 +835,18 @@ const setVolume = (arg, lastIndex) => {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
     Options.volume(lastIndexNumber, toPercentage);
-    log(1, performance.now().toFixed(2), `Set volume to ${toPercentage} at ${lastIndex?.index} index`)
+    log(1, `Set volume to ${toPercentage} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     Options.volume(lastIndexNumber, percentage / 100);
-    log(1, performance.now().toFixed(2), `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
+    log(1, `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
     return;
   }
   if (typeof number === "number" && !arg.startsWith("-")) {
     Options.volume(lastIndexNumber, number);
-    log(1, performance.now().toFixed(2), `Set volume to ${number} at ${lastIndex?.index} index`)
+    log(1, `Set volume to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
@@ -864,7 +864,7 @@ const setReverb = (arg, lastIndex) => {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     Options.reverbVolume(lastIndexNumber, dBNumber);
     Options.effects(lastIndexNumber, []);
-    log(1, performance.now().toFixed(2), `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
+    log(1, `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
@@ -872,13 +872,13 @@ const setReverb = (arg, lastIndex) => {
     const toDB = 10 * 10**(percentage/100);
     Options.reverbVolume(lastIndexNumber, toDB);
     Options.effects(lastIndexNumber, []);
-    log(1, performance.now().toFixed(2), `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
+    log(1, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (typeof number === "number" && !arg.startsWith("-")) {
     Options.reverbVolume(lastIndexNumber, number);
     Options.effects(Number(lastIndex?.index), []);
-    log(1, performance.now().toFixed(2), `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
+    log(1, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
@@ -895,7 +895,7 @@ const setMaxThreads = async (arg) => {
       && number <= availableParallelism() * 2
       && number >= 1) {
     Options.maxThreads = number;
-    log(1, performance.now().toFixed(2), `Set max threads to ${number}`)
+    log(1, `Set max threads to ${number}`)
     return;
   }
   console.error(`${normalRed}Passed something that wasn't a valid number of threads${normal}`)
@@ -907,7 +907,7 @@ const setMaxThreads = async (arg) => {
  */
 const setLogFilePath = arg => {
   Options.logFilePath = arg ?? "./spesso.log";
-  log(1, performance.now().toFixed(2), `Set log file path to ${arg ?? "./spesso.log"}`)
+  log(1, `Set log file path to ${arg ?? "./spesso.log"}`)
 }
 /**
  * Runs uninstall.mjs and uninstall spessoplayer
@@ -917,7 +917,7 @@ const uninstall = async () => {
   const uninstallScriptPath = join(import.meta.dirname, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
 
-  log(1, performance.now().toFixed(2), `Launched ${uninstallScriptPath}`)
+  log(1, `Launched ${uninstallScriptPath}`)
   try {
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
   } catch (e) {
@@ -927,7 +927,7 @@ const uninstall = async () => {
     }
     if (e.status === 2) process.exit(2)
   }
-  log(1, performance.now().toFixed(2), "Uninstalling spessoplayer")
+  log(1, "Uninstalling spessoplayer")
   execSync(`npm uninstall ${(isGloballyInstalled) ? "-g" : ""} spessoplayer`, { cwd: ".", stdio: "inherit" })
 }
 /**
@@ -1087,7 +1087,7 @@ const version = async () => {
   const packageJSONPath = join(import.meta.dirname, "package.json");
   const { version: versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
 
-  log(1, performance.now().toFixed(2), `Taken version number from ${packageJSONPath}`)
+  log(1, `Taken version number from ${packageJSONPath}`)
   console.log(`${green + versionNumber + normal}`)
 }
 

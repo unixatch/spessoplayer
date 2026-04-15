@@ -76,13 +76,13 @@ const clearLastLines = lines => {
 /**
  * Logger
  * @param {Number} level - level of the log
- * @param {String} time - time that it takes to creates this log
  * @param {Array<(String|Uint8Array<ArrayBufferLike>)>} messages - messages to print
  */
-function log(level, time, ...messages) {
-  const spacesAmount = new Date().toISOString().length + (time.length + 7) + 2;
-  const debugLevelSpesso = Number(process.env["DEBUG_LEVEL_SPESSO"]);
-  const debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
+function log(level, ...messages) {
+  const time = performance.now().toFixed(2),
+        spacesAmount = new Date().toISOString().length + (time.length + 7) + 2;
+  const debugLevelSpesso = Number(process.env["DEBUG_LEVEL_SPESSO"]),
+        debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
   if (Number.isNaN(debugLevelSpesso)
       && Options.verboseLevel === undefined) return;
   if (debugLevelSpesso > level
