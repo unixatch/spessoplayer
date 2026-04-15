@@ -119,6 +119,13 @@ class MainOptions {
     this._manageOption({property: "fileOutputs", index, value: string}, true, true)
   }
   /**
+   * Checks if it has fileOutputs
+   * @return {Boolean} file mode or not
+   */
+  static isFileMode() {
+    return this._manageOption({property: "fileOutputs"}, false);
+  }
+  /**
    * Change general volume of a specific file
    * @param {Number} index - index of the file
    * @param {Number} number - volume value as a float or integer

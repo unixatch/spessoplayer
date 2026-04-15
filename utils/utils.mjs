@@ -469,7 +469,13 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "logFilePath":
       case "dryRun":
       case "format": {
-        if (!needsToBeSet) return;
+        if (!needsToBeSet) {
+          return (
+            property === "fileOutputs"
+              ? "fileOutputs" in this.#options
+              : undefined
+          );
+        }
 
         this.#checkValueAndExistence(
           value, "string", (needsAnArray) ? property : undefined

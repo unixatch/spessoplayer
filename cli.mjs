@@ -272,31 +272,41 @@ const actUpOnPassedArgs = async (args) => {
     lastParam = undefined,
     lastIndex = undefined;
   }
+  function stdoutFileModeConflictError() {
+    console.error(`${red}Can't use both stdout and file mode at the same time${normal}`)
+    process.exit(1)
+  }
+  const isStdout = testFunctions.stdout(newArgumentsSet);
   let indexOfSetFile = 0,
       lastAutomaticFile;
   for (const arg of newArguments) {
     switch (arg) {
       case regexes.wav.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(0, arg);
         log(1, performance.now().toFixed(2), "Set file output to wav")
         break;
       }
       case regexes.flac.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(1, arg);
         log(1, performance.now().toFixed(2), "Set file output to flac")
         break;
       }
       case regexes.mp3.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(2, arg);
         log(1, performance.now().toFixed(2), "Set file output to mp3")
         break;
       }
       case regexes.raw.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(3, arg);
         log(1, performance.now().toFixed(2), "Set file output to pcm")
         break;
       }
       case regexes.stdout.test(arg) && arg: {
+        if (Options.isFileMode()) stdoutFileModeConflictError()
         Options.toStdout = true;
         break;
       }
