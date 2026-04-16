@@ -201,6 +201,14 @@ async function get20BytesFromFile(path) {
   return (await readPromise)?.toString();
 }
 const setFilePromises = [];
+const {
+  [0]: WAV_INDEX,  [1]: RAW_INDEX,
+  [2]: FLAC_INDEX, [3]: MP3_INDEX
+} = [...Array(4).keys()];
+export const FO_CONSTANTS = {
+  WAV_INDEX,  RAW_INDEX,
+  FLAC_INDEX, MP3_INDEX
+};
 /**
  * Sets necessary variables in Options class for main.mjs
  * @param {String[]} args - The process.argv to analyse
@@ -290,32 +298,32 @@ const actUpOnPassedArgs = async (args) => {
       case arg === "|": { groupSeparator = true; break; }
       case regexes.wav.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(0, arg);
+        Options.fileOutputs(WAV_INDEX, arg);
         log(1, "Set file output to wav")
+        break;
+      }
+      case regexes.raw.test(arg): {
+        if (isStdout) stdoutFileModeConflictError()
+        Options.fileOutputs(RAW_INDEX, arg);
+        log(1, "Set file output to pcm")
         break;
       }
       case regexes.flac.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(1, arg);
+        Options.fileOutputs(FLAC_INDEX, arg);
         log(1, "Set file output to flac")
         break;
       }
       case regexes.mp3.test(arg): {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(2, arg);
+        Options.fileOutputs(MP3_INDEX, arg);
         log(1, "Set file output to mp3")
-        break;
-      }
-      case regexes.raw.test(arg): {
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(3, arg);
-        log(1, "Set file output to pcm")
         break;
       }
       case regexes.stdout.test(arg): {
         if (Options.isFileMode()) stdoutFileModeConflictError()
         Options.toStdout = true;
-       log(1, "Set stdout mode")
+        log(1, "Set stdout mode")
         break;
       }
       case regexes.ask.test(arg): {
