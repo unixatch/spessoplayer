@@ -42,7 +42,7 @@ log(1, "Added SIGINT event")
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
-  Options
+  Options, FO_CONSTANTS
 } = await import("./cli.mjs");
 log(1, "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
@@ -307,7 +307,7 @@ if (isToFile?.length > 0) {
 
     options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
     const workerData = {
-      progressBuffers, options,
+      progressBuffers, options, FO_CONSTANTS,
       index: i, filesListLength
     };
     const currentWorker = workers[currentThread] ??= new Worker(

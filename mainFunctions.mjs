@@ -71,7 +71,7 @@ async function formatManager({
   effects,
   index,
   createNewFileNameAnyway,
-  fileOutputs,
+  fileOutputs, FO_CONSTANTS,
   stdoutHeader,
   promisesOfPrograms,
   outFile
@@ -116,18 +116,8 @@ async function formatManager({
   }
   let spawn;
   if (format !== "wave" && format !== ""
-      && !/^.*(?:\.wav|\.wave)$/.test(outFile)
-      && !/^.*\.(?:s16le|s32le|pcm)$/.test(outFile)) {
+      && Array.isArray(outFile)) {
     ({ spawn } = child_process ??= await import("child_process"));
-  }
-  let toFileFormat;
-  switch (format) {
-    case /^.*\.flac$/.test(outFile):
-      toFileFormat = "flac";
-      break;
-    case /^.*\.mp3$/.test(outFile):
-      toFileFormat = "mp3";
-      break;
   }
 
   const isStdout = format !== true,
@@ -183,21 +173,36 @@ async function formatManager({
       log(1, `Done setting up ${format} format${(dryRun) ? " in dry run mode" : ""}`)
       break;
     }
-    case /^.*\.flac$/.test(outFile):
-    case /^.*\.mp3$/.test(outFile): {
-      let doneSettingUpMsg = `Done setting up ${toFileFormat} outFile`;
-      const newName = newFileName(outFile, createNewFileNameAnyway);
-      fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-      outFile = newFileName(outFile, createNewFileNameAnyway);
-      if (dryRun) {
-        outFile = undefined;
-        doneSettingUpMsg = `Done setting up ${toFileFormat} outFile in dry run mode`;
+    case Array.isArray(outFile): {
+      const doneSettingUpMsg = `Done setting up ${
+        dryRun ? "files in dry run mode" : "files"
+      }`;
+      const combinedFfmpegArgs = [];
+      const formats = {
+        [FO_CONSTANTS.MP3_INDEX]: "mp3",
+        [FO_CONSTANTS.FLAC_INDEX]: "flac"
+      };
+      for (const index of outFile) {
+        const actualOutFile = fileOutputs[index],
+              newName = newFileName(actualOutFile, createNewFileNameAnyway);
+        fileOutputs[fileOutputs.indexOf(actualOutFile)] = newName;
+
+        /*
+           For dry-run mode it prints to stdout and
+           the second argument is just for concatenating
+           correctly all ffmpeg arguments
+        */
+        combinedFfmpegArgs.push(
+          ...ffmpegArgs(
+            dryRun ? undefined : newName,
+            !combinedFfmpegArgs.length ? false : true
+          )[formats[index]]
+        )
       }
 
       const ffmpeg = spawn(
-        "ffmpeg",
-        ffmpegArgs(outFile)[toFileFormat],
-        { stdio: ["pipe", ((dryRun) ? "ignore" : "pipe"), "pipe"] }
+        "ffmpeg", combinedFfmpegArgs,
+        { stdio: ["pipe", (dryRun ? "ignore" : "pipe"), "pipe"] }
       );
       log(1, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
       if (effects) {
@@ -794,13 +799,14 @@ async function toStdout({
  * @param {Number}      toFileObjectParameters.index                   index of the song
  * @param {Object}      toFileObjectParameters.progressBuffers         progress shared buffers used by Progress class
  * @param {module:typeDefinitions~toFileOptionsObject} toFileObjectParameters.toFileOptionsObject
+ * @param {Object} toFileObjectParameters.FO_CONSTANTS
  * @throws {ReferenceError} - if some required files are missing
  * @return {Promise<module:typeDefinitions~toFileArray>} array that contains the fileOutputs array and a promise
  */
 async function toFile({
   createNewFileNameAnyway, index,
   progressBuffers,
-  options
+  options, FO_CONSTANTS
 }) {
   if (!options.midiFile
       || !options.soundfontFile
@@ -832,16 +838,35 @@ async function toFile({
   });
   let promisesOfPrograms = [],
       pipingFunctions = [];
-  for (let outFile of options.fileOutputs) {
-    const pipingFunction = await formatManager({
-      readStream,
-      index, ...options,
-      createNewFileNameAnyway,
-      stdoutHeader,
-      promisesOfPrograms, outFile
-    });
-    pipingFunctions.push(pipingFunction)
+  const addFunction = async outFile => {
+    pipingFunctions.push(
+      await formatManager({
+        readStream,
+        index, ...options,
+        createNewFileNameAnyway,
+        stdoutHeader,
+        promisesOfPrograms,
+        FO_CONSTANTS: !outFile ? FO_CONSTANTS : undefined,
+        outFile: outFile ?? (
+          outFile = {...FO_CONSTANTS},
+          delete outFile["WAV_INDEX"],
+          delete outFile["RAW_INDEX"],
+          Object.values(outFile)
+        )
+      })
+    )
+  };
+  const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
+        foEntries = options.fileOutputs.entries();
+  for (const [index, outFile] of foEntries) {
+    if (index === WAV_INDEX || index === RAW_INDEX) {
+      await addFunction(outFile)
+      continue;
+    }
+    await addFunction()
+    break;
   }
+
   return [
     options.fileOutputs,
     pipingFunctions,

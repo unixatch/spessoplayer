@@ -12,17 +12,18 @@ process.on("unhandledRejection", i => console.error(i))
  * @param {Object} workerDataObj
  * @param {Object} workerDataObj.progressBuffers
  * @param {Object} workerDataObj.options
+ * @param {Object} workerDataObj.FO_CONSTANTS
  * @param {Number} workerDataObj.index
  * @param {Number} workerDataObj.filesListLength
  */
 async function runTask({
-  progressBuffers,
-  options, index, filesListLength
+  progressBuffers, options,
+  FO_CONSTANTS, index, filesListLength
 }) {
   const [fileOutputs, pipingFunctions, promiseToWait] = await toFile({
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
     progressBuffers,
-    index, options
+    index, options, FO_CONSTANTS
   })
   parentPort.postMessage({index, files: fileOutputs})
   for (const func of pipingFunctions) if (func) func()
