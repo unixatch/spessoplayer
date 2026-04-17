@@ -214,6 +214,7 @@ function getUsageEstimate(filesList, fileSizes, threadsCount) {
   }
   return AVG_MODULE_CACHE_MB * threadsCount + finalSize;
 }
+const asyncSetTimeout = setTimeout[Symbol.for("nodejs.util.promisify.custom")];
 
 /**
  * Creates a new promise with
@@ -735,6 +736,7 @@ export {
   log,
   newFileName,
   getSizes, getUsageEstimate,
+  asyncSetTimeout,
   Options
 }
 

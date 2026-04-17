@@ -22,7 +22,8 @@
 
 import {
   log,
-  newFileName
+  newFileName,
+  asyncSetTimeout
 } from "./utils/utils.mjs"
 
 let stream,
@@ -36,15 +37,16 @@ const midiList = [],
 
 /**
  * Simply returns an object containing ffmpeg's arguments in all supported formats
- * @param {String} [outFile="pipe:1"] file path to write to
+ * @param {String}  [outFile="pipe:1"]    file path to write to
+ * @param {Boolean} [withoutBasics=false] if it shouldn't include the basic arguments
  * @return {module:typeDefinitions~ffmpegArgsObj} available formats in Object format
  */
-function ffmpegArgs(outFile = "pipe:1") {
-  const BASIC_FFMPEG_ARGS = [
+function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
+  const BASIC_FFMPEG_ARGS = !withoutBasics ? [
     "-loglevel", "fatal",
     "-hide_banner",
     "-i", "-"
-  ];
+  ] : [];
   return {
     flac: BASIC_FFMPEG_ARGS.concat([
       "-f", "flac",
@@ -80,9 +82,8 @@ async function formatManager({
     if ((process.argv.includes("-") || fileOutputs)
         && code === "EPIPE") {
       // Needed so that SoX can show its stderr
-      await new Promise(resolve => {
-        setTimeout(() => resolve(), 4);
-      })
+      await asyncSetTimeout(4)
+
       if (global.SIGINT) process.exit(130)
       console.error(`${gray}Closed the program before finishing to render${normal}`)
       process.exit(errno)
