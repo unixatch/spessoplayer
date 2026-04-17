@@ -89,6 +89,13 @@ class MainOptions {
     this._manageOption({property: "noTable", value})
   }
   /**
+   * Sets showUsage boolean
+   * @param {Boolean} value - enable or disable showing usage of RAM or CPU time
+   */
+  static set showUsage(value) {
+    this._manageOption({property: "showUsage", value})
+  }
+  /**
    * Sets dryRun path string
    * @param {Boolean} value - path to use for the dry run
    */

@@ -31,6 +31,7 @@ global.underline = "\x1b[4m"        /** @global */
 global.yellow = "\x1b[33;1m"        /** @global */
 global.normalYellow = "\x1b[33m"    /** @global */
 global.magenta = "\x1b[35m"         /** @global */
+global.cyan = "\x1b[36m"            /** @global */
 global.brightMagenta = "\x1b[95m"   /** @global */
 global.dimYellow = "\x1b[2;33m"     /** @global */
 global.green = "\x1b[32m"           /** @global */
@@ -461,6 +462,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       // Boolean
       case "confirmation":
       case "noTable":
+      case "showUsage":
       case "toStdout": {
         this.#checkValueAndExistence(value, "boolean")
         setValue()

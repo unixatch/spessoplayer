@@ -66,6 +66,7 @@ const regexes = {
     "|-mt|\/mt",
     "|-T|\/T)$"
   ].join("")),
+  showUsage: /^(?:--show-usage|\/show-usage|-U|\/U)$/,
 
   stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
@@ -344,6 +345,13 @@ const actUpOnPassedArgs = async (args) => {
       case regexes.maxThreads.test(arg): {
         existsNextValueCheck(arg, newArguments)
         lastParam = "max-threads";
+        break;
+      }
+      case regexes.showUsage.test(arg): {
+        if (!isStdout) {
+          Options.showUsage = true;
+          log(INFO_LVL, "Set show-usage flag")
+        } else log(WARNING_LVL, `${normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
         break;
       }
       case regexes.input.test(arg): {
@@ -1021,6 +1029,11 @@ const help = async ({ errorText } = "") => {
      ${green}-mt${normal}, ${green}/mt${normal}, ${green}-T${normal}, ${green}/T${normal}:
       ${dimGray+italics}Sets the amount of threads to use when writing to files.${normal}
       ${dimGray+italics}Useful when you don't have much RAM${normal}
+
+    ${green}--show-usage${normal}, ${green}/show-usage${normal},
+     ${green}-U${normal}, ${green}/U${normal}:
+      ${dimGray+italics}Shows RAM usage and CPU time.${normal}
+      ${dimGray+italics}(Only works in file mode)${normal}
 
     ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal},
      ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:

@@ -58,6 +58,11 @@ Available formats:
 Sets the amount of threads to use when writing to files.
 Useful when you don't have much RAM
 
+### --show-usage, /show-usage,
+#### &nbsp;&nbsp;-U, /U:
+Shows RAM usage and CPU time.
+(Only works in file mode)
+
 ### --ask, /ask, --confirm, /confirm,
 #### &nbsp;&nbsp;-a, /a, -c, /c:
 Asks for confirmation before proceeding

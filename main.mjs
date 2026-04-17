@@ -178,7 +178,8 @@ if (isToFile?.length > 0) {
     files: filesList,
     files: {
       length: filesListLength
-    }
+    },
+    showUsage
   } = listOfOptions;
   const perSongOptions = [];
   const progressBuffers = {
@@ -253,7 +254,7 @@ if (isToFile?.length > 0) {
     };
   }
   // Starting the actual work
-  const RENDER_TEXTS_DELAY = 50,
+  const RENDER_TEXTS_DELAY = 75,
         listOfPromises = new Map(),
         unlinkPromises = [];
   const { Worker } = await import("worker_threads"),
@@ -271,6 +272,7 @@ if (isToFile?.length > 0) {
         workers = [];
   let firstRender = true,
       renderTextsInterval,
+      cpuUsageData = process.cpuUsage(),
       finalFileOutputs = [];
 
   addEvent({ eventType: "toFileSIGINT",
@@ -325,9 +327,21 @@ if (isToFile?.length > 0) {
         currentWorker.on("message", (message) => {
           renderTextsInterval ??= setInterval(progress => {
             if (!firstRender) clearLastLines([0, -1])
+            const moreInfos = showUsage ? (
+              `|| ${cyan}${
+                (process.memoryUsage.rss() / 1024**2).toFixed(2)
+              }${normal} MB, ${normalYellow}${
+                (
+                  cpuUsageData = process.cpuUsage(cpuUsageData),
+                  cpuUsageData.user
+                ).toPrecision(6)
+              }${normal} CPU`
+            ) : "";
+
             console.error(
               progress.minutesRenderedText,
-              "|", progress.percentageText
+              "|", progress.percentageText,
+              moreInfos
             )
             firstRender &&= false;
           }, RENDER_TEXTS_DELAY, progress);
