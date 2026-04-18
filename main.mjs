@@ -263,7 +263,7 @@ if (isToFile?.length > 0) {
     };
   }
   // Starting the actual work
-  const RENDER_TEXTS_DELAY = 75,
+  const RENDER_TEXTS_DELAY = 500,
         listOfPromises = new Map(),
         unlinkPromises = [];
   const { Worker } = await import("worker_threads"),

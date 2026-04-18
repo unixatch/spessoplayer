@@ -361,14 +361,14 @@ const actUpOnPassedArgs = async (args) => {
         if (!isStdout) {
           Options.showUsage = true;
           log(INFO_LVL, "Set show-usage flag")
-        } else log(WARNING_LVL, `${normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
+        } else log(WARNING_LVL, `${normal+normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
         break;
       }
       case regexes.textDelay.test(arg): {
         existsNextValueCheck(arg, newArguments)
         if (!testFunctions.stdout(newArgumentsSet)) {
           setTextDelay(arg)
-        } else log(WARNING_LVL, `${normalYellow}Ignoring this flag since stdout mode is enabled${normal}`)
+        } else log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)
         break;
       }
       case regexes.input.test(arg): {
