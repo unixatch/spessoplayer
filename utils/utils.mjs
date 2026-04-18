@@ -78,6 +78,10 @@ export const {
   [0]: ERROR_LVL, [1]: WARNING_LVL,
   [2]: INFO_LVL,  [3]: DEBUG_LVL
 } = [...Array(4).keys()];
+const LVL_TEXTS = {
+  [ERROR_LVL]: "ERROR", [WARNING_LVL]: "WARNING",
+  [INFO_LVL]: "INFO",   [DEBUG_LVL]: "DEBUG"
+};
 /**
  * Logger
  * @param {Number} level - level of the log
@@ -85,7 +89,12 @@ export const {
  */
 function log(level, ...messages) {
   const time = performance.now().toFixed(2),
-        spacesAmount = new Date().toISOString().length + (time.length + 7) + 2;
+        date = new Date();
+  const spacesAmount = (
+    date.toISOString().length +
+    LVL_TEXTS[level].length + 2 +
+    (time.length + 7) + 2
+  );
   const debugLevelSpesso = Number(process.env["DEBUG_LEVEL_SPESSO"]),
         debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
   if (Number.isNaN(debugLevelSpesso)
@@ -94,8 +103,9 @@ function log(level, ...messages) {
       || Options.verboseLevel < level) return;
 
   const message = [
-    new Date(),
-    "["+time+" ms]",
+    date,
+    "["+normalYellow+time+" ms"+normal+"]",
+    "{"+gray+LVL_TEXTS[level]+normal+"}",
     messages
       .join("")
       // Place the header data on a new line with padding
