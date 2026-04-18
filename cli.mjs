@@ -1043,8 +1043,14 @@ const help = async ({ errorText } = "") => {
       ${desc("Volume to set for reverb (default: none)")}
       ${desc("Same formats as volume")}
 
-    ${param(["--effects"+optional("n"), "/effects"+optional("n")])},
-     ${param(["-e"+optional("n"), "/e"+optional("n")])}:
+    ${param([
+        "--effects "+grayBoldText("effects_list"),
+        "/effects "+grayBoldText("effects_list")
+    ])},
+     ${param([
+        "-e "+grayBoldText("effects_list"),
+        "/e "+grayBoldText("effects_list")
+     ])}:
       ${desc('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
 
     ${param(["--loop"+optional("n"), "/loop"+optional("n")])},
