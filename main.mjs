@@ -40,14 +40,21 @@ import {
 
 addEvent({ eventType: "SIGINT" })
 process.on("unhandledRejection", i => console.error(i))
-log(DEBUG_LVL, "Added SIGINT event")
 // In case the user passes some arguments
 const {
   actUpOnPassedArgs,
   Options, FO_CONSTANTS
 } = await import("./cli.mjs");
-log(INFO_LVL, "Checking passed args...")
 await actUpOnPassedArgs(process.argv)
+
+if (process.listeners("SIGINT")) {
+  log(DEBUG_LVL, "SIGINT event was added")
+}
+if (process.listeners("unhandledRejection")) {
+  log(DEBUG_LVL, "unhandledRejection event was added")
+}
+log(INFO_LVL, "Checked passed args")
+
 const listOfOptions = Options.all;
 const {
   dryRun, confirmation,
