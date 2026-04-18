@@ -74,6 +74,10 @@ const clearLastLines = lines => {
   process.stdout
     .clearScreenDown()
 }
+export const {
+  [0]: ERROR_LVL, [1]: WARNING_LVL,
+  [2]: INFO_LVL,  [3]: DEBUG_LVL
+} = [...Array(4).keys()];
 /**
  * Logger
  * @param {Number} level - level of the log
