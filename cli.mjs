@@ -987,8 +987,15 @@ const uninstall = async () => {
  */
 const help = async ({ errorText } = "") => {
   const optional = text => normal+"["+dimGray+text+normal+"]",
-        grayBoldText = text => dimGrayBold+text+normal,
-        desc = text => dimGray+italics+text+normal;
+        grayBoldText = text => dimGrayBold+text+normal;
+  const desc = text => {
+    const lines = text.split("\n"),
+          lengthOfLines = lines.length;
+    for (let i = 0; i < lengthOfLines; i++) {
+      lines[i] = dimGray+italics+lines[i]+normal;
+    }
+    return lines.join("\n");
+  };
   const param = text => {
     const length = text.length;
     for (let i = 0; i < length; i++) {
@@ -1031,17 +1038,21 @@ const help = async ({ errorText } = "") => {
 
     ${param(["--volume"+optional("n"), "/volume"+optional("n")])},
      ${param(["-vol"+optional("n"), "/vol"+optional("n")])}:
-      ${desc("Volume to set (default: 100%)")}
+      ${desc(
+      `Volume to set (default: 100%)
 
-      ${desc("Available formats:")}
-        ${desc("- dB (example -10dB)")}
-        ${desc("- percentages (example 70%)")}
-        ${desc("- decimals (example 0.9)")}
+      Available formats:
+        - dB (example -10dB)
+        - percentages (example 70%)
+        - decimals (example 0.9)`
+      )}
 
     ${param(["--reverb-volume"+optional("n"), "/reverb-volume"+optional("n")])},
      ${param(["-rvb"+optional("n"), "/rvb"+optional("n")])}:
-      ${desc("Volume to set for reverb (default: none)")}
-      ${desc("Same formats as volume")}
+      ${desc(
+      `Volume to set for reverb (default: none)
+      Same formats as volume`
+      )}
 
     ${param([
         "--effects "+grayBoldText("effects_list"),
@@ -1055,8 +1066,10 @@ const help = async ({ errorText } = "") => {
 
     ${param(["--loop"+optional("n"), "/loop"+optional("n")])},
      ${param(["-l"+optional("n"), "/l"+optional("n")])}:
-      ${desc("Loop x amount of times (default: 0)")}
-        ${desc("(It might be slow with bigger numbers)")}
+      ${desc(
+      `Loop x amount of times (default: 0)")}
+        (It might be slow with bigger numbers)`
+      )}
 
     ${param(["--loop-start"+optional("n"), "/loop-start"+optional("n")])},
      ${param(["-ls"+optional("n"), "/ls"+optional("n")])}:
@@ -1068,19 +1081,23 @@ const help = async ({ errorText } = "") => {
 
     ${param(["--sample-rate"+optional("n"), "/sample-rate"+optional("n")])},
      ${param(["-r"+optional("n"), "/r"+optional("n")])}:
-      ${desc("Sample rate to use (default: 48000)")}
-        ${desc("(It might be slow with bigger numbers for players like mpv)")}
-        ${desc("(Some players might downsize it to a smaller frequency)")}
+      ${desc(
+      `Sample rate to use (default: 48000)")}
+        (It might be slow with bigger numbers for players like mpv)
+        (Some players might downsize it to a smaller frequency)`
+      )}
 
     ${param(["--format "+grayBoldText("format"), "/format "+grayBoldText("format")])},
      ${param(["-f "+grayBoldText("format"), "/f "+grayBoldText("format")])}:
-      ${desc("Format to use for stdout (default: wav)")}
+      ${desc(
+      `Format to use for stdout (default: wav)
 
-      ${desc("Available formats:")}
-        ${desc("- wav")}
-        ${desc("- mp3")}
-        ${desc("- flac")}
-        ${desc("- pcm (s32le)")}
+      Available formats:
+        - wav
+        - mp3
+        - flac
+        - pcm (s32le)`
+      )}
 
     ${param([
         "--max-threads "+grayBoldText("n"),
@@ -1093,25 +1110,33 @@ const help = async ({ errorText } = "") => {
         "/mt "+grayBoldText("n"),
         "-T "+grayBoldText("n"),
         "/T "+grayBoldText("n")
-    ])}:
-      ${desc("Sets the amount of threads to use when writing to files.")}
-      ${desc("Useful when you don't have much RAM")}
+     ])}:
+      ${desc(
+      `Sets the amount of threads to use when writing to files.
+      Useful when you don't have much RAM`
+      )}
 
     ${param(["--show-usage", "/show-usage"])},
      ${param(["-U", "/U"])}:
-      ${desc("Shows RAM usage and CPU time.")}
-      ${desc("(Only works in file mode)")}
+      ${desc(
+      `Shows RAM usage and CPU time.
+      (Only works in file mode)`
+      )}
 
     ${param(["--text-delay"+optional("=n"), "/text-delay"+optional("=n")])},
      ${param(["-d"+optional("=n"), "/d"+optional("=n")])}:
-      ${desc("Changes how fast it renders text (default: 500)")}
-      ${desc("(Only works in file mode)")}
-      ${normalYellow+italics}NOTE: ${desc("Going below the default will hurt performance")}
+      ${desc(
+      `Changes how fast it renders text (default: 500)
+      (Only works in file mode)
+      ${normal+normalYellow+italics}NOTE${dimGray}: Going below the default will hurt performance`
+      )}
 
     ${param(["--no-progress","/no-progress"])},
      ${param(["-np", "/np"])}:
-      ${desc("Disables progress text rendering")}
-      ${desc("(Only works in file mode)")}
+      ${desc(
+      `Disables progress text rendering
+      (Only works in file mode)`
+      )}
 
     ${param(["--ask", "/ask", "--confirm", "/confirm"])},
      ${param(["-a", "/a", "-c", "/c"])}:
@@ -1119,8 +1144,10 @@ const help = async ({ errorText } = "") => {
 
     ${param(["--no-table", "/no-table"])},
      ${param(["-nt", "/nt"])}:
-      ${dimGray+italics}When asking for confirmation,
-      ${desc("it'll show the information in a JSON-like format instead of a table")}
+      ${desc(
+      `When asking for confirmation,
+      it'll show the information in a JSON-like format instead of a table`
+      )}
 
     ${param([
         "--dry-run", "/dry-run",
@@ -1128,10 +1155,12 @@ const help = async ({ errorText } = "") => {
         "--null", "/null"
     ])},
      ${param(["-dr", "/dr", "-t", "/t", "-0", "/0"])}:
-      ${dimGray+italics}Runs the program as normal but
-      ${desc("it'll write to /dev/null on unix and \\\\.\\nul on windows.")}
-      ${dimGray+italics}Mainly used for testing purposes but
-      ${desc("can be useful when trying to debug with log options")}
+      ${desc(
+      `Runs the program as normal but
+      it'll write to /dev/null on unix and \\\\.\\nul on windows.
+      Mainly used for testing purposes but
+      can be useful when trying to debug with log options`
+      )}
 
     ${param(["--verbose"+optional("=n"), "/verbose"+optional("=n")])},
      ${param(["-v"+optional("=n"), "/v"+optional("=n")])}:
@@ -1139,8 +1168,10 @@ const help = async ({ errorText } = "") => {
 
     ${param(["--log-file"+optional("=path"), "/log-file"+optional("=path")])},
      ${param(["-lf"+optional("=path"), "/lf"+optional("=path")])}:
-      ${desc("Sets path to the log file (default: ./spesso.log)")}
-        ${desc("(Meanwhile it writes to file, it also prints to stderr)")}
+      ${desc(
+      `Sets path to the log file (default: ./spesso.log)
+        (Meanwhile it writes to file, it also prints to stderr)`
+      )}
 
     ${param(["--uninstall", "/uninstall"])},
      ${param(["-u", "/u"])}:
