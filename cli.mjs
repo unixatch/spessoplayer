@@ -365,7 +365,6 @@ const actUpOnPassedArgs = async (args) => {
         break;
       }
       case regexes.textDelay.test(arg): {
-        existsNextValueCheck(arg, newArguments)
         if (!testFunctions.stdout(newArgumentsSet)) {
           setTextDelay(arg)
         } else log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)

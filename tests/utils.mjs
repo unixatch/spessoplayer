@@ -38,7 +38,8 @@ function addOptionalArgumentsToFile(args) {
     "out.flac", "out.mp3",
     "out.pcm"
   )
-  if (process.argv.includes("-U")) args.push("-U")
+  if (process.argv.includes("-U"))   args.push("-U")
+  if (process.argv.includes("-d"))   args.push("-d=1000")
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
   if (process.argv.includes("-l"))   args.push("-l", "1")
   if (process.argv.includes("-T"))   args.push("-T", "4")
