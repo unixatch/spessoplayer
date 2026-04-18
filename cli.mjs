@@ -988,20 +988,30 @@ const uninstall = async () => {
 const help = async ({ errorText } = "") => {
   const optional = text => normal+"["+dimGray+text+normal+"]",
         grayBoldText = text => dimGrayBold+text+normal;
-  const desc = text => {
+  let multilineMode = 0;
+  const multiLine = text => {
     const lines = text.split("\n"),
           lengthOfLines = lines.length;
     for (let i = 0; i < lengthOfLines; i++) {
-      lines[i] = dimGray+italics+lines[i]+normal;
+      lines[i] = (
+        !multilineMode
+          ? italics+lines[i]
+          : dimGray+italics+lines[i]+normal
+      );
     }
-    return lines.join("\n");
+    return (multilineMode ||= 1, lines.join("\n"));
   };
-  const param = text => {
-    const length = text.length;
+  const param = (text, secondText) => {
+    const length = secondText.length;
     for (let i = 0; i < length; i++) {
-      text[i] = green+text[i]+normal;
+      text[i] &&= green+text[i]+normal;
+      secondText[i] &&= green+secondText[i]+normal;
     }
-    return text.join(", ")
+    const spaceForSecondText = " ".repeat(5);
+    return (
+      text.join(", ") + ",\n" +
+      spaceForSecondText + secondText.join(", ")
+    );
   };
 
   const helpText = `${underline}spessoplayer${normal}
@@ -1023,22 +1033,28 @@ const help = async ({ errorText } = "") => {
     the automatic order is not good enough
 
     Here some examples:
-    ${italics}  song.mid song2.mid soundfontfile.sf2
+    ${multiLine(
+    `  song.mid song2.mid soundfontfile.sf2
 
-    ${italics}  song.mid song2.mid soundfontfile.sf2
-    ${italics}  \\| another_song.mid another_song2.mid another_soundfont.sf2${normal}
+      song.mid song2.mid soundfontfile.sf2
+      \\| another_song.mid another_song2.mid another_soundfont.sf2
 
-    ${italics}  -i song.mid -i song2.mid -i soundfontfile.sf2
-    ${italics}  -i2 song.mid -i2 song2.mid -i2 soundfontfile.sf2
+      -i song.mid -i song2.mid -i soundfontfile.sf2
+      -i2 song.mid -i2 song2.mid -i2 soundfontfile.sf2`
+    )}
 
   Available parameters:
-    ${param(["--input"+optional("n"), "/input"+optional("n")])}
-     ${param(["-i"+optional("n"), "/i"+optional("n")])}:
-      ${desc("Takes the following file and puts it in the list by n")}
+    ${param(
+      ["--input"+optional("n"), "/input"+optional("n")],
+      ["-i"+optional("n"), "/i"+optional("n")]
+    )}:
+      ${multiLine("Takes the following file and puts it in the list by n")}
 
-    ${param(["--volume"+optional("n"), "/volume"+optional("n")])},
-     ${param(["-vol"+optional("n"), "/vol"+optional("n")])}:
-      ${desc(
+    ${param(
+      ["--volume"+optional("n"), "/volume"+optional("n")],
+      ["-vol"+optional("n"), "/vol"+optional("n")]
+    )}:
+      ${multiLine(
       `Volume to set (default: 100%)
 
       Available formats:
@@ -1047,49 +1063,59 @@ const help = async ({ errorText } = "") => {
         - decimals (example 0.9)`
       )}
 
-    ${param(["--reverb-volume"+optional("n"), "/reverb-volume"+optional("n")])},
-     ${param(["-rvb"+optional("n"), "/rvb"+optional("n")])}:
-      ${desc(
+    ${param(
+      ["--reverb-volume"+optional("n"), "/reverb-volume"+optional("n")],
+      ["-rvb"+optional("n"), "/rvb"+optional("n")]
+    )}:
+      ${multiLine(
       `Volume to set for reverb (default: none)
       Same formats as volume`
       )}
 
-    ${param([
-        "--effects "+grayBoldText("effects_list"),
-        "/effects "+grayBoldText("effects_list")
-    ])},
-     ${param([
-        "-e "+grayBoldText("effects_list"),
-        "/e "+grayBoldText("effects_list")
-     ])}:
-      ${desc('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
+    ${param(
+      ["--effects "+grayBoldText("effects_list"),
+       "/effects "+grayBoldText("effects_list")],
+      ["-e "+grayBoldText("effects_list"),
+       "/e "+grayBoldText("effects_list")]
+    )}:
+      ${multiLine('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
 
-    ${param(["--loop"+optional("n"), "/loop"+optional("n")])},
-     ${param(["-l"+optional("n"), "/l"+optional("n")])}:
-      ${desc(
+    ${param(
+      ["--loop"+optional("n"), "/loop"+optional("n")],
+      ["-l"+optional("n"), "/l"+optional("n")]
+    )}:
+      ${multiLine(
       `Loop x amount of times (default: 0)")}
         (It might be slow with bigger numbers)`
       )}
 
-    ${param(["--loop-start"+optional("n"), "/loop-start"+optional("n")])},
-     ${param(["-ls"+optional("n"), "/ls"+optional("n")])}:
-      ${desc("When the loop starts")}
+    ${param(
+      ["--loop-start"+optional("n"), "/loop-start"+optional("n")],
+      ["-ls"+optional("n"), "/ls"+optional("n")]
+    )}:
+      ${multiLine("When the loop starts")}
 
-    ${param(["--loop-end"+optional("n"), "/loop-end"+optional("n")])},
-     ${param(["-le"+optional("n"), "/le"+optional("n")])}:
-      ${desc("When the loop ends")}
+    ${param(
+      ["--loop-end"+optional("n"), "/loop-end"+optional("n")],
+      ["-le"+optional("n"), "/le"+optional("n")]
+    )}:
+      ${multiLine("When the loop ends")}
 
-    ${param(["--sample-rate"+optional("n"), "/sample-rate"+optional("n")])},
-     ${param(["-r"+optional("n"), "/r"+optional("n")])}:
-      ${desc(
+    ${param(
+      ["--sample-rate"+optional("n"), "/sample-rate"+optional("n")],
+      ["-r"+optional("n"), "/r"+optional("n")]
+    )}:
+      ${multiLine(
       `Sample rate to use (default: 48000)")}
         (It might be slow with bigger numbers for players like mpv)
         (Some players might downsize it to a smaller frequency)`
       )}
 
-    ${param(["--format "+grayBoldText("format"), "/format "+grayBoldText("format")])},
-     ${param(["-f "+grayBoldText("format"), "/f "+grayBoldText("format")])}:
-      ${desc(
+    ${param(
+      ["--format "+grayBoldText("format"), "/format "+grayBoldText("format")],
+      ["-f "+grayBoldText("format"), "/f "+grayBoldText("format")]
+    )}:
+      ${multiLine(
       `Format to use for stdout (default: wav)
 
       Available formats:
@@ -1099,91 +1125,97 @@ const help = async ({ errorText } = "") => {
         - pcm (s32le)`
       )}
 
-    ${param([
+    ${param(
+      [
         "--max-threads "+grayBoldText("n"),
         "/max-threads "+grayBoldText("n"),
         "--threads "+grayBoldText("n"),
         "/threads "+grayBoldText("n")
-    ])},
-     ${param([
+      ],
+      [
         "-mt "+grayBoldText("n"),
         "/mt "+grayBoldText("n"),
         "-T "+grayBoldText("n"),
         "/T "+grayBoldText("n")
-     ])}:
-      ${desc(
+      ]
+    )}:
+      ${multiLine(
       `Sets the amount of threads to use when writing to files.
       Useful when you don't have much RAM`
       )}
 
-    ${param(["--show-usage", "/show-usage"])},
-     ${param(["-U", "/U"])}:
-      ${desc(
+    ${param(["--show-usage", "/show-usage"], ["-U", "/U"])}:
+      ${multiLine(
       `Shows RAM usage and CPU time.
       (Only works in file mode)`
       )}
 
-    ${param(["--text-delay"+optional("=n"), "/text-delay"+optional("=n")])},
-     ${param(["-d"+optional("=n"), "/d"+optional("=n")])}:
-      ${desc(
+    ${param(
+      ["--text-delay"+optional("=n"), "/text-delay"+optional("=n")],
+      ["-d"+optional("=n"), "/d"+optional("=n")]
+    )}:
+      ${multiLine(
       `Changes how fast it renders text (default: 500)
       (Only works in file mode)
       ${normal+normalYellow+italics}NOTE${dimGray}: Going below the default will hurt performance`
       )}
 
-    ${param(["--no-progress","/no-progress"])},
-     ${param(["-np", "/np"])}:
-      ${desc(
+    ${param(["--no-progress","/no-progress"], ["-np", "/np"])}:
+      ${multiLine(
       `Disables progress text rendering
       (Only works in file mode)`
       )}
 
-    ${param(["--ask", "/ask", "--confirm", "/confirm"])},
-     ${param(["-a", "/a", "-c", "/c"])}:
-      ${desc("Asks for confirmation before proceeding")}
+    ${param(
+      ["--ask", "/ask", "--confirm", "/confirm"],
+      ["-a", "/a", "-c", "/c"]
+    )}:
+      ${multiLine("Asks for confirmation before proceeding")}
 
-    ${param(["--no-table", "/no-table"])},
-     ${param(["-nt", "/nt"])}:
-      ${desc(
+    ${param(["--no-table", "/no-table"], ["-nt", "/nt"])}:
+      ${multiLine(
       `When asking for confirmation,
       it'll show the information in a JSON-like format instead of a table`
       )}
 
-    ${param([
+    ${param(
+      [
         "--dry-run", "/dry-run",
         "--test", "/test",
         "--null", "/null"
-    ])},
-     ${param(["-dr", "/dr", "-t", "/t", "-0", "/0"])}:
-      ${desc(
+      ],
+      ["-dr", "/dr", "-t", "/t", "-0", "/0"]
+    )}:
+      ${multiLine(
       `Runs the program as normal but
       it'll write to /dev/null on unix and \\\\.\\nul on windows.
       Mainly used for testing purposes but
       can be useful when trying to debug with log options`
       )}
 
-    ${param(["--verbose"+optional("=n"), "/verbose"+optional("=n")])},
-     ${param(["-v"+optional("=n"), "/v"+optional("=n")])}:
-      ${desc("Sets the verbosity (default: 2)")}
+    ${param(
+      ["--verbose"+optional("=n"), "/verbose"+optional("=n")],
+      ["-v"+optional("=n"), "/v"+optional("=n")]
+    )}:
+      ${multiLine("Sets the verbosity (default: 2)")}
 
-    ${param(["--log-file"+optional("=path"), "/log-file"+optional("=path")])},
-     ${param(["-lf"+optional("=path"), "/lf"+optional("=path")])}:
-      ${desc(
+    ${param(
+      ["--log-file"+optional("=path"), "/log-file"+optional("=path")],
+      ["-lf"+optional("=path"), "/lf"+optional("=path")]
+    )}:
+      ${multiLine(
       `Sets path to the log file (default: ./spesso.log)
         (Meanwhile it writes to file, it also prints to stderr)`
       )}
 
-    ${param(["--uninstall", "/uninstall"])},
-     ${param(["-u", "/u"])}:
-      ${desc("Uninstalls dependencies with confirmation and the entire program")}
+    ${param(["--uninstall", "/uninstall"], ["-u", "/u"])}:
+      ${multiLine("Uninstalls dependencies with confirmation and the entire program")}
 
-    ${param(["--help", "/help"])},
-     ${param(["-h", "/h", "/?"])}:
-      ${desc("Shows this help message")}
+    ${param(["--help", "/help"], ["-h", "/h", "/?"])}:
+      ${multiLine("Shows this help message")}
 
-    ${param(["--version", "/version"])}:
-     ${param(["-V", "/V"])}:
-      ${desc("Shows the installed version")}
+    ${param(["--version", "/version"], ["-V", "/V"])}:
+      ${multiLine("Shows the installed version")}
   `
   if (process.env.PAGER) {
     const { spawnSync } = await import("child_process");
