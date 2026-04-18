@@ -188,7 +188,7 @@ if (isToFile?.length > 0) {
     files: {
       length: filesListLength
     },
-    showUsage, textDelay
+    showUsage, textDelay, noProgress
   } = listOfOptions;
   const perSongOptions = [];
   const progressBuffers = {
@@ -334,7 +334,7 @@ if (isToFile?.length > 0) {
         if (!hasExitEvent.length) currentWorker.on("exit", resolve)
 
         currentWorker.on("message", (message) => {
-          renderTextsInterval ??= setInterval(progress => {
+          if (!noProgress) renderTextsInterval ??= setInterval(progress => {
             if (!firstRender) clearLastLines([0, -1])
             const moreInfos = showUsage ? (
               `|| ${cyan}${

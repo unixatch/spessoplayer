@@ -89,6 +89,13 @@ class MainOptions {
     this._manageOption({property: "noTable", value})
   }
   /**
+   * Sets noProgress boolean
+   * @param {Boolean} value - enable or disable text rendering in file mode
+   */
+  static set noProgress(value) {
+    this._manageOption({property: "noProgress", value})
+  }
+  /**
    * Sets showUsage boolean
    * @param {Boolean} value - enable or disable showing usage of RAM or CPU time
    */

@@ -77,6 +77,7 @@ const regexes = {
     "|-d(?:=(?<number>\\d+))*",              // -d[=n]
     "|\\/d(?:=(?<number>\\d+))*)$"           // /d[=n]
   ].join("")),
+  noProgress: /^(?:--no-progress|\/no-progress|-np|\/np)$/,
 
   stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
@@ -345,6 +346,11 @@ const actUpOnPassedArgs = async (args) => {
       case regexes.noTable.test(arg): {
         Options.noTable = true;
         log(INFO_LVL, "Set no-table flag")
+        break;
+      }
+      case regexes.noProgress.test(arg): {
+        Options.noProgress = true;
+        log(INFO_LVL, "Set no-progress flag")
         break;
       }
       case regexes.dryRun.test(arg): {
@@ -1077,6 +1083,11 @@ const help = async ({ errorText } = "") => {
       ${dimGray+italics}Changes how fast it renders text (default: 500)${normal}
       ${dimGray+italics}(Only works in file mode)${normal}
       ${normalYellow+italics}NOTE: ${dimGray+italics}Going below the default will hurt performance${normal}
+
+    ${green}--no-progress${normal}, ${green}/no-progress${normal},
+     ${green}-np${normal}, ${green}/np${normal}:
+      ${dimGray+italics}Disables progress text rendering${normal}
+      ${dimGray+italics}(Only works in file mode)${normal}
 
     ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal},
      ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:

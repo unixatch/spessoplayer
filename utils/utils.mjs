@@ -478,6 +478,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "confirmation":
       case "noTable":
       case "showUsage":
+      case "noProgress":
       case "toStdout": {
         this.#checkValueAndExistence(value, "boolean")
         setValue()

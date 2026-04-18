@@ -69,6 +69,11 @@ Changes how fast it renders text.
 (Only works in file mode)
 NOTE: Going below the default will hurt performance
 
+### --no-progress, /no-progress,
+#### &nbsp;&nbsp;-np, /np:
+Disables progress text rendering
+(Only works in file mode)
+
 ### --ask, /ask, --confirm, /confirm,
 #### &nbsp;&nbsp;-a, /a, -c, /c:
 Asks for confirmation before proceeding
