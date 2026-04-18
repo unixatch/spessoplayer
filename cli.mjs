@@ -986,14 +986,22 @@ const uninstall = async () => {
  * @param {String} [errorObject.errorText] - error text that should be printed before helpText
  */
 const help = async ({ errorText } = "") => {
-  const optionalIndex = `${normal}[${dimGray}n${normal}]`;
-  const optionalVerboseIndex = `${normal}[${dimGray}=n${normal}]`;
+  const optional = text => normal+"["+dimGray+text+normal+"]",
+        grayBoldText = text => dimGrayBold+text+normal,
+        desc = text => dimGray+italics+text+normal;
+  const param = text => {
+    const length = text.length;
+    for (let i = 0; i < length; i++) {
+      text[i] = green+text[i]+normal;
+    }
+    return text.join(", ")
+  };
 
   const helpText = `${underline}spessoplayer${normal}
-  ${dimGrayBold}A midi converter that uses spessasynth_core to generate the data${normal}
+  ${grayBoldText("A midi converter that uses spessasynth_core to generate the data")}
 
   Usage:
-    ${bold}spessoplayer${normal} [${dimGray}options${normal}] <midi> <soundfont> [${dimGray}outFile${normal}]
+    ${bold}spessoplayer ${optional("options")} <midi> <soundfont> ${optional("outFile")}
 
   Ways to add files:
     There are 2 main ways to add files:
@@ -1017,114 +1025,128 @@ const help = async ({ errorText } = "") => {
     ${italics}  -i2 song.mid -i2 song2.mid -i2 soundfontfile.sf2
 
   Available parameters:
-    ${green}--input${optionalIndex}, ${green}/input${optionalIndex},
-     ${green}-i${optionalIndex}, ${green}/i${optionalIndex}:
-      ${dimGray+italics}Takes the following file and puts it in the list by n${normal}
+    ${param(["--input"+optional("n"), "/input"+optional("n")])}
+     ${param(["-i"+optional("n"), "/i"+optional("n")])}:
+      ${desc("Takes the following file and puts it in the list by n")}
 
-    ${green}--volume${optionalIndex}, ${green}/volume${optionalIndex},
-     ${green}-vol${optionalIndex}, ${green}/vol${optionalIndex}:
-      ${dimGray+italics}Volume to set (default: 100%)${normal}
+    ${param(["--volume"+optional("n"), "/volume"+optional("n")])},
+     ${param(["-vol"+optional("n"), "/vol"+optional("n")])}:
+      ${desc("Volume to set (default: 100%)")}
 
-      ${dimGray+italics}Available formats:${normal}
-        ${dimGray+italics}- dB (example -10dB)${normal}
-        ${dimGray+italics}- percentages (example 70%)${normal}
-        ${dimGray+italics}- decimals (example 0.9)${normal}
+      ${desc("Available formats:")}
+        ${desc("- dB (example -10dB)")}
+        ${desc("- percentages (example 70%)")}
+        ${desc("- decimals (example 0.9)")}
 
-    ${green}--reverb-volume${optionalIndex}, ${green}/reverb-volume${optionalIndex},
-     ${green}-rvb${optionalIndex}, ${green}/rvb${optionalIndex}:
-      ${dimGray+italics}Volume to set for reverb (default: none)${normal}
-      ${dimGray+italics}Same formats as volume${normal}
+    ${param(["--reverb-volume"+optional("n"), "/reverb-volume"+optional("n")])},
+     ${param(["-rvb"+optional("n"), "/rvb"+optional("n")])}:
+      ${desc("Volume to set for reverb (default: none)")}
+      ${desc("Same formats as volume")}
 
-    ${green}--effects${optionalIndex}, ${green}/effects${optionalIndex},
-     ${green}-e${optionalIndex}, ${green}/e${optionalIndex}:
-      ${dimGray+italics}Adds any effects that SoX provides (e.g "reverb,fade 1")${normal}
+    ${param(["--effects"+optional("n"), "/effects"+optional("n")])},
+     ${param(["-e"+optional("n"), "/e"+optional("n")])}:
+      ${desc('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
 
-    ${green}--loop${optionalIndex}, ${green}/loop${optionalIndex},
-     ${green}-l${optionalIndex}, ${green}/l${optionalIndex}:
-      ${dimGray+italics}Loop x amount of times (default: 0)${normal}
-        ${dimGray+italics}(It might be slow with bigger numbers)${normal}
+    ${param(["--loop"+optional("n"), "/loop"+optional("n")])},
+     ${param(["-l"+optional("n"), "/l"+optional("n")])}:
+      ${desc("Loop x amount of times (default: 0)")}
+        ${desc("(It might be slow with bigger numbers)")}
 
-    ${green}--loop-start${optionalIndex}, ${green}/loop-start${optionalIndex},
-     ${green}-ls${optionalIndex}, ${green}/ls${optionalIndex}:
-      ${dimGray+italics}When the loop starts${normal}
+    ${param(["--loop-start"+optional("n"), "/loop-start"+optional("n")])},
+     ${param(["-ls"+optional("n"), "/ls"+optional("n")])}:
+      ${desc("When the loop starts")}
 
-    ${green}--loop-end${optionalIndex}, ${green}/loop-end${optionalIndex},
-     ${green}-le${optionalIndex}, ${green}/le${optionalIndex}:
-      ${dimGray+italics}When the loop ends${normal}
+    ${param(["--loop-end"+optional("n"), "/loop-end"+optional("n")])},
+     ${param(["-le"+optional("n"), "/le"+optional("n")])}:
+      ${desc("When the loop ends")}
 
-    ${green}--sample-rate${optionalIndex}, ${green}/sample-rate${optionalIndex},
-     ${green}-r${optionalIndex}, ${green}/r${optionalIndex}:
-      ${dimGray+italics}Sample rate to use (default: 48000)${normal}
-        ${dimGray+italics}(It might be slow with bigger numbers for players like mpv)${normal}
-        ${dimGray+italics}(Some players might downsize it to a smaller frequency)${normal}
+    ${param(["--sample-rate"+optional("n"), "/sample-rate"+optional("n")])},
+     ${param(["-r"+optional("n"), "/r"+optional("n")])}:
+      ${desc("Sample rate to use (default: 48000)")}
+        ${desc("(It might be slow with bigger numbers for players like mpv)")}
+        ${desc("(Some players might downsize it to a smaller frequency)")}
 
-    ${green}--format${normal}, ${green}/format${normal},
-     ${green}-f${normal}, ${green}/f${normal}:
-      ${dimGray+italics}Format to use for stdout (default: wav)${normal}
+    ${param(["--format "+grayBoldText("format"), "/format "+grayBoldText("format")])},
+     ${param(["-f "+grayBoldText("format"), "/f "+grayBoldText("format")])}:
+      ${desc("Format to use for stdout (default: wav)")}
 
-      ${dimGray+italics}Available formats:${normal}
-        ${dimGray+italics}- wav${normal}
-        ${dimGray+italics}- mp3${normal}
-        ${dimGray+italics}- flac${normal}
-        ${dimGray+italics}- pcm (s32le)${normal}
+      ${desc("Available formats:")}
+        ${desc("- wav")}
+        ${desc("- mp3")}
+        ${desc("- flac")}
+        ${desc("- pcm (s32le)")}
 
-    ${green}--max-threads${normal}, ${green}/max-threads${normal}, ${green}--threads${normal}, ${green}/threads${normal},
-     ${green}-mt${normal}, ${green}/mt${normal}, ${green}-T${normal}, ${green}/T${normal}:
-      ${dimGray+italics}Sets the amount of threads to use when writing to files.${normal}
-      ${dimGray+italics}Useful when you don't have much RAM${normal}
+    ${param([
+        "--max-threads "+grayBoldText("n"),
+        "/max-threads "+grayBoldText("n"),
+        "--threads "+grayBoldText("n"),
+        "/threads "+grayBoldText("n")
+    ])},
+     ${param([
+        "-mt "+grayBoldText("n"),
+        "/mt "+grayBoldText("n"),
+        "-T "+grayBoldText("n"),
+        "/T "+grayBoldText("n")
+    ])}:
+      ${desc("Sets the amount of threads to use when writing to files.")}
+      ${desc("Useful when you don't have much RAM")}
 
-    ${green}--show-usage${normal}, ${green}/show-usage${normal},
-     ${green}-U${normal}, ${green}/U${normal}:
-      ${dimGray+italics}Shows RAM usage and CPU time.${normal}
-      ${dimGray+italics}(Only works in file mode)${normal}
+    ${param(["--show-usage", "/show-usage"])},
+     ${param(["-U", "/U"])}:
+      ${desc("Shows RAM usage and CPU time.")}
+      ${desc("(Only works in file mode)")}
 
-    ${green}--text-delay${optionalVerboseIndex}, ${green}/text-delay${optionalVerboseIndex},
-     ${green}-d${optionalVerboseIndex}, ${green}/d${optionalVerboseIndex}:
-      ${dimGray+italics}Changes how fast it renders text (default: 500)${normal}
-      ${dimGray+italics}(Only works in file mode)${normal}
-      ${normalYellow+italics}NOTE: ${dimGray+italics}Going below the default will hurt performance${normal}
+    ${param(["--text-delay"+optional("=n"), "/text-delay"+optional("=n")])},
+     ${param(["-d"+optional("=n"), "/d"+optional("=n")])}:
+      ${desc("Changes how fast it renders text (default: 500)")}
+      ${desc("(Only works in file mode)")}
+      ${normalYellow+italics}NOTE: ${desc("Going below the default will hurt performance")}
 
-    ${green}--no-progress${normal}, ${green}/no-progress${normal},
-     ${green}-np${normal}, ${green}/np${normal}:
-      ${dimGray+italics}Disables progress text rendering${normal}
-      ${dimGray+italics}(Only works in file mode)${normal}
+    ${param(["--no-progress","/no-progress"])},
+     ${param(["-np", "/np"])}:
+      ${desc("Disables progress text rendering")}
+      ${desc("(Only works in file mode)")}
 
-    ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal},
-     ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:
-      ${dimGray+italics}Asks for confirmation before proceeding${normal}
+    ${param(["--ask", "/ask", "--confirm", "/confirm"])},
+     ${param(["-a", "/a", "-c", "/c"])}:
+      ${desc("Asks for confirmation before proceeding")}
 
-    ${green}--no-table${normal}, ${green}/no-table${normal},
-     ${green}-nt${normal}, ${green}/nt${normal}:
+    ${param(["--no-table", "/no-table"])},
+     ${param(["-nt", "/nt"])}:
       ${dimGray+italics}When asking for confirmation,
-      ${dimGray+italics}it'll show the information in a JSON-like format instead of a table${normal}
+      ${desc("it'll show the information in a JSON-like format instead of a table")}
 
-    ${green}--dry-run${normal}, ${green}/dry-run${normal}, ${green}--test${normal}, ${green}/test${normal}, ${green}--null${normal}, ${green}/null${normal},
-     ${green}-dr${normal}, ${green}/dr${normal}, ${green}-t${normal}, ${green}/t${normal}, ${green}-0${normal}, ${green}/0${normal}:
+    ${param([
+        "--dry-run", "/dry-run",
+        "--test", "/test",
+        "--null", "/null"
+    ])},
+     ${param(["-dr", "/dr", "-t", "/t", "-0", "/0"])}:
       ${dimGray+italics}Runs the program as normal but
-      ${dimGray+italics}it'll write to /dev/null on unix and \\\\.\\nul on windows.${normal}
+      ${desc("it'll write to /dev/null on unix and \\\\.\\nul on windows.")}
       ${dimGray+italics}Mainly used for testing purposes but
-      ${dimGray+italics}can be useful when trying to debug with log options${normal}
+      ${desc("can be useful when trying to debug with log options")}
 
-    ${green}--verbose${optionalVerboseIndex}, ${green}/verbose${optionalVerboseIndex},
-     ${green}-v${optionalVerboseIndex}, ${green}/v${optionalVerboseIndex}:
-      ${dimGray+italics}Sets the verbosity (default: 2)${normal}
+    ${param(["--verbose"+optional("=n"), "/verbose"+optional("=n")])},
+     ${param(["-v"+optional("=n"), "/v"+optional("=n")])}:
+      ${desc("Sets the verbosity (default: 2)")}
 
-    ${green}--log-file${normal}, ${green}/log-file${normal},
-     ${green}-lf${normal}, ${green}/lf${normal}:
-      ${dimGray+italics}Sets path to the log file (default: ./spesso.log)${normal}
-        ${dimGray+italics}(Meanwhile it writes to file, it also prints to stderr)${normal}
+    ${param(["--log-file"+optional("=path"), "/log-file"+optional("=path")])},
+     ${param(["-lf"+optional("=path"), "/lf"+optional("=path")])}:
+      ${desc("Sets path to the log file (default: ./spesso.log)")}
+        ${desc("(Meanwhile it writes to file, it also prints to stderr)")}
 
-    ${green}--uninstall${normal}, ${green}/uninstall${normal},
-     ${green}-u${normal}, ${green}/u${normal}:
-      ${dimGray+italics}Uninstalls dependencies with confirmation and the entire program${normal}
+    ${param(["--uninstall", "/uninstall"])},
+     ${param(["-u", "/u"])}:
+      ${desc("Uninstalls dependencies with confirmation and the entire program")}
 
-    ${green}--help${normal}, ${green}/help${normal},
-     ${green}-h${normal}, ${green}/h${normal}, ${green}/?${normal}:
-      ${dimGray+italics}Shows this help message${normal}
+    ${param(["--help", "/help"])},
+     ${param(["-h", "/h", "/?"])}:
+      ${desc("Shows this help message")}
 
-    ${green}--version${normal}, ${green}/version${normal}:
-     ${green}-V${normal}, ${green}/V${normal}:
-      ${dimGray+italics}Shows the installed version${normal}
+    ${param(["--version", "/version"])}:
+     ${param(["-V", "/V"])}:
+      ${desc("Shows the installed version")}
   `
   if (process.env.PAGER) {
     const { spawnSync } = await import("child_process");
