@@ -96,6 +96,13 @@ class MainOptions {
     this._manageOption({property: "showUsage", value})
   }
   /**
+   * Sets textDelay number
+   * @param {Number} value - sets the text delay for file mode
+   */
+  static set textDelay(value) {
+    this._manageOption({property: "textDelay", value, setter: true})
+  }
+  /**
    * Sets dryRun path string
    * @param {Boolean} value - path to use for the dry run
    */
@@ -107,7 +114,7 @@ class MainOptions {
    * @param {Boolean} value - number of threads
    */
   static set maxThreads(value) {
-    this._manageOption({property: "maxThreads", value, setter: true })
+    this._manageOption({property: "maxThreads", value, setter: true})
   }
   /**
    * Sets the stdout format

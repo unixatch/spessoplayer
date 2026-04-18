@@ -188,7 +188,7 @@ if (isToFile?.length > 0) {
     files: {
       length: filesListLength
     },
-    showUsage
+    showUsage, textDelay
   } = listOfOptions;
   const perSongOptions = [];
   const progressBuffers = {
@@ -353,7 +353,7 @@ if (isToFile?.length > 0) {
               moreInfos
             )
             firstRender &&= false;
-          }, RENDER_TEXTS_DELAY, progress);
+          }, textDelay ?? RENDER_TEXTS_DELAY, progress);
 
           if (message === "DONE_RENDERING") {
             currentWorker.removeAllListeners("message")

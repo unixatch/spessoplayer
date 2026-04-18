@@ -71,6 +71,12 @@ const regexes = {
     "|-T|\/T)$"
   ].join("")),
   showUsage: /^(?:--show-usage|\/show-usage|-U|\/U)$/,
+  textDelay: new RegExp([
+    "^(?:--text-delay(?:=(?<number>\\d+))*", // --text-delay[=n]
+    "|\\/text-delay(?:=(?<number>\\d+))*",   // /text-delay[=n]
+    "|-d(?:=(?<number>\\d+))*",              // -d[=n]
+    "|\\/d(?:=(?<number>\\d+))*)$"           // /d[=n]
+  ].join("")),
 
   stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
@@ -349,7 +355,6 @@ const actUpOnPassedArgs = async (args) => {
       case regexes.maxThreads.test(arg): {
         existsNextValueCheck(arg, newArguments)
         lastParam = "max-threads";
-        log(INFO_LVL, "Set maxThreads")
         break;
       }
       case regexes.showUsage.test(arg): {
@@ -357,6 +362,13 @@ const actUpOnPassedArgs = async (args) => {
           Options.showUsage = true;
           log(INFO_LVL, "Set show-usage flag")
         } else log(WARNING_LVL, `${normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
+        break;
+      }
+      case regexes.textDelay.test(arg): {
+        existsNextValueCheck(arg, newArguments)
+        if (!testFunctions.stdout(newArgumentsSet)) {
+          setTextDelay(arg)
+        } else log(WARNING_LVL, `${normalYellow}Ignoring this flag since stdout mode is enabled${normal}`)
         break;
       }
       case regexes.input.test(arg): {
@@ -914,6 +926,27 @@ const setMaxThreads = async (arg) => {
   process.exit(1);
 }
 /**
+ * Sets the Options.textDelay variable
+ * @param {String} arg - delay to set
+ */
+const setTextDelay = (arg) => {
+  const number = Number(arg.match(regexes.textDelay).groups.number);
+  // Default
+  if (isNaN(number)) {
+    Options.textDelay = 500;
+    log(INFO_LVL, `Set text delay to ${number}`)
+    return;
+  }
+  if (typeof number === "number" && !isNaN(number)
+      && number >= 50) {
+    Options.textDelay = number;
+    log(INFO_LVL, `Set text delay to ${number}`)
+    return;
+  }
+  console.error(`${normalRed}Passed something that wasn't a valid range for the text-delay${normal}`)
+  process.exit(1);
+}
+/**
  * Sets the file path to the log file
  * @param {String} arg - Path to the log file
  */
@@ -1039,6 +1072,12 @@ const help = async ({ errorText } = "") => {
      ${green}-U${normal}, ${green}/U${normal}:
       ${dimGray+italics}Shows RAM usage and CPU time.${normal}
       ${dimGray+italics}(Only works in file mode)${normal}
+
+    ${green}--text-delay${optionalVerboseIndex}, ${green}/text-delay${optionalVerboseIndex},
+     ${green}-d${optionalVerboseIndex}, ${green}/d${optionalVerboseIndex}:
+      ${dimGray+italics}Changes how fast it renders text (default: 500)${normal}
+      ${dimGray+italics}(Only works in file mode)${normal}
+      ${normalYellow+italics}NOTE: ${dimGray+italics}Going below the default will hurt performance${normal}
 
     ${green}--ask${normal}, ${green}/ask${normal}, ${green}--confirm${normal}, ${green}/confirm${normal},
      ${green}-a${normal}, ${green}/a${normal}, ${green}-c${normal}, ${green}/c${normal}:

@@ -63,6 +63,12 @@ Useful when you don't have much RAM
 Shows RAM usage and CPU time.
 (Only works in file mode)
 
+### --text-delay, /text-delay,
+#### &nbsp;&nbsp;-d, /d:
+Changes how fast it renders text.
+(Only works in file mode)
+NOTE: Going below the default will hurt performance
+
 ### --ask, /ask, --confirm, /confirm,
 #### &nbsp;&nbsp;-a, /a, -c, /c:
 Asks for confirmation before proceeding
