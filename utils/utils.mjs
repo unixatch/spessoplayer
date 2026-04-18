@@ -90,8 +90,8 @@ function log(level, ...messages) {
         debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
   if (Number.isNaN(debugLevelSpesso)
       && Options.verboseLevel === undefined) return;
-  if (debugLevelSpesso > level
-      || Options.verboseLevel > level) return;
+  if (debugLevelSpesso < level
+      || Options.verboseLevel < level) return;
 
   const message = [
     new Date(),
