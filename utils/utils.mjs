@@ -23,26 +23,71 @@ import { join, parse, sep } from "path"
 import { classes } from "./classes.mjs"
 
 // Custom formatting
-global.normal = "\x1b[0m"           /** @global */
-global.bold = "\x1b[1m"             /** @global */
-global.italics = "\x1b[3m"          /** @global */
-global.underline = "\x1b[4m"        /** @global */
+const esc = "\x1b[";
+global.normal = `${esc}0m`           /** @global */
+global.bold = `${esc}1m`             /** @global */
+global.italics = `${esc}3m`          /** @global */
+global.underline = `${esc}4m`        /** @global */
 // Actual colors
-global.yellow = "\x1b[33;1m"        /** @global */
-global.normalYellow = "\x1b[33m"    /** @global */
-global.magenta = "\x1b[35m"         /** @global */
-global.cyan = "\x1b[36m"            /** @global */
-global.brightMagenta = "\x1b[95m"   /** @global */
-global.dimYellow = "\x1b[2;33m"     /** @global */
-global.green = "\x1b[32m"           /** @global */
-global.dimGreen = "\x1b[32;2m"      /** @global */
-global.normalRed = "\x1b[31m"       /** @global */
-global.red = "\x1b[31;1m"           /** @global */
-global.normalRed = "\x1b[31m"       /** @global */
-global.dimRed = "\x1b[31;2m"        /** @global */
-global.gray = "\x1b[90;1m"          /** @global */
-global.dimGray = "\x1b[37;2m"       /** @global */
-global.dimGrayBold = "\x1b[37;2;1m" /** @global */
+global.yellow = `${esc}33;1m`        /** @global */
+global.normalYellow = `${esc}33m`    /** @global */
+global.magenta = `${esc}35m`         /** @global */
+global.cyan = `${esc}36m`            /** @global */
+global.brightMagenta = `${esc}95m`   /** @global */
+global.dimYellow = `${esc}2;33m`     /** @global */
+global.green = `${esc}32m`           /** @global */
+global.dimGreen = `${esc}32;2m`      /** @global */
+global.normalRed = `${esc}31m`       /** @global */
+global.red = `${esc}31;1m`           /** @global */
+global.dimRed = `${esc}31;2m`        /** @global */
+global.gray = `${esc}90;1m`          /** @global */
+global.dimGray = `${esc}37;2m`       /** @global */
+global.dimGrayBold = `${esc}37;2;1m` /** @global */
+
+/*
+  This is needed because the function
+  is not always in the same place and
+  also for startup time
+*/
+const getColorDepth = (
+  process.stdout?.getColorDepth
+    ? process.stdout.getColorDepth
+    : (await import("tty")).WriteStream(1).getColorDepth
+);
+// 256 color scheme
+if (getColorDepth() === 8) {
+  const esc256 = esc+"38;5;";
+  global.magenta = `${esc256}164m`         /** @global */
+  global.brightMagenta = `${esc256}201m`   /** @global */
+  global.yellow = `${esc256}184;1m`        /** @global */
+  global.normalYellow = `${esc256}184m`    /** @global */
+  global.cyan = `${esc256}39m`             /** @global */
+  global.green = `${esc256}34m`            /** @global */
+  global.dimGreen = `${esc256}28m`         /** @global */
+  global.normalRed = `${esc256}124m`       /** @global */
+  global.red = `${esc256}196m`             /** @global */
+  global.dimRed = `${esc256}88m`           /** @global */
+  global.gray = `${esc256}238m`            /** @global */
+  global.dimGray = `${esc256}242m`         /** @global */
+  global.dimGrayBold = `${esc256}254;2;1m` /** @global */
+}
+// RGB color scheme
+if (getColorDepth() === 24) {
+  const escRGB = esc+"38;2;";
+  global.magenta = `${escRGB}175;12;164m`        /** @global */
+  global.brightMagenta = `${escRGB}245;12;224m`  /** @global */
+  global.yellow = `${escRGB}223;215;0;1m`        /** @global */
+  global.normalYellow = `${escRGB}183;175;0m`    /** @global */
+  global.cyan = `${escRGB}23;176;176m`           /** @global */
+  global.green = `${escRGB}0;176;4m`             /** @global */
+  global.dimGreen = `${escRGB}0;126;3m`          /** @global */
+  global.normalRed = `${escRGB}185;0;0m`         /** @global */
+  global.red = `${escRGB}235;0;0;1m`             /** @global */
+  global.dimRed = `${escRGB}145;0;0m`            /** @global */
+  global.gray = `${escRGB}124;124;124m`          /** @global */
+  global.dimGray = `${escRGB}114;114;114m`       /** @global */
+  global.dimGrayBold = `${escRGB}152;152;152;1m` /** @global */
+}
 
 /**
  * @typedef lines
