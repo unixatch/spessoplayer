@@ -54,18 +54,21 @@ if (FORCE_COLOR !== undefined) {
     case '1':
     case 'true':
       colorDepth = 4;
+      break;
     case '2':
       colorDepth = 8;
+      break;
     case '3':
       colorDepth = 24;
+      break;
     default:
       colorDepth = 1;
   }
 }
 if (COLORTERM === "truecolor"
     || COLORTERM === "24bit"
-    || TERM?.includes("truecolor")) colorDepth = 24;
-if (TERM?.startsWith("xterm-256")) colorDepth = 8;
+    || TERM?.includes("truecolor")) colorDepth ??= 24;
+if (TERM?.startsWith("xterm-256")) colorDepth ??= 8;
 // If the above fails, let node check
 colorDepth ??= (await import("tty")).WriteStream(1).getColorDepth();
 
