@@ -21,6 +21,14 @@
 
 const esc = "\x1b[";
 const colors = {
+  modify({escape, colors}) {
+    for (const [property, sequenceCode] of colors.values()) {
+      this[property] = (
+        escape +
+        sequenceCode.replaceAll(" ", "") + "m"
+      );
+    }
+  },
   // Custom formatting
   normal:        `${esc}0m`,
   bold:          `${esc}1m`,
@@ -74,37 +82,46 @@ colorDepth ??= (await import("tty")).WriteStream(1).getColorDepth();
 
 // 256 color scheme
 if (colorDepth === 8) {
-  const esc256 = esc+"38;5;";
-  colors.magenta =       `${esc256}164m`
-  colors.brightMagenta = `${esc256}201m`
-  colors.yellow =        `${esc256}184;1m`
-  colors.normalYellow =  `${esc256}184m`
-  colors.cyan =          `${esc256}39m`
-  colors.green =         `${esc256}34m`
-  colors.dimGreen =      `${esc256}28m`
-  colors.normalRed =     `${esc256}124m`
-  colors.red =           `${esc256}196m`
-  colors.dimRed =        `${esc256}88m`
-  colors.gray =          `${esc256}238m`
-  colors.dimGray =       `${esc256}242m`
-  colors.dimGrayBold =   `${esc256}254;2;1m`
+  colors.modify({
+    escape: esc+"38;5;",
+    colors: [
+      ["magenta",       "164"      ],
+      ["brightMagenta", "201"      ],
+      ["yellow",        "184; 1"   ],
+      ["normalYello",   "184"      ],
+      ["cyan",          "39"       ],
+      ["green",         "34"       ],
+      ["dimGreen",      "28"       ],
+      ["normalRed",     "124"      ],
+      ["red",           "196"      ],
+      ["dimRed",        "88"       ],
+      ["gray",          "238"      ],
+      ["dimGray",       "242"      ],
+      ["dimGrayBold",   "254; 2; 1"]
+    ],
+  })
 }
 // RGB color scheme
 if (colorDepth === 24) {
-  const escRGB = esc+"38;2;";
-  colors.magenta =       `${escRGB}175;12;164m`
-  colors.brightMagenta = `${escRGB}245;12;224m`
-  colors.yellow =        `${escRGB}223;215;0;1m`
-  colors.normalYellow =  `${escRGB}183;175;0m`
-  colors.cyan =          `${escRGB}23;176;176m`
-  colors.green =         `${escRGB}0;176;4m`
-  colors.dimGreen =      `${escRGB}0;126;3m`
-  colors.normalRed =     `${escRGB}185;0;0m`
-  colors.red =           `${escRGB}235;0;0;1m`
-  colors.dimRed =        `${escRGB}145;0;0m`
-  colors.gray =          `${escRGB}124;124;124m`
-  colors.dimGray =       `${escRGB}114;114;114m`
-  colors.dimGrayBold =   `${escRGB}152;152;152;1m`
+  colors.modify({
+    escape: esc+"38;2;",
+    colors: [
+      ["magenta",       "175;  12; 164"   ],
+      ["brightMagenta", "245;  12; 224"   ],
+      ["yellow",        "223; 215;   0; 1"],
+      ["normalYello",   "183; 175;   0"   ],
+      ["cyan",          "23;  176; 176"   ],
+      ["green",         "0;   176;   4"   ],
+      ["dimGreen",      "0;   126;   3"   ],
+      ["normalRed",     "185;   0;   0"   ],
+      ["red",           "235;   0;   0; 1"],
+      ["dimRed",        "145;   0;   0"   ],
+      ["gray",          "124; 124; 124"   ],
+      ["dimGray",       "114; 114; 114"   ],
+      ["dimGrayBold",   "152; 152; 152; 1"]
+    ],
+  })
 }
+delete colors.modify;
 Object.assign(global, colors)
 
