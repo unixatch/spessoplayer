@@ -279,6 +279,9 @@ if (isToFile?.length > 0) {
   };
   const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
         workers = [];
+  const up1Line = "\x1b[F",
+        clearCurrentLine = "\x1b[2K",
+        startOfLine = "\r";
   let firstRender = true,
       renderTextsInterval,
       cpuUsageData = process.cpuUsage(),
@@ -335,9 +338,8 @@ if (isToFile?.length > 0) {
 
         currentWorker.on("message", (message) => {
           if (!noProgress) renderTextsInterval ??= setInterval(progress => {
-            if (!firstRender) clearLastLines([0, -1])
             const moreInfos = showUsage ? (
-              `|| ${cyan}${
+              ` || ${cyan}${
                 (process.memoryUsage.rss() / 1024**2).toFixed(2)
               }${normal} MB, ${normalYellow}${
                 (
@@ -347,10 +349,14 @@ if (isToFile?.length > 0) {
               }${normal} CPU`
             ) : "";
 
-            console.error(
-              progress.minutesRenderedText,
-              "|", progress.percentageText,
-              moreInfos
+            process.stderr.write(
+              // Clears old text
+              (!firstRender ? up1Line : "") +
+              clearCurrentLine + startOfLine +
+              // Renders new text
+              progress.minutesRenderedText +
+              progress.percentageText +
+              moreInfos + "\n"
             )
             firstRender &&= false;
           }, textDelay ?? RENDER_TEXTS_DELAY, progress);

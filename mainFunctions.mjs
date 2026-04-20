@@ -961,7 +961,7 @@ class Progress {
             + new Date(this.#amountToRender * 1000)
                 .toISOString()
                 .replace(/.*T...(.*)Z/, "$1")
-            + `${normal}`;
+            + `${normal} | `;
   }
   /**
    * Updates the progress number of renderedAmount
