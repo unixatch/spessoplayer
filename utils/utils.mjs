@@ -214,9 +214,9 @@ const asyncSetTimeout = setTimeout[Symbol.for("nodejs.util.promisify.custom")];
  * Creates a new promise with
  * a pending state property attached to it
  * @param {Function} executor function that will be run just like new Promise
- * @return {Promise} a statetable promise
+ * @return {Promise} a stateable promise
  */
-Promise.statetable = function (func) {
+Promise.stateable = function (func) {
   function runWithState(resolve, reject) {
     const done = () => newPromise.pending = false;
     func(

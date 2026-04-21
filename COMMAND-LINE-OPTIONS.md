@@ -86,7 +86,7 @@ it'll show the information in a JSON-like format instead of a table
 ### --dry-run, /dry-run, --test, /test, --null, /null,
 #### &nbsp;&nbsp;-dr, /dr, -t, /t, -0, /0:
 Runs the program as normal but
-it'll write to /dev/null on unix and \\.\nul on windows.
+it'll write to /dev/null on Unix and \\.\nul on windows.
 
 Mainly used for testing purposes but
 can be useful when trying to debug with log options

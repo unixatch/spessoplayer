@@ -146,7 +146,7 @@ if (isToStdout) {
     });
     log(INFO_LVL, "Done setting up SoX")
   } else if (needsConvertion) {
-    // Or just a convertion/normal processing
+    // Or just a conversion/normal processing
     converterProcess.stdin.write(stdoutHeader)
   }
   log(DEBUG_LVL, "Created header file ", stdoutHeader)
@@ -413,7 +413,7 @@ for (let i = 0; i < amountOfSongs; i++) {
   );
 
   listOfPromises.set(currentThread,
-    Promise.statetable(
+    Promise.stateable(
       stateablePromiseFunction.bind([i, currentWorker])
     )
   )

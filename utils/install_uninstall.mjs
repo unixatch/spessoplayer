@@ -55,7 +55,7 @@ const clearLastLines = lines => {
     .clearScreenDown();
 }
 /**
- * Checks program existance synchronously
+ * Checks program existence synchronously
  * @param {Object} obj - the obj passed
  * @param {Function} obj.spawnSync - child_process.spawnSync
  * @param {String} obj.program - program to find
