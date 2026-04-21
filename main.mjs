@@ -186,8 +186,6 @@ if (!isToStdout && !isToFile?.length > 0) {
   await startPlayer(Options)
 }
 // +++ toFile section +++
-// Calculates amountToRender (length of all songs combined)
-// before anything else so that the percentages are correct
 const amountOfSongs = Options.amountOfSongs;
 const {
   files: filesList,
@@ -196,13 +194,15 @@ const {
   },
   showUsage, textDelay, noProgress
 } = listOfOptions;
+// Calculates amountToRender (length of all songs combined)
+// before anything else so that the percentages are correct
 const perSongOptions = [];
 const progressBuffers = {
-        amountToRender: new SharedArrayBuffer(4),
-        renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
-        percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
-      },
-      progress = new Progress(amountOfSongs, undefined, progressBuffers);
+  amountToRender: new SharedArrayBuffer(4),
+  renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
+  percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
+};
+const progress = new Progress(amountOfSongs, undefined, progressBuffers);
 for (let i = 0; i < amountOfSongs; i++) {
   const options = perSongOptions[i] = Options.getOptionsOfSong(i);
   if (!options) continue;
@@ -276,7 +276,9 @@ const { Worker } = await import("worker_threads"),
       { availableParallelism } = await import("os");
 const fileSizes = await getSizes(filesList);
 const resourceLimits = new function () {
-  const getSize = (index, previous) => (previous > index) ? previous : index ;
+  const getSize = (index, previous) => (
+    (previous > index) ? previous : index
+  );
   const biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
   return {
     maxOldGenerationSizeMb: biggestFileSize,
@@ -302,7 +304,9 @@ addEvent({ eventType: "toFileSIGINT",
     // Try to cleanup abandoned files
     // only if it's not in dry run mode
     if (dryRun) return;
-    const notENOENT = error => (error.code !== "ENOENT") && console.error(error);
+    const notENOENT = error => (
+      error.code !== "ENOENT" && console.error(error)
+    );
     for (const {files, finished} of finalFileOutputs) {
       if (finished) continue;
 
