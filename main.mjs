@@ -178,238 +178,238 @@ if (isToStdout) {
   process.exit()
 }
 
+if (!isToStdout && !isToFile?.length > 0) {
+  if (dryRun) {
+    console.error(`${yellow}Can't dry run the player${normal}`)
+    process.exit(2)
+  }
+  await startPlayer(Options)
+}
 // +++ toFile section +++
-if (isToFile?.length > 0) {
-  // Calculates amountToRender (length of all songs combined)
-  // before anything else so that the percentages are correct
-  const amountOfSongs = Options.amountOfSongs;
-  const {
-    files: filesList,
-    files: {
-      length: filesListLength
-    },
-    showUsage, textDelay, noProgress
-  } = listOfOptions;
-  const perSongOptions = [];
-  const progressBuffers = {
-          amountToRender: new SharedArrayBuffer(4),
-          renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
-          percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
-        },
-        progress = new Progress(amountOfSongs, undefined, progressBuffers);
-  for (let i = 0; i < amountOfSongs; i++) {
-    const options = perSongOptions[i] = Options.getOptionsOfSong(i);
-    if (!options) continue;
+// Calculates amountToRender (length of all songs combined)
+// before anything else so that the percentages are correct
+const amountOfSongs = Options.amountOfSongs;
+const {
+  files: filesList,
+  files: {
+    length: filesListLength
+  },
+  showUsage, textDelay, noProgress
+} = listOfOptions;
+const perSongOptions = [];
+const progressBuffers = {
+        amountToRender: new SharedArrayBuffer(4),
+        renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
+        percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
+      },
+      progress = new Progress(amountOfSongs, undefined, progressBuffers);
+for (let i = 0; i < amountOfSongs; i++) {
+  const options = perSongOptions[i] = Options.getOptionsOfSong(i);
+  if (!options) continue;
 
-    const duration = await initSpessaSynth({
-      index: i, ...options,
-      onlyDuration: true
-    });
-    const durationRounded = Math.floor(duration * 100) / 100;
-    progress.addToAmountToRender(durationRounded)
+  const duration = await initSpessaSynth({
+    index: i, ...options,
+    onlyDuration: true
+  });
+  const durationRounded = Math.floor(duration * 100) / 100;
+  progress.addToAmountToRender(durationRounded)
+}
+
+// Loads soundfonts before doing the work
+// for memory usage reasons
+const sharedFilesMap = new Map(),
+      promisesOfSharedFiles = [];
+const {
+  promises: {
+    stat: asyncStat,
+    readFile: asyncReadFile,
+    unlink: asyncUnlink
   }
+} = fs;
+for (let i = 0; i < filesListLength; i++) {
+  const [soundfontFile] = filesList[i] ?? 0;
+  if (!soundfontFile) continue;
 
-  // Loads soundfonts before doing the work
-  // for memory usage reasons
-  const sharedFilesMap = new Map(),
-        promisesOfSharedFiles = [];
-  const {
-    promises: {
-      stat: asyncStat,
-      readFile: asyncReadFile,
-      unlink: asyncUnlink
+  promisesOfSharedFiles.push(
+    asyncReadFile(soundfontFile)
+      .then(buffer => {
+        const sharedBuffer = new SharedArrayBuffer(buffer.length);
+
+        new Uint8Array(sharedBuffer).set(buffer, 0)
+        sharedFilesMap.set(soundfontFile, sharedBuffer)
+      })
+  )
+}
+await Promise.all(promisesOfSharedFiles)
+
+let calculateMaxThreads;
+{
+  /*
+    This is managed this way so that
+    _maxThreads is predictable
+    every time the function starts and
+    can't be changed accidentally
+  */
+  let _maxThreads;
+  const OFFSET_MB = 100;
+  calculateMaxThreads = cores => {
+    _maxThreads ??= cores;
+
+    const limitMB = (process.availableMemory() / 1024**2) - OFFSET_MB;
+    if (limitMB < getUsageEstimate(filesList, fileSizes, _maxThreads)) {
+      _maxThreads -= (_maxThreads > 4) ? 2 : 1;
     }
-  } = fs;
-  for (let i = 0; i < filesListLength; i++) {
-    const [soundfontFile] = filesList[i] ?? 0;
-    if (!soundfontFile) continue;
+    if (getUsageEstimate(filesList, fileSizes, _maxThreads) > limitMB) {
+      return calculateMaxThreads();
+    }
 
-    promisesOfSharedFiles.push(
-      asyncReadFile(soundfontFile)
-        .then(buffer => {
-          const sharedBuffer = new SharedArrayBuffer(buffer.length);
-
-          new Uint8Array(sharedBuffer).set(buffer, 0)
-          sharedFilesMap.set(soundfontFile, sharedBuffer)
-        })
-    )
-  }
-  await Promise.all(promisesOfSharedFiles)
-
-  let calculateMaxThreads;
-  {
-    /*
-      This is managed this way so that
-      _maxThreads is predictable
-      every time the function starts and
-      can't be changed accidentally
-    */
-    let _maxThreads;
-    const OFFSET_MB = 100;
-    calculateMaxThreads = cores => {
-      _maxThreads ??= cores;
-
-      const limitMB = (process.availableMemory() / 1024**2) - OFFSET_MB;
-      if (limitMB < getUsageEstimate(filesList, fileSizes, _maxThreads)) {
-        _maxThreads -= (_maxThreads > 4) ? 2 : 1;
-      }
-      if (getUsageEstimate(filesList, fileSizes, _maxThreads) > limitMB) {
-        return calculateMaxThreads();
-      }
-
-      const oldMaxThreads = _maxThreads;
-      _maxThreads = null;
-      return oldMaxThreads;
-    };
-  }
-  // Starting the actual work
-  const RENDER_TEXTS_DELAY = 500,
-        listOfPromises = new Map(),
-        unlinkPromises = [];
-  const { Worker } = await import("worker_threads"),
-        { availableParallelism } = await import("os");
-  const fileSizes = await getSizes(filesList);
-  const resourceLimits = new function () {
-    const getSize = (index, previous) => (previous > index) ? previous : index ;
-    const biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
-    return {
-      maxOldGenerationSizeMb: biggestFileSize,
-      maxYoungGenerationSizeMb: biggestFileSize / 2
-    };
+    const oldMaxThreads = _maxThreads;
+    _maxThreads = null;
+    return oldMaxThreads;
   };
-  const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
-        workers = [];
-  const up1Line = "\x1b[F",
-        clearCurrentLine = "\x1b[2K",
-        startOfLine = "\r";
-  let firstRender = true,
-      renderTextsInterval,
-      cpuUsageData = process.cpuUsage(),
-      finalFileOutputs = [];
+}
+// Starting the actual work
+const RENDER_TEXTS_DELAY = 500,
+      listOfPromises = new Map(),
+      unlinkPromises = [];
+const { Worker } = await import("worker_threads"),
+      { availableParallelism } = await import("os");
+const fileSizes = await getSizes(filesList);
+const resourceLimits = new function () {
+  const getSize = (index, previous) => (previous > index) ? previous : index ;
+  const biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
+  return {
+    maxOldGenerationSizeMb: biggestFileSize,
+    maxYoungGenerationSizeMb: biggestFileSize / 2
+  };
+};
+const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
+      workers = [];
+const up1Line = "\x1b[F",
+      clearCurrentLine = "\x1b[2K",
+      startOfLine = "\r";
+let firstRender = true,
+    renderTextsInterval,
+    cpuUsageData = process.cpuUsage(),
+    finalFileOutputs = [];
 
-  addEvent({ eventType: "toFileSIGINT",
-    func: () => {
-      clearInterval(renderTextsInterval)
-      for (const worker of workers) worker.terminate()
-      finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
+addEvent({ eventType: "toFileSIGINT",
+  func: () => {
+    clearInterval(renderTextsInterval)
+    for (const worker of workers) worker.terminate()
+    finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
 
-      // Try to cleanup abandoned files
-      // only if it's not in dry run mode
-      if (dryRun) return;
-      const notENOENT = error => (error.code !== "ENOENT") && console.error(error);
-      for (const {files, finished} of finalFileOutputs) {
-        if (finished) continue;
+    // Try to cleanup abandoned files
+    // only if it's not in dry run mode
+    if (dryRun) return;
+    const notENOENT = error => (error.code !== "ENOENT") && console.error(error);
+    for (const {files, finished} of finalFileOutputs) {
+      if (finished) continue;
 
-        for (const file of files) {
-          unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
-        }
+      for (const file of files) {
+        unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
       }
     }
-  })
-  for (let i = 0; i < amountOfSongs; i++) {
-    const options = perSongOptions[i];
-    if (!options) continue;
-
-    // Waits for all workers to finish
-    // if the max of available threads
-    // at once has been reached
-    const currentThread = (maxThreads === 1) ? 0 : i % maxThreads;
-    if (i !== 0 && !(currentThread)) {
-      await Promise.all(listOfPromises.values())
-      if (global.SIGINT) break;
-    }
-
-    options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
-    const workerData = {
-      progressBuffers, options, FO_CONSTANTS,
-      index: i, filesListLength
-    };
-    const currentWorker = workers[currentThread] ??= new Worker(
-      "./fileWriter_worker.mjs",
-      { workerData, resourceLimits }
-    );
-
-    listOfPromises.set(currentThread, (
-      Promise.statetable((resolve, reject) => {
-        const hasErrorEvent = currentWorker.listeners("error");
-        const hasExitEvent = currentWorker.listeners("exit");
-        if (!hasErrorEvent.length) currentWorker.on("error", reject)
-        if (!hasExitEvent.length) currentWorker.on("exit", resolve)
-
-        currentWorker.on("message", (message) => {
-          if (!noProgress) renderTextsInterval ??= setInterval(progress => {
-            const moreInfos = showUsage ? (
-              ` || ${cyan}${
-                (process.memoryUsage.rss() / 1024**2).toFixed(2)
-              }${normal} MB, ${normalYellow}${
-                (
-                  cpuUsageData = process.cpuUsage(cpuUsageData),
-                  cpuUsageData.user
-                ).toPrecision(6)
-              }${normal} CPU`
-            ) : "";
-
-            process.stderr.write(
-              // Clears old text
-              (!firstRender ? up1Line : "") +
-              clearCurrentLine + startOfLine +
-              // Renders new text
-              progress.minutesRenderedText +
-              progress.percentageText +
-              moreInfos + "\n"
-            )
-            firstRender &&= false;
-          }, textDelay ?? RENDER_TEXTS_DELAY, progress);
-
-          if (message === "DONE_RENDERING") {
-            currentWorker.removeAllListeners("message")
-            return resolve(finalFileOutputs[i].finished = true);
-          }
-          if (typeof message === "object") finalFileOutputs[i] = message;
-        })
-      })
-    ))
-    if (i >= maxThreads) currentWorker.postMessage(workerData)
   }
-  // Terminate last idle workers since they're unused
-  const workersEntries = workers.reverse().entries();
-  for (const [index, worker] of workersEntries) {
-    const promise = listOfPromises.get((maxThreads-1) - index);
-    if (promise.pending) break;
-    worker.terminate()
+})
+for (let i = 0; i < amountOfSongs; i++) {
+  const options = perSongOptions[i];
+  if (!options) continue;
+
+  // Waits for all workers to finish
+  // if the max of available threads
+  // at once has been reached
+  const currentThread = (maxThreads === 1) ? 0 : i % maxThreads;
+  if (i !== 0 && !(currentThread)) {
+    await Promise.all(listOfPromises.values())
+    if (global.SIGINT) break;
   }
 
-  await Promise.all(listOfPromises.values())
-  clearInterval(renderTextsInterval)
-  if (global.SIGINT) {
-    await Promise.all(unlinkPromises)
-    console.log(
-      "Written only",
-      finalFileOutputs.filter(i => {
-        if (i.finished) {
-          delete i.finished;
-          return true;
+  options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
+  const workerData = {
+    progressBuffers, options, FO_CONSTANTS,
+    index: i, filesListLength
+  };
+  const currentWorker = workers[currentThread] ??= new Worker(
+    "./fileWriter_worker.mjs",
+    { workerData, resourceLimits }
+  );
+
+  listOfPromises.set(currentThread, (
+    Promise.statetable((resolve, reject) => {
+      const hasErrorEvent = currentWorker.listeners("error");
+      const hasExitEvent = currentWorker.listeners("exit");
+      if (!hasErrorEvent.length) currentWorker.on("error", reject)
+      if (!hasExitEvent.length) currentWorker.on("exit", resolve)
+
+      currentWorker.on("message", (message) => {
+        if (!noProgress) renderTextsInterval ??= setInterval(progress => {
+          const moreInfos = showUsage ? (
+            ` || ${cyan}${
+              (process.memoryUsage.rss() / 1024**2).toFixed(2)
+            }${normal} MB, ${normalYellow}${
+              (
+                cpuUsageData = process.cpuUsage(cpuUsageData),
+                cpuUsageData.user
+              ).toPrecision(6)
+            }${normal} CPU`
+          ) : "";
+
+          process.stderr.write(
+            // Clears old text
+            (!firstRender ? up1Line : "") +
+            clearCurrentLine + startOfLine +
+            // Renders new text
+            progress.minutesRenderedText +
+            progress.percentageText +
+            moreInfos + "\n"
+          )
+          firstRender &&= false;
+        }, textDelay ?? RENDER_TEXTS_DELAY, progress);
+
+        if (message === "DONE_RENDERING") {
+          currentWorker.removeAllListeners("message")
+          return resolve(finalFileOutputs[i].finished = true);
         }
+        if (typeof message === "object") finalFileOutputs[i] = message;
       })
-    )
-    if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
-    process.exit(130)
-  }
+    })
+  ))
+  if (i >= maxThreads) currentWorker.postMessage(workerData)
+}
+// Terminate last idle workers since they're unused
+const workersEntries = workers.reverse().entries();
+for (const [index, worker] of workersEntries) {
+  const promise = listOfPromises.get((maxThreads-1) - index);
+  if (promise.pending) break;
+  worker.terminate()
+}
 
-  // Close workers before continuing
-  // otherwise it gets stuck
-  for (const worker of workers) worker.terminate()
-
-  finalFileOutputs.forEach(i => delete i.finished)
-  console.log("Written", finalFileOutputs);
+await Promise.all(listOfPromises.values())
+clearInterval(renderTextsInterval)
+if (global.SIGINT) {
+  await Promise.all(unlinkPromises)
+  console.log(
+    "Written only",
+    finalFileOutputs.filter(i => {
+      if (i.finished) {
+        delete i.finished;
+        return true;
+      }
+    })
+  )
   if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
-  // Required because some child_processes sometimes blocks node from exiting
-  process.exit()
+  process.exit(130)
 }
 
-if (dryRun) {
-  console.error(`${yellow}Can't dry run the player${normal}`)
-  process.exit(2)
-}
-await startPlayer(Options)
+// Close workers before continuing
+// otherwise it gets stuck
+for (const worker of workers) worker.terminate()
+
+finalFileOutputs.forEach(i => delete i.finished)
+console.log("Written", finalFileOutputs);
+if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
+// Required because some child_processes sometimes blocks node from exiting
+process.exit()
+
 
