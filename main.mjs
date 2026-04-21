@@ -252,6 +252,11 @@ let calculateMaxThreads;
   */
   let _maxThreads;
   const OFFSET_MB = 100;
+  /**
+   * Calculates the amount of threads
+   * @param {Number} cores amount of cores available
+   * @return {Number} threads count
+   */
   calculateMaxThreads = cores => {
     _maxThreads ??= cores;
 
@@ -316,6 +321,10 @@ addEvent({ eventType: "toFileSIGINT",
     }
   }
 })
+/**
+ * Main function that renders progress text
+ * @param {class} progress class used to get information
+ */
 const renderTextsFunction = progress => {
   const moreInfos = showUsage ? (
     ` || ${cyan}${
@@ -339,6 +348,14 @@ const renderTextsFunction = progress => {
   )
   firstRender &&= false;
 };
+/**
+ * Adds an event to target only once
+ * and does nothing if listenerCount > 0
+ * @param {*}        target    where to attach the event
+ * @param {String}   eventName event name
+ * @param {Function} func      function to use when the event fires
+ * @return {(*|null)} the target or null
+ */
 const addEventOnce = (target, eventName, func) => {
   return (
     !target.listenerCount(eventName)
@@ -346,6 +363,12 @@ const addEventOnce = (target, eventName, func) => {
       : null
   );
 };
+/**
+ * A function that coordinates the worker
+ * @param {Function} resolve
+ * @param {Function} reject
+ * @this Array<Number, Worker>
+ */
 const stateablePromiseFunction = function (resolve, reject) {
   const [i, currentWorker] = this;
   addEventOnce(currentWorker, "error", reject)
