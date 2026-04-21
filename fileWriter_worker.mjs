@@ -26,7 +26,7 @@ async function runTask({
     index, options, FO_CONSTANTS
   })
   parentPort.postMessage({index, files: fileOutputs})
-  for (const func of pipingFunctions) if (func) func()
+  for (const func of pipingFunctions) func?.()
 
   await promiseToWait
   parentPort.postMessage("DONE_RENDERING")

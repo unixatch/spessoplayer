@@ -96,11 +96,13 @@ if (isToStdout) {
   for (let i = 0; i < amountOfSongs; i++) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
-    const length = await initSpessaSynth({
-      index: i, ...options,
-      onlySampleCount: true
-    });
-    lengthOfFiles.push(length)
+
+    lengthOfFiles.push(
+      await initSpessaSynth({
+        index: i, ...options,
+        onlySampleCount: true
+      })
+    )
   }
 
   let effectsProcess,
@@ -170,7 +172,7 @@ if (isToStdout) {
     if (!options) continue;
     const [ func, promise ] = await toStdout({ index: i, options });
 
-    if (func) func(destination, i === amountOfSongs-1)
+    func?.(destination, i === amountOfSongs-1)
     await promise
   }
   await Promise.all(promisesOfPrograms)
@@ -217,8 +219,8 @@ for (let i = 0; i < amountOfSongs; i++) {
 
 // Loads soundfonts before doing the work
 // for memory usage reasons
-const sharedFilesMap = new Map(),
-      promisesOfSharedFiles = [];
+const sharedFilesMap = new Map();
+let promisesOfSharedFiles = [];
 const {
   promises: {
     stat: asyncStat,
@@ -241,6 +243,7 @@ for (let i = 0; i < filesListLength; i++) {
   )
 }
 await Promise.all(promisesOfSharedFiles)
+promisesOfSharedFiles = null;
 
 let calculateMaxThreads;
 {

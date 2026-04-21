@@ -107,7 +107,7 @@ async function formatManager({
       : pipingFunction = func;
   }
   function addErrorEventToDest(dest, altThis) {
-    const finalDest = (altThis) ? altThis : dest,
+    const finalDest = altThis ?? dest,
           boundFunction = streamErrorHandling.bind(finalDest),
           reversedListOfEvents = dest.listeners("error").reverse();
     return (
@@ -250,7 +250,7 @@ async function formatManager({
       if (isToFile) {
         output = fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
       } else {
-        output = (res) ? res : process.stdout;
+        output = res ?? process.stdout;
         if (dryRun) output = fs.createWriteStream(dryRun, {fd: fs.openSync(dryRun, "r+")});
       }
       log(INFO_LVL,
@@ -275,7 +275,7 @@ async function formatManager({
 
       const doneSettingUpMsg = "Done setting up" + ((dryRun) ? " dry run" : "");
       addPipingFunction((whereToConnect, end) => {
-        const destination = (res) ? res : whereToConnect;
+        const destination = res ?? whereToConnect;
         addErrorEventToDest(
           readStream
             .on("error", streamErrorHandling)
@@ -1012,9 +1012,9 @@ class Progress {
  */
 async function startPlayer(Options) {
   const listOfOptions = Options.all;
-  const { getWavHeader }     = await import("./audioBuffer.mjs"),
-        { spawn }            = child_process ??= await import("child_process"),
-        { createServer }     = await import("http");
+  const { getWavHeader } = await import("./audioBuffer.mjs"),
+        { spawn }        = child_process ??= await import("child_process"),
+        { createServer } = await import("http");
 
   const port = 3000,
         server = createServer(),
@@ -1029,6 +1029,7 @@ async function startPlayer(Options) {
     if (fullUrl.pathname !== "/song" && index === null) {
       return res.end();
     }
+    promisesOfPrograms.length = 0;
     const realIndex = Number(index),
           options = Options.getOptionsOfSong(realIndex);
     const length = await initSpessaSynth({
@@ -1065,7 +1066,7 @@ async function startPlayer(Options) {
       [effectsProcess] = await applyEffects({
         program: "sox",
         stdoutHeader,
-        stdout: (converterProcess) ? converterProcess.stdin : res.socket,
+        stdout: converterProcess?.stdin ?? res.socket,
         promisesOfPrograms,
         // TODO: effects system needs to overhauled
         //effects: listOfOptions?.effects[0]
@@ -1095,7 +1096,7 @@ async function startPlayer(Options) {
       index: realIndex,
       options, res
     });
-    if (func) func(destination, true)
+    func?.(destination, true)
     await Promise.all([promise, promisesOfPrograms])
 
     return res.end();
