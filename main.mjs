@@ -316,6 +316,29 @@ addEvent({ eventType: "toFileSIGINT",
     }
   }
 })
+const renderTextsFunction = progress => {
+  const moreInfos = showUsage ? (
+    ` || ${cyan}${
+      (process.memoryUsage.rss() / 1024**2).toFixed(2)
+    }${normal} MB, ${normalYellow}${
+      (
+        cpuUsageData = process.cpuUsage(cpuUsageData),
+        cpuUsageData.user
+      ).toPrecision(6)
+    }${normal} CPU`
+  ) : "";
+
+  process.stderr.write(
+    // Clears old text
+    (!firstRender ? up1Line : "") +
+    clearCurrentLine + startOfLine +
+    // Renders new text
+    progress.minutesRenderedText +
+    progress.percentageText +
+    moreInfos + "\n"
+  )
+  firstRender &&= false;
+};
 for (let i = 0; i < amountOfSongs; i++) {
   const options = perSongOptions[i];
   if (!options) continue;
@@ -347,30 +370,13 @@ for (let i = 0; i < amountOfSongs; i++) {
       if (!hasExitEvent.length) currentWorker.on("exit", resolve)
 
       currentWorker.on("message", (message) => {
-        if (!noProgress) renderTextsInterval ??= setInterval(progress => {
-          const moreInfos = showUsage ? (
-            ` || ${cyan}${
-              (process.memoryUsage.rss() / 1024**2).toFixed(2)
-            }${normal} MB, ${normalYellow}${
-              (
-                cpuUsageData = process.cpuUsage(cpuUsageData),
-                cpuUsageData.user
-              ).toPrecision(6)
-            }${normal} CPU`
-          ) : "";
-
-          process.stderr.write(
-            // Clears old text
-            (!firstRender ? up1Line : "") +
-            clearCurrentLine + startOfLine +
-            // Renders new text
-            progress.minutesRenderedText +
-            progress.percentageText +
-            moreInfos + "\n"
-          )
-          firstRender &&= false;
-        }, textDelay ?? RENDER_TEXTS_DELAY, progress);
-
+        renderTextsInterval ??= (
+           noProgress ?? setInterval(
+             renderTextsFunction,
+             textDelay ?? RENDER_TEXTS_DELAY,
+             progress
+           )
+         );
         if (message === "DONE_RENDERING") {
           currentWorker.removeAllListeners("message")
           return resolve(finalFileOutputs[i].finished = true);
@@ -391,6 +397,8 @@ for (const [index, worker] of workersEntries) {
 
 await Promise.all(listOfPromises.values())
 clearInterval(renderTextsInterval)
+// Renders the last bit so that it is 100%
+if (!global.SIGINT) renderTextsFunction(progress)
 if (global.SIGINT) {
   await Promise.all(unlinkPromises)
   console.log(
@@ -415,5 +423,4 @@ console.log("Written", finalFileOutputs);
 if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
 // Required because some child_processes sometimes blocks node from exiting
 process.exit()
-
 
