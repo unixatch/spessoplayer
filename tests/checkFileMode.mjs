@@ -10,6 +10,15 @@ const {
   addOptionalArgumentsToFile
 } = await import("./utils.mjs")
 
+if (process.argv.includes("-h")) {
+  console.log(
+    addOptionalArgumentsToFile
+      .toString()
+      .replace(/.*includes\((".*")\)\).*/g, "  $1")
+  )
+  process.exit()
+}
+
 // Other arguments and run it
 const args = [
   ...globs.midis,         // Automatically adding files
