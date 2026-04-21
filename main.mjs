@@ -339,6 +339,33 @@ const renderTextsFunction = progress => {
   )
   firstRender &&= false;
 };
+const addEventOnce = (target, eventName, func) => {
+  return (
+    !target.listenerCount(eventName)
+      ? target.on(eventName, func)
+      : null
+  );
+};
+const stateablePromiseFunction = function (resolve, reject) {
+  const [i, currentWorker] = this;
+  addEventOnce(currentWorker, "error", reject)
+  addEventOnce(currentWorker, "exit", resolve)
+
+  currentWorker.on("message", message => {
+    renderTextsInterval ??= (
+      noProgress ?? setInterval(
+        renderTextsFunction,
+        textDelay ?? RENDER_TEXTS_DELAY,
+        progress
+      )
+    );
+    if (message === "DONE_RENDERING") {
+      currentWorker.removeAllListeners("message")
+      return resolve(finalFileOutputs[i].finished = true);
+    }
+    if (typeof message === "object") finalFileOutputs[i] = message;
+  })
+};
 for (let i = 0; i < amountOfSongs; i++) {
   const options = perSongOptions[i];
   if (!options) continue;
@@ -362,29 +389,11 @@ for (let i = 0; i < amountOfSongs; i++) {
     { workerData, resourceLimits }
   );
 
-  listOfPromises.set(currentThread, (
-    Promise.statetable((resolve, reject) => {
-      const hasErrorEvent = currentWorker.listeners("error");
-      const hasExitEvent = currentWorker.listeners("exit");
-      if (!hasErrorEvent.length) currentWorker.on("error", reject)
-      if (!hasExitEvent.length) currentWorker.on("exit", resolve)
-
-      currentWorker.on("message", (message) => {
-        renderTextsInterval ??= (
-           noProgress ?? setInterval(
-             renderTextsFunction,
-             textDelay ?? RENDER_TEXTS_DELAY,
-             progress
-           )
-         );
-        if (message === "DONE_RENDERING") {
-          currentWorker.removeAllListeners("message")
-          return resolve(finalFileOutputs[i].finished = true);
-        }
-        if (typeof message === "object") finalFileOutputs[i] = message;
-      })
-    })
-  ))
+  listOfPromises.set(currentThread,
+    Promise.statetable(
+      stateablePromiseFunction.bind([i, currentWorker])
+    )
+  )
   if (i >= maxThreads) currentWorker.postMessage(workerData)
 }
 // Terminate last idle workers since they're unused
