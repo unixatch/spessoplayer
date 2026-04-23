@@ -101,7 +101,7 @@ async function formatManager({
       ? pipingFunction = (whereToConnect, end) => {
         addErrorEventToDest(
           readStream
-            .on("error", streamErrorHandling)
+            .once("error", streamErrorHandling)
             .pipe(whereToConnect, { end })
         )
       }
@@ -114,7 +114,7 @@ async function formatManager({
     return (
       (reversedListOfEvents[0]?.name === boundFunction.name)
         ? finalDest
-        : (dest.on("error", boundFunction), finalDest)
+        : (dest.once("error", boundFunction), finalDest)
     );
   }
   let spawn;
@@ -162,7 +162,7 @@ async function formatManager({
           output.write(stdoutHeader ?? "")
           addErrorEventToDest(
             readStream
-              .on("error", streamErrorHandling)
+              .once("error", streamErrorHandling)
               .pipe(output, { end })
           )
         })
@@ -221,8 +221,8 @@ async function formatManager({
       }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
-          ffmpeg.on("error", reject)
-          ffmpeg.on("exit", resolve)
+          ffmpeg.once("error", reject)
+          ffmpeg.once("exit", resolve)
         })
       )
       log(DEBUG_LVL, "Added promise")
@@ -230,7 +230,7 @@ async function formatManager({
         ffmpeg.stdin.write(stdoutHeader)
         addErrorEventToDest(
           readStream
-            .on("error", streamErrorHandling)
+            .once("error", streamErrorHandling)
             .pipe(ffmpeg.stdin),
           ffmpeg
         )
@@ -263,7 +263,7 @@ async function formatManager({
       addPipingFunction((whereToConnect, end) => {
         addErrorEventToDest(
           readStream
-            .on("error", streamErrorHandling)
+            .once("error", streamErrorHandling)
             .pipe(output, { end })
         )
       })
@@ -279,7 +279,7 @@ async function formatManager({
         const destination = res ?? whereToConnect;
         addErrorEventToDest(
           readStream
-            .on("error", streamErrorHandling)
+            .once("error", streamErrorHandling)
             .pipe(destination, { end })
         )
       })
@@ -508,8 +508,8 @@ async function applyEffects({
   })
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
-      sox.on("exit", resolve)
-      sox.on("error", reject)
+      sox.once("exit", resolve)
+      sox.once("error", reject)
     })
   )
 
@@ -1124,7 +1124,7 @@ async function startPlayer(Options) {
     ...listOfURLs
   ], { stdio: "inherit" });
   await new Promise((resolve, reject) => {
-    mpv.on("exit", (code, signal) => {
+    mpv.once("exit", (code, signal) => {
       switch (code) {
         case 0:
         case 4:

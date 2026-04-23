@@ -36,8 +36,8 @@ if (!process.argv.includes("--verbose")
   const { fork } = await import("child_process");
   const realTest = fork(process.argv[1], args.concat(positionalArgs));
   await new Promise((resolve, reject) => {
-    realTest.on("exit", resolve)
-    realTest.on("error", reject)
+    realTest.once("exit", resolve)
+    realTest.once("error", reject)
   })
     .then(process.exit)
     .catch(error => {

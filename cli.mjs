@@ -188,7 +188,7 @@ async function get20BytesFromFile(path) {
 
   fs.createReadStream(path, { start: 0, end: 20 })
     .on("data", resolve)
-    .on("error", ({code, message, errno}) => {
+    .once("error", ({code, message, errno}) => {
       let messageToPrint;
       switch (code) {
         case "EACCES":

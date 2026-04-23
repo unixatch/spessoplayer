@@ -38,8 +38,8 @@ const MAIN_PATH = (
 );
 const realTest = fork(MAIN_PATH, args);
 await new Promise((resolve, reject) => {
-  realTest.on("exit", resolve)
-  realTest.on("error", reject)
+  realTest.once("exit", resolve)
+  realTest.once("error", reject)
 })
   .then(process.exit)
   .catch(error => {
