@@ -59,7 +59,7 @@ const {
 await actUpOnPassedArgs(process.argv)
 console.log(Options.all)
 console.log(
-  "files:",
+  "Argv files:",
   process.argv
     .slice(2, process.argv.lastIndexOf("-i"+indexOfParameter)+2)
 )

@@ -69,7 +69,11 @@ function generalCliArguments(mode) {
     default:
       return [
         "-f", "flac",         // format
-        "--dry-run",
+        "--dry-run",          // Only test
+        "--no-progress",
+        "--text-delay=75",    // How fast it renders progress
+        "--show-usage",       // RAM usage and CPU time
+        "--no-table",         // Plain files object
         "--confirm",          // confirmation
         "--max-threads", "4", // threads to use for toFile
         "--verbose"           // verboseLevel, must be the last

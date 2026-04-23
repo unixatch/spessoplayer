@@ -1,12 +1,19 @@
 import { globSync } from "fs"
 import { parse, join } from "path"
 import { fork } from "child_process"
+import {} from "../utils/colors.mjs"
+
+process.on("SIGINT", () => {
+  realTest?.kill()
+  console.log(gray+"Closed tester with Ctrl+c"+normal)
+  process.exit(130)
+})
 
 // Setup file path arguments
 const {
   globs,
   manualMidi, manualSoundfont,
-  generalCliArguments,
+  generalCliArguments, perSongCliArguments,
   addOptionalArgumentsToStdout
 } = await import("./utils.mjs")
 
@@ -26,6 +33,7 @@ const args = [
   "-i2", manualMidi,      // Manually adding files
   "-i2", manualSoundfont,
   ...generalCliArguments("stdout"),
+  ...(process.argv.includes("-ps") ? perSongCliArguments : []),
   "-"
 ];
 addOptionalArgumentsToStdout(args)
