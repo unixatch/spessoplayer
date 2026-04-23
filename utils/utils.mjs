@@ -21,7 +21,7 @@
 
 import { join, parse, sep } from "path"
 import { classes } from "./classes.mjs"
-import {} from "./colors.mjs"
+import "./colors.mjs"
 
 /**
  * @typedef lines

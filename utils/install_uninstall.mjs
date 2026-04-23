@@ -19,7 +19,7 @@
  * @module utils/install_uninstall
  */
 
-import {} from "./colors.mjs"
+import "./colors.mjs"
 
 /**
  * @typedef lines

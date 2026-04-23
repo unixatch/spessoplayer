@@ -1,7 +1,7 @@
 import { globSync } from "fs"
 import { parse, join } from "path"
 import { fork } from "child_process"
-import {} from "../utils/colors.mjs"
+import "../utils/colors.mjs"
 
 process.on("SIGINT", () => {
   realTest?.kill()
