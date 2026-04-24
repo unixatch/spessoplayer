@@ -429,8 +429,13 @@ const actUpOnPassedArgs = async (args) => {
         lastIndex = arg.match(regexes.loop)?.groups;
         break;
       }
-      case (lastParam === "input" || lastParam === undefined)
-            && (global.fs ??= await import("node:fs")).existsSync(arg): {
+      case (
+        (lastParam === "input" || !lastParam)
+          && (
+            global.fs ??= await import("node:fs")
+          )
+            .existsSync(arg) && arg
+      ): {
         if (doneFileList.get(arg) === doneSymbol) {
           if (lastParam === "input") clearLastVariables()
           break;
@@ -563,7 +568,7 @@ const setFile = async ({
     const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
     return lastSetFilePromise?.then(func) ?? func();
   }
-  if (lastParam !== undefined && lastParam !== "input") return;
+  if (lastParam && lastParam !== "input") return;
 
   const fileMagicNumber = await get20BytesFromFile(arg);
   let typeOfFile;
