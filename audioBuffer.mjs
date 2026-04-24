@@ -174,57 +174,51 @@ function getWavHeader({ length, numChannels },
       cueEnd
     ]);
   }
-  const headerSize = 44;
-  const dataSize = length * numChannels * bytesPerSample;
-  const fileSize = headerSize + dataSize + infoChunk.length + cueChunk.length - 8;
-  const header = new Uint8Array(headerSize);
-  header.set([82, 73, 70, 70], 0); // "RIFF"
-  header.set(
-    new Uint8Array([
-      fileSize & 255,
-      fileSize >> 8 & 255,
-      fileSize >> 16 & 255,
-      fileSize >> 24 & 255
-    ]),
-    4
-  )
-  header.set([87, 65, 86, 69], 8);     // "WAVE"
-  header.set([102, 109, 116, 32], 12); // "fmt "
-  header.set([16, 0, 0, 0], 16);       // BlocSize
-  header.set([1, 0], 20);              // AudioFormat: PCM Integer
-  header.set([numChannels & 255, numChannels >> 8], 22);
-  header.set(
-    new Uint8Array([
-      sampleRate & 255,
-      sampleRate >> 8 & 255,
-      sampleRate >> 16 & 255,
-      sampleRate >> 24 & 255
-    ]),
-    24
-  )
-  const byteRate = sampleRate * numChannels * bytesPerSample;
-  header.set(
-    new Uint8Array([
-      byteRate & 255,
-      byteRate >> 8 & 255,
-      byteRate >> 16 & 255,
-      byteRate >> 24 & 255
-    ]),
-    28
-  )
-  header.set([numChannels * bytesPerSample, 0], 32); // BytePerBloc
-  header.set([16, 0], 34);                           // BitsPerSample
-  header.set([100, 97, 116, 97], 36);                // "data"
-  header.set(
-    new Uint8Array([
-      dataSize & 255,
-      dataSize >> 8 & 255,
-      dataSize >> 16 & 255,
-      dataSize >> 24 & 255
-    ]),
-    40
-  )
-  return header;
+  const headerSize = 44,
+        dataSize = length * numChannels * bytesPerSample;
+  const fileSize = (
+    headerSize + dataSize +
+    infoChunk.length + cueChunk.length - 8
+  );
+  const arrayBuffer = new ArrayBuffer(headerSize),
+        uint8       = new Uint8Array(arrayBuffer),
+        uint16      = new Uint16Array(arrayBuffer),
+        uint32      = new Uint32Array(arrayBuffer);
+
+  // Letters as numbers
+  const R=82,  I=73,  F=70,
+        W=87,  A=65,  V=86,  E=69,
+        f=102, m=109, t=116, space=32,
+        d=100, a=97;
+  //                               I      bits
+  const I_fileSize      = 1,  //   4,      32
+        I_BlocSize      = 4,  // 16 / 4,   32
+        I_AudioFormat   = 10, // 20 / 2,   16
+        I_numChannels   = 11, // 22 / 2,   16
+        I_sampleRate    = 6,  // 24 / 4,   32
+        I_byteRate      = 7,  // 28 / 4,   32
+        I_BytePerBloc   = 16, // 32 / 2,   16
+        I_BitsPerSample = 17, // 36 / 2,   16
+        I_dataSize      = 10; // 40 / 4,   32
+
+  uint8.set([ R,I,F,F     ], 0)
+  uint32[I_fileSize] = fileSize;
+
+  uint8.set([ W,A,V,E     ], 8)
+  uint8.set([ f,m,t,space ], 12)
+
+  uint32[I_BlocSize]      = 16;
+  uint16[I_AudioFormat]   = 1;
+  uint16[I_numChannels]   = numChannels;
+  uint32[I_sampleRate]    = sampleRate;
+  uint32[I_byteRate]      = sampleRate * numChannels * bytesPerSample;
+
+  uint16[I_BytePerBloc]   = numChannels * bytesPerSample;
+  uint16[I_BitsPerSample] = 16;
+
+  uint8.set([ d,a,t,a     ], 36)
+  uint32[I_dataSize] = dataSize;
+  return uint8;
 }
 
 /**
