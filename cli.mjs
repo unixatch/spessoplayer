@@ -37,56 +37,33 @@ let argvWithoutFileExts = new Promise(resolve => {
   resolve(newArguments)
 });
 const regexes = {
-  help: /^(?:--help|\/help|-h|\/h|\/\?)$/,
-  version: /^(?:--version|\/version|-V|\/V)$/,
-  uninstall: /^(?:--uninstall|\/uninstall|-u|\/u)$/,
-
+  // These look like --option or --option[=n]
   verboseLevel: new RegExp([
-    "^(?:--verbose(?:=(?<number>\\d))*", // --verbose[=n]
-    "|\\/verbose(?:=(?<number>\\d))*",   // /verbose[=n]
-    "|-v(?:=(?<number>\\d))*",           // -v[=n]
-    "|\\/v(?:=(?<number>\\d))*)$"        // /v[=n]
+    "^(?:--verbose(?:=(?<number>\\d))*",
+    "|\\/verbose(?:=(?<number>\\d))*",
+    "|-v(?:=(?<number>\\d))*",
+    "|\\/v(?:=(?<number>\\d))*)$"
   ].join("")),
 
   logFile: new RegExp([
-    "^(?:--log-file(?:=(?<path>\\w+))*", // --log-file[=n]
-    "|\\/log-file(?:=(?<path>\\w+))*",   // /log-file[=n]
-    "|-lf(?:=(?<path>\\w+))*",           // -lf[=n]
-    "|\\/lf(?:=(?<path>\\w+))*)$"        // /lf[=n]
+    "^(?:--log-file(?:=(?<path>\\w+))*",
+    "|\\/log-file(?:=(?<path>\\w+))*",
+    "|-lf(?:=(?<path>\\w+))*",
+    "|\\/lf(?:=(?<path>\\w+))*)$"
   ].join("")),
-  ask: /^(?:--ask|\/ask|--confirm|\/confirm|-a|\/a|-c|\/c)$/,
-  noTable: /^(?:--no-table|\/no-table|-nt|\/nt)$/,
-  dryRun: new RegExp([
-    "^(?:--dry-run|\/dry-run",
-    "|--test|\/test",
-    "|--null|\/null",
-    "|-dr|\/dr",
-    "|-t|\/t",
-    "|-0|\/0)$"
-  ].join("")),
-  maxThreads: new RegExp([
-    "^(?:--max-threads|\/max-threads",
-    "|--threads|\/threads",
-    "|-mt|\/mt",
-    "|-T|\/T)$"
-  ].join("")),
-  showUsage: /^(?:--show-usage|\/show-usage|-U|\/U)$/,
   textDelay: new RegExp([
-    "^(?:--text-delay(?:=(?<number>\\d+))*", // --text-delay[=n]
-    "|\\/text-delay(?:=(?<number>\\d+))*",   // /text-delay[=n]
-    "|-d(?:=(?<number>\\d+))*",              // -d[=n]
-    "|\\/d(?:=(?<number>\\d+))*)$"           // /d[=n]
+    "^(?:--text-delay(?:=(?<number>\\d+))*",
+    "|\\/text-delay(?:=(?<number>\\d+))*",
+    "|-d(?:=(?<number>\\d+))*",
+    "|\\/d(?:=(?<number>\\d+))*)$"
   ].join("")),
-  noProgress: /^(?:--no-progress|\/no-progress|-np|\/np)$/,
 
-  stdout: /^-$/,
   wav: /^.*(?:\.wav|\.wave)$/,
-  wavFormat: /^(?:wav|wave)$/,
   flac: /^.*\.flac$/,
   mp3: /^.*\.mp3$/,
   raw: /^.*\.(?:s16le|s32le|pcm)$/,
-  rawFormat: /^(?:s16le|s32le|pcm)$/,
 
+  // Instead these like --option or --option[n]
   input: new RegExp([
     "^(?:--input(?<index>\\d+)*",
     "|\\/input(?<index>\\d+)*",
@@ -106,9 +83,6 @@ const regexes = {
     "|\\/e(?<index>\\d+)*)$"
   ].join("")),
 
-  // stdout format must be of only 1 kind
-  // otherwise players like mpv won't read the output correctly
-  format: /^(?:--format|\/format|-f|\/f)$/,
   volume: new RegExp([
     "^(?:--volume(?<index>\\d+)*",
     "|\\/volume(?<index>\\d+)*",
@@ -306,124 +280,141 @@ const actUpOnPassedArgs = async (args) => {
       lastAutomaticFile,
       groupSeparator;
   for (const arg of newArguments) {
-    switch (true) {
-      case arg === "|": { groupSeparator = true; break; }
-      case regexes.wav.test(arg): {
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(WAV_INDEX, arg);
-        log(INFO_LVL, "Set file output to wav")
-        break;
-      }
-      case regexes.raw.test(arg): {
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(RAW_INDEX, arg);
-        log(INFO_LVL, "Set file output to pcm")
-        break;
-      }
-      case regexes.flac.test(arg): {
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(FLAC_INDEX, arg);
-        log(INFO_LVL, "Set file output to flac")
-        break;
-      }
-      case regexes.mp3.test(arg): {
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(MP3_INDEX, arg);
-        log(INFO_LVL, "Set file output to mp3")
-        break;
-      }
-      case regexes.stdout.test(arg): {
+    switch (arg) {
+      case "|": { groupSeparator = true; break; }
+      case "-": {
         if (Options.isFileMode()) stdoutFileModeConflictError()
         Options.toStdout = true;
         log(INFO_LVL, "Set stdout mode")
         break;
       }
-      case regexes.ask.test(arg): {
+      case regexes.wav.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
+        Options.fileOutputs(WAV_INDEX, arg);
+        log(INFO_LVL, "Set file output to wav")
+        break;
+      }
+      case regexes.raw.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
+        Options.fileOutputs(RAW_INDEX, arg);
+        log(INFO_LVL, "Set file output to pcm")
+        break;
+      }
+      case regexes.flac.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
+        Options.fileOutputs(FLAC_INDEX, arg);
+        log(INFO_LVL, "Set file output to flac")
+        break;
+      }
+      case regexes.mp3.test(arg) && arg: {
+        if (isStdout) stdoutFileModeConflictError()
+        Options.fileOutputs(MP3_INDEX, arg);
+        log(INFO_LVL, "Set file output to mp3")
+        break;
+      }
+      case "--ask":     case "/ask":
+      case "--confirm": case "/confirm":
+      case "-a":        case "/a":
+      case "-c":        case "/c": {
         Options.confirmation = true;
         log(INFO_LVL, "Set confirmation flag")
         break;
       }
-      case regexes.noTable.test(arg): {
+      case "--no-table": case "/no-table":
+      case "-nt":        case "/nt": {
         Options.noTable = true;
         log(INFO_LVL, "Set no-table flag")
         break;
       }
-      case regexes.noProgress.test(arg): {
+      case "--no-progress": case "/no-progress":
+      case "-np":           case "/np": {
         Options.noProgress = true;
         log(INFO_LVL, "Set no-progress flag")
         break;
       }
-      case regexes.dryRun.test(arg): {
+      case "--dry-run": case "/dry-run":
+      case "--test":    case "/test":
+      case "--null":    case "/null":
+      case "-dr":       case "/dr":
+      case "-t":        case "/t":
+      case "-0":        case "/0": {
         Options.dryRun();
         log(INFO_LVL, "Set dry-run mode")
         break;
       }
-      case regexes.maxThreads.test(arg): {
+      case "--max-threads": case "/max-threads":
+      case "--threads":     case "/threads":
+      case "-mt":           case "/mt":
+      case "-T":            case "/T": {
         existsNextValueCheck(arg, newArguments)
         lastParam = "max-threads";
         break;
       }
-      case regexes.showUsage.test(arg): {
+      case "--show-usage": case "/show-usage":
+      case "-U":           case "/U": {
         if (!isStdout) {
           Options.showUsage = true;
           log(INFO_LVL, "Set show-usage flag")
         } else log(WARNING_LVL, `${normal+normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
         break;
       }
-      case regexes.textDelay.test(arg): {
+      // stdout format must be of only 1 kind
+      // otherwise players like mpv won't read the output correctly
+      case "--format": case "/format":
+      case "-f":       case "/f": {
+        existsNextValueCheck(arg, newArguments)
+        lastParam = "format";
+        break;
+      }
+      case regexes.textDelay.test(arg) && arg: {
         if (!testFunctions.stdout(newArgumentsSet)) {
           setTextDelay(arg)
         } else log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)
         break;
       }
-      case regexes.input.test(arg): {
+      case regexes.input.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "input";
         lastIndex = arg.match(regexes.input)?.groups;
         break;
       }
-      case regexes.reverbVolume.test(arg): {
+      case regexes.reverbVolume.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "reverb";
         lastIndex = arg.match(regexes.reverbVolume)?.groups;
         break;
       }
-      case regexes.volume.test(arg): {
+      case regexes.volume.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "volume";
         lastIndex = arg.match(regexes.volume)?.groups;
         break;
       }
-      case regexes.effects.test(arg): {
+      case regexes.effects.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "effects";
         lastIndex = arg.match(regexes.effects)?.groups;
         break;
       }
-      case regexes.format.test(arg): {
-        existsNextValueCheck(arg, newArguments)
-        lastParam = "format";
-        break;
-      }
-      case regexes.sampleRate.test(arg): {
+      case regexes.sampleRate.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "sample-rate";
         lastIndex = arg.match(regexes.sampleRate)?.groups;
         break;
       }
-      case regexes.loopStart.test(arg): {
+      case regexes.loopStart.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "loop-start";
         lastIndex = arg.match(regexes.loopStart)?.groups;
         break;
       }
-      case regexes.loopEnd.test(arg): {
+      case regexes.loopEnd.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "loop-end";
         lastIndex = arg.match(regexes.loopEnd)?.groups;
         break;
       }
-      case regexes.loop.test(arg): {
+      case regexes.loop.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "loop";
         lastIndex = arg.match(regexes.loop)?.groups;
@@ -779,7 +770,7 @@ const setVerboseLevel = async (arg) => {
  */
 const setFormat = arg => {
   switch (arg) {
-    case regexes.wavFormat.test(arg) && arg: {
+    case "wav": case "wave": {
       Options.format = "wave";
       log(INFO_LVL, `Set stdout format to "wave"`)
       return;
@@ -794,7 +785,8 @@ const setFormat = arg => {
       log(INFO_LVL, `Set stdout format to "mp3"`)
       return;
     }
-    case regexes.rawFormat.test(arg) && arg: {
+    case "s16le": case "s32le":
+    case "pcm": {
       Options.format = "pcm";
       log(INFO_LVL, `Set stdout format to "pcm"`)
       return;
