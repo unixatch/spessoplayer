@@ -233,11 +233,14 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
         fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS),
         bytesPerSample = 2;
 
+  const [left, right] = audioData;
   const fileSize = length * numChannels * bytesPerSample,
-        Data = new Uint8Array(fileSize);
+        arrayBuffer = new ArrayBuffer(fileSize),
+        Data16      = new Uint16Array(arrayBuffer);
 
-  let offset = 0,
-      multiplier = 32767;
+  let currentSample = 0,
+      multiplier = 32767,
+      negativeMultiplier = multiplier * -1 - 1;
   // Volume
   /*if (fullOptions.normalizeAudio) {
     const numSamples = audioData[0].length;
@@ -257,13 +260,16 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
       : 1;
   }*/
   for (let i = 0; i < length; i++) {
-    for (const d of audioData) {
-      const sample = Math.min(32767, Math.max(-32768, d[i] * multiplier));
-      Data[offset++] = sample & 255;
-      Data[offset++] = sample >> 8 & 255;
-    }
+    // Left channel
+    Data16[currentSample++] = Math.min(
+      multiplier, Math.max(negativeMultiplier, left[i] * multiplier)
+    );
+    // Right channel
+    Data16[currentSample++] = Math.min(
+      multiplier, Math.max(negativeMultiplier, right[i] * multiplier)
+    );
   }
-  return Data;
+  return new Uint8Array(arrayBuffer);
 }
 
 
