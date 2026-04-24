@@ -695,8 +695,8 @@ function createReadable(Readable, isStdout = false, {
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
       seq.processTick()
-      synth.renderAudio(
-        stereoChannels, [], [],
+      synth.process(
+        left, right,
         0,
         bufferSize
       )
