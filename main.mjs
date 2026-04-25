@@ -425,7 +425,12 @@ for (let i = 0; i < amountOfSongs; i++) {
 // Terminate last idle workers since they're unused
 const workersEntries = workers.reverse().entries();
 for (const [index, worker] of workersEntries) {
-  const promise = listOfPromises.get((maxThreads-1) - index);
+  const indexOfPromise = (
+    amountOfSongs < maxThreads
+      ? amountOfSongs - 1 - index
+      : maxThreads    - 1 - index
+  );
+  const promise = listOfPromises.get(indexOfPromise);
   if (promise.pending) break;
   worker.terminate()
 }
