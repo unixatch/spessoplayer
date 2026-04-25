@@ -239,7 +239,7 @@ async function formatManager({
       break;
     }
     case "pcm":
-    case /^.*\.(?:s16le|s32le|pcm)$/.test(outFile): {
+    case /^.*\.(?:s16le|f32le|pcm)$/.test(outFile): {
       if (isToFile) {
         const newName = newFileName(outFile, createNewFileNameAnyway);
         fileOutputs[fileOutputs.indexOf(outFile)] = newName;
@@ -1052,7 +1052,7 @@ async function startPlayer(Options) {
     }
 
     // If it needs to be converted
-    const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
+    const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|f32le)/) === null;
     if (needsConvertion) {
       const { spawn } = child_process ??= await import("child_process");
       converterProcess = spawn("ffmpeg",
@@ -1062,7 +1062,7 @@ async function startPlayer(Options) {
     }
     // If it needs effects
     if (listOfOptions?.effects
-        && (listOfOptions?.format?.match(/(?:pcm|s16le|s32le)/) === null
+        && (listOfOptions?.format?.match(/(?:pcm|s16le|f32le)/) === null
         || !listOfOptions?.format)) {
       [effectsProcess] = await applyEffects({
         program: "sox",

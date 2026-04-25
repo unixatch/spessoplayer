@@ -61,7 +61,7 @@ const regexes = {
   wav: /^.*(?:\.wav|\.wave)$/,
   flac: /^.*\.flac$/,
   mp3: /^.*\.mp3$/,
-  raw: /^.*\.(?:s16le|s32le|pcm)$/,
+  raw: /^.*\.(?:s16le|f32le|pcm)$/,
 
   // Instead these like --option or --option[n]
   input: new RegExp([
@@ -785,7 +785,7 @@ const setFormat = arg => {
       log(INFO_LVL, `Set stdout format to "mp3"`)
       return;
     }
-    case "s16le": case "s32le":
+    case "s16le": case "f32le":
     case "pcm": {
       Options.format = "pcm";
       log(INFO_LVL, `Set stdout format to "pcm"`)
@@ -1119,7 +1119,7 @@ const help = async ({ errorText } = "") => {
         - wav
         - mp3
         - flac
-        - pcm (s32le)`
+        - pcm (f32le)`
       )}
 
     ${param(

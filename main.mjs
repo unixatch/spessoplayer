@@ -122,7 +122,7 @@ if (isToStdout) {
   }, listOfOptions?.sampleRate ?? 48000);
 
   // If it needs to be converted
-  const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|s32le)/) === null;
+  const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|f32le)/) === null;
   if (needsConvertion) {
     const { spawn } = await import("child_process");
     converterProcess = spawn("ffmpeg",
@@ -136,7 +136,7 @@ if (isToStdout) {
   }
   // If it needs effects
   if (listOfOptions?.effects
-      && (listOfOptions?.format?.match(/(?:pcm|s16le|s32le)/) === null
+      && (listOfOptions?.format?.match(/(?:pcm|s16le|f32le)/) === null
       || !listOfOptions?.format)) {
     [effectsProcess] = await applyEffects({
       program: "sox",
