@@ -51,7 +51,7 @@ Available formats:
 - **wav**;
 - **mp3**;
 - **flac**;
-- **pcm (s32le)**;
+- **pcm (f32le)**;
 
 ### --max-threads **n**, /max-threads **n**, --threads **n**, /threads **n**,
 #### &nbsp;&nbsp;-mt **n**, /mt **n**, -T **n**, /T **n**:

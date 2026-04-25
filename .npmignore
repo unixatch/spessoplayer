@@ -7,4 +7,5 @@ node_modules/
 *.mp3
 *.pcm
 *.s16le
-*.s32le
+*.f32le
+
