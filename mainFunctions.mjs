@@ -889,6 +889,7 @@ async function toFile({
   const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
         foEntries = options.fileOutputs.entries();
   for (const [index, outFile] of foEntries) {
+    if (!outFile) continue;
     if (index === WAV_INDEX || index === RAW_INDEX) {
       await addFunction(outFile)
       continue;

@@ -121,7 +121,7 @@ function log(level, ...messages) {
  * @returns {String} The path, modified or not
  */
 function newFileName(path, createAnyway = false) {
-  if (!fs.existsSync(path) && !createAnyway) return path;
+  if (!fs.existsSync(path ?? "") && !createAnyway) return path;
 
   const LIMIT = 900;
   const randomCharCode = () => {
