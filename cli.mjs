@@ -787,8 +787,9 @@ const setFormat = arg => {
     }
     case "s16le": case "f32le":
     case "pcm": {
-      Options.format = "pcm";
-      log(INFO_LVL, `Set stdout format to "pcm"`)
+      const formatToUse = (arg === "f32le") ? "f32le" : "pcm";
+      Options.format = formatToUse;
+      log(INFO_LVL, `Set stdout format to "${formatToUse}"`)
       return;
     }
   }

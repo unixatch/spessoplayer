@@ -636,7 +636,7 @@ function addEvent({ eventType, func }) {
 function createReadable(Readable, isStdout = false, {
   sampleCount, index,
   seq, synth,
-  getData,
+  getData, isf32le,
   progressBuffers
 }) {
   /**
@@ -674,6 +674,29 @@ function createReadable(Readable, isStdout = false, {
     }
 
     progress.updateProgress(SCurrentTime)
+  }
+  /**
+   * @typedef interleavedFloat32Channels
+   * @type {Array}
+   * @property {Float32Array} left  left channel
+   * @property {Float32Array} right right channel
+   */
+  /**
+   * Combines raw Float32Arrays into 1
+   * @param {interleavedFloat32Channels} channels
+   * @return {Buffer} interleaved float32 buffer
+   */
+  function getInterleavedFloat32Data([left, right]) {
+    const length = left.length,
+          bufferLength = length * 2 * 4,
+          buffer = Buffer.alloc(bufferLength);
+
+    let currentSample = 0;
+    for (let i = 0; i < length; i++) {
+      buffer.writeFloatLE(left[i],  currentSample++ << 2)
+      buffer.writeFloatLE(right[i], currentSample++ << 2)
+    }
+    return buffer;
   }
 
   let textRenderingIndex = 0,
@@ -716,7 +739,11 @@ function createReadable(Readable, isStdout = false, {
 
       if (filledSamples <= sampleCount && !lastBytes) {
         if (filledSamples === sampleCount) lastBytes = true;
-        const data = getData(stereoChannels);
+        const data = (
+          isf32le
+            ? getInterleavedFloat32Data(stereoChannels)
+            : getData(stereoChannels)
+        );
         // Clean up old data for both channels
         left.fill(0, 0, BUFFER_SIZE)
         right.fill(0, 0, BUFFER_SIZE)
@@ -764,7 +791,7 @@ async function toStdout({
   let readStream = createReadable(Readable, true, {
     sampleCount,
     seq, synth,
-    getData
+    getData, isf32le: format === "f32le"
   });
 
   let promisesOfPrograms = [];
@@ -1112,9 +1139,10 @@ async function startPlayer(Options) {
   }
   server.listen({ host: "localhost", port })
 
-  const isRawAudio = (format === "pcm") ? [
+  const isf32le = format === "f32le";
+  const isRawAudio = (format === "pcm" || isf32le) ? [
     "--demuxer=rawaudio",
-    "--demuxer-rawaudio-format=s16le",
+    "--demuxer-rawaudio-format="+(isf32le ? "floatle" : "s16le"),
     "--demuxer-rawaudio-rate="+(sampleRate ?? 48000),
     "--demuxer-rawaudio-channels=2"
   ] : "";
