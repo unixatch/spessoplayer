@@ -1012,14 +1012,18 @@ class Progress {
  * @param {Options} Options Options class
  */
 async function startPlayer(Options) {
-  const listOfOptions = Options.all;
+  const {
+    files: filesList,
+    sampleRate,
+    format,
+    effects
+  } = Options.all;
   const { getWavHeader } = await import("./audioBuffer.mjs"),
         { spawn }        = child_process ??= await import("child_process"),
         { createServer } = await import("http");
 
   const port = 3000,
         server = createServer(),
-        filesList = listOfOptions.files,
         listOfURLs = [],
         promisesOfPrograms = [];
 
@@ -1041,36 +1045,36 @@ async function startPlayer(Options) {
     let effectsProcess,
         converterProcess;
     // Creating the header
-    const stdoutHeader = getWavHeader({ length, numChannels: 2 }, listOfOptions?.sampleRate ?? 48000);
+    const stdoutHeader = getWavHeader({ length, numChannels: 2 }, sampleRate ?? 48000);
 
     // Needed even if it's wrong because
     // otherwise mpv gives out a fatal error
     // only if it's a flac convertion (buggy ffmpeg?)
-    if (listOfOptions?.format === "flac") {
+    if (format === "flac") {
       res.setHeader("Content-Length", length << 4)
       res.flushHeaders()
     }
 
     // If it needs to be converted
-    const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|f32le)/) === null;
+    const needsConvertion = format?.match(/(?:wave|pcm|s16le|f32le)/) === null;
     if (needsConvertion) {
       const { spawn } = child_process ??= await import("child_process");
       converterProcess = spawn("ffmpeg",
-        ffmpegArgs()[listOfOptions?.format],
+        ffmpegArgs()[format],
         {stdio: ["pipe", res.socket, "pipe"]}
       );
     }
     // If it needs effects
-    if (listOfOptions?.effects
-        && (listOfOptions?.format?.match(/(?:pcm|s16le|f32le)/) === null
-        || !listOfOptions?.format)) {
+    if (effects
+        && (format?.match(/(?:pcm|s16le|f32le)/) === null
+        || !format)) {
       [effectsProcess] = await applyEffects({
         program: "sox",
         stdoutHeader,
         stdout: converterProcess?.stdin ?? res.socket,
         promisesOfPrograms,
         // TODO: effects system needs to overhauled
-        //effects: listOfOptions?.effects[0]
+        //effects: effects[0]
       });
       log(INFO_LVL, "Done setting up SoX")
     } else if (needsConvertion) {
@@ -1108,13 +1112,13 @@ async function startPlayer(Options) {
   }
   server.listen({ host: "localhost", port })
 
-  const isRawAudio = (listOfOptions?.format === "pcm") ? [
+  const isRawAudio = (format === "pcm") ? [
     "--demuxer=rawaudio",
     "--demuxer-rawaudio-format=s16le",
-    "--demuxer-rawaudio-rate="+(listOfOptions?.sampleRate ?? 48000),
+    "--demuxer-rawaudio-rate="+(sampleRate ?? 48000),
     "--demuxer-rawaudio-channels=2"
   ] : "";
-  const msgLevel = (!listOfOptions?.format?.match(/wave|pcm/))
+  const msgLevel = (!format?.match(/wave|pcm/))
                       // Hide Content-Length mismatch error
                     ? ["--msg-level=ffmpeg=fatal"]
                     : [];
