@@ -284,10 +284,14 @@ const { Worker } = await import("worker_threads"),
       { availableParallelism } = await import("os");
 const fileSizes = await getSizes(filesList);
 const resourceLimits = new function () {
+  const DEFAULT_MAX_OLD_GEN = 20;
   const getSize = (index, previous) => (
     (previous > index) ? previous : index
   );
-  const biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
+  let biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
+  if (biggestFileSize < DEFAULT_MAX_OLD_GEN) {
+    biggestFileSize = DEFAULT_MAX_OLD_GEN;
+  }
   return {
     maxOldGenerationSizeMb: biggestFileSize,
     maxYoungGenerationSizeMb: biggestFileSize / 2
