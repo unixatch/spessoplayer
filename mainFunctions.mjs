@@ -69,7 +69,8 @@ function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
  */
 async function formatManager({
   format = true,
-  readStream, res, dryRun,
+  readStream, rawReadStream,
+  res, dryRun,
   effects,
   index,
   createNewFileNameAnyway,
@@ -261,8 +262,9 @@ async function formatManager({
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
       addPipingFunction((whereToConnect, end) => {
+        const stream = rawReadStream ?? readStream;
         addErrorEventToDest(
-          readStream
+          stream
             .once("error", streamErrorHandling)
             .pipe(output, { end })
         )
@@ -860,18 +862,38 @@ async function toFile({
   let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
-  let readStream = createReadable(Readable, false, {
-    sampleCount,
-    seq, synth,
-    getData,
-    index, progressBuffers
-  });
+  const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
+        hasf32le = options.fileOutputs[RAW_INDEX]?.endsWith(".f32le");
+  let readStream = (
+    hasf32le &&
+    options.fileOutputs.length === 2 &&
+    !options.fileOutputs[WAV_INDEX]
+      ? undefined
+      : createReadable(Readable, false, {
+        sampleCount,
+        seq, synth,
+        getData,
+        index, progressBuffers
+      })
+  );
+  let rawReadStream = (
+    hasf32le
+      ? createReadable(Readable, false, {
+        sampleCount,
+        seq, synth,
+        getData, isf32le: hasf32le,
+        index, progressBuffers
+      })
+      : undefined
+  );
   let promisesOfPrograms = [],
       pipingFunctions = [];
   const addFunction = async outFile => {
+    const isf32le = outFile?.endsWith(".f32le");
     pipingFunctions.push(
       await formatManager({
-        readStream,
+        readStream:    isf32le || readStream,
+        rawReadStream: isf32le ? rawReadStream : undefined,
         index, ...options,
         createNewFileNameAnyway,
         stdoutHeader,
@@ -886,8 +908,7 @@ async function toFile({
       })
     )
   };
-  const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
-        foEntries = options.fileOutputs.entries();
+  const foEntries = options.fileOutputs.entries();
   for (const [index, outFile] of foEntries) {
     if (!outFile) continue;
     if (index === WAV_INDEX || index === RAW_INDEX) {
@@ -898,18 +919,23 @@ async function toFile({
     break;
   }
 
+  const finishedOptions = { cleanup: true };
   return [
     options.fileOutputs,
     pipingFunctions,
     Promise.all([
-      finished(readStream, { cleanup: true })
+      Promise.all([
+        rawReadStream && finished(rawReadStream, finishedOptions),
+        readStream    && finished(readStream,    finishedOptions)
+      ])
         .then(() => {
           synth.soundBankManager.soundBankList.splice(0)
           synth.destroySynthProcessor()
           seq.songs.length = 0;
           return [
             sampleCount, stdoutHeader,
-            readStream, seq, synth,
+            readStream, rawReadStream,
+            seq, synth,
             pipingFunctions, promisesOfPrograms
           ] = [];
         }),
