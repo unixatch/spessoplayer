@@ -846,7 +846,7 @@ const setEffects = (arg, lastIndex) => {
     }
 
     Options.effects(Number(lastIndex?.index), list);
-    log(INFO_LVL, `Set list of SoX effects as ${global.effects}`)
+    log(INFO_LVL, "Set list of SoX effects as ", JSON.stringify(list))
     return;
   }
   console.error(`${normalRed}The string for SoX effects you passed is not usable${normal}`);

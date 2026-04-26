@@ -151,7 +151,7 @@ async function formatManager({
             stdoutHeader, readStream,
             promisesOfPrograms,
             destination: outFile,
-            effects: (Array.isArray(effects)) ? effects[index] : undefined
+            effects: (Array.isArray(effects)) ? effects : undefined
           })
         }
         log(INFO_LVL, doneSettingUpMsg)
@@ -215,7 +215,7 @@ async function formatManager({
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
-          effects: (Array.isArray(effects)) ? effects[index] : undefined
+          effects: (Array.isArray(effects)) ? effects : undefined
         })
         log(INFO_LVL, doneSettingUpMsg)
         break;
@@ -456,12 +456,12 @@ async function applyEffects({
     const oldEffectsArray = [...effects];
     effects.length = 0;
     oldEffectsArray
-      .forEach((i) => {
-        if (i.values) {
-          effects.push(i.effect, ...i.values)
+      .forEach(({ effect, values }) => {
+        if (values) {
+          effects.push(effect, ...values)
           return;
         }
-        effects.push(i.effect)
+        effects.push(effect)
       })
   }
   const sox = spawn(program, [
