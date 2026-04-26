@@ -415,7 +415,7 @@ for (let i = 0; i < amountOfSongs; i++) {
     index: i, filesListLength
   };
   const currentWorker = workers[currentThread] ??= new Worker(
-    "./fileWriter_worker.mjs",
+    import.meta.dirname+"/fileWriter_worker.mjs",
     { workerData, resourceLimits }
   );
 
