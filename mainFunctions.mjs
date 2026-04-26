@@ -1026,7 +1026,9 @@ class Progress {
    * @throws {TypeError} - if trying to update with a full shared array
    */
   updateProgress(newNumber, typeOfArray = "renderedAmount") {
-    if (this.#index === undefined) throw new TypeError("Can't update with full shared array")
+    if (this.#index === undefined) {
+      throw new TypeError("Can't update with full shared array")
+    }
 
     switch (typeOfArray) {
       case "renderedAmount":

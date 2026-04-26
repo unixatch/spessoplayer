@@ -273,7 +273,9 @@ const actUpOnPassedArgs = async (args) => {
   function existsNextValueCheck(arg, newArguments) {
     // In case there's no other argument
     const indexOfArg = newArguments.indexOf(arg);
-    if (newArguments[indexOfArg + 1] === undefined) throw new ReferenceError("Missing necessary argument");
+    if (newArguments[indexOfArg + 1] === undefined) {
+      throw new ReferenceError("Missing necessary argument")
+    }
   }
   const isStdout = testFunctions.stdout(newArgumentsSet);
   let indexOfSetFile = 0,

@@ -74,7 +74,9 @@ function writeRIFFChunkParts(header, chunks, isList = false) {
   return outArray;
 }
 function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
-  if (header.length !== 4) throw new Error(`Invalid header length: ${header}`)
+  if (header.length !== 4) {
+    throw new Error(`Invalid header length: ${header}`)
+  }
   let dataStartOffset = 8;
   let headerWritten = header;
   let dataLength = data.length;

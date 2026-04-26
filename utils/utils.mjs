@@ -351,11 +351,15 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           value, "array", (needsAnArray) ? property : undefined
         )
         for (const effectObj of value) {
-          if (typeof effectObj.effect !== "string") throw new TypeError("effect property is not a string")
+          if (typeof effectObj.effect !== "string") {
+            throw new TypeError("effect property is not a string")
+          }
           // Array of strings or undefined
           if (effectObj.values === undefined) continue;
           for (const string of effectObj.values) {
-            if (typeof string !== "string") throw new TypeError("effect property is not a string")
+            if (typeof string !== "string") {
+              throw new TypeError("effect property is not a string")
+            }
           }
         }
         if (Number.isInteger(index)) setIndex(); else pushValue()
@@ -511,8 +515,12 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @throws {TypeError} - if index is not a number
    */
   static isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup) {
-    if (!Array.isArray(argvWithoutFileExts)) throw new TypeError("argvWithoutFileExts must be an array")
-    if (typeof indexOfGroup !== "number") throw new TypeError("index must be a number")
+    if (!Array.isArray(argvWithoutFileExts)) {
+      throw new TypeError("argvWithoutFileExts must be an array")
+    }
+    if (typeof indexOfGroup !== "number") {
+      throw new TypeError("index must be a number")
+    }
     const group = this.#options.files[indexOfGroup];
 
     if (group.size > 2) return false;
