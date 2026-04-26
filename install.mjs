@@ -71,7 +71,7 @@ async function runCheck(program, noInstallMsg = "") {
       if (/^(?:n|no)$/i.test(answer)) {
         console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
       }
-      clearLastLines([0, -1])
+      clearLastLines(-1)
       return await question();
     }
     await question();

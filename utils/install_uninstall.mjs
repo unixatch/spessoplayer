@@ -22,37 +22,22 @@
 import "./colors.mjs"
 
 /**
- * @typedef lines
- * @type {Number[]}
- * @property {Number} x x axis
- * @property {Number} [y] y axis
- */
-/**
  * Clears lines from the last line up
- * @param {lines} lines - two numbers, x and y values
- * @throws {TypeError} - if the passed argument isn't an array,
- *                       if one of its values is a string or
- *                       it can't be converted to an integer
+ * @param {Number} lineY - line before the cursor in negative
+ * @throws {TypeError}   - if it's not a valid number
  * @example
  * // Clears only the last line
- * clearLastLines([0, -1])
+ * clearLastLines(-1)
  */
 const clearLastLines = lines => {
-  if (!Array.isArray(lines)) throw new TypeError("Didn't give an array");
-  let lineX, lineY;
-  lines
-    .forEach((line, i) => {
-      if (typeof line === "string") throw new TypeError(`Gave string "${line}", numbers only allowed`)
-      const int = parseInt(line);
-      if (isNaN(int)) throw new TypeError("Didn't give a number")
-      if (i === 0) {
-        lineX = line;
-      } else lineY = line;
-    })
-  process.stdout
-    .moveCursor(lineX, lineY);
-  process.stdout
-    .clearScreenDown();
+  if (typeof lineY !== "number" || isNaN(lineY)) {
+    throw new TypeError("Didn't give a valid number")
+  }
+  const absoluteNumber = Math.abs(lineY);
+  const upNLines = `\x1b[${absoluteNumber}F`,
+        clearScreenDown = "\x1b[0J";
+
+  process.stdout.write(upNLines + clearScreenDown)
 }
 /**
  * Checks program existence synchronously

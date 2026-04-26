@@ -79,7 +79,7 @@ if (confirmation) {
       console.warn(`${gray}Closing then...${normal}`)
       process.exit()
     }
-    clearLastLines([0, -1])
+    clearLastLines(-1)
     return await question();
   }
   await question()

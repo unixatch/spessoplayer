@@ -63,7 +63,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
     if (/^(?:n|no)$/i.test(answer)) {
       console.warn(normalYellow + noUninstallMsg + normal)
     }
-    clearLastLines([0, -1])
+    clearLastLines(-1)
     return await runCheck(program, noUninstallMsg, true);
   } catch (e) {
     if (e.name === "AbortError") {
