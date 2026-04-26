@@ -641,6 +641,12 @@ function createReadable(Readable, isStdout = false, {
   getData, isf32le,
   progressBuffers
 }) {
+  // Creates the variable without losing "this" context
+  const {
+    midiData: { midiTicksToSeconds: tmpMTS }
+  } = seq;
+  const midiTicksToSeconds = tmpMTS.bind(seq.midiData);
+
   /**
    * Sets the rendered amount of seconds
    * with loops accounted for when they start
@@ -652,7 +658,6 @@ function createReadable(Readable, isStdout = false, {
     const {
       loopCount, currentTime: SCurrentTime,
       midiData: {
-        midiTicksToSeconds,
         loop: { start: loopStart }
       }
     } = seq;
