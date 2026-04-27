@@ -998,7 +998,9 @@ class Progress {
    */
   get percentageText() {
     if (this.#index !== undefined) return;
-    return yellow+(this.#sum(this.#percentageDone).toFixed(2))+normal+"%";
+    return yellow + (
+      this.#sum(this.#percentageDone).toFixed(2)
+    ) + normal + "%";
   }
   /**
    * Gives the amount of minutes rendered
@@ -1007,21 +1009,28 @@ class Progress {
    */
   get minutesRenderedText() {
     if (this.#index !== undefined) return;
-    return `${magenta}`
-            // Gets the ISO format and then gets mm:ss.sss
-            + new Date(
-                (Math.floor(this.#sum(this.#renderedAmount) * 100) / 100) * 1000
-              )
-                .toISOString()
-                .replace(/.*T...(.*)Z/, "$1")
-            + `${normal}`
-            + " / "
-            + `${brightMagenta}`
-              // Same down here
-            + new Date(this.#amountToRender * 1000)
-                .toISOString()
-                .replace(/.*T...(.*)Z/, "$1")
-            + `${normal} | `;
+
+    const renderedAmountNumber = (
+      Math.floor(
+        this.#sum(this.#renderedAmount) * 100
+      ) / 100 * 1000
+    );
+    const upToMinutesRegex = /.*T...(.*)Z/;
+    return (
+      magenta
+        // Gets the ISO format and then gets mm:ss.sss
+        + (
+          new Date(renderedAmountNumber)
+            .toISOString().replace(upToMinutesRegex, "$1")
+          + `${normal} / ${brightMagenta}`
+        )
+        // Same down here
+        + (
+          new Date(this.#amountToRender * 1000)
+            .toISOString().replace(upToMinutesRegex, "$1")
+          + `${normal} | `
+        )
+    );
   }
   /**
    * Updates the progress number of renderedAmount
