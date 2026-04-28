@@ -144,9 +144,7 @@ const testFunctions = {
       set.has("--uninstall") || set.has("/uninstall")
       || set.has("-u") || set.has("/u")
     );
-  },
-  verboseLevel: i => regexes.verboseLevel.test(i),
-  logFile: i => regexes.logFile.test(i)
+  }
 };
 
 /**
@@ -185,6 +183,76 @@ async function get20BytesFromFile(path) {
       reject(process.exit(errno))
     })
   return (await readPromise)?.toString();
+}
+/**
+ * Manages/handles verbose options
+ * @param {Array}  newArguments process.argv -2 initial arguments
+ * @param {Object} variableObj
+ * @param {String} variableObj.DEBUG_LEVEL_SPESSO  terminal value for verbosity
+ * @param {String} variableObj.DEBUG_FILE_SPESSO   terminal value for file path
+ * @param {String} variableObj.debugLevelSpessoMsg
+ * @param {String} variableObj.debugFileSpessoMsg
+ */
+async function manageVerboseOptions(newArguments, {
+  DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
+  debugLevelSpessoMsg, debugFileSpessoMsg
+}) {
+  let isVerboseLevelSet,
+      newArgumentsLength = newArguments.length;
+
+  // +++ verboseLevel section +++
+  for (let index = 0; index < newArgumentsLength; index++) {
+    if (DEBUG_LEVEL_SPESSO) {
+      log(INFO_LVL, debugLevelSpessoMsg)
+      break;
+    }
+    const argvString = newArguments[index];
+    if (!argvString.startsWith("-")
+        && !argvString.startsWith("/")) continue;
+    if (
+      !argvString.startsWith("--verbose") &&
+      !argvString.startsWith("/verbose") &&
+      !argvString.startsWith("-v") &&
+      !argvString.startsWith("/v")
+    ) continue;
+
+    newArguments.splice(index, 1)
+    newArgumentsLength--
+
+    isVerboseLevelSet = argvString;
+    await setVerboseLevel(
+      argvString
+        ?.match(regexes.verboseLevel)
+          .groups
+          .number ?? INFO_LVL+""
+    )
+    break;
+  }
+  // +++ logFile section +++
+  for (let index = 0; index < newArgumentsLength; index++) {
+    if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
+
+    const argvString = newArguments[index];
+    if (!argvString.startsWith("-")
+        && !argvString.startsWith("/")) continue;
+    if (
+      !argvString.startsWith("--log-file") &&
+      !argvString.startsWith("/log-file") &&
+      !argvString.startsWith("-lf") &&
+      !argvString.startsWith("/lf")
+    ) continue;
+
+    newArguments.splice(index, 1)
+
+    if (!isVerboseLevelSet) await setVerboseLevel("1")
+    setLogFilePath(
+      argvString
+        ?.match(regexes.logFile)
+          .groups
+          .path
+    )
+    break;
+  }
 }
 const setFilePromises = [];
 const {
@@ -227,40 +295,19 @@ const actUpOnPassedArgs = async (args) => {
     process.exit()
   }
 
-  const isVerboseLevelSet = newArguments.find(testFunctions.verboseLevel);
-  if (isVerboseLevelSet) {
-    let verboseOptionNumber = isVerboseLevelSet.match(regexes.verboseLevel).groups.number;
-    const verboseOptionPosition = newArguments.indexOf(isVerboseLevelSet);
-
-    if (!verboseOptionNumber) verboseOptionNumber = INFO_LVL+"";
-    // Delete verbose-level from newArguments
-    newArguments.splice(verboseOptionPosition, 1)
-
-    if (!process.env["DEBUG_LEVEL_SPESSO"]) {
-      await setVerboseLevel(verboseOptionNumber)
-    } else log(INFO_LVL, `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
-  } else if (process.env["DEBUG_LEVEL_SPESSO"]) {
-    log(INFO_LVL, `Using variable DEBUG_LEVEL_SPESSO=${process.env["DEBUG_LEVEL_SPESSO"]}`)
-  }
-  const isPathOfLogFileSet = newArguments.find(testFunctions.logFile);
-  if (isPathOfLogFileSet
-      && !isVerboseLevelSet
-      && !process.env["DEBUG_LEVEL_SPESSO"]) {
-    await setVerboseLevel("1")
-  }
-
-  if (isPathOfLogFileSet) {
-    const pathOfLogFile = isPathOfLogFileSet.match(regexes.logFile).groups.path;
-    const pathOfLogFilePosition = newArguments.indexOf(isPathOfLogFileSet);
-
-    // Delete verbose-level from newArguments
-    newArguments.splice(pathOfLogFilePosition, 1)
-
-    if (!process.env["DEBUG_FILE_SPESSO"]) {
-      setLogFilePath(pathOfLogFile)
-    } else log(INFO_LVL, `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
-  } else if (process.env["DEBUG_FILE_SPESSO"]) {
-    log(INFO_LVL, `Using variable DEBUG_FILE_SPESSO=${process.env["DEBUG_FILE_SPESSO"]}`)
+  const {
+    env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
+  } = process;
+  const debugLevelSpessoMsg = `Using variable DEBUG_LEVEL_SPESSO=${DEBUG_LEVEL_SPESSO}`,
+        debugFileSpessoMsg  = `Using variable DEBUG_FILE_SPESSO=${DEBUG_FILE_SPESSO}`;
+  if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
+    log(INFO_LVL, debugLevelSpessoMsg)
+    log(INFO_LVL, debugFileSpessoMsg)
+  } else {
+    await manageVerboseOptions(newArguments, {
+      DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
+      debugLevelSpessoMsg, debugFileSpessoMsg
+    })
   }
 
   function clearLastVariables() {
