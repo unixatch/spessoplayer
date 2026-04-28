@@ -843,11 +843,13 @@ async function toStdout({
 async function toFile({
   createNewFileNameAnyway, index,
   progressBuffers,
-  options, FO_CONSTANTS
+  options, options: {
+    fileOutputs,
+    fileOutputs: { length: foLength }
+  },
+  FO_CONSTANTS
 }) {
-  if (!options.midiFile
-      || !options.soundfontFile
-      || options.fileOutputs.length === 0) {
+  if (!options.midiFile || !options.soundfontFile || !foLength) {
     throw new ReferenceError("Missing some required files")
   }
   log(INFO_LVL, "Started toFile")
@@ -868,11 +870,10 @@ async function toFile({
   log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
   const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
-        hasf32le = options.fileOutputs[RAW_INDEX]?.endsWith(".f32le");
+        hasf32le = fileOutputs[RAW_INDEX]?.endsWith(".f32le");
   let readStream = (
     hasf32le &&
-    options.fileOutputs.length === 2 &&
-    !options.fileOutputs[WAV_INDEX]
+    foLength === 2 && !fileOutputs[WAV_INDEX]
       ? undefined
       : createReadable(Readable, false, {
         sampleCount,
@@ -913,9 +914,10 @@ async function toFile({
       })
     )
   };
-  const foEntries = options.fileOutputs.entries();
-  for (const [index, outFile] of foEntries) {
-    if (!outFile) continue;
+  for (let index = 0; index < foLength; index++) {
+    if (!fileOutputs[index]) continue;
+
+    const outFile = fileOutputs[index];
     if (index === WAV_INDEX || index === RAW_INDEX) {
       await addFunction(outFile)
       continue;
@@ -926,7 +928,7 @@ async function toFile({
 
   const finishedOptions = { cleanup: true };
   return [
-    options.fileOutputs,
+    fileOutputs,
     pipingFunctions,
     Promise.all([
       Promise.all([
