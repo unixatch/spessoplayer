@@ -86,12 +86,18 @@ function log(level, ...messages) {
       .replace(/(.*)/s, `${dimGray}$1${normal}`)
   ];
   if (messages[0] === "Finished printing to stdout") message.unshift("\n")
-  console.error(...message);
+  console.error(...message)
 
   const path = debugFileSpesso || Options.logFilePath;
   if (!path) return;
+
   message[0] = message[0].toISOString();
-  message[message.length-1] = message[message.length-1].replaceAll(/\x1b\[.{1,10}m/g, "")
+  const messageLength = message.length,
+        escapeSequenceRemover = /\x1b\[[0-9;]*m/g;
+
+  for (let i = 1; i < messageLength; i++) {
+    message[i] = message[i].replaceAll(escapeSequenceRemover, "");
+  }
   message.push("\n")
   fs.appendFileSync(path, message.join(" "))
 }
