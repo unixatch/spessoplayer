@@ -29,7 +29,7 @@ import "./colors.mjs"
  * // Clears only the last line
  * clearLastLines(-1)
  */
-const clearLastLines = lines => {
+const clearLastLines = lineY => {
   if (typeof lineY !== "number" || isNaN(lineY)) {
     throw new TypeError("Didn't give a valid number")
   }

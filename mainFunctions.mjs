@@ -199,7 +199,7 @@ async function formatManager({
         combinedFfmpegArgs.push(
           ...ffmpegArgs(
             dryRun ? undefined : newName,
-            !combinedFfmpegArgs.length ? false : true
+            !combinedFfmpegArgs.length
           )[formats[index]]
         )
       }
@@ -262,9 +262,9 @@ async function formatManager({
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
       addPipingFunction((whereToConnect, end) => {
-        const stream = rawReadStream ?? readStream;
+        const rawStream = rawReadStream ?? readStream;
         addErrorEventToDest(
-          stream
+          rawStream
             .once("error", streamErrorHandling)
             .pipe(output, { end })
         )
@@ -316,12 +316,12 @@ function getSampleCount({
   } else {
     let end;
     if (loopEnd === undefined && !loopDetectedInMidi) {
-      end = midi.duration;
+      end = durationInSeconds;
     } else if (loopEnd !== undefined && !loopDetectedInMidi) {
-      end = midi.duration - loopEnd;
+      end = durationInSeconds - loopEnd;
     } else end = loopEnd;
 
-    durationInSeconds = midi.duration + ((end - loopStart) * possibleLoopAmount);
+    durationInSeconds += (end - loopStart) * possibleLoopAmount;
     sampleCount = Math.ceil(sampleRate * durationInSeconds);
   }
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
@@ -907,18 +907,18 @@ async function toFile({
         FO_CONSTANTS: !outFile ? FO_CONSTANTS : undefined,
         outFile: outFile ?? (
           outFile = {...FO_CONSTANTS},
-          delete outFile["WAV_INDEX"],
-          delete outFile["RAW_INDEX"],
+          delete outFile.WAV_INDEX,
+          delete outFile.RAW_INDEX,
           Object.values(outFile)
         )
       })
     )
   };
-  for (let index = 0; index < foLength; index++) {
-    if (!fileOutputs[index]) continue;
+  for (let foIndex = 0; foIndex < foLength; foIndex++) {
+    if (!fileOutputs[foIndex]) continue;
 
-    const outFile = fileOutputs[index];
-    if (index === WAV_INDEX || index === RAW_INDEX) {
+    const outFile = fileOutputs[foIndex];
+    if (foIndex === WAV_INDEX || foIndex === RAW_INDEX) {
       await addFunction(outFile)
       continue;
     }

@@ -223,7 +223,6 @@ const sharedFilesMap = new Map();
 let promisesOfSharedFiles = [];
 const {
   promises: {
-    stat: asyncStat,
     readFile: asyncReadFile,
     unlink: asyncUnlink
   }

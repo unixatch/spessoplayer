@@ -21,8 +21,8 @@
 
 const esc = "\x1b[";
 const colors = {
-  modify({escape, colors}) {
-    for (const [property, sequenceCode] of colors.values()) {
+  modify({escape, colorsToUse}) {
+    for (const [property, sequenceCode] of colorsToUse.values()) {
       this[property] = (
         escape +
         sequenceCode.replaceAll(" ", "") + "m"
@@ -52,21 +52,23 @@ const colors = {
 };
 
 let colorDepth;
-const { FORCE_COLOR, COLORTERM, TERM } = process.env;
+const {
+  env: { FORCE_COLOR, COLORTERM, TERM }
+} = process;
 /* Using part of node's code so that
    it doesn't need to wait for any imports,
    either from node internally or from here */
 if (FORCE_COLOR !== undefined) {
   switch (FORCE_COLOR) {
-    case '':
-    case '1':
-    case 'true':
+    case "":
+    case "1":
+    case "true":
       colorDepth = 4;
       break;
-    case '2':
+    case "2":
       colorDepth = 8;
       break;
-    case '3':
+    case "3":
       colorDepth = 24;
       break;
     default:
@@ -84,7 +86,7 @@ colorDepth ??= (await import("tty")).WriteStream(1).getColorDepth();
 if (colorDepth === 8) {
   colors.modify({
     escape: esc+"38;5;",
-    colors: [
+    colorsToUse: [
       ["magenta",       "164"      ],
       ["brightMagenta", "201"      ],
       ["yellow",        "184; 1"   ],
@@ -105,7 +107,7 @@ if (colorDepth === 8) {
 if (colorDepth === 24) {
   colors.modify({
     escape: esc+"38;2;",
-    colors: [
+    colorsToUse: [
       ["magenta",       "175;  12; 164"   ],
       ["brightMagenta", "245;  12; 224"   ],
       ["yellow",        "223; 215;   0; 1"],

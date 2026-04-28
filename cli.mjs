@@ -19,7 +19,7 @@
  * @module cli
  */
 
-import { join, basename, parse } from "path"
+import { join, parse } from "path"
 import {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
@@ -44,13 +44,13 @@ const regexes = {
     "|-v(?:=(?<number>\\d))*",
     "|\\/v(?:=(?<number>\\d))*)$"
   ].join("")),
-
   logFile: new RegExp([
     "^(?:--log-file(?:=(?<path>\\w+))*",
     "|\\/log-file(?:=(?<path>\\w+))*",
     "|-lf(?:=(?<path>\\w+))*",
     "|\\/lf(?:=(?<path>\\w+))*)$"
   ].join("")),
+
   textDelay: new RegExp([
     "^(?:--text-delay(?:=(?<number>\\d+))*",
     "|\\/text-delay(?:=(?<number>\\d+))*",
@@ -188,8 +188,8 @@ async function get20BytesFromFile(path) {
 }
 const setFilePromises = [];
 const {
-  [0]: WAV_INDEX,  [1]: RAW_INDEX,
-  [2]: FLAC_INDEX, [3]: MP3_INDEX
+  0: WAV_INDEX,  1: RAW_INDEX,
+  2: FLAC_INDEX, 3: MP3_INDEX
 } = [...Array(4).keys()];
 export const FO_CONSTANTS = {
   WAV_INDEX,  RAW_INDEX,
@@ -203,12 +203,13 @@ export const FO_CONSTANTS = {
 const actUpOnPassedArgs = async (args) => {
   let lastParam,
       lastIndex;
-  let newArguments = args.slice(2);
-  const newArgumentsSet = new Set(newArguments),
-        noDuplicates = [...newArgumentsSet.values()],
+  const newArguments = args.slice(2),
+        newArgumentsSet = new Set(newArguments),
+        noDuplicates = [...newArgumentsSet.values()];
         /** @type {Map<String, (String|Symbol)>} */
-        doneFileList = new Map(newArgumentsSet.entries()),
+  const doneFileList = new Map(newArgumentsSet.entries()),
         doneSymbol = Symbol("ALREADY_DONE");
+
   if (newArguments.length === 0) {
     await help()
     process.exit()
@@ -357,7 +358,9 @@ const actUpOnPassedArgs = async (args) => {
         if (!isStdout) {
           Options.showUsage = true;
           log(INFO_LVL, "Set show-usage flag")
-        } else log(WARNING_LVL, `${normal+normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
+          break;
+        }
+        log(WARNING_LVL, `${normal+normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
         break;
       }
       // stdout format must be of only 1 kind
@@ -371,7 +374,9 @@ const actUpOnPassedArgs = async (args) => {
       case regexes.textDelay.test(arg) && arg: {
         if (!testFunctions.stdout(newArgumentsSet)) {
           setTextDelay(arg)
-        } else log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)
+          break;
+        }
+        log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)
         break;
       }
       case regexes.input.test(arg) && arg: {
@@ -486,7 +491,9 @@ const actUpOnPassedArgs = async (args) => {
           case "max-threads":
             if (!testFunctions.stdout(newArgumentsSet)) {
               setMaxThreads(arg)
-            } else log(WARNING_LVL, `${normalYellow}Ignoring this flag since stdout mode is enabled${normal}`)
+            } else {
+              log(WARNING_LVL, `${normalYellow}Ignoring this flag since stdout mode is enabled${normal}`)
+            }
             clearLastVariables()
             break;
 
@@ -774,17 +781,17 @@ const setFormat = arg => {
   switch (arg) {
     case "wav": case "wave": {
       Options.format = "wave";
-      log(INFO_LVL, `Set stdout format to "wave"`)
+      log(INFO_LVL, "Set stdout format to 'wave'")
       return;
     }
     case "flac": {
       Options.format = "flac";
-      log(INFO_LVL, `Set stdout format to "flac"`)
+      log(INFO_LVL, "Set stdout format to 'flac'")
       return;
     }
     case "mp3": {
       Options.format = "mp3";
-      log(INFO_LVL, `Set stdout format to "mp3"`)
+      log(INFO_LVL, "Set stdout format to 'mp3'")
       return;
     }
     case "s16le": case "f32le":

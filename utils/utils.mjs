@@ -43,8 +43,8 @@ const clearLastLines = lineY => {
   process.stdout.write(upNLines + clearScreenDown)
 }
 export const {
-  [0]: ERROR_LVL, [1]: WARNING_LVL,
-  [2]: INFO_LVL,  [3]: DEBUG_LVL
+  0: ERROR_LVL, 1: WARNING_LVL,
+  2: INFO_LVL,  3: DEBUG_LVL
 } = [...Array(4).keys()];
 const LVL_TEXTS = {
   [ERROR_LVL]: "ERROR", [WARNING_LVL]: "WARNING",
@@ -63,8 +63,8 @@ function log(level, ...messages) {
     LVL_TEXTS[level].length + 2 +
     (time.length + 7) + 2
   );
-  const debugLevelSpesso = Number(process.env["DEBUG_LEVEL_SPESSO"]),
-        debugFileSpesso = process.env["DEBUG_FILE_SPESSO"];
+  const debugLevelSpesso = Number(process.env.DEBUG_LEVEL_SPESSO),
+        debugFileSpesso = process.env.DEBUG_FILE_SPESSO;
   if (Number.isNaN(debugLevelSpesso)
       && Options.verboseLevel === undefined) return;
   if (debugLevelSpesso < level
@@ -140,8 +140,7 @@ function newFileName(path, createAnyway = false) {
   };
   const MAX_LENGTH = 8,
         parsedPath = parse(path),
-        pathDir = parsedPath.dir,
-        pathExt = parsedPath.ext;
+        { dir: pathDir, ext: pathExt } = parsedPath;
   let newString = "",
       pathFileName = parsedPath.name;
   for (let i = 0; i < MAX_LENGTH; i++) newString += randomCharCode();
@@ -197,7 +196,10 @@ function getUsageEstimate(filesList, fileSizes, threadsCount) {
   }
   return AVG_MODULE_CACHE_MB * threadsCount + finalSize;
 }
-const asyncSetTimeout = setTimeout[Symbol.for("nodejs.util.promisify.custom")];
+const {
+  [Symbol.for("nodejs.util.promisify.custom")]
+    : asyncSetTimeout
+} = setTimeout;
 
 /**
  * A class that represents options interpreted by cli.mjs
@@ -558,26 +560,27 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     const group = this.#options.files[indexOfGroup];
 
     simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
-    simplifiedOptionsObject["midiFile"] = group.get(songFile);
-    simplifiedOptionsObject["indexOfGroup"] = indexOfGroup;
+    simplifiedOptionsObject["midiFile"]      = group.get(songFile);
+    simplifiedOptionsObject["indexOfGroup"]  = indexOfGroup;
 
     for (let i = 0; i < allOptionsLength; i++) {
       const key = allOptions[i];
+      const property = this.#options[key];
       if (key === "files") continue;
       if (key === "fileOutputs") {
-        simplifiedOptionsObject[key] = [...this.#options[key]];
+        simplifiedOptionsObject[key] = [...property];
         continue;
       }
-      const isArray = Array.isArray(this.#options[key]);
-      if (isArray && this.#options[key].length === 1) {
-        simplifiedOptionsObject[key] = this.#options[key][0];
+      const isArray = Array.isArray(property);
+      if (isArray && property.length === 1) {
+        simplifiedOptionsObject[key] = property[0];
         continue;
       }
       if (isArray) {
-        simplifiedOptionsObject[key] = this.#options[key][index];
+        simplifiedOptionsObject[key] = property[index];
         continue;
       }
-      simplifiedOptionsObject[key] = this.#options[key];
+      simplifiedOptionsObject[key] = property;
     }
     return simplifiedOptionsObject;
   }
