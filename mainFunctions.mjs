@@ -150,8 +150,9 @@ async function formatManager({
             program: "sox",
             stdoutHeader, readStream,
             promisesOfPrograms,
+            stdout: "ignore",
             destination: outFile,
-            effects: (Array.isArray(effects)) ? effects : undefined
+            effects
           })
         }
         log(INFO_LVL, doneSettingUpMsg)
@@ -215,7 +216,7 @@ async function formatManager({
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
-          effects: (Array.isArray(effects)) ? effects : undefined
+          effects
         })
         log(INFO_LVL, doneSettingUpMsg)
         break;
@@ -439,7 +440,7 @@ async function applyEffects({
   promisesOfPrograms,
   stdout = process.stdout,
   destination = "-",
-  effects = ["reverb", "20", "36", "100", "100", "10", "10"]
+  effects
 }) {
   /*
     ffmpeg
@@ -449,6 +450,9 @@ async function applyEffects({
       -f wav
         pipe:1
   */
+  if (!effects?.length) {
+    effects = ["reverb", "20", "36", "100", "100", "10", "10"];
+  }
   const { spawn } = child_process ??= await import("child_process");
   // In case it's custom
   if (effects[0]?.effect) {
