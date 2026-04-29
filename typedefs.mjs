@@ -15,6 +15,7 @@
  * @property {ResponseServer}   [res]                     optional ResponseServer
  * @property {String}           [dryRun]                  dry run flag
  * @property {Object[]}         [effects]                 list of effects to apply
+ * @property {Number}           [reverbVolume]            reverb's volume
  * @property {Number}           index                     index of the song
  * @property {Boolean}          [createNewFileNameAnyway] if it's necessary to create a new file name
  * @property {String[]}         [fileOutputs]             list of file outputs
@@ -56,6 +57,7 @@
  * @param {Stream}              [stdout=process.stdout] the destination
  * @param {String}              [destination="-"]       the destination path
  * @param {(String[]|Object[])} [effects=String[]]      all effects to pass to SoX
+ * @param {Number}              [reverbVolume="20"]     reverb's volume
  */
   //-| cli.mjs |-//
 /**

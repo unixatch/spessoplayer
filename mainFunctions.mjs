@@ -71,7 +71,7 @@ async function formatManager({
   format = true,
   readStream, rawReadStream,
   res, dryRun,
-  effects,
+  effects, reverbVolume,
   index,
   createNewFileNameAnyway,
   fileOutputs, FO_CONSTANTS,
@@ -152,7 +152,7 @@ async function formatManager({
             promisesOfPrograms,
             stdout: "ignore",
             destination: outFile,
-            effects
+            effects, reverbVolume
           })
         }
         log(INFO_LVL, doneSettingUpMsg)
@@ -216,7 +216,7 @@ async function formatManager({
           stdoutHeader, readStream,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
-          effects
+          effects, reverbVolume
         })
         log(INFO_LVL, doneSettingUpMsg)
         break;
@@ -440,7 +440,7 @@ async function applyEffects({
   promisesOfPrograms,
   stdout = process.stdout,
   destination = "-",
-  effects
+  effects, reverbVolume = "20"
 }) {
   /*
     ffmpeg
@@ -451,7 +451,7 @@ async function applyEffects({
         pipe:1
   */
   if (!effects?.length) {
-    effects = ["reverb", "20", "36", "100", "100", "10", "10"];
+    effects = ["reverb", reverbVolume, "36", "100", "100", "10", "10"];
   }
   const { spawn } = child_process ??= await import("child_process");
   // In case it's custom
@@ -472,7 +472,7 @@ async function applyEffects({
     "-t", "wav", "-",
     "-t", "wav", destination,
     ...effects
-  ], {stdio: ["pipe", stdout, "pipe"], detached: true})
+  ], {stdio: ["pipe", stdout, "pipe"], detached: true});
   //  For SIGINT event to work, sometimes... ↑
   log(DEBUG_LVL, "Spawned SoX with " + sox.spawnargs.join(" "))
 
