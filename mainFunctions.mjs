@@ -188,8 +188,10 @@ async function formatManager({
         [FO_CONSTANTS.FLAC_INDEX]: "flac"
       };
       for (const index of outFile) {
-        const actualOutFile = fileOutputs[index],
-              newName = newFileName(actualOutFile, createNewFileNameAnyway);
+        const actualOutFile = fileOutputs[index];
+        if (!actualOutFile) continue;
+
+        const newName = newFileName(actualOutFile, createNewFileNameAnyway);
         fileOutputs[fileOutputs.indexOf(actualOutFile)] = newName;
 
         /*
@@ -200,7 +202,7 @@ async function formatManager({
         combinedFfmpegArgs.push(
           ...ffmpegArgs(
             dryRun ? undefined : newName,
-            !combinedFfmpegArgs.length
+            !!combinedFfmpegArgs.length
           )[formats[index]]
         )
       }
