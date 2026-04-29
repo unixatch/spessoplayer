@@ -322,6 +322,7 @@ addEvent({ eventType: "toFileSIGINT",
       if (finished) continue;
 
       for (const file of files) {
+        if (!file) continue;
         unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
       }
     }
