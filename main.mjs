@@ -299,9 +299,12 @@ const resourceLimits = new function () {
 const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
       workers = [];
 let renderTextsInterval,
+    isCursorHidden = false,
     cpuUsageData = process.cpuUsage(),
     finalFileOutputs = [];
-const clearCurrentLine = "\x1b[2K",
+const showCursor = "\x1b[?25h",
+      hideCursor = "\x1b[?25l",
+      clearCurrentLine = "\x1b[2K",
       startOfLine = "\r";
 /**
  * Main function that renders progress text
@@ -320,6 +323,9 @@ const renderTextsFunction = progress => {
   ) : "";
 
   process.stderr.write(
+    (!isCursorHidden
+      ? (isCursorHidden ||= true, hideCursor) : ""
+    ) +
     // Clears old text
     clearCurrentLine + startOfLine +
     // Renders new text
@@ -372,7 +378,7 @@ const stateablePromiseFunction = function (resolve, reject) {
 addEvent({ eventType: "toFileSIGINT",
   func: () => {
     clearInterval(renderTextsInterval)
-    process.stderr.write(clearCurrentLine+startOfLine)
+    process.stderr.write(clearCurrentLine+startOfLine+showCursor)
     for (const worker of workers) worker.terminate()
     finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
 
@@ -390,6 +396,19 @@ addEvent({ eventType: "toFileSIGINT",
         unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
       }
     }
+  }
+})
+addEvent({ eventType: "toFileSIGTSTP",
+  func: () => {
+    isCursorHidden &&= false;
+    process.stderr.write(showCursor)
+    process.kill(process.pid, "SIGSTOP")
+  }
+})
+addEvent({ eventType: "toFileSIGTERM",
+  func: () => {
+    process.stderr.write(showCursor+"\n")
+    process.exit(143)
   }
 })
 
@@ -462,7 +481,7 @@ if (global.SIGINT) {
 for (const worker of workers) worker.terminate()
 
 finalFileOutputs.forEach(i => delete i.finished)
-console.log(clearCurrentLine+startOfLine + "Written", finalFileOutputs);
+console.log(clearCurrentLine+startOfLine+showCursor + "Written", finalFileOutputs);
 if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
 // Required because some child_processes sometimes blocks node from exiting
 process.exit()

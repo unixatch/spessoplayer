@@ -560,6 +560,12 @@ function addEvent({ eventType, func }) {
     );
   }
   switch (eventType) {
+    case "toFileSIGTSTP": {
+      return addAndCheckEvent("SIGTSTP", func);
+    }
+    case "toFileSIGTERM": {
+      return addAndCheckEvent("SIGTERM", func);
+    }
     case "toFileSIGINT": {
       return addAndCheckEvent("SIGINT", func);
     }
