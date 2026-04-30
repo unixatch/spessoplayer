@@ -57,21 +57,23 @@ const LVL_TEXTS = {
  */
 function log(level, ...messages) {
   const time = performance.now().toFixed(2),
-        date = new Date();
+        date = new Date().toISOString();
   const spacesAmount = (
-    date.toISOString().length +
+    date.length +
     LVL_TEXTS[level].length + 2 +
     (time.length + 7) + 2
   );
+  const logOptions = this?.verboseLevel ? this : Options;
   const debugLevelSpesso = Number(process.env.DEBUG_LEVEL_SPESSO),
         debugFileSpesso = process.env.DEBUG_FILE_SPESSO;
+
   if (Number.isNaN(debugLevelSpesso)
-      && Options.verboseLevel === undefined) return;
+      && logOptions.verboseLevel === undefined) return;
   if (debugLevelSpesso < level
-      || Options.verboseLevel < level) return;
+      || logOptions.verboseLevel < level) return;
 
   const message = [
-    date,
+    brightMagenta+date+normal,
     "["+normalYellow+time+" ms"+normal+"]",
     "{"+gray+LVL_TEXTS[level]+normal+"}",
     messages
@@ -83,22 +85,22 @@ function log(level, ...messages) {
       // Place the ffmpeg arguments on a new line with padding
       .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
       // Add dimmed gray to the output
-      .replace(/(.*)/s, `${dimGray}$1${normal}`)
+      .replace(/(.*)/s, `${dimGray}$1${normal}`),
+    logOptions === this ? "\n" : ""
   ];
   if (messages[0] === "Finished printing to stdout") message.unshift("\n")
   console.error(...message)
 
-  const path = debugFileSpesso || Options.logFilePath;
+  const path = debugFileSpesso || logOptions.logFilePath;
   if (!path) return;
 
-  message[0] = message[0].toISOString();
   const messageLength = message.length,
         escapeSequenceRemover = /\x1b\[[0-9;]*m/g;
 
   for (let i = 1; i < messageLength; i++) {
     message[i] = message[i].replaceAll(escapeSequenceRemover, "");
   }
-  message.push("\n")
+  if (logOptions !== this) message.push("\n")
   fs.appendFileSync(path, message.join(" "))
 }
 /**
@@ -280,7 +282,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     const setIndex = () => this.#options[property][index] = value;
     const pushValue = () => this.#options[property].push(value)
     switch (property) {
-      // Getters
       case "verboseLevel":
       case "logFilePath": {
         if (!needsToBeSet) return this.#options[property];

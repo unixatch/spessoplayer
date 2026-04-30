@@ -2,8 +2,10 @@ import {
   parentPort, workerData
 } from "worker_threads"
 import * as fs from "fs"
-import { toFile } from "./mainFunctions.mjs"
 
+const {verboseLevel, logFilePath} = workerData;
+global.logThis = {verboseLevel, logFilePath};
+const { toFile } = await import("./mainFunctions.mjs")
 global.fs = fs;
 process.on("unhandledRejection", i => console.error(i))
 /**

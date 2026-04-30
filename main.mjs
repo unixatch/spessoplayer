@@ -412,7 +412,9 @@ for (let i = 0; i < amountOfSongs; i++) {
   options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
   const workerData = {
     progressBuffers, options, FO_CONSTANTS,
-    index: i, filesListLength
+    index: i, filesListLength,
+    verboseLevel: Options.verboseLevel,
+    logFilePath:  Options.logFilePath
   };
   const currentWorker = workers[currentThread] ??= new Worker(
     import.meta.dirname+"/fileWriter_worker.mjs",

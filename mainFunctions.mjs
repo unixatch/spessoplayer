@@ -20,14 +20,19 @@
  * @module mainFunctions
  */
 
-import {
+const {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
-  log,
+  log: tmpLog,
   newFileName,
   asyncSetTimeout
-} from "./utils/utils.mjs"
+} = await import("./utils/utils.mjs");
 
+let log = tmpLog;
+if (global.logThis) {
+  log = tmpLog.bind(global.logThis);
+  delete global.logThis;
+}
 let stream,
     audioBuffer,
     SpessaSynth,
