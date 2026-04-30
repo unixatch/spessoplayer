@@ -565,7 +565,7 @@ function addEvent({ eventType, func }) {
     }
     case "SIGINT": {
       function SIGINTFunction() {
-        console.error(`${gray}Closed with Ctrl+c${normal}`);
+        console.error(`\n${gray}Closed with Ctrl+c${normal}`);
         global.SIGINT = true;
         if (process.argv.includes("-")) process.exit(130)
       }

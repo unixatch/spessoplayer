@@ -298,36 +298,11 @@ const resourceLimits = new function () {
 };
 const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
       workers = [];
-const up1Line = "\x1b[F",
-      clearCurrentLine = "\x1b[2K",
-      startOfLine = "\r";
-let firstRender = true,
-    renderTextsInterval,
+let renderTextsInterval,
     cpuUsageData = process.cpuUsage(),
     finalFileOutputs = [];
-
-addEvent({ eventType: "toFileSIGINT",
-  func: () => {
-    clearInterval(renderTextsInterval)
-    for (const worker of workers) worker.terminate()
-    finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
-
-    // Try to cleanup abandoned files
-    // only if it's not in dry run mode
-    if (dryRun) return;
-    const notENOENT = error => (
-      error.code !== "ENOENT" && console.error(error)
-    );
-    for (const {files, finished} of finalFileOutputs) {
-      if (finished) continue;
-
-      for (const file of files) {
-        if (!file) continue;
-        unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
-      }
-    }
-  }
-})
+const clearCurrentLine = "\x1b[2K",
+      startOfLine = "\r";
 /**
  * Main function that renders progress text
  * @param {class} progress class used to get information
@@ -346,14 +321,12 @@ const renderTextsFunction = progress => {
 
   process.stderr.write(
     // Clears old text
-    (!firstRender ? up1Line : "") +
     clearCurrentLine + startOfLine +
     // Renders new text
     progress.minutesRenderedText +
     progress.percentageText +
-    moreInfos + "\n"
+    moreInfos
   )
-  firstRender &&= false;
 };
 /**
  * Adds an event to target only once
@@ -396,6 +369,30 @@ const stateablePromiseFunction = function (resolve, reject) {
     if (typeof message === "object") finalFileOutputs[i] = message;
   })
 };
+addEvent({ eventType: "toFileSIGINT",
+  func: () => {
+    clearInterval(renderTextsInterval)
+    process.stderr.write(clearCurrentLine+startOfLine)
+    for (const worker of workers) worker.terminate()
+    finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
+
+    // Try to cleanup abandoned files
+    // only if it's not in dry run mode
+    if (dryRun) return;
+    const notENOENT = error => (
+      error.code !== "ENOENT" && console.error(error)
+    );
+    for (const {files, finished} of finalFileOutputs) {
+      if (finished) continue;
+
+      for (const file of files) {
+        if (!file) continue;
+        unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
+      }
+    }
+  }
+})
+
 for (let i = 0; i < amountOfSongs; i++) {
   const options = perSongOptions[i];
   if (!options) continue;
@@ -465,7 +462,7 @@ if (global.SIGINT) {
 for (const worker of workers) worker.terminate()
 
 finalFileOutputs.forEach(i => delete i.finished)
-console.log("Written", finalFileOutputs);
+console.log(clearCurrentLine+startOfLine + "Written", finalFileOutputs);
 if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
 // Required because some child_processes sometimes blocks node from exiting
 process.exit()

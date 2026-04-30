@@ -73,6 +73,7 @@ function log(level, ...messages) {
       || logOptions.verboseLevel < level) return;
 
   const message = [
+    (this === logOptions ? "\r" : "") +
     brightMagenta+date+normal,
     "["+normalYellow+time+" ms"+normal+"]",
     "{"+gray+LVL_TEXTS[level]+normal+"}",
@@ -85,8 +86,7 @@ function log(level, ...messages) {
       // Place the ffmpeg arguments on a new line with padding
       .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
       // Add dimmed gray to the output
-      .replace(/(.*)/s, `${dimGray}$1${normal}`),
-    logOptions === this ? "\n" : ""
+      .replace(/(.*)/s, `${dimGray}$1${normal}`)
   ];
   if (messages[0] === "Finished printing to stdout") message.unshift("\n")
   console.error(...message)
@@ -100,7 +100,7 @@ function log(level, ...messages) {
   for (let i = 1; i < messageLength; i++) {
     message[i] = message[i].replaceAll(escapeSequenceRemover, "");
   }
-  if (logOptions !== this) message.push("\n")
+  message.push("\n")
   fs.appendFileSync(path, message.join(" "))
 }
 /**
