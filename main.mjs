@@ -187,7 +187,65 @@ if (!isToStdout && !isToFile?.length > 0) {
   }
   await startPlayer(Options)
 }
+
 // +++ toFile section +++
+const showCursor = "\x1b[?25h",
+      hideCursor = "\x1b[?25l",
+      clearCurrentLine = "\x1b[2K",
+      startOfLine = "\r";
+let isCursorHidden = true;
+addEvent({ eventType: "toFileSIGTSTP",
+  func: () => {
+    try { isCursorHidden &&= false } catch (error) {
+      if (error.name === "ReferenceError") {
+        process.stderr.write(showCursor)
+        process.kill(process.pid, "SIGSTOP")
+        return;
+      }
+      return console.error(showCursor + error);
+    }
+    process.stderr.write(showCursor)
+    process.kill(process.pid, "SIGSTOP")
+  }
+})
+addEvent({ eventType: "toFileSIGTERM",
+  func: () => {
+    process.stderr.write(showCursor+"\n")
+    process.exit(143)
+  }
+})
+addEvent({ eventType: "toFileSIGINT",
+  func: () => {
+    try { renderTextsInterval } catch (error) {
+      return (
+        error.name === "ReferenceError"
+          ? console.error(clearCurrentLine+startOfLine+showCursor)
+          : console.error(showCursor + error)
+      );
+    }
+    clearInterval(renderTextsInterval)
+    process.stderr.write(clearCurrentLine+startOfLine+showCursor)
+    for (const worker of workers) worker.terminate()
+    finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
+
+    // Try to cleanup abandoned files
+    // only if it's not in dry run mode
+    if (dryRun) return;
+    const notENOENT = error => (
+      error.code !== "ENOENT" && console.error(error)
+    );
+    for (const {files, finished} of finalFileOutputs) {
+      if (finished) continue;
+
+      for (const file of files) {
+        if (!file) continue;
+        unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
+      }
+    }
+  }
+})
+process.stderr.write(hideCursor)
+
 const amountOfSongs = Options.amountOfSongs;
 const {
   files: filesList,
@@ -299,13 +357,8 @@ const resourceLimits = new function () {
 const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
       workers = [];
 let renderTextsInterval,
-    isCursorHidden = false,
     cpuUsageData = process.cpuUsage(),
     finalFileOutputs = [];
-const showCursor = "\x1b[?25h",
-      hideCursor = "\x1b[?25l",
-      clearCurrentLine = "\x1b[2K",
-      startOfLine = "\r";
 /**
  * Main function that renders progress text
  * @param {class} progress class used to get information
@@ -375,42 +428,6 @@ const stateablePromiseFunction = function (resolve, reject) {
     if (typeof message === "object") finalFileOutputs[i] = message;
   })
 };
-addEvent({ eventType: "toFileSIGINT",
-  func: () => {
-    clearInterval(renderTextsInterval)
-    process.stderr.write(clearCurrentLine+startOfLine+showCursor)
-    for (const worker of workers) worker.terminate()
-    finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
-
-    // Try to cleanup abandoned files
-    // only if it's not in dry run mode
-    if (dryRun) return;
-    const notENOENT = error => (
-      error.code !== "ENOENT" && console.error(error)
-    );
-    for (const {files, finished} of finalFileOutputs) {
-      if (finished) continue;
-
-      for (const file of files) {
-        if (!file) continue;
-        unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
-      }
-    }
-  }
-})
-addEvent({ eventType: "toFileSIGTSTP",
-  func: () => {
-    isCursorHidden &&= false;
-    process.stderr.write(showCursor)
-    process.kill(process.pid, "SIGSTOP")
-  }
-})
-addEvent({ eventType: "toFileSIGTERM",
-  func: () => {
-    process.stderr.write(showCursor+"\n")
-    process.exit(143)
-  }
-})
 
 for (let i = 0; i < amountOfSongs; i++) {
   const options = perSongOptions[i];
