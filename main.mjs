@@ -245,24 +245,18 @@ const showFileList = (dryRun, partial = false) => (
   )
 );
 addEvent({ eventType: "toFileSIGTSTP",
-  func: () => {
-    if (typeof isCursorHidden === "undefined") return pauseProcess();
-    isCursorHidden &&= false;
-    pauseProcess()
-  }
+  func: () => (isCursorHidden &&= false, pauseProcess())
 })
 addEvent({ eventType: "toFileSIGTERM",
-  func: () => {
-    process.stderr.write(showCursor+"\n")
-    process.exit(143)
-  }
+  func: () => (process.stderr.write(showCursor+"\n"), process.exit(143))
 })
 addEvent({ eventType: "toFileSIGINT",
   func: () => {
     const cleanLine = clearCurrentLine + startOfLine + showCursor;
-    if (typeof renderTextsInterval === "undefined") return (
-      process.stderr.write(cleanLine)
-    );
+    try { renderTextsInterval } catch(error) {
+      if (error.name !== "ReferenceError") return console.error(error);
+      return process.stderr.write(cleanLine);
+    }
     clearInterval(renderTextsInterval)
     process.stderr.write(cleanLine)
     for (const worker of workers) worker.terminate()
