@@ -228,6 +228,22 @@ const pauseProcess = () => {
   process.stderr.write(showCursor)
   process.kill(process.pid, "SIGSTOP")
 };
+const showFileList = (dryRun, partial = false) => (
+  console.log(
+    !partial
+      ? clearCurrentLine+startOfLine+showCursor + "Written"
+      : "Written only",
+    finalFileOutputs.filter(i => {
+      if (i.finished) {
+        delete i.finished;
+        return true;
+      }
+    }),
+    dryRun
+      ? `\b\nbut actually ${bold}nothing${normal} was written...`
+      : "\b"
+  )
+);
 addEvent({ eventType: "toFileSIGTSTP",
   func: () => {
     if (typeof isCursorHidden === "undefined") return pauseProcess();
@@ -254,17 +270,44 @@ addEvent({ eventType: "toFileSIGINT",
 
     // Try to cleanup abandoned files
     // only if it's not in dry run mode
-    if (dryRun) return;
+    if (dryRun) {
+      try {
+        if (finishLine) {}
+        showFileList(dryRun, true)
+        return process.exit(130);
+      } catch (error) {
+        return (
+          error.name !== "ReferenceError"
+            ? console.error(error) : undefined
+        );
+      }
+    }
     const notENOENT = error => (
       error.code !== "ENOENT" && console.error(error)
     );
+    let finishLineActive = false;
     for (const {files, finished} of finalFileOutputs) {
       if (finished) continue;
 
       for (const file of files) {
         if (!file) continue;
-        unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
+        try {
+          // Monkey patch mode
+          if (finishLine) unlinkSync(file)
+          finishLineActive ||= true;
+          continue;
+        } catch (error) {
+          // Normal mode
+          if (error.name !== "ReferenceError") return console.error(error);
+
+          unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
+          continue;
+        }
       }
+    }
+    if (finishLineActive) {
+      showFileList(dryRun, true)
+      return process.exit(130);
     }
   }
 })
@@ -307,7 +350,8 @@ const {
   promises: {
     readFile: asyncReadFile,
     unlink: asyncUnlink
-  }
+  },
+  unlinkSync
 } = fs;
 for (let i = 0; i < filesListLength; i++) {
   const [soundfontFile] = filesList[i] ?? 0;
@@ -502,32 +546,24 @@ for (const [index, worker] of workersEntries) {
   worker.terminate()
 }
 
-await Promise.all(listOfPromises.values())
-clearInterval(renderTextsInterval)
-// Renders the last bit so that it is 100%
-if (!global.SIGINT) renderTextsFunction(progress)
-if (global.SIGINT) {
-  await Promise.all(unlinkPromises)
-  console.log(
-    "Written only",
-    finalFileOutputs.filter(i => {
-      if (i.finished) {
-        delete i.finished;
-        return true;
-      }
-    })
-  )
-  if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
-  process.exit(130)
-}
+const finishLine = true;
+Promise.all(listOfPromises.values()).then(async () => {
+  clearInterval(renderTextsInterval)
+  // Renders the last bit so that it is 100%
+  if (!global.SIGINT) renderTextsFunction(progress)
+  if (global.SIGINT) {
+    await Promise.all(unlinkPromises)
+    showFileList(dryRun, true)
+    process.exit(130)
+  }
 
-// Close workers before continuing
-// otherwise it gets stuck
-for (const worker of workers) worker.terminate()
+  // Close workers before continuing
+  // otherwise it gets stuck
+  for (const worker of workers) worker.terminate()
 
-finalFileOutputs.forEach(i => delete i.finished)
-console.log(clearCurrentLine+startOfLine+showCursor + "Written", finalFileOutputs);
-if (dryRun) console.error(`but actually ${bold}nothing${normal} was written...`)
-// Required because some child_processes sometimes blocks node from exiting
-process.exit()
+  showFileList(dryRun)
+  // Required because some child_processes sometimes blocks node from exiting
+  process.exit()
+})
+  .catch(e => console.error(e))
 
