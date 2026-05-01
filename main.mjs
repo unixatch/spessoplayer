@@ -194,18 +194,15 @@ const showCursor = "\x1b[?25h",
       clearCurrentLine = "\x1b[2K",
       startOfLine = "\r";
 let isCursorHidden = true;
+const pauseProcess = () => {
+  process.stderr.write(showCursor)
+  process.kill(process.pid, "SIGSTOP")
+};
 addEvent({ eventType: "toFileSIGTSTP",
   func: () => {
-    try { isCursorHidden &&= false } catch (error) {
-      if (error.name === "ReferenceError") {
-        process.stderr.write(showCursor)
-        process.kill(process.pid, "SIGSTOP")
-        return;
-      }
-      return console.error(showCursor + error);
-    }
-    process.stderr.write(showCursor)
-    process.kill(process.pid, "SIGSTOP")
+    if (typeof isCursorHidden === "undefined") return pauseProcess();
+    isCursorHidden &&= false;
+    pauseProcess()
   }
 })
 addEvent({ eventType: "toFileSIGTERM",
@@ -216,15 +213,12 @@ addEvent({ eventType: "toFileSIGTERM",
 })
 addEvent({ eventType: "toFileSIGINT",
   func: () => {
-    try { renderTextsInterval } catch (error) {
-      return (
-        error.name === "ReferenceError"
-          ? console.error(clearCurrentLine+startOfLine+showCursor)
-          : console.error(showCursor + error)
-      );
-    }
+    const cleanLine = clearCurrentLine + startOfLine + showCursor;
+    if (typeof renderTextsInterval === "undefined") return (
+      process.stderr.write(cleanLine)
+    );
     clearInterval(renderTextsInterval)
-    process.stderr.write(clearCurrentLine+startOfLine+showCursor)
+    process.stderr.write(cleanLine)
     for (const worker of workers) worker.terminate()
     finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
 
