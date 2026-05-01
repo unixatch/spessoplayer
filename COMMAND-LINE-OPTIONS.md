@@ -91,8 +91,8 @@ it'll write to /dev/null on Unix and \\.\nul on windows.
 Mainly used for testing purposes but
 can be useful when trying to debug with log options
 
-### --verbose[=n], /verbose[=n],
-#### &nbsp;&nbsp;-v[=n], /v[=n]:
+### --verbose **n**, /verbose **n**,
+#### &nbsp;&nbsp;-v **n**, /v **n**:
 Sets the verbosity (*default: 2*)
 
 ### --log-file[=path], /log-file[=path],

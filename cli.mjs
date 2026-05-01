@@ -1238,8 +1238,8 @@ const help = async ({ errorText } = "") => {
       )}
 
     ${param(
-      ["--verbose"+optional("=n"), "/verbose"+optional("=n")],
-      ["-v"+optional("=n"), "/v"+optional("=n")]
+      ["--verbose "+grayBoldText("n"), "/verbose "+grayBoldText("n")],
+      ["-v "+grayBoldText("n"), "/v "+grayBoldText("n")]
     )}:
       ${multiLine("Sets the verbosity (default: 2)")}
 
