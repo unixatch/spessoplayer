@@ -38,12 +38,6 @@ let argvWithoutFileExts = new Promise(resolve => {
 });
 const regexes = {
   // These look like --option or --option[=n]
-  verboseLevel: new RegExp([
-    "^(?:--verbose(?:=(?<number>\\d))*",
-    "|\\/verbose(?:=(?<number>\\d))*",
-    "|-v(?:=(?<number>\\d))*",
-    "|\\/v(?:=(?<number>\\d))*)$"
-  ].join("")),
   logFile: new RegExp([
     "^(?:--log-file(?:=(?<path>\\w+))*",
     "|\\/log-file(?:=(?<path>\\w+))*",
@@ -202,32 +196,26 @@ async function manageVerboseOptions({
       newArgumentsLength = newArguments.length;
 
   // +++ verboseLevel section +++
-  for (let index = 0; index < newArgumentsLength; index++) {
-    if (DEBUG_LEVEL_SPESSO) {
-      log(INFO_LVL, debugLevelSpessoMsg)
-      break;
-    }
-    const argvString = newArguments[index];
-    if (!argvString.startsWith("-")
-        && !argvString.startsWith("/")) continue;
-    if (
-      !argvString.startsWith("--verbose") &&
-      !argvString.startsWith("/verbose") &&
-      !argvString.startsWith("-v") &&
-      !argvString.startsWith("/v")
-    ) continue;
+  if (!DEBUG_LEVEL_SPESSO) verboseLevelBlock: {
+    let indexOfVerboseLevel = newArguments.indexOf("--verbose");
+    // -1 + 1 = 0, false so keep chaining
+    // if not -1 then it stops chaining
+    indexOfVerboseLevel+1
+    || (indexOfVerboseLevel = newArguments.indexOf("/verbose"))+1
+    || (indexOfVerboseLevel = newArguments.indexOf("-v"))+1
+    || (indexOfVerboseLevel = newArguments.indexOf("/v"))+1
 
-    newArguments.splice(index, 1)
-    newArgumentsLength--
+    if (indexOfVerboseLevel === -1) break verboseLevelBlock;
 
-    isVerboseLevelSet = argvString;
+    isVerboseLevelSet = newArguments[indexOfVerboseLevel];
+    const argumentOfParameter = Number(
+      newArguments[indexOfVerboseLevel+1]
+    );
     await setVerboseLevel(
-      argvString
-        ?.match(regexes.verboseLevel)
-          .groups
-          .number ?? INFO_LVL+""
+      isNaN(argumentOfParameter)
+        ? INFO_LVL+""
+        : argumentOfParameter
     )
-    break;
   }
   // +++ logFile section +++
   for (let index = 0; index < newArgumentsLength; index++) {
@@ -243,9 +231,7 @@ async function manageVerboseOptions({
       !argvString.startsWith("/lf")
     ) continue;
 
-    newArguments.splice(index, 1)
-
-    if (!isVerboseLevelSet) await setVerboseLevel("1")
+    if (!isVerboseLevelSet) await setVerboseLevel(INFO_LVL+"")
     setLogFilePath(
       argvString
         ?.match(regexes.logFile)
@@ -316,9 +302,25 @@ const actUpOnPassedArgs = async args => {
   const isStdout = testFunctions.stdout(newArgumentsSet);
   let indexOfSetFile = 0,
       lastAutomaticFile,
-      groupSeparator;
+      groupSeparator,
+      skipVerboseLevel = false;
   for (const arg of newArguments) {
+    if (skipVerboseLevel) {
+      skipVerboseLevel = false;
+      continue;
+    }
     switch (arg) {
+      // Skip verboseLevel and logFilePath flags
+      case "--verbose":  case "/verbose":
+      case "-v":         case "/v": {
+        const nextArg = newArguments.indexOf(arg)+1;
+        if (!isNaN(Number(newArguments[nextArg]))) {
+          skipVerboseLevel = true;
+        }
+        break;
+      }
+      case regexes.logFile.test(arg) && arg: break;
+
       case "|": { groupSeparator = true; break; }
       case "-": {
         if (Options.isFileMode()) stdoutFileModeConflictError()
@@ -794,11 +796,11 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
 const setVerboseLevel = async (arg) => {
   const number = Number(arg);
   const isFromUser = arg !== undefined;
-  if (!arg) arg = "2";
-  if (!global.fs) global.fs = await import("fs");
+  arg ??= "2";
+  global.fs ??= await import("fs");
+
   if (typeof number === "number"
-      && !(number < 0 && number > 2)
-      && !arg.startsWith("-")) {
+      && !(number < 0 && number > 2)) {
     Options.verboseLevel = number;
     if (isFromUser) {
       log(INFO_LVL, `Set verbose level asked by the user to ${number}`)
