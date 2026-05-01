@@ -186,17 +186,18 @@ async function get20BytesFromFile(path) {
 }
 /**
  * Manages/handles verbose options
- * @param {Array}  newArguments process.argv -2 initial arguments
  * @param {Object} variableObj
  * @param {String} variableObj.DEBUG_LEVEL_SPESSO  terminal value for verbosity
  * @param {String} variableObj.DEBUG_FILE_SPESSO   terminal value for file path
  * @param {String} variableObj.debugLevelSpessoMsg
  * @param {String} variableObj.debugFileSpessoMsg
+ * @return {Boolean} true if verboseLevel is set or false otherwise
  */
-async function manageVerboseOptions(newArguments, {
+async function manageVerboseOptions({
   DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
   debugLevelSpessoMsg, debugFileSpessoMsg
 }) {
+  const newArguments = newArgs;
   let isVerboseLevelSet,
       newArgumentsLength = newArguments.length;
 
@@ -253,6 +254,7 @@ async function manageVerboseOptions(newArguments, {
     )
     break;
   }
+  return Options.verboseLevel !== undefined;
 }
 const setFilePromises = [];
 const {
@@ -263,15 +265,16 @@ export const FO_CONSTANTS = {
   WAV_INDEX,  RAW_INDEX,
   FLAC_INDEX, MP3_INDEX
 };
+const newArgs = process.argv.slice(2);
 /**
  * Sets necessary variables in Options class for main.mjs
  * @param {String[]} args - The process.argv to analyse
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
-const actUpOnPassedArgs = async (args) => {
+const actUpOnPassedArgs = async args => {
   let lastParam,
       lastIndex;
-  const newArguments = args.slice(2),
+  const newArguments = args?.slice(2) ?? newArgs,
         newArgumentsSet = new Set(newArguments),
         noDuplicates = [...newArgumentsSet.values()];
         /** @type {Map<String, (String|Symbol)>} */
@@ -293,21 +296,6 @@ const actUpOnPassedArgs = async (args) => {
   if (testFunctions.uninstall(newArgumentsSet)) {
     await uninstall()
     process.exit()
-  }
-
-  const {
-    env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
-  } = process;
-  const debugLevelSpessoMsg = `Using variable DEBUG_LEVEL_SPESSO=${DEBUG_LEVEL_SPESSO}`,
-        debugFileSpessoMsg  = `Using variable DEBUG_FILE_SPESSO=${DEBUG_FILE_SPESSO}`;
-  if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
-    log(INFO_LVL, debugLevelSpessoMsg)
-    log(INFO_LVL, debugFileSpessoMsg)
-  } else {
-    await manageVerboseOptions(newArguments, {
-      DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
-      debugLevelSpessoMsg, debugFileSpessoMsg
-    })
   }
 
   function clearLastVariables() {
@@ -1303,6 +1291,7 @@ const version = async () => {
 }
 
 export {
+  manageVerboseOptions,
   actUpOnPassedArgs,
   join, parse,
   Options

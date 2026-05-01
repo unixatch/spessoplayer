@@ -37,22 +37,38 @@ import {
   Progress,
   startPlayer
 } from "./mainFunctions.mjs"
-
-addEvent({ eventType: "SIGINT" })
-process.on("unhandledRejection", i => console.error(i))
-// In case the user passes some arguments
-const {
+import {
+  manageVerboseOptions,
   actUpOnPassedArgs,
   Options, FO_CONSTANTS
-} = await import("./cli.mjs");
-await actUpOnPassedArgs(process.argv)
+} from "./cli.mjs"
 
-if (process.listeners("SIGINT")) {
-  log(DEBUG_LVL, "SIGINT event was added")
+let isVerboseLevelSet = false;
+const {
+  env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
+} = process;
+const debugLevelSpessoMsg = `Using variable DEBUG_LEVEL_SPESSO=${DEBUG_LEVEL_SPESSO}`,
+      debugFileSpessoMsg  = `Using variable DEBUG_FILE_SPESSO=${DEBUG_FILE_SPESSO}`;
+if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
+  log(INFO_LVL, debugLevelSpessoMsg)
+  log(INFO_LVL, debugFileSpessoMsg)
+  isVerboseLevelSet = true;
+} else {
+  isVerboseLevelSet = await manageVerboseOptions({
+    DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
+    debugLevelSpessoMsg, debugFileSpessoMsg
+  });
 }
-if (process.listeners("unhandledRejection")) {
-  log(DEBUG_LVL, "unhandledRejection event was added")
-}
+if (!isVerboseLevelSet) console.log(gray+"Starting..."+normal)
+let processingMessageCleaned = false;
+
+addEvent({ eventType: "SIGINT" })
+log(DEBUG_LVL, "SIGINT event has been added")
+process.on("unhandledRejection", i => console.error(i))
+log(DEBUG_LVL, "unhandledRejection event has been added")
+
+// In case the user passes some arguments
+await actUpOnPassedArgs()
 log(INFO_LVL, "Checked passed args")
 
 const listOfOptions = Options.all;
@@ -63,6 +79,11 @@ const {
 } = listOfOptions;
 
 if (confirmation) {
+  if (!isVerboseLevelSet) {
+    process.stdout.write("\x1b[F\x1b[2K")
+    processingMessageCleaned = true;
+  }
+
   const infos = Options.getConfirmationTable();
   if (listOfOptions?.noTable) {
     for (const i of infos) console.log(i)
@@ -87,6 +108,11 @@ if (confirmation) {
 
 // +++ toStdout section +++
 if (isToStdout) {
+  if (!isVerboseLevelSet && !processingMessageCleaned) {
+    process.stdout.write("\x1b[F\x1b[2K")
+    processingMessageCleaned = true;
+  }
+
   const filesList = listOfOptions.files,
         perSongOptions = [],
         lengthOfFiles = [],
@@ -181,6 +207,10 @@ if (isToStdout) {
 }
 
 if (!isToStdout && !isToFile?.length > 0) {
+  if (!isVerboseLevelSet && !processingMessageCleaned) {
+    process.stdout.write("\x1b[F\x1b[2K")
+    processingMessageCleaned = true;
+  }
   if (dryRun) {
     console.error(`${yellow}Can't dry run the player${normal}`)
     process.exit(2)
@@ -415,6 +445,10 @@ const stateablePromiseFunction = function (resolve, reject) {
         progress
       )
     );
+    if (!isVerboseLevelSet && !processingMessageCleaned) {
+      process.stdout.write("\x1b[F" + clearCurrentLine)
+      processingMessageCleaned = true;
+    }
     if (message === "DONE_RENDERING") {
       currentWorker.removeAllListeners("message")
       return resolve(finalFileOutputs[i].finished = true);
