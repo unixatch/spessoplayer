@@ -264,8 +264,7 @@ async function formatManager({
         if (dryRun) output = fs.createWriteStream(dryRun, {fd: fs.openSync(dryRun, "r+")});
       }
       log(INFO_LVL,
-        performance.now().toFixed(2),
-        (isStdout)
+        isStdout
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
