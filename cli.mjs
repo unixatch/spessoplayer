@@ -216,7 +216,8 @@ async function manageVerboseOptions({
         ? INFO_LVL+""
         : argumentOfParameter
     )
-  }
+  } else log(INFO_LVL, debugLevelSpessoMsg)
+
   // +++ logFile section +++
   for (let index = 0; index < newArgumentsLength; index++) {
     if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);

@@ -53,8 +53,25 @@ const CLI_PATH = (
     .find(i => i.includes("cli.mjs"))
 );
 const {
+  manageVerboseOptions,
   actUpOnPassedArgs, Options
 } = await import(CLI_PATH);
+
+const {
+  env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
+} = process;
+const debugLevelSpessoMsg = `Using variable DEBUG_LEVEL_SPESSO=${DEBUG_LEVEL_SPESSO}`,
+      debugFileSpessoMsg  = `Using variable DEBUG_FILE_SPESSO=${DEBUG_FILE_SPESSO}`;
+if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
+  log(INFO_LVL, debugLevelSpessoMsg)
+  log(INFO_LVL, debugFileSpessoMsg)
+  isVerboseLevelSet = true;
+} else {
+  await manageVerboseOptions({
+    DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
+    debugLevelSpessoMsg, debugFileSpessoMsg
+  });
+}
 
 await actUpOnPassedArgs(process.argv)
 console.log(Options.all)
