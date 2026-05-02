@@ -112,9 +112,14 @@ if (isToStdout) {
     process.stdout.write("\x1b[F\x1b[2K")
     processingMessageCleaned = true;
   }
+  const {
+    files: filesList,
+    sampleRate: stdoutSampleRate,
+    format: stdoutFormat,
+    effects: effectsList, reverbVolume
+  } = listOfOptions;
 
-  const filesList = listOfOptions.files,
-        perSongOptions = [],
+  const perSongOptions = [],
         lengthOfFiles = [],
         promisesOfPrograms = [],
         { getWavHeader } = await import("./audioBuffer.mjs");
@@ -145,14 +150,16 @@ if (isToStdout) {
   const stdoutHeader = getWavHeader({
     length: lengthOfFiles.reduce(sumOfLengths),
     numChannels: 2
-  }, listOfOptions?.sampleRate ?? 48000);
+  }, stdoutSampleRate ?? 48000);
 
-  // If it needs to be converted
-  const needsConvertion = listOfOptions?.format?.match(/(?:wave|pcm|s16le|f32le)/) === null;
+  const ffmpegFormats   = /(?:flac|mp3)/,
+        losslessFormats = /(?:pcm|s16le|f32le)/;
+  const needsConvertion = stdoutFormat?.match(ffmpegFormats);
+
   if (needsConvertion) {
     const { spawn } = await import("child_process");
     converterProcess = spawn("ffmpeg",
-      ffmpegArgs()[listOfOptions?.format],
+      ffmpegArgs()[stdoutFormat],
       {stdio: [
         "pipe",
         dryRunStream ?? process.stdout,
@@ -160,10 +167,9 @@ if (isToStdout) {
       ]}
     );
   }
-  // If it needs effects
-  if (listOfOptions?.effects
-      && (listOfOptions?.format?.match(/(?:pcm|s16le|f32le)/) === null
-      || !listOfOptions?.format)) {
+  // If it needs effects, excluding lossless formats
+  if (effectsList
+      && !stdoutFormat?.match(losslessFormats)) {
     [effectsProcess] = await applyEffects({
       program: "sox",
       stdoutHeader,
