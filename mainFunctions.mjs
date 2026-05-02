@@ -147,7 +147,7 @@ async function formatManager({
         doneSettingUpMsg = `Done setting up ${(isToFile) ? "wav outFile" : ""} in dry run mode`;
       }
 
-      if (effects) {
+      if (effects || reverbVolume !== undefined) {
         if (isStdout) {
           addPipingFunction();
         } else {
@@ -217,7 +217,7 @@ async function formatManager({
         { stdio: ["pipe", (dryRun ? "ignore" : "pipe"), "pipe"] }
       );
       log(DEBUG_LVL, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
-      if (effects) {
+      if (effects || reverbVolume !== undefined) {
         await applyEffects({
           program: "sox",
           stdoutHeader, readStream,

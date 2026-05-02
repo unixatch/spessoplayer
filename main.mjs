@@ -168,13 +168,14 @@ if (isToStdout) {
     );
   }
   // If it needs effects, excluding lossless formats
-  if (effectsList
+  if (effectsList || reverbVolume !== undefined
       && !stdoutFormat?.match(losslessFormats)) {
     [effectsProcess] = await applyEffects({
       program: "sox",
       stdoutHeader,
       stdout: converterProcess?.stdin ?? dryRunStream,
       promisesOfPrograms,
+      reverbVolume
       // TODO: effects system needs to overhauled
       //effects: listOfOptions?.effects[0]
     });
