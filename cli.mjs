@@ -300,27 +300,53 @@ const actUpOnPassedArgs = async args => {
       throw new ReferenceError("Missing necessary argument")
     }
   }
-  const isStdout = testFunctions.stdout(newArgumentsSet);
+  const isStdout = testFunctions.stdout(newArgumentsSet),
+        newArgumentsLength = newArguments.length;
   let indexOfSetFile = 0,
       lastAutomaticFile,
-      groupSeparator,
-      skipVerboseLevel = false;
-  for (const arg of newArguments) {
-    if (skipVerboseLevel) {
-      skipVerboseLevel = false;
-      continue;
-    }
+      groupSeparator;
+  for (let i = 0; i < newArgumentsLength; i++) {
+    const arg = newArguments[i];
+
     switch (arg) {
       // Skip verboseLevel and logFilePath flags
       case "--verbose":  case "/verbose":
       case "-v":         case "/v": {
         const nextArg = newArguments.indexOf(arg)+1;
-        if (!isNaN(Number(newArguments[nextArg]))) {
-          skipVerboseLevel = true;
-        }
+        // if it also has been provided a valid argument
+        if (!isNaN(Number(newArguments[nextArg]))) i++
         break;
       }
+      case "--log-file": case "/log-file":
+      case "-lf":        case "/lf":
       case regexes.logFile.test(arg) && arg: break;
+
+      case (
+        (lastParam === "input" || !lastParam)
+          && (
+            global.fs ??= await import("node:fs")
+          )
+            .existsSync(arg) && arg
+      ): {
+        if (doneFileList.get(arg) === doneSymbol) {
+          if (lastParam === "input") clearLastVariables()
+          break;
+        }
+        doneFileList.set(arg, doneSymbol)
+
+        setFilePromises.push(
+          setFile({
+            indexOfSetFile: indexOfSetFile++,
+            lastParam, lastIndex,
+            lastAutomaticFile, groupSeparator,
+            newArguments: noDuplicates, arg
+          })
+        )
+        if (!lastParam) lastAutomaticFile = arg;
+        if (lastParam === "input") clearLastVariables()
+        groupSeparator &&= undefined;
+        break;
+      }
 
       case "|": { groupSeparator = true; break; }
       case "-": {
@@ -329,24 +355,28 @@ const actUpOnPassedArgs = async args => {
         log(INFO_LVL, "Set stdout mode")
         break;
       }
+      case "out.wav":
       case regexes.wav.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(WAV_INDEX, arg);
         log(INFO_LVL, "Set file output to wav")
         break;
       }
+      case "out.pcm": case "out.s16le": case "out.f32le":
       case regexes.raw.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(RAW_INDEX, arg);
         log(INFO_LVL, "Set file output to pcm")
         break;
       }
+      case "out.flac":
       case regexes.flac.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(FLAC_INDEX, arg);
         log(INFO_LVL, "Set file output to flac")
         break;
       }
+      case "out.mp3":
       case regexes.mp3.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(MP3_INDEX, arg);
@@ -409,6 +439,8 @@ const actUpOnPassedArgs = async args => {
         lastParam = "format";
         break;
       }
+      case "--text-delay": case "/text-delay":
+      case "-d":           case "/d":
       case regexes.textDelay.test(arg) && arg: {
         if (!testFunctions.stdout(newArgumentsSet)) {
           setTextDelay(arg)
@@ -417,78 +449,68 @@ const actUpOnPassedArgs = async args => {
         log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)
         break;
       }
+      case "--input": case "/input":
+      case "-i":      case "/i":
       case regexes.input.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "input";
         lastIndex = arg.match(regexes.input)?.groups;
         break;
       }
-      case regexes.reverbVolume.test(arg) && arg: {
-        existsNextValueCheck(arg, newArguments)
-        lastParam = "reverb";
-        lastIndex = arg.match(regexes.reverbVolume)?.groups;
-        break;
-      }
+      case "--volume": case "/volume":
+      case "-vol":     case "/vol":
       case regexes.volume.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "volume";
         lastIndex = arg.match(regexes.volume)?.groups;
         break;
       }
-      case regexes.effects.test(arg) && arg: {
-        existsNextValueCheck(arg, newArguments)
-        lastParam = "effects";
-        lastIndex = arg.match(regexes.effects)?.groups;
-        break;
-      }
+      case "--sample-rate": case "/sample-rate":
+      case "-r":            case "/r":
       case regexes.sampleRate.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "sample-rate";
         lastIndex = arg.match(regexes.sampleRate)?.groups;
         break;
       }
-      case regexes.loopStart.test(arg) && arg: {
+      case "--reverb-volume": case "/reverb-volume":
+      case "-rvb":            case "/rvb":
+      case regexes.reverbVolume.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
-        lastParam = "loop-start";
-        lastIndex = arg.match(regexes.loopStart)?.groups;
+        lastParam = "reverb";
+        lastIndex = arg.match(regexes.reverbVolume)?.groups;
         break;
       }
-      case regexes.loopEnd.test(arg) && arg: {
+      case "--effects": case "/effects":
+      case "-e":       case "/e":
+      case regexes.effects.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
-        lastParam = "loop-end";
-        lastIndex = arg.match(regexes.loopEnd)?.groups;
+        lastParam = "effects";
+        lastIndex = arg.match(regexes.effects)?.groups;
         break;
       }
+      case "--loop": case "/loop":
+      case "-l":     case "/l":
       case regexes.loop.test(arg) && arg: {
         existsNextValueCheck(arg, newArguments)
         lastParam = "loop";
         lastIndex = arg.match(regexes.loop)?.groups;
         break;
       }
-      case (
-        (lastParam === "input" || !lastParam)
-          && (
-            global.fs ??= await import("node:fs")
-          )
-            .existsSync(arg) && arg
-      ): {
-        if (doneFileList.get(arg) === doneSymbol) {
-          if (lastParam === "input") clearLastVariables()
-          break;
-        }
-        doneFileList.set(arg, doneSymbol)
-
-        setFilePromises.push(
-          setFile({
-            indexOfSetFile: indexOfSetFile++,
-            lastParam, lastIndex,
-            lastAutomaticFile, groupSeparator,
-            newArguments: noDuplicates, arg
-          })
-        )
-        if (!lastParam) lastAutomaticFile = arg;
-        if (lastParam === "input") clearLastVariables()
-        groupSeparator &&= undefined;
+      case "--loop-start": case "/loop-start":
+      case "-ls":          case "/ls":
+      case regexes.loopStart.test(arg) && arg: {
+        existsNextValueCheck(arg, newArguments)
+        lastParam = "loop-start";
+        lastIndex = arg.match(regexes.loopStart)?.groups;
+        break;
+      }
+      case "--loop-end": case "/loop-end":
+      case "-le":        case "/le":
+      case regexes.loopEnd.test(arg) && arg: {
+        existsNextValueCheck(arg, newArguments)
+        lastParam = "loop-end";
+        lastIndex = arg.match(regexes.loopEnd)?.groups;
         break;
       }
 
