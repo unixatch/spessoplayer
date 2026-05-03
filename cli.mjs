@@ -292,6 +292,10 @@ const actUpOnPassedArgs = async args => {
     console.error(`${red}Can't use both stdout and file mode at the same time${normal}`)
     process.exit(1)
   }
+  /**
+   * Runs the logic that comes before setFile is run
+   * @param {String} arg file to check and maybe run
+   */
   function runSetFile(arg) {
     if (doneFileList.get(arg) === doneSymbol) return;
     doneFileList.set(arg, doneSymbol)
@@ -608,10 +612,30 @@ const setFile = async ({
 
   const inputIndex = Number(lastIndex?.index ?? 0);
   const logMessages = {
-    getMessage(type, arg, index) {
+    /**
+     * Generates a generic log message
+     * @param {Boolean} type    file type
+     * @param {String}  msgArg  filename
+     * @param {Number}  [index] group index of the file
+     * @inner
+     * @private
+     * @memberof module:cli
+     * @return {String} generic log message
+     */
+    getMessage(type, msgArg, index) {
       const typeOfFile = type ? "midi" : "soundfont";
-      return `Set ${typeOfFile} file to "${arg}" at index ${index}`;
+      return `Set ${typeOfFile} file to "${msgArg}" at index ${index}`;
     },
+    /**
+     * Generates a log message replacer
+     * @param {String} original original soundfont
+     * @param {String} newOne   new soundfont
+     * @param {Number} [index]  group index of the file
+     * @inner
+     * @private
+     * @memberof module:cli
+     * @return {String} log message replacer
+     */
     getReplacedSoundfont(original, newOne, index) {
       return `Replaced soundfont file from "${original}" to "${newOne}" at index ${index}`;
     }
@@ -806,14 +830,10 @@ const setFormat = arg => {
       log(INFO_LVL, "Set stdout format to 'wave'")
       return;
     }
-    case "flac": {
-      Options.format = "flac";
-      log(INFO_LVL, "Set stdout format to 'flac'")
-      return;
-    }
+    case "flac":
     case "mp3": {
-      Options.format = "mp3";
-      log(INFO_LVL, "Set stdout format to 'mp3'")
+      Options.format = arg;
+      log(INFO_LVL, `Set stdout format to '${arg}'`)
       return;
     }
     case "s16le": case "f32le":
