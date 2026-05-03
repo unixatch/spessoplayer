@@ -190,9 +190,9 @@ async function manageVerboseOptions({
   DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
   debugLevelSpessoMsg, debugFileSpessoMsg
 }) {
-  const newArguments = newArgs;
-  let isVerboseLevelSet,
-      newArgumentsLength = newArguments.length;
+  const newArguments = newArgs,
+        newArgumentsLength = newArguments.length;
+  let isVerboseLevelSet;
 
   // +++ verboseLevel section +++
   if (!DEBUG_LEVEL_SPESSO) verboseLevelBlock: {
@@ -212,7 +212,7 @@ async function manageVerboseOptions({
     );
     await setVerboseLevel(
       isNaN(argumentOfParameter)
-        ? INFO_LVL+""
+        ? String(INFO_LVL)
         : argumentOfParameter
     )
   } else log(INFO_LVL, debugLevelSpessoMsg)
@@ -231,7 +231,7 @@ async function manageVerboseOptions({
       !argvString.startsWith("/lf")
     ) continue;
 
-    if (!isVerboseLevelSet) await setVerboseLevel(INFO_LVL+"")
+    if (!isVerboseLevelSet) await setVerboseLevel(String(INFO_LVL))
     setLogFilePath(
       argvString
         ?.match(regexes.logFile)
@@ -327,7 +327,7 @@ const actUpOnPassedArgs = async args => {
       case "--verbose":  case "/verbose":
       case "-v":         case "/v": {
         const nextArgument = Number(nextArg);
-        // if it also has been provided a valid argument
+        // If it also has been provided a valid argument
         if (!isNaN(nextArgument)) i++
         break;
       }
@@ -342,8 +342,8 @@ const actUpOnPassedArgs = async args => {
       ): {
         runSetFile(arg)
         if (nextArg.startsWith("-")
-            || nextArg.startsWith("/")
-            || !fs.existsSync(nextArg)) break;
+            || nextArg.startsWith("/")) break;
+        if (!fs.existsSync(nextArg)) { i++; break; }
 
         runSetFile(nextArg); i++
         break;
@@ -436,7 +436,7 @@ const actUpOnPassedArgs = async args => {
         log(WARNING_LVL, `${normal+normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
         break;
       }
-      // stdout format must be of only 1 kind
+      // Stdout format must be of only 1 kind
       // otherwise players like mpv won't read the output correctly
       case "--format": case "/format":
       case "-f":       case "/f": {
@@ -456,12 +456,18 @@ const actUpOnPassedArgs = async args => {
       case "--input": case "/input":
       case "-i":      case "/i":
       case regexes.input.test(arg) && arg: {
-        if (!nextArg) {
+        if (!nextArg
+            || nextArg.startsWith("-")
+            || nextArg.startsWith("/")) {
           console.error(red+"Missing a necessary argument"+normal)
           process.exit(1)
         }
         lastParam = "input";
         lastIndex = arg.match(regexes.input)?.groups;
+        const { existsSync } = global.fs ??= await import("node:fs");
+        if (!existsSync(nextArg)) { i++; break; }
+
+        runSetFile(nextArg); i++
         break;
       }
       case "--volume": case "/volume":
@@ -866,10 +872,10 @@ const setEffects = (arg, lastIndex) => {
   );
   const regexGroupListGetter = /([a-z]+) ?([-a-z\d ]+)?/gm;
   const regexTests = {
-    // is it a list structured like
+    // Is it a list structured like
     //   <effect1>[values1],<effect2>[values2]?
     normalList: new RegExp(`${regexGroupListGetter.source},${regexGroupListGetter.source}`).test(arg),
-    // is it a single effect like
+    // Is it a single effect like
     //   <effect>[values]?
     isIncorrect: new RegExp(`^${regexGroupListGetter.source}[^,](?:${regexListOfEffects}).*$`).test(arg)
   }
