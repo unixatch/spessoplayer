@@ -109,7 +109,6 @@ const regexes = {
     "|\\/le(?<index>\\d+)*)$"
   ].join("")),
 
-  infinity: /^(?:Infinity|infinity)$/,
   //                          HH:MM:SS.sss
   ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
   areDecibels: /^(?:-|\+*)[\d.]+dB/,
@@ -733,16 +732,17 @@ const setFile = async ({
 const setLoop = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index);
-  if (typeof number === "number" && !regexes.infinity.test(arg)) {
+  if (typeof number === "number"
+      && !isNaN(number) && number !== Infinity) {
     Options.loopAmount(lastIndexNumber, number);
     log(INFO_LVL, `Set loop amount to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  if (regexes.infinity.test(arg)) {
-    console.error(`${normalRed}Can't use infinity, sorry${normal}`)
+  if (number === Infinity) {
+    console.error(`${normalRed}[loop]: Can't use infinity, sorry${normal}`)
     process.exit(1);
   }
-  console.error(`${normalRed}Passed something that wasn't a number${normal}`)
+  console.error(`${normalRed}[loop]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
   process.exit(1);
 }
 /**
@@ -753,7 +753,7 @@ const setLoop = (arg, lastIndex) => {
 const setLoopStart = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index);
-  if (typeof number === "number"
+  if (typeof number === "number" && number !== Infinity
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
@@ -765,7 +765,7 @@ const setLoopStart = (arg, lastIndex) => {
     log(INFO_LVL, `Set loop-start to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
+  console.error(`${normalRed}[loop-start]: ${underline+bold+arg+normal+normalRed} isn't a number or a valid ISO string format${normal}`)
   process.exit(1);
 }
 /**
@@ -776,7 +776,7 @@ const setLoopStart = (arg, lastIndex) => {
 const setLoopEnd = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index);
-  if (typeof number === "number"
+  if (typeof number === "number" && number !== Infinity
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
@@ -788,7 +788,7 @@ const setLoopEnd = (arg, lastIndex) => {
     log(INFO_LVL, `Set loop-end to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a number or in ISO string format${normal}`)
+  console.error(`${normalRed}[loop-end]: ${underline+bold+arg+normal+normalRed} isn't a number or a valid ISO string format${normal}`)
   process.exit(1);
 }
 /**
@@ -799,7 +799,8 @@ const setLoopEnd = (arg, lastIndex) => {
  */
 const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   const number = Number(arg);
-  if (typeof number === "number" && !arg.startsWith("-")) {
+  if (typeof number === "number" && !isNaN(number)
+      && number !== Infinity) {
     if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutSampleRate = number;
       log(INFO_LVL, `Set sample rate for all to ${number} because output is stdout`)
@@ -809,7 +810,7 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
     log(INFO_LVL, `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
+  console.error(`${normalRed}[sample-rate]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
   process.exit(1);
 }
 /**
@@ -822,7 +823,7 @@ const setVerboseLevel = async (arg) => {
   arg ??= "2";
   global.fs ??= await import("fs");
 
-  if (typeof number === "number"
+  if (typeof number === "number" && !isNaN(number)
       && !(number < 0 && number > 2)) {
     Options.verboseLevel = number;
     if (isFromUser) {
@@ -830,7 +831,7 @@ const setVerboseLevel = async (arg) => {
     } else log(INFO_LVL, `Set verbose level to ${number}`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a valid number${normal}`)
+  console.error(`${normalRed}[verbose]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
   process.exit(1);
 }
 /**
@@ -862,7 +863,7 @@ const setFormat = arg => {
       return;
     }
   }
-  console.error(`${normalRed}Passed something that wasn't an available format${normal}`)
+  console.error(`${normalRed}[format]: ${underline+bold+arg+normal+normalRed} isn't a valid format${normal}`)
   process.exit(1);
 }
 /**
@@ -908,7 +909,7 @@ const setEffects = (arg, lastIndex) => {
     if (!list
           .every(i => new RegExp(regexListOfEffects).test(i.effect))
     ) {
-      console.error(`${normalRed}One effect that you passed doesn't exist in SoX${normal}`);
+      console.error(`${normalRed}[effects]: One effect inside "${underline+bold+arg+normal+normalRed}" doesn't exist in SoX${normal}`);
       process.exit(1);
     }
 
@@ -916,7 +917,7 @@ const setEffects = (arg, lastIndex) => {
     log(INFO_LVL, "Set list of SoX effects as ", JSON.stringify(list))
     return;
   }
-  console.error(`${normalRed}The string for SoX effects you passed is not usable${normal}`);
+  console.error(`${normalRed}[effects]: "${underline+bold+arg+normal+normalRed}" is a malformatted string${normal}`);
   process.exit(1);
 }
 /**
@@ -940,12 +941,13 @@ const setVolume = (arg, lastIndex) => {
     log(INFO_LVL, `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
     return;
   }
-  if (typeof number === "number" && !arg.startsWith("-")) {
+  if (typeof number === "number"
+      && !isNaN(number) && number !== Infinity) {
     Options.volume(lastIndexNumber, number);
     log(INFO_LVL, `Set volume to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
+  console.error(`${normalRed}[volume]: ${underline+bold+arg+normal+normalRed} isn't a valid number/dB/percentage${normal}`)
   process.exit(1);
 }
 /**
@@ -971,13 +973,14 @@ const setReverb = (arg, lastIndex) => {
     log(INFO_LVL, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
   }
-  if (typeof number === "number" && !arg.startsWith("-")) {
+  if (typeof number === "number"
+      && !isNaN(number) && number !== Infinity) {
     Options.reverbVolume(lastIndexNumber, number);
     Options.effects(Number(lastIndex?.index), []);
     log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a valid number/dB/percentage${normal}`)
+  console.error(`${normalRed}[reverb-volume]: ${underline+bold+arg+normal+normalRed} isn't a valid number/dB/percentage${normal}`)
   process.exit(1);
 }
 /**
@@ -986,15 +989,14 @@ const setReverb = (arg, lastIndex) => {
  */
 const setMaxThreads = async (arg) => {
   const number = Number(arg);
-  const { availableParallelism } = await import("os");
   if (typeof number === "number" && !isNaN(number)
-      && number <= availableParallelism() * 2
+      && number <= (await import("os")).availableParallelism() * 2
       && number >= 1) {
     Options.maxThreads = number;
     log(INFO_LVL, `Set max threads to ${number}`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a valid number of threads${normal}`)
+  console.error(`${normalRed}[max-threads]: ${underline+bold+arg+normal+normalRed} is out of range of valid numbers of threads${normal}`)
   process.exit(1);
 }
 /**
@@ -1009,13 +1011,14 @@ const setTextDelay = (arg) => {
     log(INFO_LVL, `Set text delay to ${number}`)
     return;
   }
-  if (typeof number === "number" && !isNaN(number)
+  if (typeof number === "number"
+      && !isNaN(number) && number !== Infinity
       && number >= 50) {
     Options.textDelay = number;
     log(INFO_LVL, `Set text delay to ${number}`)
     return;
   }
-  console.error(`${normalRed}Passed something that wasn't a valid range for the text-delay${normal}`)
+  console.error(`${normalRed}[text-delay]: ${underline+bold+arg+normal+normalRed} is out of range of valid numbers for text-delay${normal}`)
   process.exit(1);
 }
 /**
@@ -1039,7 +1042,7 @@ const uninstall = async () => {
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
   } catch (e) {
     if (e.status !== 0 && e.status !== 2) {
-      console.error(`${red}Uninstallation interrupted with error ${e.status}${normal}`);
+      console.error(`${red}[uninstall]: Uninstallation interrupted with error ${e.status}${normal}`);
       process.exit(2);
     }
     if (e.status === 2) process.exit(2)
