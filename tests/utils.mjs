@@ -14,16 +14,16 @@ globsWithExts.midis
 globsWithExts.soundfonts
   .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
 
-const manualMidi = globs.midis.filter(i => {
-  return globsWithExts.soundfonts.find(i2 => {
-    return join(parse(i).dir, parse(i).name) === i2;
-  });
-})[0];
-const manualSoundfont = globs.soundfonts.filter(i => {
-  return globsWithExts.midis.find(i2 => {
-    return join(parse(i).dir, parse(i).name) === i2;
-  });
-})[0];
+const manualMidi = globs.midis.filter(i => (
+  globsWithExts.soundfonts.find(i2 => (
+    join(parse(i).dir, parse(i).name) === i2
+  ))
+))[0];
+const manualSoundfont = globs.soundfonts.filter(i => (
+  globsWithExts.midis.find(i2 => (
+    join(parse(i).dir, parse(i).name) === i2
+  ))
+))[0];
 globs.midis = globs.midis.filter(i => i !== manualMidi);
 globs.soundfonts = globs.soundfonts.filter(i => i !== manualSoundfont);
 

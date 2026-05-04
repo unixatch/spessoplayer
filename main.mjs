@@ -33,7 +33,6 @@ import {
   applyEffects,
   addEvent,
   toStdout,
-  toFile,
   Progress,
   startPlayer
 } from "./mainFunctions.mjs"
@@ -74,7 +73,8 @@ let processingMessageCleaned = false;
 
 const listOfOptions = Options.all;
 const {
-  dryRun, confirmation,
+  dryRun,
+  confirmation, noTable,
   toStdout: isToStdout,
   fileOutputs: isToFile
 } = listOfOptions;
@@ -86,7 +86,7 @@ if (confirmation) {
   }
 
   const infos = Options.getConfirmationTable();
-  if (listOfOptions?.noTable) {
+  if (noTable) {
     for (const i of infos) console.log(i)
   } else console.table(Options.getConfirmationTable())
 
@@ -114,7 +114,6 @@ if (isToStdout) {
     processingMessageCleaned = true;
   }
   const {
-    files: filesList,
     sampleRate: stdoutSampleRate,
     format: stdoutFormat,
     effects: effectsList, reverbVolume
@@ -236,18 +235,19 @@ const pauseProcess = () => {
   process.stderr.write(showCursor)
   process.kill(process.pid, "SIGSTOP")
 };
-const showFileList = (dryRun, partial = false) => (
+const showFileList = (isDryRun, partial = false) => (
   console.log(
     !partial
-      ? clearCurrentLine+startOfLine+showCursor + "Written"
+      ? clearCurrentLine + startOfLine + showCursor + "Written"
       : "Written only",
     finalFileOutputs.filter(i => {
       if (i.finished) {
         delete i.finished;
         return true;
       }
+      return false;
     }),
-    dryRun
+    isDryRun
       ? `\b\nbut actually ${bold}nothing${normal} was written...`
       : "\b"
   )
@@ -274,7 +274,7 @@ addEvent({ eventType: "toFileSIGINT",
     // only if it's not in dry run mode
     if (dryRun) {
       try {
-        if (finishLine) {}
+        finishLine // might trigger the catch
         showFileList(dryRun, true)
         return process.exit(130);
       } catch (error) {
@@ -321,7 +321,8 @@ const {
   files: {
     length: filesListLength
   },
-  showUsage, textDelay, noProgress
+  showUsage, textDelay, noProgress,
+  maxThreads: OMaxThreads
 } = listOfOptions;
 // Calculates amountToRender (length of all songs combined)
 // before anything else so that the percentages are correct
@@ -424,7 +425,7 @@ const resourceLimits = new function () {
     maxYoungGenerationSizeMb: biggestFileSize / 2
   };
 };
-const maxThreads = listOfOptions?.maxThreads ?? calculateMaxThreads(availableParallelism()),
+const maxThreads = OMaxThreads ?? calculateMaxThreads(availableParallelism()),
       workers = [];
 let renderTextsInterval,
     cpuUsageData = process.cpuUsage(),
@@ -433,7 +434,7 @@ let renderTextsInterval,
  * Main function that renders progress text
  * @param {class} progress class used to get information
  */
-const renderTextsFunction = progress => {
+const renderTextsFunction = progressClass => {
   const moreInfos = showUsage ? (
     ` || ${cyan}${
       (process.memoryUsage.rss() / 1024**2).toFixed(2)
@@ -452,8 +453,8 @@ const renderTextsFunction = progress => {
     // Clears old text
     clearCurrentLine + startOfLine +
     // Renders new text
-    progress.minutesRenderedText +
-    progress.percentageText +
+    progressClass.minutesRenderedText +
+    progressClass.percentageText +
     moreInfos
   )
 };

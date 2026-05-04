@@ -207,7 +207,7 @@ async function formatManager({
         combinedFfmpegArgs.push(
           ...ffmpegArgs(
             dryRun ? undefined : newName,
-            !!combinedFfmpegArgs.length
+            Boolean(combinedFfmpegArgs.length)
           )[formats[index]]
         )
       }
@@ -931,9 +931,9 @@ async function toFile({
     )
   };
   for (let foIndex = 0; foIndex < foLength; foIndex++) {
-    if (!fileOutputs[foIndex]) continue;
-
     const outFile = fileOutputs[foIndex];
+    if (!outFile) continue;
+
     if (foIndex === WAV_INDEX || foIndex === RAW_INDEX) {
       await addFunction(outFile)
       continue;

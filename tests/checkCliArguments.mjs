@@ -1,5 +1,5 @@
 import { globSync } from "fs"
-import { parse, join } from "path"
+import { parse } from "path"
 
 const indexOfParameter = "2";
 // Main thread/process

@@ -1,5 +1,5 @@
 import { globSync } from "fs"
-import { parse, join } from "path"
+import { parse } from "path"
 import { fork } from "child_process"
 import "../utils/colors.mjs"
 
