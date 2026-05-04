@@ -59,8 +59,6 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
     debugLevelSpessoMsg, debugFileSpessoMsg
   });
 }
-if (!isVerboseLevelSet) console.log(gray+"Starting..."+normal)
-let processingMessageCleaned = false;
 
 addEvent({ eventType: "SIGINT" })
 log(DEBUG_LVL, "SIGINT event has been added")
@@ -70,6 +68,9 @@ log(DEBUG_LVL, "unhandledRejection event has been added")
 // In case the user passes some arguments
 await actUpOnPassedArgs()
 log(INFO_LVL, "Checked passed args")
+
+if (!isVerboseLevelSet) console.log(gray+"Starting..."+normal)
+let processingMessageCleaned = false;
 
 const listOfOptions = Options.all;
 const {
