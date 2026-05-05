@@ -52,10 +52,16 @@ const regexes = {
     "|\\/d(?:=(?<number>\\d+))*)$"
   ].join("")),
 
-  wav: /^.*(?:\.wav|\.wave)$/,
+  wav:  /^.*\.(?:wav|wave)$/,
   flac: /^.*\.flac$/,
-  mp3: /^.*\.mp3$/,
-  raw: /^.*\.(?:s16le|f32le|pcm)$/,
+  mp3:  /^.*\.mp3$/,
+  raw:  /^.*\.(?:s16le|f32le|pcm)$/,
+  allFO: new RegExp(`^${[
+    ".*\\.(?:wav|wave)",
+    ".*\\.flac",
+    ".*\\.mp3",
+    ".*\\.(?:s16le|f32le|pcm)",
+  ].join("|")}$`),
 
   // Instead these like --option or --option[n]
   input: new RegExp([
@@ -221,9 +227,11 @@ async function manageVerboseOptions({
   for (let index = 0; index < newArgumentsLength; index++) {
     if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
 
-    const argvString = newArguments[index];
-    if (!argvString.startsWith("-")
-        && !argvString.startsWith("/")) continue;
+    const {
+      [index]: argvString,
+      [index]: { 0: firstChar }
+    } = newArguments;
+    if (firstChar === "-" || firstChar === "/") continue;
     if (
       !argvString.startsWith("--log-file") &&
       !argvString.startsWith("/log-file") &&
@@ -341,8 +349,14 @@ const actUpOnPassedArgs = async args => {
            .existsSync(arg) && arg
       ): {
         runSetFile(arg)
-        if (nextArg.startsWith("-")
-            || nextArg.startsWith("/")) break;
+
+        if (
+          !nextArg ||
+          nextArg    === "|" ||
+          nextArg[0] === "-" ||  // Parameters
+          nextArg[0] === "/" ||
+          regexes.allFO.test(nextArg) // File output
+        ) break;
         if (!fs.existsSync(nextArg)) { i++; break; }
 
         runSetFile(nextArg); i++
@@ -456,9 +470,13 @@ const actUpOnPassedArgs = async args => {
       case "--input": case "/input":
       case "-i":      case "/i":
       case regexes.input.test(arg) && arg: {
-        if (!nextArg
-            || nextArg.startsWith("-")
-            || nextArg.startsWith("/")) {
+        if (
+          !nextArg ||
+          nextArg    === "|" ||
+          nextArg[0] === "-" ||       // Parameters
+          nextArg[0] === "/" ||
+          regexes.allFO.test(nextArg) // File output
+        ) {
           console.error(red+"Missing a necessary argument"+normal)
           process.exit(1)
         }
