@@ -184,10 +184,8 @@ async function formatManager({
       break;
     }
     case Array.isArray(outFile): {
-      const doneSettingUpMsg = `Done setting up ${
-        dryRun ? "files in dry run mode" : "files"
-      }`;
-      const combinedFfmpegArgs = [];
+      const formatsUsed = [],
+            combinedFfmpegArgs = [];
       const formats = {
         [FO_CONSTANTS.MP3_INDEX]: "mp3",
         [FO_CONSTANTS.FLAC_INDEX]: "flac"
@@ -210,7 +208,13 @@ async function formatManager({
             Boolean(combinedFfmpegArgs.length)
           )[formats[index]]
         )
+        formatsUsed.push(formats[index])
       }
+      const doneSettingUpMsg = `Done setting up ${
+        dryRun
+          ? formatsUsed.join(", ") + " outFiles in dry run mode"
+          : formatsUsed.join(", ") + " outFiles"
+      }`;
 
       const ffmpeg = spawn(
         "ffmpeg", combinedFfmpegArgs,
