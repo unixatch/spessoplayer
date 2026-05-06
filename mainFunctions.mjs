@@ -1141,7 +1141,7 @@ async function startPlayer(Options) {
 
     // Needed even if it's wrong because
     // otherwise mpv gives out a fatal error
-    // only if it's a flac convertion (buggy ffmpeg?)
+    // only if it's a flac conversion (buggy ffmpeg?)
     if (format === "flac") {
       res.setHeader("Content-Length", length << 4)
       res.flushHeaders()
@@ -1159,19 +1159,19 @@ async function startPlayer(Options) {
       );
     }
     // If it needs effects, excluding lossless formats
-    if (effects || reverbVolume !== undefined
-        && !format?.match(losslessFormats)) {
+    if ((effects || reverbVolume !== undefined)
+        && format?.match(ffmpegFormats)) {
       [effectsProcess] = await applyEffects({
         program: "sox",
         stdoutHeader,
-        stdout: converterProcess?.stdin ?? res.socket,
+        stdout: converterProcess.stdin,
         promisesOfPrograms,
-        // TODO: effects system needs to overhauled
-        //effects: effects[0]
+        reverbVolume: options.reverbVolume,
+        effects: options.effects
       });
       log(INFO_LVL, "Done setting up SoX")
     } else if (needsConvertion) {
-      // Or just a convertion/normal processing
+      // Or just a conversion/normal processing
       converterProcess.stdin.write(stdoutHeader)
     }
     log(DEBUG_LVL, "Created header file ", stdoutHeader)
@@ -1196,17 +1196,21 @@ async function startPlayer(Options) {
   }
   server.listen({ host: "localhost", port })
 
-  const isf32le = format === "f32le";
-  const isRawAudio = (format === "pcm" || isf32le) ? [
+  const isPcm = (
+    format === "f32le"
+    || format === "pcm" || format === "s16le"
+  );
+  const isRawAudio = isPcm ? [
     "--demuxer=rawaudio",
-    "--demuxer-rawaudio-format="+(isf32le ? "floatle" : "s16le"),
+    "--demuxer-rawaudio-format="+(format === "f32le" ? "floatle" : "s16le"),
     "--demuxer-rawaudio-rate="+(sampleRate ?? 48000),
     "--demuxer-rawaudio-channels=2"
   ] : "";
-  const msgLevel = (!format?.match(/wave|pcm/))
-                      // Hide Content-Length mismatch error
-                    ? ["--msg-level=ffmpeg=fatal"]
-                    : [];
+  const msgLevel = (
+    !isPcm && format !== "wave"
+      ? ["--msg-level=ffmpeg=fatal"] // Hides Content-Length mismatch error
+      : ""
+  );
   const mpv = spawn("mpv", [
     ...msgLevel,
     ...isRawAudio,
