@@ -68,7 +68,7 @@ log(DEBUG_LVL, "unhandledRejection event has been added")
 await actUpOnPassedArgs()
 log(INFO_LVL, "Checked passed args")
 
-if (!isVerboseLevelSet) console.log(gray+"Starting..."+normal)
+if (!isVerboseLevelSet) console.error(gray+"Starting..."+normal)
 let processingMessageCleaned = false;
 
 const listOfOptions = Options.all;
@@ -81,7 +81,7 @@ const {
 
 if (confirmation) {
   if (!isVerboseLevelSet) {
-    process.stdout.write("\x1b[F\x1b[2K")
+    process.stderr.write("\x1b[F\x1b[2K")
     processingMessageCleaned = true;
   }
 
@@ -110,7 +110,7 @@ if (confirmation) {
 // +++ toStdout section +++
 if (isToStdout) {
   if (!isVerboseLevelSet && !processingMessageCleaned) {
-    process.stdout.write("\x1b[F\x1b[2K")
+    process.stderr.write("\x1b[F\x1b[2K")
     processingMessageCleaned = true;
   }
   const {
@@ -215,7 +215,7 @@ if (isToStdout) {
 
 if (!isToStdout && !isToFile?.length > 0) {
   if (!isVerboseLevelSet && !processingMessageCleaned) {
-    process.stdout.write("\x1b[F\x1b[2K")
+    process.stderr.write("\x1b[F\x1b[2K")
     processingMessageCleaned = true;
   }
   if (dryRun) {
@@ -493,7 +493,7 @@ const stateablePromiseFunction = function (resolve, reject) {
       )
     );
     if (!isVerboseLevelSet && !processingMessageCleaned) {
-      process.stdout.write("\x1b[F" + clearCurrentLine)
+      process.stderr.write("\x1b[F" + clearCurrentLine)
       processingMessageCleaned = true;
     }
     if (message === "DONE_RENDERING") {
