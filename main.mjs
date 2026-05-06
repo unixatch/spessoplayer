@@ -186,20 +186,15 @@ if (isToStdout) {
   }
   log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
-  let destination;
-  // When SoX exists
-  if (effectsProcess) {
-    destination = effectsProcess.stdin;
-  }
-  // When only ffmpeg exists
-  if (converterProcess && !effectsProcess) {
-    destination = converterProcess.stdin;
-  }
-  // When neither of child_processes exist
-  if (!effectsProcess && !converterProcess) {
-    (dryRunStream ?? process.stdout).write(stdoutHeader)
-    destination = dryRunStream ?? process.stdout;
-  }
+  const destination = (
+    effectsProcess?.stdin      // Sox or
+    ?? converterProcess?.stdin // Ffmpeg or
+    ?? (
+      // dryRun/stdout
+      (dryRunStream ?? process.stdout).write(stdoutHeader),
+       dryRunStream ?? process.stdout
+    )
+  );
   for (let i = 0; i < amountOfSongs; i++) {
     const options = perSongOptions[i];
     if (!options) continue;

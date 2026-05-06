@@ -1176,20 +1176,11 @@ async function startPlayer(Options) {
     }
     log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
-    let destination;
-    // When SoX exists
-    if (effectsProcess) {
-      destination = effectsProcess.stdin;
-    }
-    // When only ffmpeg exists
-    if (converterProcess && !effectsProcess) {
-      destination = converterProcess.stdin;
-    }
-    // When neither of child_processes exist
-    if (!effectsProcess && !converterProcess) {
-      res.write(stdoutHeader)
-      destination = res;
-    }
+    const destination = (
+      effectsProcess?.stdin             // SoX or
+      ?? converterProcess?.stdin        // Ffmpeg or
+      ?? (res.write(stdoutHeader), res) // ServerResponse
+    );
     const [ func, promise ] = await toStdout({
       index: realIndex,
       options, res
