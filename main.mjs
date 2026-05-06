@@ -168,7 +168,7 @@ if (isToStdout) {
     );
   }
   // If it needs effects, excluding lossless formats
-  if (effectsList || reverbVolume !== undefined
+  if ((effectsList || reverbVolume !== undefined)
       && !stdoutFormat?.match(losslessFormats)) {
     [effectsProcess] = await applyEffects({
       program: "sox",

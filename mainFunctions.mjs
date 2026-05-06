@@ -1158,7 +1158,7 @@ async function startPlayer(Options) {
         {stdio: ["pipe", res.socket, "pipe"]}
       );
     }
-    // If it needs effects, excluding lossless formats
+    // If it needs effects, excluding lossless/wave formats
     if ((effects || reverbVolume !== undefined)
         && format?.match(ffmpegFormats)) {
       [effectsProcess] = await applyEffects({
