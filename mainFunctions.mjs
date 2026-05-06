@@ -1108,7 +1108,7 @@ async function startPlayer(Options) {
     files: filesList,
     sampleRate,
     format,
-    effects
+    effects, reverbVolume
   } = Options.all;
   const { getWavHeader } = await import("./audioBuffer.mjs"),
         { spawn }        = child_process ??= await import("child_process"),
@@ -1147,8 +1147,10 @@ async function startPlayer(Options) {
       res.flushHeaders()
     }
 
-    // If it needs to be converted
-    const needsConvertion = format?.match(/(?:wave|pcm|s16le|f32le)/) === null;
+    const ffmpegFormats   = /(?:flac|mp3)/,
+          losslessFormats = /(?:pcm|s16le|f32le)/;
+    const needsConvertion = format?.match(ffmpegFormats);
+
     if (needsConvertion) {
       const { spawn } = child_process ??= await import("child_process");
       converterProcess = spawn("ffmpeg",
@@ -1156,10 +1158,9 @@ async function startPlayer(Options) {
         {stdio: ["pipe", res.socket, "pipe"]}
       );
     }
-    // If it needs effects
-    if (effects
-        && (format?.match(/(?:pcm|s16le|f32le)/) === null
-        || !format)) {
+    // If it needs effects, excluding lossless formats
+    if (effects || reverbVolume !== undefined
+        && !format?.match(losslessFormats)) {
       [effectsProcess] = await applyEffects({
         program: "sox",
         stdoutHeader,
