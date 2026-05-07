@@ -149,7 +149,7 @@ async function formatManager({
 
       if (effects || reverbVolume !== undefined) {
         if (isStdout) {
-          addPipingFunction();
+          addPipingFunction()
         } else {
           await applyEffects({
             program: "sox",

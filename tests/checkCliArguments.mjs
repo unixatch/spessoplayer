@@ -41,7 +41,7 @@ if (!process.argv.includes("--verbose")
   })
     .then(process.exit)
     .catch(error => {
-      console.error(error);
+      console.error(error)
       process.exit(error.errno)
     })
 }
@@ -70,7 +70,7 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
   await manageVerboseOptions({
     DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
     debugLevelSpessoMsg, debugFileSpessoMsg
-  });
+  })
 }
 
 await actUpOnPassedArgs(process.argv)

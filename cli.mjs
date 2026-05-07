@@ -424,7 +424,7 @@ const actUpOnPassedArgs = async args => {
       case "-dr":       case "/dr":
       case "-t":        case "/t":
       case "-0":        case "/0": {
-        Options.dryRun();
+        Options.dryRun()
         log(INFO_LVL, "Set dry-run mode")
         break;
       }
@@ -572,7 +572,7 @@ const actUpOnPassedArgs = async args => {
   */
   await Promise.all(await Promise.all(setFilePromises))
   if (!Object.keys(Options.all.files ?? []).length) {
-    console.error(`${red}Missing required files${normal}`);
+    console.error(`${red}Missing required files${normal}`)
     process.exit(1)
   }
 }
@@ -696,7 +696,7 @@ const setFile = async ({
     const pathUpToName = join(parse(arg).dir, parse(arg).name);
     const foundIndex = Options.searchAddedFile(pathUpToName, typeOfFile);
     if (typeof foundIndex === "number") {
-      Options.files(foundIndex, arg, !typeOfFile);
+      Options.files(foundIndex, arg, !typeOfFile)
       log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, foundIndex))
       return;
     }
@@ -728,7 +728,7 @@ const setFile = async ({
       // if the group separator has been used
       lastKnownGroupIndex = groupSeparator ? ++indexOfGroup : indexOfGroup;
     }
-    Options.files(lastKnownGroupIndex, arg, !typeOfFile);
+    Options.files(lastKnownGroupIndex, arg, !typeOfFile)
     log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex))
   });
   // --- END of automatic addition of files section ---
@@ -743,16 +743,16 @@ const setLoop = (arg, lastIndex) => {
         lastIndexNumber = Number(lastIndex?.index);
   if (typeof number === "number"
       && !isNaN(number) && number !== Infinity) {
-    Options.loopAmount(lastIndexNumber, number);
+    Options.loopAmount(lastIndexNumber, number)
     log(INFO_LVL, `Set loop amount to ${number} at ${lastIndex?.index} index`)
     return;
   }
   if (number === Infinity) {
     console.error(`${normalRed}[loop]: Can't use infinity, sorry${normal}`)
-    process.exit(1);
+    process.exit(1)
   }
   console.error(`${normalRed}[loop]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.loopStart variable
@@ -766,16 +766,16 @@ const setLoopStart = (arg, lastIndex) => {
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      Options.loopStart(lastIndexNumber, seconds);
+      Options.loopStart(lastIndexNumber, seconds)
       log(INFO_LVL, `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
-    Options.loopStart(lastIndexNumber, number);
+    Options.loopStart(lastIndexNumber, number)
     log(INFO_LVL, `Set loop-start to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}[loop-start]: ${underline+bold+arg+normal+normalRed} isn't a number or a valid ISO string format${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.loopEnd variable
@@ -789,16 +789,16 @@ const setLoopEnd = (arg, lastIndex) => {
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
-      Options.loopEnd(lastIndexNumber, seconds);
+      Options.loopEnd(lastIndexNumber, seconds)
       log(INFO_LVL, `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
       return;
     }
-    Options.loopEnd(lastIndexNumber, number);
+    Options.loopEnd(lastIndexNumber, number)
     log(INFO_LVL, `Set loop-end to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}[loop-end]: ${underline+bold+arg+normal+normalRed} isn't a number or a valid ISO string format${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.sampleRate variable
@@ -815,12 +815,12 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
       log(INFO_LVL, `Set sample rate for all to ${number} because output is stdout`)
       return;
     }
-    Options.sampleRate(Number(lastIndex?.index), number);
+    Options.sampleRate(Number(lastIndex?.index), number)
     log(INFO_LVL, `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}[sample-rate]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Simply changes how the program should log
@@ -841,7 +841,7 @@ const setVerboseLevel = async (arg) => {
     return;
   }
   console.error(`${normalRed}[verbose]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.format variable for use in stdout mode
@@ -869,7 +869,7 @@ const setFormat = arg => {
     }
   }
   console.error(`${normalRed}[format]: ${underline+bold+arg+normal+normalRed} isn't a valid format${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Applies effects from the user's string passed through --effects
@@ -914,16 +914,16 @@ const setEffects = (arg, lastIndex) => {
     if (!list
           .every(i => new RegExp(regexListOfEffects).test(i.effect))
     ) {
-      console.error(`${normalRed}[effects]: One effect inside "${underline+bold+arg+normal+normalRed}" doesn't exist in SoX${normal}`);
-      process.exit(1);
+      console.error(`${normalRed}[effects]: One effect inside "${underline+bold+arg+normal+normalRed}" doesn't exist in SoX${normal}`)
+      process.exit(1)
     }
 
-    Options.effects(Number(lastIndex?.index), list);
+    Options.effects(Number(lastIndex?.index), list)
     log(INFO_LVL, "Set list of SoX effects as ", JSON.stringify(list))
     return;
   }
-  console.error(`${normalRed}[effects]: "${underline+bold+arg+normal+normalRed}" is a malformatted string${normal}`);
-  process.exit(1);
+  console.error(`${normalRed}[effects]: "${underline+bold+arg+normal+normalRed}" is a malformatted string${normal}`)
+  process.exit(1)
 }
 /**
  * Sets the Options.volume variable for the masterGain
@@ -936,24 +936,24 @@ const setVolume = (arg, lastIndex) => {
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
-    Options.volume(lastIndexNumber, toPercentage);
+    Options.volume(lastIndexNumber, toPercentage)
     log(INFO_LVL, `Set volume to ${toPercentage} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
-    Options.volume(lastIndexNumber, percentage / 100);
+    Options.volume(lastIndexNumber, percentage / 100)
     log(INFO_LVL, `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
     return;
   }
   if (typeof number === "number"
       && !isNaN(number) && number !== Infinity) {
-    Options.volume(lastIndexNumber, number);
+    Options.volume(lastIndexNumber, number)
     log(INFO_LVL, `Set volume to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(`${normalRed}[volume]: ${underline+bold+arg+normal+normalRed} isn't a valid number/dB/percentage${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.reverb variable
@@ -965,28 +965,28 @@ const setReverb = (arg, lastIndex) => {
         lastIndexNumber = Number(lastIndex?.index);
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
-    Options.reverbVolume(lastIndexNumber, dBNumber);
-    Options.effects(lastIndexNumber, []);
+    Options.reverbVolume(lastIndexNumber, dBNumber)
+    Options.effects(lastIndexNumber, [])
     log(INFO_LVL, `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     const toDB = 10 * 10**(percentage/100);
-    Options.reverbVolume(lastIndexNumber, toDB);
-    Options.effects(lastIndexNumber, []);
+    Options.reverbVolume(lastIndexNumber, toDB)
+    Options.effects(lastIndexNumber, [])
     log(INFO_LVL, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (typeof number === "number"
       && !isNaN(number) && number !== Infinity) {
-    Options.reverbVolume(lastIndexNumber, number);
-    Options.effects(Number(lastIndex?.index), []);
+    Options.reverbVolume(lastIndexNumber, number)
+    Options.effects(Number(lastIndex?.index), [])
     log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
   }
   console.error(`${normalRed}[reverb-volume]: ${underline+bold+arg+normal+normalRed} isn't a valid number/dB/percentage${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.maxThreads variable
@@ -1002,7 +1002,7 @@ const setMaxThreads = async (arg) => {
     return;
   }
   console.error(`${normalRed}[max-threads]: ${underline+bold+arg+normal+normalRed} is out of range of valid numbers of threads${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the Options.textDelay variable
@@ -1024,7 +1024,7 @@ const setTextDelay = (arg) => {
     return;
   }
   console.error(`${normalRed}[text-delay]: ${underline+bold+arg+normal+normalRed} is out of range of valid numbers for text-delay${normal}`)
-  process.exit(1);
+  process.exit(1)
 }
 /**
  * Sets the file path to the log file
@@ -1047,8 +1047,8 @@ const uninstall = async () => {
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
   } catch (e) {
     if (e.status !== 0 && e.status !== 2) {
-      console.error(`${red}[uninstall]: Uninstallation interrupted with error ${e.status}${normal}`);
-      process.exit(2);
+      console.error(`${red}[uninstall]: Uninstallation interrupted with error ${e.status}${normal}`)
+      process.exit(2)
     }
     if (e.status === 2) process.exit(2)
   }

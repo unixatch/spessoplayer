@@ -51,7 +51,7 @@ await new Promise((resolve, reject) => {
 })
   .then(process.exit)
   .catch(error => {
-    console.error(error);
+    console.error(error)
     process.exit(error.errno)
   })
 

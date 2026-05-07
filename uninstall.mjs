@@ -67,7 +67,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
     return await runCheck(program, noUninstallMsg, true);
   } catch (e) {
     if (e.name === "AbortError") {
-      console.error(`\n${gray}Uninstallation of dependencies interrupted with Ctrl+c${normal}`);
+      console.error(`\n${gray}Uninstallation of dependencies interrupted with Ctrl+c${normal}`)
       process.exit(2)
     }
     if (e.message === "Program doesn't exist") {
@@ -75,7 +75,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
       console.warn("\x1b[33mSkipping \x1b[4m"+program+"\x1b[0m")
       return;
     }
-    console.error(e);
+    console.error(e)
     process.exit(1)
   }
 }

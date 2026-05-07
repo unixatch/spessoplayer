@@ -42,11 +42,11 @@ async function runCheck(program, noInstallMsg = "") {
     runProgramSync({ spawnSync, program })
   } catch (e) {
     if (e.message !== "Program doesn't exist") {
-      console.error(e);
-      console.error(`${red}There was an error while trying to check ${program}, exiting...${normal}`);
-      process.exit(1);
+      console.error(e)
+      console.error(`${red}There was an error while trying to check ${program}, exiting...${normal}`)
+      process.exit(1)
     }
-    console.warn("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally\x1b[0m");
+    console.warn("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally\x1b[0m")
     if (!readline) {
       readline = await import("readline/promises");
       ({ stdin, stdout, stderr } = await import ("process"));
@@ -60,7 +60,7 @@ async function runCheck(program, noInstallMsg = "") {
         rl.close()
       } catch (e2) {
         if (e2.name === "AbortError") {
-          console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`);
+          console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`)
           process.exit(2)
         }
       }

@@ -63,9 +63,9 @@ function writeRIFFChunkParts(header, chunks, isList = false) {
   if (finalSize % 2 !== 0) finalSize++
 
   const outArray = new IndexedByteArray(finalSize);
-  writeBinaryStringIndexed(outArray, headerWritten);
-  writeDword(outArray, writtenSize);
-  if (isList) writeBinaryStringIndexed(outArray, header);
+  writeBinaryStringIndexed(outArray, headerWritten)
+  writeDword(outArray, writtenSize)
+  if (isList) writeBinaryStringIndexed(outArray, header)
 
   chunks.forEach(c => {
     outArray.set(c, dataOffset)
@@ -92,11 +92,11 @@ function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
   if (finalSize % 2 !== 0) finalSize++
 
   const outArray = new IndexedByteArray(finalSize);
-  writeBinaryStringIndexed(outArray, headerWritten);
-  writeDword(outArray, writtenSize);
+  writeBinaryStringIndexed(outArray, headerWritten)
+  writeDword(outArray, writtenSize)
 
-  if (isList) writeBinaryStringIndexed(outArray, header);
-  outArray.set(data, dataStartOffset);
+  if (isList) writeBinaryStringIndexed(outArray, header)
+  outArray.set(data, dataStartOffset)
   return outArray;
 }
 
@@ -128,22 +128,22 @@ function getWavHeader({ length, numChannels },
     if (metadata.artist) {
       infoChunks.push(
         writeRIFFChunkRaw("IART", encoder.encode(metadata.artist), true)
-      );
+      )
     }
     if (metadata.album) {
       infoChunks.push(
         writeRIFFChunkRaw("IPRD", encoder.encode(metadata.album), true)
-      );
+      )
     }
     if (metadata.genre) {
       infoChunks.push(
         writeRIFFChunkRaw("IGNR", encoder.encode(metadata.genre), true)
-      );
+      )
     }
     if (metadata.title) {
       infoChunks.push(
         writeRIFFChunkRaw("INAM", encoder.encode(metadata.title), true)
-      );
+      )
     }
     infoChunk = writeRIFFChunkParts("INFO", infoChunks, true);
   }
@@ -154,20 +154,20 @@ function getWavHeader({ length, numChannels },
     const loopEndSamples = Math.floor(loop.end * sampleRate);
 
     const cueStart = new IndexedByteArray(24);
-    writeLittleEndianIndexed(cueStart, 0, 4);
-    writeLittleEndianIndexed(cueStart, 0, 4);
-    writeBinaryStringIndexed(cueStart, "data");
-    writeLittleEndianIndexed(cueStart, 0, 4);
-    writeLittleEndianIndexed(cueStart, 0, 4);
-    writeLittleEndianIndexed(cueStart, loopStartSamples, 4);
+    writeLittleEndianIndexed(cueStart, 0, 4)
+    writeLittleEndianIndexed(cueStart, 0, 4)
+    writeBinaryStringIndexed(cueStart, "data")
+    writeLittleEndianIndexed(cueStart, 0, 4)
+    writeLittleEndianIndexed(cueStart, 0, 4)
+    writeLittleEndianIndexed(cueStart, loopStartSamples, 4)
 
     const cueEnd = new IndexedByteArray(24);
-    writeLittleEndianIndexed(cueEnd, 1, 4);
-    writeLittleEndianIndexed(cueEnd, 0, 4);
-    writeBinaryStringIndexed(cueEnd, "data");
-    writeLittleEndianIndexed(cueEnd, 0, 4);
-    writeLittleEndianIndexed(cueEnd, 0, 4);
-    writeLittleEndianIndexed(cueEnd, loopEndSamples, 4);
+    writeLittleEndianIndexed(cueEnd, 1, 4)
+    writeLittleEndianIndexed(cueEnd, 0, 4)
+    writeBinaryStringIndexed(cueEnd, "data")
+    writeLittleEndianIndexed(cueEnd, 0, 4)
+    writeLittleEndianIndexed(cueEnd, 0, 4)
+    writeLittleEndianIndexed(cueEnd, loopEndSamples, 4)
 
     cueChunk = writeRIFFChunkParts("cue ", [
       new IndexedByteArray([2, 0, 0, 0]),
