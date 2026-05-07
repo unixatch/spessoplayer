@@ -324,6 +324,9 @@ const actUpOnPassedArgs = async args => {
   let indexOfSetFile = 0,
       lastAutomaticFile,
       groupSeparator;
+
+  global.fs ??= await import("node:fs");
+  const { existsSync } = fs;
   for (let i = 0; i < newArgumentsLength; i++) {
     const {
         [i]: arg,
@@ -345,8 +348,7 @@ const actUpOnPassedArgs = async args => {
 
       case (
         (lastParam === "input" || !lastParam) &&
-        (global.fs ??= await import("node:fs"))
-           .existsSync(arg) && arg
+        !regexes.allFO.test(arg) && existsSync(arg) && arg
       ): {
         runSetFile(arg)
 
@@ -357,7 +359,7 @@ const actUpOnPassedArgs = async args => {
           nextArg[0] === "/" ||
           regexes.allFO.test(nextArg) // File output
         ) break;
-        if (!fs.existsSync(nextArg)) { i++; break; }
+        if (!existsSync(nextArg)) { i++; break; }
 
         runSetFile(nextArg); i++
         break;
@@ -482,7 +484,6 @@ const actUpOnPassedArgs = async args => {
         }
         lastParam = "input";
         lastIndex = arg.match(regexes.input)?.groups;
-        const { existsSync } = global.fs ??= await import("node:fs");
         if (!existsSync(nextArg)) { i++; break; }
 
         runSetFile(nextArg); i++
