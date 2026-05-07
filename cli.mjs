@@ -56,12 +56,12 @@ const regexes = {
   flac: /^.*\.flac$/,
   mp3:  /^.*\.mp3$/,
   raw:  /^.*\.(?:s16le|f32le|pcm)$/,
-  allFO: new RegExp(`^${[
-    ".*\\.(?:wav|wave)",
-    ".*\\.flac",
-    ".*\\.mp3",
-    ".*\\.(?:s16le|f32le|pcm)",
-  ].join("|")}$`),
+  allFO: new RegExp(`^${
+    [".*\\.(?:wav|wave)",
+     ".*\\.flac",
+     ".*\\.mp3",
+     ".*\\.(?:s16le|f32le|pcm)"].join("|")
+  }$`),
 
   // Instead these like --option or --option[n]
   input: new RegExp([
@@ -373,28 +373,28 @@ const actUpOnPassedArgs = async args => {
       case "out.wav":
       case regexes.wav.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(WAV_INDEX, arg);
+        Options.fileOutputs(WAV_INDEX, arg)
         log(INFO_LVL, "Set file output to wav")
         break;
       }
       case "out.pcm": case "out.s16le": case "out.f32le":
       case regexes.raw.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(RAW_INDEX, arg);
+        Options.fileOutputs(RAW_INDEX, arg)
         log(INFO_LVL, "Set file output to pcm")
         break;
       }
       case "out.flac":
       case regexes.flac.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(FLAC_INDEX, arg);
+        Options.fileOutputs(FLAC_INDEX, arg)
         log(INFO_LVL, "Set file output to flac")
         break;
       }
       case "out.mp3":
       case regexes.mp3.test(arg) && arg: {
         if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(MP3_INDEX, arg);
+        Options.fileOutputs(MP3_INDEX, arg)
         log(INFO_LVL, "Set file output to mp3")
         break;
       }
