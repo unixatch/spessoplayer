@@ -51,6 +51,7 @@ const midiList = [],
 function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
   const BASIC_FFMPEG_ARGS = !withoutBasics ? [
     "-loglevel", "fatal",
+    "-nostdin", // Necessary because of spawn and no shell
     "-hide_banner",
     "-i", "-"
   ] : [];
@@ -221,6 +222,7 @@ async function formatManager({
         { stdio: ["pipe", (dryRun ? "ignore" : "pipe"), "pipe"] }
       );
       log(DEBUG_LVL, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
+
       if (effects || reverbVolume !== undefined) {
         await applyEffects({
           program: "sox",
@@ -230,15 +232,17 @@ async function formatManager({
           effects, reverbVolume
         })
         log(INFO_LVL, doneSettingUpMsg)
+        addPipingFunction(() => (ffmpeg.needToEndStdin = true, ffmpeg))
         break;
       }
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
-          ffmpeg.once("error", reject)
           ffmpeg.once("exit", resolve)
+                .once("error", reject)
         })
       )
-      log(DEBUG_LVL, "Added promise")
+      log(DEBUG_LVL, "Added ffmpeg promise")
+
       addPipingFunction(() => {
         ffmpeg.stdin.write(stdoutHeader)
         addErrorEventToDest(
@@ -525,9 +529,10 @@ async function applyEffects({
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
       sox.once("exit", resolve)
-      sox.once("error", reject)
+         .once("error", reject)
     })
   )
+  log(DEBUG_LVL, "Added SoX promise")
 
   sox.stdin.write(stdoutHeader)
   readStream?.pipe(sox.stdin)

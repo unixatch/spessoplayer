@@ -8,6 +8,8 @@ global.logThis = {verboseLevel, logFilePath};
 const { toFile } = await import("./mainFunctions.mjs")
 global.fs = fs;
 process.on("unhandledRejection", i => console.error(i))
+
+let processToClose;
 /**
  * Runs toFile with the provided data and also
  * sends the fileOutputs array back
@@ -22,13 +24,18 @@ async function runTask({
   progressBuffers, options,
   FO_CONSTANTS, index, filesListLength
 }) {
+  processToClose?.stdin?.end()
+
   const [fileOutputs, pipingFunctions, promiseToWait] = await toFile({
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
     progressBuffers,
     index, options, FO_CONSTANTS
   })
   parentPort.postMessage({index, files: fileOutputs})
-  for (const func of pipingFunctions) func?.()
+  for (const func of pipingFunctions) {
+    const returnValue = func?.();
+    if (returnValue?.needToEndStdin) processToClose = returnValue;
+  }
 
   await promiseToWait
   parentPort.postMessage("DONE_RENDERING")
