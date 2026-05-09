@@ -82,6 +82,28 @@ if (TERM?.startsWith("xterm-256")) colorDepth ??= 8;
 // If the above fails, let node check
 colorDepth ??= (await import("tty")).WriteStream(1).getColorDepth();
 
+if (colorDepth === 1) {
+  colors.modify({
+    escape: esc,
+    colorsToUse: [
+      ["magenta",       "0"   ],
+      ["brightMagenta", "1"   ],
+      ["yellow",        "1"   ],
+      ["normalYellow",  "0"   ],
+      ["dimYellow",     "2"   ],
+      ["cyan",          "0"   ],
+      ["green",         "0"   ],
+      ["dimGreen",      "2"   ],
+      ["normalRed",     "0"   ],
+      ["red",           "1"   ],
+      ["dimRed",        "2"   ],
+      ["gray",          "0"   ],
+      ["dimGray",       "2"   ],
+      ["dimGrayBold",   "2; 1"]
+    ]
+  })
+}
+
 // 256 color scheme
 if (colorDepth === 8) {
   colors.modify({
@@ -90,7 +112,8 @@ if (colorDepth === 8) {
       ["magenta",       "164"      ],
       ["brightMagenta", "201"      ],
       ["yellow",        "184; 1"   ],
-      ["normalYello",   "184"      ],
+      ["dimYellow",     "184; 2"   ],
+      ["normalYellow",  "184"      ],
       ["cyan",          "39"       ],
       ["green",         "34"       ],
       ["dimGreen",      "28"       ],
@@ -111,10 +134,11 @@ if (colorDepth === 24) {
       ["magenta",       "175;  12; 164"   ],
       ["brightMagenta", "245;  12; 224"   ],
       ["yellow",        "223; 215;   0; 1"],
-      ["normalYello",   "183; 175;   0"   ],
-      ["cyan",          "23;  176; 176"   ],
-      ["green",         "0;   176;   4"   ],
-      ["dimGreen",      "0;   126;   3"   ],
+      ["dimYellow",     "203; 195;   0; 2"],
+      ["normalYellow",  "193; 185;   0"   ],
+      ["cyan",          " 23; 176; 176"   ],
+      ["green",         "  0; 176;   4"   ],
+      ["dimGreen",      "  0; 126;   3"   ],
       ["normalRed",     "185;   0;   0"   ],
       ["red",           "235;   0;   0; 1"],
       ["dimRed",        "145;   0;   0"   ],
