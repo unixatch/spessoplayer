@@ -382,21 +382,19 @@ async function initSpessaSynth({
       : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
   );
   if (!onlySampleCount && !onlyDuration) {
-    if (isToFile) {
-      const {
-        [lastIndexOfGroup]: lastIndex,
-        [indexOfGroup]: currentIndex
-      } = soundFontList;
+    // Memory cleanup
+    if (midiList.length) delete midiList[index-1];
+    const {
+      [lastIndexOfGroup]: lastIndex,
+      [indexOfGroup]:     currentIndex
+    } = soundFontList;
 
-      if (lastIndex !== currentIndex) {
-        delete soundFontList[lastIndexOfGroup];
-        lastIndexOfGroup = indexOfGroup;
-      }
+    if (lastIndex !== currentIndex) {
+      delete soundFontList[lastIndexOfGroup];
+      lastIndexOfGroup = indexOfGroup;
     }
     soundFontList[indexOfGroup] ??= (
-      (isToFile)
-        ? soundfontFile
-        : fs.readFileSync(soundfontFile)
+      isToFile ? soundfontFile : fs.readFileSync(soundfontFile)
     );
   }
   const {
