@@ -303,6 +303,7 @@ addEvent({ eventType: "toFileSIGINT",
           continue;
         } catch (error) {
           // Normal mode
+          if (error.code === "ENOENT") continue;
           if (error.name !== "ReferenceError") return console.error(error);
 
           unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
