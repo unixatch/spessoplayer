@@ -25,7 +25,8 @@ const {
   INFO_LVL,  DEBUG_LVL,
   log: tmpLog,
   newFileName,
-  asyncSetTimeout
+  asyncSetTimeout,
+  ffmpegExitHandler
 } = await import("./utils/utils.mjs");
 
 let log = tmpLog;
@@ -38,7 +39,8 @@ let stream,
     SpessaSynth,
     child_process,
     lastIndexOfGroup = 0,
-    doneStreaming = false;
+    doneStreaming = false,
+    fatalErrors;
 const midiList = [],
       soundFontList = [];
 
@@ -235,10 +237,16 @@ async function formatManager({
         addPipingFunction(() => (ffmpeg.needToEndStdin = true, ffmpeg))
         break;
       }
+      ffmpeg.stderr.on("data", data => {
+        (fatalErrors ??= []).push(data.toString())
+      })
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
-          ffmpeg.once("exit", resolve)
-                .once("error", reject)
+          ffmpeg
+            .once("exit", exitCode => {
+              ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode, resolve)
+            })
+            .once("error", reject)
         })
       )
       log(DEBUG_LVL, "Added ffmpeg promise")

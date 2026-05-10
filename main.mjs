@@ -25,7 +25,8 @@ import {
   INFO_LVL,  DEBUG_LVL,
   log,
   clearLastLines,
-  getSizes, getUsageEstimate
+  getSizes, getUsageEstimate,
+  ffmpegExitHandler
 } from "./utils/utils.mjs"
 import {
   ffmpegArgs,
@@ -119,6 +120,7 @@ if (isToStdout) {
     effects: effectsList, reverbVolume
   } = listOfOptions;
 
+  let fatalErrors;
   const perSongOptions = [],
         lengthOfFiles = [],
         promisesOfPrograms = [],
@@ -166,6 +168,12 @@ if (isToStdout) {
         "pipe"
       ]}
     );
+    converterProcess.stderr.on("data", data => {
+      (fatalErrors ??= []).push(data.toString())
+    })
+    converterProcess.once("exit", exitCode => {
+      ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
+    })
   }
   // If it needs effects, excluding lossless formats
   if ((effectsList || reverbVolume !== undefined)

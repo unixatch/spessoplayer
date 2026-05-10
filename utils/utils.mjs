@@ -598,6 +598,40 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static get all() { return structuredClone(this.#options); }
 }
+/**
+ * A class that returns an error
+ * based on child_processes' exit codes
+ * @param {String}  message           message to show
+ * @param {Object?} options           options passed to Error class
+ * @param {Object}  stdBuffers
+ * @param {Number}  stdBuffers.exitCode exit code of the child process
+ * @param {Array}   stdBuffers.stdout   stdout array
+ * @param {Array}   stdBuffers.stderr   stderr array
+ */
+class UnwantedNonZeroError extends Error {
+  constructor(message, options, { exitCode, stdout, stderr }) {
+    super(message, options)
+    this.exitCode = exitCode;
+    this.stdout = stdout;
+    this.stderr = stderr;
+  }
+}
+/**
+ * Exit event handler for ffmpeg child_processes
+ * @param {Number}   exitCode
+ * @param {Function} resolver in case it needs to resolve a promise
+ * @return {Number?} maybe the result of the resolver
+ * @throws {UnwantedNonZeroError} if the exitCode is non-zero
+ */
+function ffmpegExitHandler(exitCode, resolver) {
+  if (exitCode === 0) return resolver?.(exitCode);
+
+  throw new UnwantedNonZeroError(
+    `ffmpeg child_process closed with ${exitCode}`,
+    undefined,
+    {exitCode, stdout: this.stdout, stderr: this.stderr}
+  )
+}
 
 export {
   clearLastLines,
@@ -605,6 +639,7 @@ export {
   newFileName,
   getSizes, getUsageEstimate,
   asyncSetTimeout,
-  Options
+  Options,
+  ffmpegExitHandler
 }
 
