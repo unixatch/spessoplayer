@@ -888,10 +888,21 @@ async function toFile({
   log(INFO_LVL, "Started toFile")
   const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
         hasf32le = fileOutputs[RAW_INDEX]?.endsWith(".f32le");
-  let {
-    seq, synth, sampleCount
-  } = await initSpessaSynth({ index, ...options, isToFile: true });
-  let seqFloat, synthFloat, sampleCountFloat;
+  const onlyFloat = (
+    hasf32le &&
+    !fileOutputs[WAV_INDEX] && foLength === 2
+  );
+  let seq,
+      synth,
+      sampleCount,
+      seqFloat,
+      synthFloat,
+      sampleCountFloat;
+  if (!onlyFloat) {
+    ({
+      seq, synth, sampleCount
+    } = await initSpessaSynth({ index, ...options, isToFile: true }));
+  }
   if (hasf32le) {
     ({
       seq: seqFloat,
@@ -913,26 +924,23 @@ async function toFile({
   log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
   let readStream = (
-    hasf32le &&
-    foLength === 2 && !fileOutputs[WAV_INDEX]
-      ? undefined
-      : createReadable(Readable, false, {
-        sampleCount,
-        seq, synth,
-        getData,
-        index, progressBuffers
-      })
+    !onlyFloat
+    && createReadable(Readable, false, {
+      sampleCount,
+      seq, synth,
+      getData,
+      index, progressBuffers
+    })
   );
   let rawReadStream = (
     hasf32le
-      ? createReadable(Readable, false, {
-        sampleCount: sampleCountFloat,
-        seq: seqFloat, synth: synthFloat,
-        getData, isf32le: hasf32le,
-        index, progressBuffers,
-        doNotRepeat: readStream ? true : undefined
-      })
-      : undefined
+    && createReadable(Readable, false, {
+      sampleCount: sampleCountFloat,
+      seq: seqFloat, synth: synthFloat,
+      getData, isf32le: hasf32le,
+      index, progressBuffers,
+      doNotRepeat: readStream && true
+    })
   );
   let promisesOfPrograms = [],
       pipingFunctions = [];
@@ -978,11 +986,15 @@ async function toFile({
         readStream    && finished(readStream,    finishedOptions)
       ])
         .then(() => {
-          synth.soundBankManager.soundBankList.splice(0)
-          synth.destroySynthProcessor()
-          seq.songs.length = 0;
+          synth?.soundBankManager.soundBankList.splice(0)
+          synthFloat?.soundBankManager.soundBankList.splice(0)
+          synth?.destroySynthProcessor()
+          synthFloat?.destroySynthProcessor()
+          if (seq) seq.songs.length = 0;
+          if (seqFloat) seqFloat.songs.length = 0;
           return [
-            sampleCount, stdoutHeader,
+            sampleCount, sampleCountFloat,
+            stdoutHeader,
             readStream, rawReadStream,
             seq, synth,
             seqFloat, synthFloat,
