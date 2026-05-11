@@ -268,7 +268,7 @@ async function formatManager({
       if (isToFile) {
         const newName = newFileName(outFile, createNewFileNameAnyway);
         fileOutputs[fileOutputs.indexOf(outFile)] = newName;
-        outFile = newFileName(outFile, createNewFileNameAnyway);
+        outFile = newName;
       }
       if (dryRun) outFile = dryRun;
 
