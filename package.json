@@ -1,6 +1,6 @@
 {
   "name": "spessoplayer",
-  "version": "0.8.6-beta",
+  "version": "0.8.7-beta",
   "description": "A midi converter that uses spessasynth_core to generate the data",
   "homepage": "https://github.com/unixatch/spessoplayer",
   "repository": {
