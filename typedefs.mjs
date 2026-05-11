@@ -115,6 +115,7 @@
  * @property {SpessaSynthProcessor} synth              spessasynth_core's processor
  * @property {Function}             getData            translator: Float32Arrays → Uint8Arrays
  * @property {Boolean}              isf32le            if the requested format is f32le
+ * @property {Boolean}              doNotRepeat        if it should skip updating the progress
  * @property {Object}               progressBuffers    Object that contains SharedArrayBuffers
  */
 

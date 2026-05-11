@@ -670,6 +670,7 @@ function createReadable(Readable, isStdout = false, {
   sampleCount, index,
   seq, synth,
   getData, isf32le,
+  doNotRepeat,
   progressBuffers
 }) {
   // Creates the variable without losing "this" context
@@ -768,6 +769,7 @@ function createReadable(Readable, isStdout = false, {
           if (textRenderingIndex % 100 !== 0) break toFileTextRendering;
         }
 
+        if (doNotRepeat) break toFileTextRendering;
         setRenderedAmount()
         progress.updateProgress(
           (progress.renderedAmount / progress.amountToRender) * 100,
@@ -884,9 +886,19 @@ async function toFile({
     throw new ReferenceError("Missing some required files")
   }
   log(INFO_LVL, "Started toFile")
+  const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
+        hasf32le = fileOutputs[RAW_INDEX]?.endsWith(".f32le");
   let {
     seq, synth, sampleCount
   } = await initSpessaSynth({ index, ...options, isToFile: true });
+  let seqFloat, synthFloat, sampleCountFloat;
+  if (hasf32le) {
+    ({
+      seq: seqFloat,
+      synth: synthFloat,
+      sampleCount: sampleCountFloat
+    } = await initSpessaSynth({ index, ...options, isToFile: true }));
+  }
 
   const {
     getWavHeader,
@@ -900,8 +912,6 @@ async function toFile({
   let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
   log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
-  const { WAV_INDEX, RAW_INDEX } = FO_CONSTANTS,
-        hasf32le = fileOutputs[RAW_INDEX]?.endsWith(".f32le");
   let readStream = (
     hasf32le &&
     foLength === 2 && !fileOutputs[WAV_INDEX]
@@ -916,10 +926,11 @@ async function toFile({
   let rawReadStream = (
     hasf32le
       ? createReadable(Readable, false, {
-        sampleCount,
-        seq, synth,
+        sampleCount: sampleCountFloat,
+        seq: seqFloat, synth: synthFloat,
         getData, isf32le: hasf32le,
-        index, progressBuffers
+        index, progressBuffers,
+        doNotRepeat: readStream ? true : undefined
       })
       : undefined
   );
@@ -974,6 +985,7 @@ async function toFile({
             sampleCount, stdoutHeader,
             readStream, rawReadStream,
             seq, synth,
+            seqFloat, synthFloat,
             pipingFunctions, promisesOfPrograms
           ] = [];
         }),
