@@ -223,6 +223,8 @@ function getWavHeader({ length, numChannels },
   return uint8;
 }
 
+const MAX_SIGNED_16INT = 32767,
+      MIN_SIGNED_16INT = -(MAX_SIGNED_16INT) - 1;
 /**
  * Translates to audible PCM data
  * @param {Array} audioData - An array that contains the audio buffers
@@ -240,9 +242,6 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
         arrayBuffer = new ArrayBuffer(fileSize),
         Data16      = new Uint16Array(arrayBuffer);
 
-  let currentSample = 0,
-      multiplier = 32767,
-      negativeMultiplier = multiplier * -1 - 1;
   // Volume
   /*if (fullOptions.normalizeAudio) {
     const numSamples = audioData[0].length;
@@ -257,18 +256,41 @@ function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
         }
       }
     }
-    multiplier = maxAbsValue > 0
+    MAX_SIGNED_16INT = maxAbsValue > 0
       ? 32767 / maxAbsValue
       : 1;
   }*/
+  let currentSample = 0;
   for (let i = 0; i < length; i++) {
-    // Left channel
-    Data16[currentSample++] = Math.min(
-      multiplier, Math.max(negativeMultiplier, left[i] * multiplier)
+    /*
+      Basically it amplifies the float 32bit little endian data
+      and caps it to the 16bit signed integer limits.
+      It does it on both channels.
+
+      TLDR:
+        Must be:
+          amplified_sample >= MIN_SIGNED_16INT
+          amplified_sample <= MAX_SIGNED_16INT
+
+        Otherwise one of these:
+          MIN_SIGNED_16INT
+          MAX_SIGNED_16INT
+    */
+    // <- Left channel <-
+    const amplifiedLeft = left[i] * MAX_SIGNED_16INT;
+    Data16[currentSample++] = (
+      Math.min(
+        MAX_SIGNED_16INT,
+        Math.max(MIN_SIGNED_16INT, amplifiedLeft)
+      )
     );
-    // Right channel
-    Data16[currentSample++] = Math.min(
-      multiplier, Math.max(negativeMultiplier, right[i] * multiplier)
+    // -> Right channel ->
+    const amplifiedRight = right[i] * MAX_SIGNED_16INT;
+    Data16[currentSample++] = (
+      Math.min(
+        MAX_SIGNED_16INT,
+        Math.max(MIN_SIGNED_16INT, amplifiedRight)
+      )
     );
   }
   return new Uint8Array(arrayBuffer);
