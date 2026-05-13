@@ -3,19 +3,13 @@ import { parse } from "path"
 import { fork } from "child_process"
 import "../utils/colors.mjs"
 
-process.on("SIGINT", () => {
-  realTest?.kill()
-  console.log(gray+"Closed tester with Ctrl+c"+normal)
-  process.exit(130)
-})
-
 // Setup file path arguments
 const {
   globs,
   manualMidi, manualSoundfont,
   generalCliArguments, perSongCliArguments,
   addOptionalArgumentsToStdout
-} = await import("./utils.mjs")
+} = await import("./utils.mjs");
 
 if (process.argv.includes("-h")) {
   console.log(
@@ -23,9 +17,14 @@ if (process.argv.includes("-h")) {
       .toString()
       .replace(/.*includes\((".*")\)\).*/g, "  $1")
   )
-  process.exit()
+  process.exit(1)
 }
 
+process.on("SIGINT", () => {
+  realTest?.kill()
+  console.log(gray+"Closed tester with Ctrl+c"+normal)
+  process.exit(130)
+})
 // Other arguments and run it
 const args = [
   ...globs.midis,         // Automatically adding files

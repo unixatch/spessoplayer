@@ -1,17 +1,28 @@
 import { globSync } from "fs"
 import { parse } from "path"
 
-const indexOfParameter = "2";
-// Main thread/process
-if (!process.argv.includes("--verbose")
-    && !process.argv.includes("-h")) {
-  const {
-    globs,
-    manualMidi, manualSoundfont,
-    generalCliArguments, perSongCliArguments,
-    addOptionalCliArguments
-  } = await import("./utils.mjs")
+// Setup file path arguments
+const {
+  globs,
+  manualMidi, manualSoundfont,
+  generalCliArguments, perSongCliArguments,
+  addOptionalCliArguments
+} = await import("./utils.mjs");
 
+// Shows the test's options
+if (process.argv.includes("-h")) {
+  console.log(
+    addOptionalCliArguments
+      .toString()
+      .replace(/.*includes\((".*")\)\).*/g, "  $1")
+      .replace(/.*\/\/.*\n/g, "")
+  )
+  process.exit(1)
+}
+
+// Main thread/process
+const indexOfParameter = "2";
+if (!process.argv.includes("--verbose")) {
   const args = [
     ...globs.midis,           // Automatically adding files
     ...globs.soundfonts,

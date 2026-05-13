@@ -1,31 +1,34 @@
 import { globSync } from "fs"
 import { parse, join } from "path"
 
-const globs = {
-  midis: globSync("*.mid"),
-  soundfonts: globSync("*.sf2")
-};
-const globsWithExts = {
-  midis: [...globs.midis],
-  soundfonts: [...globs.soundfonts]
-};
-globsWithExts.midis
-  .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
-globsWithExts.soundfonts
-  .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
+let globs, globsWithExts, manualMidi, manualSoundfont;
+if (!process.argv.includes("-h")) {
+  globs = {
+    midis: globSync("*.mid"),
+    soundfonts: globSync("*.sf2")
+  };
+  globsWithExts = {
+    midis: [...globs.midis],
+    soundfonts: [...globs.soundfonts]
+  };
+  globsWithExts.midis
+    .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
+  globsWithExts.soundfonts
+    .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
 
-const manualMidi = globs.midis.filter(i => (
-  globsWithExts.soundfonts.find(i2 => (
-    join(parse(i).dir, parse(i).name) === i2
-  ))
-))[0];
-const manualSoundfont = globs.soundfonts.filter(i => (
-  globsWithExts.midis.find(i2 => (
-    join(parse(i).dir, parse(i).name) === i2
-  ))
-))[0];
-globs.midis = globs.midis.filter(i => i !== manualMidi);
-globs.soundfonts = globs.soundfonts.filter(i => i !== manualSoundfont);
+  manualMidi = globs.midis.filter(i => (
+    globsWithExts.soundfonts.find(i2 => (
+      join(parse(i).dir, parse(i).name) === i2
+    ))
+  ))[0];
+  manualSoundfont = globs.soundfonts.filter(i => (
+    globsWithExts.midis.find(i2 => (
+      join(parse(i).dir, parse(i).name) === i2
+    ))
+  ))[0];
+  globs.midis = globs.midis.filter(i => i !== manualMidi);
+  globs.soundfonts = globs.soundfonts.filter(i => i !== manualSoundfont);
+}
 
 function addOptionalArgumentsToStdout(args) {
   if (process.argv.includes("-f"))   args.push("-f", "flac")
