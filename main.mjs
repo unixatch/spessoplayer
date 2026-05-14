@@ -496,10 +496,6 @@ const stateablePromiseFunction = function (resolve, reject) {
         progress
       )
     );
-    if (!isVerboseLevelSet && !processingMessageCleaned) {
-      process.stderr.write("\x1b[F" + clearCurrentLine)
-      processingMessageCleaned = true;
-    }
     if (message === "DONE_RENDERING") {
       currentWorker.removeAllListeners("message")
       return resolve(finalFileOutputs[i].finished = true);
@@ -516,7 +512,7 @@ for (let i = 0; i < amountOfSongs; i++) {
   // if the max of available threads
   // at once has been reached
   const currentThread = (maxThreads === 1) ? 0 : i % maxThreads;
-  if (i !== 0 && !(currentThread)) {
+  if (i && !currentThread) {
     await Promise.all(listOfPromises.values())
     if (global.SIGINT) break;
   }
@@ -532,6 +528,13 @@ for (let i = 0; i < amountOfSongs; i++) {
     import.meta.dirname+"/fileWriter_worker.mjs",
     { workerData, resourceLimits }
   );
+  if (!isVerboseLevelSet
+      && !processingMessageCleaned && !i) {
+    currentWorker.once("online", () => {
+      process.stderr.write("\x1b[F" + clearCurrentLine)
+      processingMessageCleaned = true;
+    })
+  }
 
   listOfPromises.set(currentThread,
     Promise.stateable(
