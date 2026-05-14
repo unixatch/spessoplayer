@@ -1248,6 +1248,7 @@ async function startPlayer(Options) {
   );
   const mpv = spawn("mpv", [
     ...msgLevel,
+    "-ytdl=no", // so that it doesn't retry twice
     ...isRawAudio,
     ...listOfURLs
   ], { stdio: "inherit" });
