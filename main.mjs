@@ -130,12 +130,12 @@ if (isToStdout) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
 
-    lengthOfFiles.push(
-      await initSpessaSynth({
-        index: i, ...options,
-        onlySampleCount: true
-      })
-    )
+    const sampleCount = await initSpessaSynth({
+      index: i, ...options,
+      onlySampleCount: true
+    });
+    if (!sampleCount) continue;
+    lengthOfFiles.push(sampleCount)
   }
 
   let effectsProcess,
@@ -206,7 +206,9 @@ if (isToStdout) {
   for (let i = 0; i < amountOfSongs; i++) {
     const options = perSongOptions[i];
     if (!options) continue;
-    const [ func, promise ] = await toStdout({ index: i, options });
+    const toStdoutValue = await toStdout({ index: i, options });
+    if (toStdoutValue === null) continue;
+    const [ func, promise ] = toStdoutValue;
 
     func?.(destination, i === amountOfSongs-1)
     await promise
@@ -345,6 +347,7 @@ for (let i = 0; i < amountOfSongs; i++) {
     index: i, ...options,
     onlyDuration: true
   });
+  if (duration === null) continue;
   const durationRounded = Math.floor(duration * 100) / 100;
   progress.addToAmountToRender(durationRounded)
 }
@@ -496,9 +499,14 @@ const stateablePromiseFunction = function (resolve, reject) {
         progress
       )
     );
-    if (message === "DONE_RENDERING") {
+    if (message === "DONE_RENDERING"
+        || message === "FAILED_INITIALIZATION") {
       currentWorker.removeAllListeners("message")
-      return resolve(finalFileOutputs[i].finished = true);
+      return resolve(
+        message !== "FAILED_INITIALIZATION"
+          ? finalFileOutputs[i].finished = true
+          : null
+      );
     }
     if (typeof message === "object") finalFileOutputs[i] = message;
   })

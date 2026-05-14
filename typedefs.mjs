@@ -44,6 +44,7 @@
  * @property {Number}  loopEnd                 end of loop
  * @property {Number}  indexOfGroup            index of the Set/group the song is in
  * @property {Boolean} [isToFile=false]        if it's the toFile function
+ * @property {Boolean} [isStartPlayer=false]   if it's the startPlayer function
  * @property {Boolean} [onlySampleCount=false] if it should return just the sample count of the song and do nothing else
  * @property {Boolean} [onlyDuration=false]    if it should return just the duration of the song and do nothing else
  */

@@ -355,9 +355,34 @@ function getSampleCount({
   };
 }
 /**
+ * Pretty print SpessaSynth errors
+ * @param {Error}  errorObj
+ * @param {String} errorObj.name    type of error
+ * @param {String} errorObj.message error message
+ * @param {String} filename
+ */
+function printfSpessaSynthErrors({name: eName, message: eMessage}, filename) {
+  const messageFormat = `${red}%s %s${normal}\n  ${normalRed}%s${normal}`;
+  switch (eName) {
+    case "SyntaxError":
+      console.error(
+        messageFormat,
+        filename, "is malformed because:", eMessage
+      )
+      break;
+
+    case "Error":
+    default:
+      console.error(
+        messageFormat,
+        filename, "failed to load because:", eMessage
+      )
+  }
+}
+/**
  * Initializes all the required variables for spessasynth_core usage
  * @param {module:typeDefinitions~initObjectParameters} initObjectParameters
- * @return {Promise<module:typeDefinitions~initSpessaSynthObj|Number>} initSpessaSynthObj
+ * @return {Promise<module:typeDefinitions~initSpessaSynthObj|Number|null>} initSpessaSynthObj
  */
 async function initSpessaSynth({
   loopAmount = 0,
@@ -367,7 +392,8 @@ async function initSpessaSynth({
   loopStart, loopEnd,
   index, indexOfGroup,
   isToFile = false,
-  onlySampleCount = false, onlyDuration = false
+  onlySampleCount = false, onlyDuration = false,
+  isStartPlayer = false
 }) {
   const {
     BasicMIDI,
@@ -376,11 +402,27 @@ async function initSpessaSynth({
     SpessaSynthSequencer
   } = SpessaSynth ??= await import("spessasynth_core");
 
-  const midi = (
-    (onlyDuration || isToFile)
-      ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
-      : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
-  );
+  let midi;
+  try {
+    midi = (
+      (onlyDuration || isToFile)
+        ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
+        : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
+    );
+  } catch (error) {
+    printfSpessaSynthErrors(error, midiFile)
+    return null;
+  }
+  if (!midi.duration) {
+    if (!onlySampleCount && !onlyDuration || isStartPlayer) {
+      console.error(
+        normalYellow+"%s %s"+normal,
+        midiFile, "has a duration of 0 seconds, skipping..."
+      )
+    }
+    return null;
+  }
+
   if (!onlySampleCount && !onlyDuration) {
     // Memory cleanup
     if (midiList.length) delete midiList[index-1];
@@ -418,17 +460,22 @@ async function initSpessaSynth({
     // (midi.duration - loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
     midi.loop.end = midi.secondsToMIDITicks(midi.duration - loopEnd);
   }
+  // Save the SoundFont2 class to soundFontList so that
+  // it's a reference and not a copy next time
+  if (Buffer.isBuffer(soundFontList[indexOfGroup])
+      || soundFontList[indexOfGroup] instanceof SharedArrayBuffer) {
+    try {
+      soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
+    } catch (error) {
+      printfSpessaSynthErrors(error, soundfontFile)
+      return null;
+    }
+  }
   const synth = new SpessaSynthProcessor(sampleRate, {
     enableEventSystem: false,
     enableEffects: false
   });
   synth.setMasterParameter("masterGain", volume)
-  // Save the SoundFont2 class to soundFontList so that
-  // it's a reference and not a copy next time
-  if (Buffer.isBuffer(soundFontList[indexOfGroup])
-      || soundFontList[indexOfGroup] instanceof SharedArrayBuffer) {
-    soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
-  }
   synth.soundBankManager.addSoundBank(
     soundFontList[indexOfGroup],
     "main"
@@ -813,9 +860,12 @@ async function toStdout({
     throw new ReferenceError("Missing some required files")
   }
   log(INFO_LVL, "Started toStdout")
+
+  const initSpessaSynthObj = await initSpessaSynth({ index, ...options });
+  if (initSpessaSynthObj === null) return null;
   let {
     seq, synth, sampleCount
-  } = await initSpessaSynth({ index, ...options });
+  } = initSpessaSynthObj;
 
   if (!res && !process.listenerCount("exit")) {
     addEvent({ eventType: "stdoutExit" })
@@ -899,16 +949,20 @@ async function toFile({
       synthFloat,
       sampleCountFloat;
   if (!onlyFloat) {
+    const initSpessaSynthObj = await initSpessaSynth({ index, ...options, isToFile: true });
+    if (initSpessaSynthObj === null) return null;
     ({
       seq, synth, sampleCount
-    } = await initSpessaSynth({ index, ...options, isToFile: true }));
+    } = initSpessaSynthObj);
   }
   if (hasf32le) {
+    const initSpessaSynthObj = await initSpessaSynth({ index, ...options, isToFile: true });
+    if (initSpessaSynthObj === null) return null;
     ({
       seq: seqFloat,
       synth: synthFloat,
       sampleCount: sampleCountFloat
-    } = await initSpessaSynth({ index, ...options, isToFile: true }));
+    } = initSpessaSynthObj);
   }
 
   const {
@@ -1166,8 +1220,13 @@ async function startPlayer(Options) {
           options = Options.getOptionsOfSong(realIndex);
     const length = await initSpessaSynth({
       index: realIndex, ...options,
-      onlySampleCount: true
+      onlySampleCount: true, isStartPlayer: true
     });
+    if (length === null) {
+      res.statusCode = 204;
+      res.flushHeaders()
+      return res.end();
+    }
 
     let effectsProcess,
         converterProcess;

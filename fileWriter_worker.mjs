@@ -26,11 +26,14 @@ async function runTask({
 }) {
   processToClose?.stdin?.end()
 
-  const [fileOutputs, pipingFunctions, promiseToWait] = await toFile({
+  const toFileValue = await toFile({
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
     progressBuffers,
     index, options, FO_CONSTANTS
-  })
+  });
+  if (toFileValue === null) return parentPort.postMessage("FAILED_INITIALIZATION")
+
+  const [fileOutputs, pipingFunctions, promiseToWait] = toFileValue;
   parentPort.postMessage({index, files: fileOutputs})
   for (const func of pipingFunctions) {
     const returnValue = func?.();
