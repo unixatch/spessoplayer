@@ -1,11 +1,11 @@
 import { globSync } from "fs"
 import { parse } from "path"
 import { fork } from "child_process"
-import "../utils/colors.mjs"
 
 // Setup file path arguments
 const {
   globs,
+  formatStrings,
   manualMidi, manualSoundfont,
   generalCliArguments, perSongCliArguments,
   addOptionalArgumentsToStdout

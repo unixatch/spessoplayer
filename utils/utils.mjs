@@ -103,6 +103,13 @@ function log(level, ...messages) {
   message.push("\n")
   fs.appendFileSync(path, message.join(" "))
 }
+export const formatStrings = {
+  errorText: red+"%s"+normal,
+  warningText: yellow+"%s"+normal,
+  grayedOutText: gray+"%s"+normal,
+  failedCliParamWithArg: `${normalRed}%s ${underline+bold}%s${normal+normalRed} %s${normal}`,
+  failedCliParam: `${normalRed}%s${normal}`
+};
 /**
  * Returns a new path with a new number (adds 1) at the end of the filename
  * if necessary otherwise it returns the given path

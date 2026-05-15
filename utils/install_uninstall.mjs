@@ -59,6 +59,11 @@ function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) 
     throw new ReferenceError("Program doesn't exist")
   } else return true
 }
+export const formatStrings = {
+  errorText: red+"%s"+normal,
+  warningText: yellow+"%s"+normal,
+  grayedOutText: gray+"%s"+normal
+};
 /**
  * Tries to check and install the program via a package manager
  * @param {String} packageToUse - package to search and install

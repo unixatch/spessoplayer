@@ -1,5 +1,8 @@
 import { globSync } from "fs"
 import { parse, join } from "path"
+import "../utils/colors.mjs"
+
+export const grayedOutText = gray+"%s"+normal;
 
 let globs, globsWithExts, manualMidi, manualSoundfont;
 if (!process.argv.includes("-h")) {
