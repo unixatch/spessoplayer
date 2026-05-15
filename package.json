@@ -22,6 +22,7 @@
   "author": "unixatch",
   "type": "module",
   "main": "main.js",
+  "min-release-age": "4",
   "preferGlobal": true,
   "engines": {
     "node": ">=20.11.0"
