@@ -63,7 +63,7 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
 
 addEvent({ eventType: "SIGINT" })
 log(DEBUG_LVL, "SIGINT event has been added")
-process.on("unhandledRejection", i => console.error(i))
+process.on("unhandledRejection", console.error)
 log(DEBUG_LVL, "unhandledRejection event has been added")
 
 // In case the user passes some arguments
@@ -587,5 +587,5 @@ Promise.all(listOfPromises.values()).then(async () => {
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
 })
-  .catch(e => console.error(e))
+  .catch(console.error)
 

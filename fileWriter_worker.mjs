@@ -7,7 +7,7 @@ const {verboseLevel, logFilePath} = workerData;
 global.logThis = {verboseLevel, logFilePath};
 const { toFile } = await import("./mainFunctions.mjs")
 global.fs = fs;
-process.on("unhandledRejection", i => console.error(i))
+process.on("unhandledRejection", console.error)
 
 let processToClose;
 /**
