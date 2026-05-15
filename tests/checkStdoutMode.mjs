@@ -22,7 +22,7 @@ if (process.argv.includes("-h")) {
 
 process.on("SIGINT", () => {
   realTest?.kill()
-  console.log(gray+"Closed tester with Ctrl+c"+normal)
+  console.log(grayedOutText, "Closed tester with Ctrl+c")
   process.exit(130)
 })
 // Other arguments and run it

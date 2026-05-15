@@ -23,6 +23,7 @@
 import {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
+  formatStrings,
   log,
   clearLastLines,
   getSizes, getUsageEstimate,
@@ -224,7 +225,10 @@ if (!isToStdout && !isToFile?.length > 0) {
     processingMessageCleaned = true;
   }
   if (dryRun) {
-    console.error(`${yellow}Can't dry run the player${normal}`)
+    console.error(
+      formatStrings.warningText,
+      "Can't dry run the player"
+    )
     process.exit(2)
   }
   await startPlayer(Options)

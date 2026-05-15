@@ -23,6 +23,7 @@
 const { spawnSync } = await import("child_process");
 const {
   clearLastLines,
+  formatStrings,
   runProgramSync,
   tryToUninstall,
 } = await import("./utils/install_uninstall.mjs");
@@ -67,7 +68,10 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
     return await runCheck(program, noUninstallMsg, true);
   } catch (e) {
     if (e.name === "AbortError") {
-      console.error(`\n${gray}Uninstallation of dependencies interrupted with Ctrl+c${normal}`)
+      console.error(
+        formatStrings.grayedOutText,
+        "\nUninstallation of dependencies interrupted with Ctrl+c"
+      )
       process.exit(2)
     }
     if (e.message === "Program doesn't exist") {

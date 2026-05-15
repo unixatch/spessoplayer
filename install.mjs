@@ -23,6 +23,7 @@
 const { spawnSync } = await import("child_process");
 const {
   clearLastLines,
+  formatStrings,
   runProgramSync,
   tryToInstall
 } = await import("./utils/install_uninstall.mjs");
@@ -43,7 +44,10 @@ async function runCheck(program, noInstallMsg = "") {
   } catch (e) {
     if (e.message !== "Program doesn't exist") {
       console.error(e)
-      console.error(`${red}There was an error while trying to check ${program}, exiting...${normal}`)
+      console.error(
+        formatStrings.errorText,
+        `There was an error while trying to check ${program}, exiting...`
+      )
       process.exit(1)
     }
     console.warn("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally\x1b[0m")
@@ -60,7 +64,10 @@ async function runCheck(program, noInstallMsg = "") {
         rl.close()
       } catch (e2) {
         if (e2.name === "AbortError") {
-          console.error(`\n${gray}Installation of dependencies interrupted with Ctrl+c${normal}`)
+          console.error(
+            formatStrings.grayedOutText,
+            "\nInstallation of dependencies interrupted with Ctrl+c"
+          )
           process.exit(2)
         }
       }

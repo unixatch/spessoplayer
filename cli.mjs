@@ -23,6 +23,7 @@ import { join, parse } from "path"
 import {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
+  formatStrings,
   log, Options
 } from "./utils/utils.mjs"
 
@@ -163,22 +164,22 @@ async function get20BytesFromFile(path) {
       let messageToPrint;
       switch (code) {
         case "EACCES":
-          messageToPrint = `${red}Can't open '${path}' because permissions aren't enough${normal}`;
+          messageToPrint = `Can't open '${path}' because permissions aren't enough`;
           break;
         case "EISDIR":
-          messageToPrint = `${red}Can't read a directory${normal}`;
+          messageToPrint = "Can't read a directory";
           break;
         case "ENOENT":
-          messageToPrint = `${red}Can't open '${path}' because it doesn't exist${normal}`;
+          messageToPrint = `Can't open '${path}' because it doesn't exist`;
           break;
         case "EPERM":
-          messageToPrint = `${red}Can't read '${path}' because it requires elevated permissions to do so${normal}`;
+          messageToPrint = `Can't read '${path}' because it requires elevated permissions to do so`;
           break;
 
         default:
-          messageToPrint = `${red}Quitting because ${underline+message+normal}`;
+          messageToPrint = `Quitting because ${underline+message}`;
       }
-      console.error(messageToPrint)
+      console.error(formatStrings.errorText, messageToPrint)
       reject(process.exit(errno))
     })
   return (await readPromise)?.toString();
@@ -297,7 +298,10 @@ const actUpOnPassedArgs = async args => {
     lastIndex = undefined;
   }
   function stdoutFileModeConflictError() {
-    console.error(`${red}Can't use both stdout and file mode at the same time${normal}`)
+    console.error(
+      formatStrings.errorText,
+      "Can't use both stdout and file mode at the same time"
+    )
     process.exit(1)
   }
   /**
@@ -479,7 +483,10 @@ const actUpOnPassedArgs = async args => {
           nextArg[0] === "/" ||
           regexes.allFO.test(nextArg) // File output
         ) {
-          console.error(red+"Missing a necessary argument"+normal)
+          console.error(
+            formatStrings.errorText,
+            "Missing a necessary argument"
+          )
           process.exit(1)
         }
         lastParam = "input";
@@ -573,7 +580,10 @@ const actUpOnPassedArgs = async args => {
   */
   await Promise.all(await Promise.all(setFilePromises))
   if (!Object.keys(Options.all.files ?? []).length) {
-    console.error(`${red}Missing required files${normal}`)
+    console.error(
+      formatStrings.errorText,
+      "Missing required files"
+    )
     process.exit(1)
   }
 }
@@ -734,6 +744,7 @@ const setFile = async ({
   });
   // --- END of automatic addition of files section ---
 }
+const invalidNumberString = "isn't a number";
 /**
  * Sets the Options.loopAmount variable
  * @param {String} arg - the loop amount
@@ -749,12 +760,19 @@ const setLoop = (arg, lastIndex) => {
     return;
   }
   if (number === Infinity) {
-    console.error(`${normalRed}[loop]: Can't use infinity, sorry${normal}`)
+    console.error(
+      formatStrings.failedCliParam,
+      "[loop]: Can't use infinity, sorry"
+    )
     process.exit(1)
   }
-  console.error(`${normalRed}[loop]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[loop]:", arg, invalidNumberString
+  )
   process.exit(1)
 }
+const invalidNumberOrISOString = "isn't a number or a valid ISO string format";
 /**
  * Sets the Options.loopStart variable
  * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
@@ -775,7 +793,10 @@ const setLoopStart = (arg, lastIndex) => {
     log(INFO_LVL, `Set loop-start to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}[loop-start]: ${underline+bold+arg+normal+normalRed} isn't a number or a valid ISO string format${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[loop-start]:", arg, invalidNumberOrISOString
+  )
   process.exit(1)
 }
 /**
@@ -798,7 +819,10 @@ const setLoopEnd = (arg, lastIndex) => {
     log(INFO_LVL, `Set loop-end to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}[loop-end]: ${underline+bold+arg+normal+normalRed} isn't a number or a valid ISO string format${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[loop-end]:", arg, invalidNumberOrISOString
+  )
   process.exit(1)
 }
 /**
@@ -820,7 +844,10 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
     log(INFO_LVL, `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}[sample-rate]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[sample-rate]:", arg, invalidNumberString
+  )
   process.exit(1)
 }
 /**
@@ -841,7 +868,10 @@ const setVerboseLevel = async (arg) => {
     } else log(INFO_LVL, `Set verbose level to ${number}`)
     return;
   }
-  console.error(`${normalRed}[verbose]: ${underline+bold+arg+normal+normalRed} isn't a number${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[verbose]:", arg, invalidNumberString
+  )
   process.exit(1)
 }
 /**
@@ -869,7 +899,10 @@ const setFormat = arg => {
       return;
     }
   }
-  console.error(`${normalRed}[format]: ${underline+bold+arg+normal+normalRed} isn't a valid format${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[format]:", arg, "isn't a valid format"
+  )
   process.exit(1)
 }
 /**
@@ -915,7 +948,11 @@ const setEffects = (arg, lastIndex) => {
     if (!list
           .every(i => new RegExp(regexListOfEffects).test(i.effect))
     ) {
-      console.error(`${normalRed}[effects]: One effect inside "${underline+bold+arg+normal+normalRed}" doesn't exist in SoX${normal}`)
+      console.error(
+        formatStrings.failedCliParamWithArg,
+        "[effects]: One effect inside", '"'+arg+'"',
+        "doesn't exist in SoX"
+      )
       process.exit(1)
     }
 
@@ -923,9 +960,13 @@ const setEffects = (arg, lastIndex) => {
     log(INFO_LVL, "Set list of SoX effects as ", JSON.stringify(list))
     return;
   }
-  console.error(`${normalRed}[effects]: "${underline+bold+arg+normal+normalRed}" is a malformatted string${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[effects]:", '"'+arg+'"', "is a malformed string"
+  )
   process.exit(1)
 }
+const invalidVolumeString = "isn't a valid number/dB/percentage";
 /**
  * Sets the Options.volume variable for the masterGain
  * @param {String} arg - the volume in either percentage, decibels or decimals
@@ -953,7 +994,10 @@ const setVolume = (arg, lastIndex) => {
     log(INFO_LVL, `Set volume to ${number} at ${lastIndex?.index} index`)
     return;
   }
-  console.error(`${normalRed}[volume]: ${underline+bold+arg+normal+normalRed} isn't a valid number/dB/percentage${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[volume]:", arg, invalidVolumeString
+  )
   process.exit(1)
 }
 /**
@@ -986,7 +1030,10 @@ const setReverb = (arg, lastIndex) => {
     log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
   }
-  console.error(`${normalRed}[reverb-volume]: ${underline+bold+arg+normal+normalRed} isn't a valid number/dB/percentage${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[reverb-volume]:", arg, invalidVolumeString
+  )
   process.exit(1)
 }
 /**
@@ -1002,7 +1049,11 @@ const setMaxThreads = async (arg) => {
     log(INFO_LVL, `Set max threads to ${number}`)
     return;
   }
-  console.error(`${normalRed}[max-threads]: ${underline+bold+arg+normal+normalRed} is out of range of valid numbers of threads${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[max-threads]:", arg,
+    "is out of range of valid numbers of threads"
+  )
   process.exit(1)
 }
 /**
@@ -1024,7 +1075,11 @@ const setTextDelay = (arg) => {
     log(INFO_LVL, `Set text delay to ${number}`)
     return;
   }
-  console.error(`${normalRed}[text-delay]: ${underline+bold+arg+normal+normalRed} is out of range of valid numbers for text-delay${normal}`)
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    "[text-delay]:", arg,
+    "is out of range of valid numbers for text-delay"
+  )
   process.exit(1)
 }
 /**
@@ -1048,7 +1103,10 @@ const uninstall = async () => {
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
   } catch (e) {
     if (e.status !== 0 && e.status !== 2) {
-      console.error(`${red}[uninstall]: Uninstallation interrupted with error ${e.status}${normal}`)
+      console.error(
+        formatStrings.errorText,
+        `[uninstall]: Uninstallation interrupted with error ${e.status}`
+      )
       process.exit(2)
     }
     if (e.status === 2) process.exit(2)

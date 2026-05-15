@@ -23,6 +23,7 @@
 const {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
+  formatStrings,
   log: tmpLog,
   newFileName,
   asyncSetTimeout,
@@ -96,7 +97,10 @@ async function formatManager({
       await asyncSetTimeout(4)
 
       if (global.SIGINT) process.exit(130)
-      console.error(`${gray}Closed the program before finishing to render${normal}`)
+      console.error(
+        formatStrings.grayedOutText,
+        "Closed the program before finishing to render"
+      )
       process.exit(errno)
     }
     if (code !== "EPIPE") {
@@ -632,7 +636,10 @@ function addEvent({ eventType, func }) {
     }
     case "SIGINT": {
       function SIGINTFunction() {
-        console.error(`\n${gray}Closed with Ctrl+c${normal}`);
+        console.error(
+          formatStrings.grayedOutText,
+          "\nClosed with Ctrl+c"
+        )
         global.SIGINT = true;
         if (process.argv.includes("-")) process.exit(130)
       }
@@ -1333,7 +1340,8 @@ async function startPlayer(Options) {
         ? (await import("util")).convertProcessSignalToExitCode(signal)
         : code;
       console.error(
-        `${red}mpv exited with ${errno}/${signal+normal}`
+        formatStrings.errorText,
+        `mpv exited with ${errno}/${signal}`
       )
       process.exit(errno)
     })

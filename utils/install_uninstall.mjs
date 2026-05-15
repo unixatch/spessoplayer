@@ -132,8 +132,14 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
     }
   }
-  console.warn(`${yellow}Couldn't find any package manager in the list${normal}`)
-  console.warn(`${yellow}install it either manually or with a package manager you use${normal}`)
+  console.warn(
+    formatStrings.warningText,
+    "Couldn't find any package manager in the list"
+  )
+  console.warn(
+    formatStrings.warningText,
+    "install it either manually or with a package manager you use"
+  )
 }
 /**
  * Tries to check and uninstall the program via a package manager
@@ -211,8 +217,14 @@ function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
         } catch { break; }
     }
   }
-  console.warn(`${yellow}Couldn't find any package manager in the list${normal}`)
-  console.warn(`${yellow}uninstall it either manually or with a package manager you use${normal}`)
+  console.warn(
+    formatStrings.warningText,
+    "Couldn't find any package manager in the list"
+  )
+  console.warn(
+    formatStrings.warningText,
+    "uninstall it either manually or with a package manager you use"
+  )
 }
 
 export {
