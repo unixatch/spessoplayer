@@ -50,7 +50,10 @@ async function runCheck(program, noInstallMsg = "") {
       )
       process.exit(1)
     }
-    console.warn("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally\x1b[0m")
+    console.warn(
+      normalYellow+underline+"%s"+normal+normalYellow+" %s"+normal,
+      program, "is not installed or it's not visible globally"
+    )
     if (!readline) {
       readline = await import("readline/promises");
       ({ stdin, stdout, stderr } = await import ("process"));
@@ -76,7 +79,7 @@ async function runCheck(program, noInstallMsg = "") {
         return tryToInstall(program, spawnSync, { stdout, stderr })
       }
       if (/^(?:n|no)$/i.test(answer)) {
-        console.warn("\x1b[33m"+noInstallMsg+"\x1b[0m")
+        console.warn(normalYellow+noInstallMsg+normal)
       }
       clearLastLines(-1)
       return await question();

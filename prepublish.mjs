@@ -1,11 +1,15 @@
 import { spawnSync } from "child_process"
+import "./utils/colors.mjs"
 
 const result = spawnSync("git", [
   "status", "--porcelain"
 ]);
 
 if (result.stdout.length) {
-  console.error("\x1b[33mStash or commit/push your local changes first\x1b[0m")
+  console.error(
+    normalYellow+"%s"+normal,
+    "Stash or commit/push your local changes first"
+  )
   process.exit(1)
 }
 

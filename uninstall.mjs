@@ -75,8 +75,13 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
       process.exit(2)
     }
     if (e.message === "Program doesn't exist") {
-      console.warn("\x1b[33;4m"+program+"\x1b[0;33m is not installed or it's not visible globally\x1b[0m")
-      console.warn("\x1b[33mSkipping \x1b[4m"+program+"\x1b[0m")
+      const unrecognisedProgramFormat = `${normalYellow+underline}%s${normal+normalYellow} %s${normal}`;
+      console.warn(
+        unrecognisedProgramFormat,
+        program, "is not installed or it's not visible globally"
+      )
+      const skipFormat = `${normalYellow}%s ${underline}%s${normal}`;
+      console.warn(skipFormat, "Skipping", program)
       return;
     }
     console.error(e)
