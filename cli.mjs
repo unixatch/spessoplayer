@@ -753,12 +753,6 @@ const invalidNumberString = "isn't a number";
 const setLoop = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index);
-  if (typeof number === "number"
-      && !isNaN(number) && number !== Infinity) {
-    Options.loopAmount(lastIndexNumber, number)
-    log(INFO_LVL, `Set loop amount to ${number} at ${lastIndex?.index} index`)
-    return;
-  }
   if (number === Infinity) {
     console.error(
       formatStrings.failedCliParam,
@@ -766,13 +760,18 @@ const setLoop = (arg, lastIndex) => {
     )
     process.exit(1)
   }
+  if (typeof number === "number" && !isNaN(number)) {
+    Options.loopAmount(lastIndexNumber, number)
+    log(INFO_LVL, `Set loop amount to ${number} at ${lastIndex?.index} index`)
+    return;
+  }
   console.error(
     formatStrings.failedCliParamWithArg,
     "[loop]:", arg, invalidNumberString
   )
   process.exit(1)
 }
-const invalidNumberOrISOString = "isn't a number or a valid ISO string format";
+const invalidNumberOrISOString = "isn't a valid number or a valid ISO string format";
 /**
  * Sets the Options.loopStart variable
  * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
@@ -781,7 +780,8 @@ const invalidNumberOrISOString = "isn't a number or a valid ISO string format";
 const setLoopStart = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index);
-  if (typeof number === "number" && number !== Infinity
+  if (typeof number === "number"
+      && number !== Infinity && !(number < 0)
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = Date.parse(`1970T${arg}Z`) / 1000;
