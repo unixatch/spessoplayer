@@ -365,23 +365,22 @@ function getSampleCount({
  * @param {String} errorObj.message error message
  * @param {String} filename
  */
-function printfSpessaSynthErrors({name: eName, message: eMessage}, filename) {
-  const messageFormat = `${red}%s %s${normal}\n  ${normalRed}%s${normal}`;
+function prettyLogSpessaSynthErrors({name: eName, message: eMessage}, filename) {
+  let message;
   switch (eName) {
     case "SyntaxError":
-      console.error(
-        messageFormat,
-        filename, "is malformed because:", eMessage
-      )
+      message = " is malformed because: ";
       break;
 
     case "Error":
     default:
-      console.error(
-        messageFormat,
-        filename, "failed to load because:", eMessage
-      )
+      message = " failed to load because: ";
   }
+  log(ERROR_LVL,
+    red+underline + filename + normal+red,
+    message,
+    normalRed + eMessage
+  )
 }
 /**
  * Initializes all the required variables for spessasynth_core usage
@@ -414,14 +413,13 @@ async function initSpessaSynth({
         : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
     );
   } catch (error) {
-    printfSpessaSynthErrors(error, midiFile)
+    prettyLogSpessaSynthErrors(error, midiFile)
     return null;
   }
   if (!midi.duration) {
     if (!onlySampleCount && !onlyDuration || isStartPlayer) {
-      console.error(
-        normalYellow+"%s %s"+normal,
-        midiFile, "has a duration of 0 seconds, skipping..."
+      log(WARNING_LVL,
+        midiFile, " has a duration of 0 seconds, skipping..."
       )
     }
     return null;
@@ -471,7 +469,7 @@ async function initSpessaSynth({
     try {
       soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
     } catch (error) {
-      printfSpessaSynthErrors(error, soundfontFile)
+      prettyLogSpessaSynthErrors(error, soundfontFile)
       return null;
     }
   }
