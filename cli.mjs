@@ -133,6 +133,13 @@ const testFunctions = {
       || set.has("/?")
     );
   },
+  loop(set) {
+    return (
+      set.has("--loop")
+      || set.has("/loop")
+      || set.has("-l") || set.has("/l")
+    );
+  },
   version(set) {
     return (
       set.has("--version") || set.has("/version")
@@ -539,6 +546,14 @@ const actUpOnPassedArgs = async args => {
       case "--loop-start": case "/loop-start":
       case "-ls":          case "/ls":
       case regexes.loopStart.test(arg) && arg: {
+        if (!testFunctions.loop(newArgumentsSet)) {
+          log(
+            WARNING_LVL,
+            "Skipping loop-start because loop isn't set"
+          )
+          i++
+          break;
+        }
         lastIndex = arg.match(regexes.loopStart)?.groups;
         setLoopStart(nextArg, lastIndex)
         i++
@@ -547,6 +562,14 @@ const actUpOnPassedArgs = async args => {
       case "--loop-end": case "/loop-end":
       case "-le":        case "/le":
       case regexes.loopEnd.test(arg) && arg: {
+        if (!testFunctions.loop(newArgumentsSet)) {
+          log(
+            WARNING_LVL,
+            "Skipping loop-end because loop isn't set"
+          )
+          i++
+          break;
+        }
         lastIndex = arg.match(regexes.loopEnd)?.groups;
         setLoopEnd(nextArg, lastIndex)
         i++
