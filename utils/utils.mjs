@@ -50,6 +50,12 @@ const LVL_TEXTS = {
   [ERROR_LVL]: "ERROR", [WARNING_LVL]: "WARNING",
   [INFO_LVL]: "INFO",   [DEBUG_LVL]: "DEBUG"
 };
+const debugLevelSpesso = Number(process.env.DEBUG_LEVEL_SPESSO),
+      debugFileSpesso  = process.env.DEBUG_FILE_SPESSO;
+const logMessageColors = {
+  0: normalRed, 1: normalYellow,
+  2: dimGray,   3: dimGray
+};
 /**
  * Logger
  * @param {Number} level - level of the log
@@ -64,10 +70,8 @@ function log(level, ...messages) {
     (time.length + 7) + 2
   );
   const logOptions = this?.verboseLevel ? this : Options;
-  const debugLevelSpesso = Number(process.env.DEBUG_LEVEL_SPESSO),
-        debugFileSpesso = process.env.DEBUG_FILE_SPESSO;
 
-  if (Number.isNaN(debugLevelSpesso)
+  if (isNaN(debugLevelSpesso)
       && logOptions.verboseLevel === undefined) return;
   if (debugLevelSpesso < level
       || logOptions.verboseLevel < level) return;
@@ -86,7 +90,7 @@ function log(level, ...messages) {
       // Place the ffmpeg arguments on a new line with padding
       .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
       // Add dimmed gray to the output
-      .replace(/(.*)/s, `${dimGray}$1${normal}`)
+      .replace(/(.*)/s, `${logMessageColors[level]}$1${normal}`)
   ];
   if (messages[0] === "Finished printing to stdout") message.unshift("\n")
   console.error(...message)

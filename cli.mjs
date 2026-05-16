@@ -448,7 +448,9 @@ const actUpOnPassedArgs = async args => {
         if (!testFunctions.stdout(newArgumentsSet)) {
           setMaxThreads(nextArg)
         } else {
-          log(WARNING_LVL, `${normalYellow}Ignoring this flag since stdout mode is enabled${normal}`)
+          log(WARNING_LVL,
+            "Ignoring this flag since stdout mode is enabled"
+          )
         }
         i++
         break;
@@ -460,7 +462,9 @@ const actUpOnPassedArgs = async args => {
           log(INFO_LVL, "Set show-usage flag")
           break;
         }
-        log(WARNING_LVL, `${normal+normalYellow}Ignored show-usage flag since stdout mode is enabled${normal}`)
+        log(WARNING_LVL,
+          "Ignored show-usage flag since stdout mode is enabled"
+        )
         break;
       }
       // Stdout format must be of only 1 kind
@@ -477,7 +481,9 @@ const actUpOnPassedArgs = async args => {
           setTextDelay(arg)
           break;
         }
-        log(WARNING_LVL, `${normal+normalYellow}Ignored text-delay flag since stdout mode is enabled${normal}`)
+        log(WARNING_LVL,
+          "Ignored text-delay flag since stdout mode is enabled"
+        )
         break;
       }
       case "--input": case "/input":

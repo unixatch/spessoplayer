@@ -107,7 +107,7 @@ async function formatManager({
       console.error(error, "\n")
       process.exit(errno)
     }
-    log(ERROR_LVL, `${normalRed}Ignored error ${underline+code+normal}`)
+    log(ERROR_LVL, `Ignored error ${underline+code}`)
   }
   function addPipingFunction(func) {
     return (!func)
