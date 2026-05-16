@@ -33,6 +33,39 @@ function checkValue(value, requiredType) {
     }
   }
 }
+/**
+ * Adds a new property to Options class
+ * @param {MainOptions} that
+ * @param {String} property name of property to add
+ * @param {*} value what to add to the property
+ * @param {Boolean} isSetter if it's a setter
+ */
+function addProperty(that, property, value, isSetter) {
+  that._manageOption({
+    property, value, setter: isSetter
+  });
+}
+/**
+ * Adds/updates a property with an index to Options class
+ * @param {(MainOptions|EffectsOptions)} that
+ * @param {String} property name of property to add
+ * @param {Number?} index index of the array
+ * @param {*} value value to add
+ */
+function addIndexedProperty(that, property, index, value) {
+  that._manageOption({
+    property, index, value
+  }, true, true);
+}
+/**
+ * Gets the property from Options class
+ * @param {MainOptions} that
+ * @param {String} property name of the property to retrieve
+ * @return {*} value of the property
+ */
+function getProperty(that, property) {
+  return that._manageOption({property}, false);
+}
 
 /**
  * Main options class that contains general options
@@ -44,91 +77,91 @@ class MainOptions {
    * @param {Number} number - verboseLevel's number
    */
   static set verboseLevel(number) {
-    this._manageOption({property: "verboseLevel", value: number})
+    addProperty(this, "verboseLevel", number)
   }
   /**
    * Gives verboseLevel's number
    * @return {Number} verboseLevel's number
    */
   static get verboseLevel() {
-    return this._manageOption({property: "verboseLevel"}, false);
+    return getProperty(this, "verboseLevel");
   }
   /**
    * Sets logFilePath
    * @param {String} path - path to write to
    */
   static set logFilePath(path) {
-    this._manageOption({property: "logFilePath", value: path})
+    addProperty(this, "logFilePath", path)
   }
   /**
    * Gives logFilePath
    * @return {String} logFilePath
    */
   static get logFilePath() {
-    return this._manageOption({property: "logFilePath"}, false)
+    return getProperty(this, "logFilePath");
   }
   /**
    * Sets toStdout boolean
    * @param {Boolean} value - enable or disable printing to stdout
    */
   static set toStdout(value) {
-    this._manageOption({property: "toStdout", value})
+    addProperty(this, "toStdout", value)
   }
   /**
    * Sets confirmation boolean
    * @param {Boolean} value - enable or disable confirmation
    */
   static set confirmation(value) {
-    this._manageOption({property: "confirmation", value})
+    addProperty(this, "confirmation", value)
   }
   /**
    * Sets noTable boolean
    * @param {Boolean} value - enable or disable tabling the confirmation prompt
    */
   static set noTable(value) {
-    this._manageOption({property: "noTable", value})
+    addProperty(this, "noTable", value)
   }
   /**
    * Sets noProgress boolean
    * @param {Boolean} value - enable or disable text rendering in file mode
    */
   static set noProgress(value) {
-    this._manageOption({property: "noProgress", value})
+    addProperty(this, "noProgress", value)
   }
   /**
    * Sets showUsage boolean
    * @param {Boolean} value - enable or disable showing usage of RAM or CPU time
    */
   static set showUsage(value) {
-    this._manageOption({property: "showUsage", value})
+    addProperty(this, "showUsage", value)
   }
   /**
    * Sets textDelay number
    * @param {Number} value - sets the text delay for file mode
    */
   static set textDelay(value) {
-    this._manageOption({property: "textDelay", value, setter: true})
+    addProperty(this, "textDelay", value, true)
   }
   /**
    * Sets dryRun path string
    * @param {Boolean} value - path to use for the dry run
    */
   static dryRun() {
-    this._manageOption({property: "dryRun", value: ""})
+    addProperty(this, "dryRun", "")
   }
   /**
    * Sets the maximum of threads to use in file mode
    * @param {Boolean} value - number of threads
    */
   static set maxThreads(value) {
-    this._manageOption({property: "maxThreads", value, setter: true})
+    addProperty(this, "maxThreads", value, true)
   }
   /**
    * Sets the stdout format
    * @param {String} string - a string representing the format
    */
   static set format(string) {
-    this._manageOption({property: "format", value: string})
+    addProperty(this, "format", string)
   }
   /**
    * Adds a path to write to in a particular format
@@ -137,14 +170,14 @@ class MainOptions {
    */
   static fileOutputs(index, string) {
     checkValue(index, "number")
-    this._manageOption({property: "fileOutputs", index, value: string}, true, true)
+    addIndexedProperty(this, "fileOutputs", index, string)
   }
   /**
    * Checks if it has fileOutputs
    * @return {Boolean} file mode or not
    */
   static isFileMode() {
-    return this._manageOption({property: "fileOutputs"}, false);
+    return getProperty(this, "fileOutputs");
   }
   /**
    * Change general volume of a specific file
@@ -153,18 +186,18 @@ class MainOptions {
    */
   static volume(index, number) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "volume",
-      index: (!Number.isNaN(index)) ? index : undefined,
-      value: number
-    }, true, true)
+    addIndexedProperty(
+      this, "volume",
+      !isNaN(index) ? index : undefined,
+      number
+    )
   }
   /**
    * Sets the sample rate of the stdout output
    * @param {Number} number - sample rate to set for all files in stdout
    */
   static set stdoutSampleRate(number) {
-    this._manageOption({property: "sampleRate", value: number, setter: true})
+    addProperty(this, "sampleRate", number, true)
   }
   /**
    * Sets the sample rate of a specific file
@@ -173,11 +206,11 @@ class MainOptions {
    */
   static sampleRate(index, number) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "sampleRate",
-      index: (!Number.isNaN(index)) ? index : undefined,
-      value: number
-    }, true, true)
+    addIndexedProperty(
+      this, "sampleRate",
+      !isNaN(index) ? index : undefined,
+      number
+    )
   }
   /**
    * Sets the amount of loops to do for a specific file
@@ -186,11 +219,11 @@ class MainOptions {
    */
   static loopAmount(index, number) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "loopAmount",
-      index: (!Number.isNaN(index)) ? index : undefined,
-      value: number
-    }, true, true)
+    addIndexedProperty(
+      this, "loopAmount",
+      !isNaN(index) ? index : undefined,
+      number
+    )
   }
   /**
    * Sets when the loop starts for a specific file
@@ -199,11 +232,11 @@ class MainOptions {
    */
   static loopStart(index, number) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "loopStart",
-      index: (!Number.isNaN(index)) ? index : undefined,
-      value: number
-    }, true, true)
+    addIndexedProperty(
+      this, "loopStart",
+      !isNaN(index) ? index : undefined,
+      number
+    )
   }
   /**
    * Sets when the loop ends for a specific file
@@ -212,11 +245,11 @@ class MainOptions {
    */
   static loopEnd(index, number) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "loopEnd",
-      index: (!Number.isNaN(index)) ? index : undefined,
-      value: number
-    }, true, true)
+    addIndexedProperty(
+      this, "loopEnd",
+      !isNaN(index) ? index : undefined,
+      number
+    )
   }
 }
 
@@ -233,11 +266,11 @@ class EffectsOptions {
    */
   static effects(index, arrayOfObjects) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "effects",
-      index: (Number.isNaN(index)) ? undefined : index,
-      value: arrayOfObjects
-    }, true, true)
+    addIndexedProperty(
+      this, "effects",
+      isNaN(index) ? undefined : index,
+      arrayOfObjects
+    )
   }
   /**
    * Change reverb's volume of a specific file
@@ -246,11 +279,11 @@ class EffectsOptions {
    */
   static reverbVolume(index, number) {
     checkValue(index, "number")
-    this._manageOption({
-      property: "reverbVolume",
-      index: (!Number.isNaN(index)) ? index : undefined,
-      value: number
-    }, true, true)
+    addIndexedProperty(
+      this, "reverbVolume",
+      !isNaN(index) ? index : undefined,
+      number
+    )
   }
 }
 
