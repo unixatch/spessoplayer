@@ -782,7 +782,8 @@ const invalidNumberString = "isn't a number";
  */
 const setLoop = (arg, lastIndex) => {
   let number = Number(arg);
-  const lastIndexNumber = Number(lastIndex?.index);
+  const lastIndexNumber = Number(lastIndex?.index),
+        lastIndexString = lastIndex?.index ?? "0";
   // Negative conversion
   if (number < 0) {
     log(WARNING_LVL,
@@ -796,7 +797,7 @@ const setLoop = (arg, lastIndex) => {
   if (number === Infinity) {
     console.error(
       formatStrings.failedCliParam,
-      "[loop]: Can't use infinity, sorry"
+      `[loop|${lastIndexString}]: Can't use infinity, sorry`
     )
     process.exit(1)
   }
@@ -807,7 +808,7 @@ const setLoop = (arg, lastIndex) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[loop]:", arg, invalidNumberString
+    `[loop|${lastIndexString}]:`, arg, invalidNumberString
   )
   process.exit(1)
 }
@@ -819,7 +820,8 @@ const invalidNumberOrISOString = "isn't a valid number or a valid ISO string for
  */
 const setLoopStart = (arg, lastIndex) => {
   const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index);
+        lastIndexNumber = Number(lastIndex?.index),
+        lastIndexString = lastIndex?.index ?? "0";
   if (typeof number === "number"
       && number !== Infinity && !(number < 0)
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
@@ -835,7 +837,8 @@ const setLoopStart = (arg, lastIndex) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[loop-start]:", arg, invalidNumberOrISOString
+    `[loop-start|${lastIndexString}]:`, arg,
+    invalidNumberOrISOString
   )
   process.exit(1)
 }
@@ -846,7 +849,8 @@ const setLoopStart = (arg, lastIndex) => {
  */
 const setLoopEnd = (arg, lastIndex) => {
   const number = Math.abs(Number(arg)),
-        lastIndexNumber = Number(lastIndex?.index);
+        lastIndexNumber = Number(lastIndex?.index),
+        lastIndexString = lastIndex?.index ?? "0";
   if (typeof number === "number" && number !== Infinity
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
     if (regexes.ISOTimestamp.test(arg)) {
@@ -861,7 +865,7 @@ const setLoopEnd = (arg, lastIndex) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[loop-end]:", arg, invalidNumberOrISOString
+    `[loop-end|${lastIndexString}]:`, arg, invalidNumberOrISOString
   )
   process.exit(1)
 }
@@ -873,11 +877,12 @@ const negativeNumberErrorString = "must be above or equal to 0";
  * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
  */
 const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
-  const number = Number(arg);
+  const number = Number(arg),
+        lastIndexString = lastIndex?.index ?? "0";
   if (number < 0) {
     console.error(
       formatStrings.failedCliParam,
-      `[sample-rate]: ${negativeNumberErrorString}`
+      `[sample-rate|${lastIndexString}]: ${negativeNumberErrorString}`
     )
     process.exit(1)
   }
@@ -894,7 +899,7 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[sample-rate]:", arg, invalidNumberString
+    `[sample-rate|${lastIndexString}]:`, arg, invalidNumberString
   )
   process.exit(1)
 }
@@ -1022,7 +1027,8 @@ const invalidVolumeString = "isn't a valid number/dB/percentage";
  */
 const setVolume = (arg, lastIndex) => {
   const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index);
+        lastIndexNumber = Number(lastIndex?.index),
+        lastIndexString = lastIndex?.index ?? "0";
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
@@ -1040,7 +1046,8 @@ const setVolume = (arg, lastIndex) => {
   if (number < 0) {
     console.error(
       formatStrings.failedCliParamWithArg,
-      `[volume]:`, arg, negativeNumberErrorString
+      `[volume|${lastIndexString}]:`, arg,
+      negativeNumberErrorString
     )
     process.exit(1)
   }
@@ -1052,7 +1059,7 @@ const setVolume = (arg, lastIndex) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[volume]:", arg, invalidVolumeString
+    `[volume|${lastIndexString}]:`, arg, invalidVolumeString
   )
   process.exit(1)
 }
@@ -1063,7 +1070,8 @@ const setVolume = (arg, lastIndex) => {
  */
 const setReverb = (arg, lastIndex) => {
   const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index);
+        lastIndexNumber = Number(lastIndex?.index),
+        lastIndexString = lastIndex?.index ?? "0";
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     Options.reverbVolume(lastIndexNumber, dBNumber)
@@ -1083,7 +1091,8 @@ const setReverb = (arg, lastIndex) => {
   if (number < 0) {
     console.error(
       formatStrings.failedCliParamWithArg,
-      `[reverb-volume]:`, arg, negativeNumberErrorString
+      `[reverb-volume|${lastIndexString}]:`, arg,
+      negativeNumberErrorString
     )
     process.exit(1)
   }
@@ -1096,7 +1105,8 @@ const setReverb = (arg, lastIndex) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[reverb-volume]:", arg, invalidVolumeString
+    `[reverb-volume|${lastIndexString}]:`, arg,
+    invalidVolumeString
   )
   process.exit(1)
 }
