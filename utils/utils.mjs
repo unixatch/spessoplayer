@@ -42,10 +42,12 @@ const clearLastLines = lineY => {
 
   process.stdout.write(upNLines + clearScreenDown)
 }
+const debugLevels = Array(4).keys();
+export const debugMaxLevel = debugLevels.length-1;
 export const {
   0: ERROR_LVL, 1: WARNING_LVL,
   2: INFO_LVL,  3: DEBUG_LVL
-} = [...Array(4).keys()];
+} = [...debugLevels];
 const LVL_TEXTS = {
   [ERROR_LVL]: "ERROR", [WARNING_LVL]: "WARNING",
   [INFO_LVL]: "INFO",   [DEBUG_LVL]: "DEBUG"

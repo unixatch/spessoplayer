@@ -23,6 +23,7 @@ import { join, parse } from "path"
 import {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
+  debugMaxLevel,
   formatStrings,
   log, Options
 } from "./utils/utils.mjs"
@@ -780,8 +781,18 @@ const invalidNumberString = "isn't a number";
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoop = (arg, lastIndex) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index);
+  let number = Number(arg);
+  const lastIndexNumber = Number(lastIndex?.index);
+  // Negative conversion
+  if (number < 0) {
+    log(WARNING_LVL,
+      `Converted ${
+        underline+number+normal+normalYellow
+      } to 0 because it was negative`
+    )
+    number = 0;
+  }
+
   if (number === Infinity) {
     console.error(
       formatStrings.failedCliParam,
@@ -834,7 +845,7 @@ const setLoopStart = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopEnd = (arg, lastIndex) => {
-  const number = Number(arg),
+  const number = Math.abs(Number(arg)),
         lastIndexNumber = Number(lastIndex?.index);
   if (typeof number === "number" && number !== Infinity
       || !isNaN(Date.parse(`1970T${arg}Z`))) {
@@ -854,6 +865,7 @@ const setLoopEnd = (arg, lastIndex) => {
   )
   process.exit(1)
 }
+const negativeNumberErrorString = "must be above or equal to 0";
 /**
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
@@ -862,6 +874,13 @@ const setLoopEnd = (arg, lastIndex) => {
  */
 const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   const number = Number(arg);
+  if (number < 0) {
+    console.error(
+      formatStrings.failedCliParam,
+      `[sample-rate]: ${negativeNumberErrorString}`
+    )
+    process.exit(1)
+  }
   if (typeof number === "number" && !isNaN(number)
       && number !== Infinity) {
     if (testFunctions.stdout(newArgumentsSet)) {
@@ -890,7 +909,7 @@ const setVerboseLevel = async (arg) => {
   global.fs ??= await import("fs");
 
   if (typeof number === "number" && !isNaN(number)
-      && !(number < 0 && number > 2)) {
+      && !(number < 0 && number > debugMaxLevel)) {
     Options.verboseLevel = number;
     if (isFromUser) {
       log(INFO_LVL, `Set verbose level asked by the user to ${number}`)
@@ -1017,6 +1036,14 @@ const setVolume = (arg, lastIndex) => {
     log(INFO_LVL, `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
     return;
   }
+  // Negative conversion
+  if (number < 0) {
+    console.error(
+      formatStrings.failedCliParamWithArg,
+      `[volume]:`, arg, negativeNumberErrorString
+    )
+    process.exit(1)
+  }
   if (typeof number === "number"
       && !isNaN(number) && number !== Infinity) {
     Options.volume(lastIndexNumber, number)
@@ -1051,6 +1078,14 @@ const setReverb = (arg, lastIndex) => {
     Options.effects(lastIndexNumber, [])
     log(INFO_LVL, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
+  }
+  // Negative conversion
+  if (number < 0) {
+    console.error(
+      formatStrings.failedCliParamWithArg,
+      `[reverb-volume]:`, arg, negativeNumberErrorString
+    )
+    process.exit(1)
   }
   if (typeof number === "number"
       && !isNaN(number) && number !== Infinity) {
@@ -1116,8 +1151,9 @@ const setTextDelay = (arg) => {
  * @param {String} arg - Path to the log file
  */
 const setLogFilePath = arg => {
-  Options.logFilePath = arg ?? "./spesso.log";
-  log(INFO_LVL, `Set log file path to ${arg ?? "./spesso.log"}`)
+  const pathToUse = arg || "./spesso.log";
+  Options.logFilePath = pathToUse;
+  log(INFO_LVL, `Set log file path to ${pathToUse}`)
 }
 /**
  * Runs uninstall.mjs and uninstall spessoplayer
