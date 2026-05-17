@@ -554,8 +554,7 @@ const actUpOnPassedArgs = async args => {
       case "-ls":          case "/ls":
       case regexes.loopStart.test(arg) && arg: {
         if (!testFunctions.loop(newArgumentsSet)) {
-          log(
-            WARNING_LVL,
+          log(WARNING_LVL,
             "Skipping loop-start because loop isn't set"
           )
           i++
@@ -570,8 +569,7 @@ const actUpOnPassedArgs = async args => {
       case "-le":        case "/le":
       case regexes.loopEnd.test(arg) && arg: {
         if (!testFunctions.loop(newArgumentsSet)) {
-          log(
-            WARNING_LVL,
+          log(WARNING_LVL,
             "Skipping loop-end because loop isn't set"
           )
           i++
@@ -774,7 +772,21 @@ const setFile = async ({
   });
   // --- END of automatic addition of files section ---
 }
-const invalidNumberString = "isn't a number";
+/**
+ * Checks if the given number is an actual number
+ * @param {*} number the value to check
+ * @param {Boolean} checkForInfinity if it's also not Infinity
+ * @return {Boolean} if it's an actual number or not
+ */
+const isRealNumber = (number, checkForInfinity) => {
+  const isNumber = typeof number === "number" && !isNaN(number);
+  return (
+    checkForInfinity
+      ? isNumber && number !== Infinity
+      : isNumber
+  );
+};
+const invalidNumberString = "isn't a valid number";
 /**
  * Sets the Options.loopAmount variable
  * @param {String} arg - the loop amount
@@ -801,7 +813,7 @@ const setLoop = (arg, lastIndex) => {
     )
     process.exit(1)
   }
-  if (typeof number === "number" && !isNaN(number)) {
+  if (isRealNumber(number)) {
     Options.loopAmount(lastIndexNumber, number)
     log(INFO_LVL, `Set loop amount to ${number} at ${lastIndex?.index} index`)
     return;
@@ -822,11 +834,14 @@ const setLoopStart = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index),
         lastIndexString = lastIndex?.index ?? "0";
-  if (typeof number === "number"
-      && number !== Infinity && !(number < 0)
-      || !isNaN(Date.parse(`1970T${arg}Z`))) {
+
+  const argAsADate = Date.parse(`1970T${arg}Z`);
+  if (
+    isRealNumber(number, true)
+    && !(number < 0) || !isNaN(argAsADate)
+  ) {
     if (regexes.ISOTimestamp.test(arg)) {
-      const seconds = Date.parse(`1970T${arg}Z`) / 1000;
+      const seconds = argAsADate / 1000;
       Options.loopStart(lastIndexNumber, seconds)
       log(INFO_LVL, `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
       return;
@@ -851,10 +866,11 @@ const setLoopEnd = (arg, lastIndex) => {
   const number = Math.abs(Number(arg)),
         lastIndexNumber = Number(lastIndex?.index),
         lastIndexString = lastIndex?.index ?? "0";
-  if (typeof number === "number" && number !== Infinity
-      || !isNaN(Date.parse(`1970T${arg}Z`))) {
+
+  const argAsADate = Date.parse(`1970T${arg}Z`);
+  if (isRealNumber(number, true) || !isNaN(argAsADate)) {
     if (regexes.ISOTimestamp.test(arg)) {
-      const seconds = Date.parse(`1970T${arg}Z`) / 1000;
+      const seconds = argAsADate / 1000;
       Options.loopEnd(lastIndexNumber, seconds)
       log(INFO_LVL, `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
       return;
@@ -886,8 +902,7 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
     )
     process.exit(1)
   }
-  if (typeof number === "number" && !isNaN(number)
-      && number !== Infinity) {
+  if (isRealNumber(number, true)) {
     if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutSampleRate = number;
       log(INFO_LVL, `Set sample rate for all to ${number} because output is stdout`)
@@ -913,8 +928,10 @@ const setVerboseLevel = async (arg) => {
   arg ??= "2";
   global.fs ??= await import("fs");
 
-  if (typeof number === "number" && !isNaN(number)
-      && !(number < 0 && number > debugMaxLevel)) {
+  if (
+    isRealNumber(number)
+    && !(number < 0 && number > debugMaxLevel)
+  ) {
     Options.verboseLevel = number;
     if (isFromUser) {
       log(INFO_LVL, `Set verbose level asked by the user to ${number}`)
@@ -998,12 +1015,12 @@ const setEffects = (arg, lastIndex) => {
         }) )
     ];
 
-    if (!list
-          .every(i => new RegExp(regexListOfEffects).test(i.effect))
+    if (
+      !list.every(i => new RegExp(regexListOfEffects).test(i.effect))
     ) {
       console.error(
         formatStrings.failedCliParamWithArg,
-        "[effects]: One effect inside", '"'+arg+'"',
+        "[effects]: One effect inside", `"${arg}"`,
         "doesn't exist in SoX"
       )
       process.exit(1)
@@ -1015,7 +1032,7 @@ const setEffects = (arg, lastIndex) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[effects]:", '"'+arg+'"', "is a malformed string"
+    "[effects]:", `"${arg}"`, "is a malformed string"
   )
   process.exit(1)
 }
@@ -1029,6 +1046,7 @@ const setVolume = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index),
         lastIndexString = lastIndex?.index ?? "0";
+
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     const toPercentage = 10**(dBNumber/10);
@@ -1051,8 +1069,7 @@ const setVolume = (arg, lastIndex) => {
     )
     process.exit(1)
   }
-  if (typeof number === "number"
-      && !isNaN(number) && number !== Infinity) {
+  if (isRealNumber(number, true)) {
     Options.volume(lastIndexNumber, number)
     log(INFO_LVL, `Set volume to ${number} at ${lastIndex?.index} index`)
     return;
@@ -1072,6 +1089,7 @@ const setReverb = (arg, lastIndex) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index),
         lastIndexString = lastIndex?.index ?? "0";
+
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
     Options.reverbVolume(lastIndexNumber, dBNumber)
@@ -1096,8 +1114,7 @@ const setReverb = (arg, lastIndex) => {
     )
     process.exit(1)
   }
-  if (typeof number === "number"
-      && !isNaN(number) && number !== Infinity) {
+  if (isRealNumber(number, true)) {
     Options.reverbVolume(lastIndexNumber, number)
     Options.effects(Number(lastIndex?.index), [])
     log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
@@ -1116,9 +1133,11 @@ const setReverb = (arg, lastIndex) => {
  */
 const setMaxThreads = async (arg) => {
   const number = Number(arg);
-  if (typeof number === "number" && !isNaN(number)
-      && number <= (await import("os")).availableParallelism() * 2
-      && number >= 1) {
+  if (
+    isRealNumber(number)
+    && number <= (await import("os")).availableParallelism() * 2
+    && number >= 1
+  ) {
     Options.maxThreads = number;
     log(INFO_LVL, `Set max threads to ${number}`)
     return;
@@ -1142,9 +1161,7 @@ const setTextDelay = (arg) => {
     log(INFO_LVL, `Set text delay to ${number}`)
     return;
   }
-  if (typeof number === "number"
-      && !isNaN(number) && number !== Infinity
-      && number >= 50) {
+  if (isRealNumber(number, true) && number >= 50) {
     Options.textDelay = number;
     log(INFO_LVL, `Set text delay to ${number}`)
     return;
