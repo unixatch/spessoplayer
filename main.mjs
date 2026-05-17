@@ -475,15 +475,12 @@ const renderTextsFunction = progressClass => {
  * @param {*}        target    where to attach the event
  * @param {String}   eventName event name
  * @param {Function} func      function to use when the event fires
- * @return {(*|null)} the target or null
+ * @return {(*|false)} the target or false if it exists
  */
-const addEventOnce = (target, eventName, func) => {
-  return (
-    !target.listenerCount(eventName)
-      ? target.on(eventName, func)
-      : null
-  );
-};
+const addEventOnce = (target, eventName, func) => (
+  !target.listenerCount(eventName)
+    && target.on(eventName, func)
+);
 /**
  * A function that coordinates the worker
  * @param {Function} resolve
