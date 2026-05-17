@@ -2,8 +2,12 @@
 
 ### spessoplayer [options] \<midi\> \<soundfont\> [outFile]
 
-### --volume[n], /volume[n],
-#### &nbsp;&nbsp;-v[n], /v[n]:
+### --input[n] **file**, /input[n] **file**,
+#### -i[n] **file**, /i[n] **file**:
+  Takes the following **file** and puts it in the list by n
+
+### --volume[n] **amount**, /volume[n] **amount**,
+#### &nbsp;&nbsp;-v[n] **amount**, /v[n] **amount**:
   Volume to set (*default: 100%*)
 
   Available formats:
@@ -11,8 +15,8 @@
   - **percentages** (*example 70%*);
   - **decimals** (*example 0.9*);
 
-### --reverb-volume[n], /reverb-volume[n],
-#### &nbsp;&nbsp;-rvb[n], /rvb[n]:
+### --reverb-volume[n] **amount**, /reverb-volume[n] **amount**,
+#### &nbsp;&nbsp;-rvb[n] **amount**, /rvb[n] **amount**:
   Volume to set for reverb (*default: none*)
 
   Same formats as volume
@@ -21,22 +25,22 @@
 #### &nbsp;&nbsp;-e **effects_list**, /e **effects_list**:
 Adds any effects that SoX provides (*e.g "reverb,fade 1"*)
 
-### --loop[n], /loop[n],
-#### &nbsp;&nbsp;-l[n], /l[n]:
+### --loop[n] **seconds**, /loop[n] **seconds**,
+#### &nbsp;&nbsp;-l[n] **seconds**, /l[n] **seconds**:
   Loop x amount of times (*default: 0*)
 
 &nbsp;&nbsp;&nbsp;<sub>(It might be slow with bigger numbers)</sub>
 
-### --loop-start[n], /loop-start[n],
-#### &nbsp;&nbsp;-ls[n], /ls[n]:
-When the loop starts
+### --loop-start[n] **seconds**, /loop-start[n] **seconds**,
+#### &nbsp;&nbsp;-ls[n] **seconds**, /ls[n] **seconds**:
+The loop will start after **seconds**
 
-### --loop-end[n], /loop-end[n],
-#### &nbsp;&nbsp;-le[n], /le[n]:
-When the loop ends
+### --loop-end[n] **seconds**, /loop-end[n] **seconds**,
+#### &nbsp;&nbsp;-le[n] **seconds**, /le[n] **seconds**:
+The loop will restart at [-] **seconds** from the end
 
-### --sample-rate[n], /sample-rate[n],
-#### &nbsp;&nbsp;-r[n], /r[n]:
+### --sample-rate[n] **samples**, /sample-rate[n] **samples**,
+#### &nbsp;&nbsp;-r[n] **samples**, /r[n] **samples**:
 Sample rate to use (*default: 48000*)
 
 &nbsp;&nbsp;&nbsp;<sub>(It might be slow with bigger numbers for players like mpv)</sub>

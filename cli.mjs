@@ -1208,14 +1208,18 @@ const help = async ({ errorText } = "") => {
 
   Available parameters:
     ${param(
-      ["--input"+optional("n"), "/input"+optional("n")],
-      ["-i"+optional("n"), "/i"+optional("n")]
+      ["--input"+optional("n")+" "+grayBoldText("file"),
+       "/input"+optional("n")+" "+grayBoldText("file")],
+      ["-i"+optional("n")+" "+grayBoldText("file"),
+       "/i"+optional("n")+" "+grayBoldText("file")]
     )}:
       ${multiLine("Takes the following file and puts it in the list by n")}
 
     ${param(
-      ["--volume"+optional("n"), "/volume"+optional("n")],
-      ["-vol"+optional("n"), "/vol"+optional("n")]
+      ["--volume"+optional("n")+" "+grayBoldText("amount"),
+       "/volume"+optional("n")+" "+grayBoldText("amount")],
+      ["-vol"+optional("n")+" "+grayBoldText("amount"),
+       "/vol"+optional("n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
       `Volume to set (default: 100%)
@@ -1227,8 +1231,10 @@ const help = async ({ errorText } = "") => {
       )}
 
     ${param(
-      ["--reverb-volume"+optional("n"), "/reverb-volume"+optional("n")],
-      ["-rvb"+optional("n"), "/rvb"+optional("n")]
+      ["--reverb-volume"+optional("n")+" "+grayBoldText("amount"),
+       "/reverb-volume"+optional("n")+" "+grayBoldText("amount")],
+      ["-rvb"+optional("n")+" "+grayBoldText("amount"),
+       "/rvb"+optional("n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
       `Volume to set for reverb (default: none)
@@ -1244,32 +1250,42 @@ const help = async ({ errorText } = "") => {
       ${multiLine('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
 
     ${param(
-      ["--loop"+optional("n"), "/loop"+optional("n")],
-      ["-l"+optional("n"), "/l"+optional("n")]
+      ["--loop"+optional("n")+" "+grayBoldText("seconds"),
+        "/loop"+optional("n")+" "+grayBoldText("seconds")],
+      ["-l"+optional("n")+" "+grayBoldText("seconds"),
+       "/l"+optional("n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
-      `Loop x amount of times (default: 0)")}
+      `Loop x amount of times (default: 0)
         (It might be slow with bigger numbers)`
       )}
 
     ${param(
-      ["--loop-start"+optional("n"), "/loop-start"+optional("n")],
-      ["-ls"+optional("n"), "/ls"+optional("n")]
+      ["--loop-start"+optional("n")+" "+grayBoldText("seconds"),
+        "/loop-start"+optional("n")+" "+grayBoldText("seconds")],
+      ["-ls"+optional("n")+" "+grayBoldText("seconds"),
+       "/ls"+optional("n")+" "+grayBoldText("seconds")]
     )}:
-      ${multiLine("When the loop starts")}
+      ${multiLine(`The loop will start after ${grayBoldText("seconds")}`)}
 
     ${param(
-      ["--loop-end"+optional("n"), "/loop-end"+optional("n")],
-      ["-le"+optional("n"), "/le"+optional("n")]
-    )}:
-      ${multiLine("When the loop ends")}
-
-    ${param(
-      ["--sample-rate"+optional("n"), "/sample-rate"+optional("n")],
-      ["-r"+optional("n"), "/r"+optional("n")]
+      ["--loop-end"+optional("n")+" "+grayBoldText("seconds"),
+       "/loop-end"+optional("n")+" "+grayBoldText("seconds")],
+      ["-le"+optional("n")+" "+grayBoldText("seconds"),
+       "/le"+optional("n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
-      `Sample rate to use (default: 48000)")}
+      `The loop will restart at ${optional("-")+grayBoldText("seconds")+dimGray+italics} from the end`
+      )}
+
+    ${param(
+      ["--sample-rate"+optional("n")+" "+grayBoldText("samples"),
+       "/sample-rate"+optional("n")+" "+grayBoldText("samples")],
+      ["-r"+optional("n")+" "+grayBoldText("samples"),
+       "/r"+optional("n")+" "+grayBoldText("samples")]
+    )}:
+      ${multiLine(
+      `Sample rate to use (default: 48000)
         (It might be slow with bigger numbers for players like mpv)
         (Some players might downsize it to a smaller frequency)`
       )}
