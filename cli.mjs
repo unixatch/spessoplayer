@@ -587,7 +587,7 @@ const actUpOnPassedArgs = async args => {
             underline+dimRed +
             arg +
             normal+red
-          }' is an invalid parameter`+normal
+          }' is an invalid parameter`+normal+"\n"
         })
         process.exit()
     }
@@ -1211,7 +1211,7 @@ const uninstall = async () => {
  * @param {Object} [errorObject=""] - an object containing additional info that should be printed alongside help
  * @param {String} [errorObject.errorText] - error text that should be printed before helpText
  */
-const help = async ({ errorText } = "") => {
+const help = async ({ errorText = "" } = "") => {
   const optional = text => normal+"["+dimGray+text+normal+"]",
         grayBoldText = text => dimGrayBold+text+normal;
   let multilineMode = 0;
@@ -1458,25 +1458,25 @@ const help = async ({ errorText } = "") => {
 
     ${param(["--version", "/version"], ["-V", "/V"])}:
       ${multiLine("Shows the installed version")}
-  `
-  if (process.env.PAGER) {
-    const { spawnSync } = await import("child_process");
-    const PAGERCommand = process.env.PAGER.split(" ").slice(0, 1)[0],
-          PAGERArguments = process.env.PAGER.split(" ").slice(1);
-    spawnSync(
-      PAGERCommand,
-      [...PAGERArguments],
-      {
-        stdio: ["pipe", "inherit", "inherit"],
-        input: (errorText)
-          ? errorText+"\n"+helpText
-          : helpText
-      }
-    )
-    return;
+  `;
+
+  const { env: { PAGER } } = process;
+  if (!PAGER) {
+    if (errorText) console.error(errorText)
+    return console.log(helpText);
   }
-  if (errorText) console.error(errorText)
-  console.log(helpText)
+
+  const { spawnSync } = await import("child_process");
+  const PAGERArguments = PAGER.split(" "),
+        [PAGERCommand] = PAGERArguments.splice(0, 1);
+
+  spawnSync(
+    PAGERCommand, PAGERArguments,
+    {
+      stdio: ["pipe", "inherit", "inherit"],
+      input: (errorText && errorText+"\n")+helpText
+    }
+  )
 }
 /**
  * Shows the version number taken from package.json
