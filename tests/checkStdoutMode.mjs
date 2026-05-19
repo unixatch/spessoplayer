@@ -4,8 +4,7 @@ import { fork } from "child_process"
 
 // Setup file path arguments
 const {
-  globs,
-  formatStrings,
+  grayedOutText, globs,
   manualMidi, manualSoundfont,
   generalCliArguments, perSongCliArguments,
   addOptionalArgumentsToStdout

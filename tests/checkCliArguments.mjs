@@ -36,8 +36,8 @@ if (!process.argv.includes("--verbose")) {
   // Manually setting options at indexes
   const positionalArgs = [];
   for (let i = args.indexOf("--verbose")+1; i < args.length; i++) {
-    if (args[i].includes("-lf")) continue;
-    if (args[i].includes("-")) {
+    if (args[i] === "-lf") continue;
+    if (args[i].startsWith("-")) {
       positionalArgs.push(args[i]+indexOfParameter)
       continue;
     }
