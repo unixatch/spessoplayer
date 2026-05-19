@@ -449,6 +449,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     return this.#options.files?.length ?? 0;
   }
   /**
+   * Gives the filename of the song
+   * @param {Number} index index of the song
+   * @return {String} the filename without extension
+   */
+  static getSongName(index) {
+    return this.#listOfSongs[index * 3 + 2];
+  }
+  /**
    * Gives the last known group's index that has been added
    * @return {(Number|undefined)} index of the group
    */

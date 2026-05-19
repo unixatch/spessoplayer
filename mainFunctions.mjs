@@ -1290,8 +1290,10 @@ async function startPlayer(Options) {
     return res.end();
   })
   const amountOfSongs = Options.amountOfSongs;
+  const baseUrl = `http://localhost:${port}/song`;
   for (let i = 0; i < amountOfSongs; i++) {
-    listOfURLs.push(`http://localhost:${port}/song?index=${i}`)
+    const filename = Options.getSongName(i);
+    listOfURLs.push(`${baseUrl}?index=${i}&name=${filename}`)
   }
   server.listen({ host: "localhost", port })
 
