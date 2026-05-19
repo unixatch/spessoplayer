@@ -331,9 +331,9 @@ const actUpOnPassedArgs = async args => {
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
   }
-  const isStdout = testFunctions.stdout(newArgumentsSet),
-        newArgumentsLength = newArguments.length;
-  let indexOfSetFile = 0,
+  const newArgumentsLength = newArguments.length;
+  let isStdout, loopExists,
+      indexOfSetFile = 0,
       lastAutomaticFile,
       groupSeparator;
 
@@ -386,6 +386,7 @@ const actUpOnPassedArgs = async args => {
       }
       case "out.wav":
       case regexes.wav.test(arg) && arg: {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(WAV_INDEX, arg)
         log(INFO_LVL, "Set file output to wav")
@@ -393,6 +394,7 @@ const actUpOnPassedArgs = async args => {
       }
       case "out.pcm": case "out.s16le": case "out.f32le":
       case regexes.raw.test(arg) && arg: {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(RAW_INDEX, arg)
         log(INFO_LVL, "Set file output to pcm")
@@ -400,6 +402,7 @@ const actUpOnPassedArgs = async args => {
       }
       case "out.flac":
       case regexes.flac.test(arg) && arg: {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(FLAC_INDEX, arg)
         log(INFO_LVL, "Set file output to flac")
@@ -407,6 +410,7 @@ const actUpOnPassedArgs = async args => {
       }
       case "out.mp3":
       case regexes.mp3.test(arg) && arg: {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (isStdout) stdoutFileModeConflictError()
         Options.fileOutputs(MP3_INDEX, arg)
         log(INFO_LVL, "Set file output to mp3")
@@ -446,7 +450,8 @@ const actUpOnPassedArgs = async args => {
       case "--threads":     case "/threads":
       case "-mt":           case "/mt":
       case "-T":            case "/T": {
-        if (!testFunctions.stdout(newArgumentsSet)) {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        if (!isStdout) {
           setMaxThreads(nextArg)
         } else {
           log(WARNING_LVL,
@@ -458,6 +463,7 @@ const actUpOnPassedArgs = async args => {
       }
       case "--show-usage": case "/show-usage":
       case "-U":           case "/U": {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
           Options.showUsage = true;
           log(INFO_LVL, "Set show-usage flag")
@@ -478,7 +484,8 @@ const actUpOnPassedArgs = async args => {
       case "--text-delay": case "/text-delay":
       case "-d":           case "/d":
       case regexes.textDelay.test(arg) && arg: {
-        if (!testFunctions.stdout(newArgumentsSet)) {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        if (!isStdout) {
           setTextDelay(arg)
           break;
         }
@@ -553,7 +560,8 @@ const actUpOnPassedArgs = async args => {
       case "--loop-start": case "/loop-start":
       case "-ls":          case "/ls":
       case regexes.loopStart.test(arg) && arg: {
-        if (!testFunctions.loop(newArgumentsSet)) {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
           log(WARNING_LVL,
             "Skipping loop-start because loop isn't set"
           )
@@ -568,7 +576,8 @@ const actUpOnPassedArgs = async args => {
       case "--loop-end": case "/loop-end":
       case "-le":        case "/le":
       case regexes.loopEnd.test(arg) && arg: {
-        if (!testFunctions.loop(newArgumentsSet)) {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
           log(WARNING_LVL,
             "Skipping loop-end because loop isn't set"
           )
