@@ -44,6 +44,20 @@ import {
   Options, FO_CONSTANTS
 } from "./cli.mjs"
 
+const argv = process.argv,
+      spessasynthLogging = { info: false, warning: false };
+if (argv.includes("--enable-spessasynth-logging")) {
+  spessasynthLogging.info = true;
+  spessasynthLogging.warning = true;
+}
+if (!spessasynthLogging.info && !spessasynthLogging.warning) {
+  if (argv.includes("--enable-spessasynth-info-logging")) {
+    spessasynthLogging.info = true;
+  }
+  if (argv.includes("--enable-spessasynth-warn-logging")) {
+    spessasynthLogging.warning = true;
+  }
+}
 let isVerboseLevelSet = false;
 const {
   env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
@@ -133,7 +147,8 @@ if (isToStdout) {
 
     const sampleCount = await initSpessaSynth({
       index: i, ...options,
-      onlySampleCount: true
+      onlySampleCount: true,
+      spessasynthLogging
     });
     if (!sampleCount) continue;
     lengthOfFiles.push(sampleCount)
@@ -231,7 +246,7 @@ if (!isToStdout && !isToFile?.length > 0) {
     )
     process.exit(2)
   }
-  await startPlayer(Options)
+  await startPlayer(Options, spessasynthLogging)
 }
 
 // +++ toFile section +++
@@ -349,7 +364,8 @@ for (let i = 0; i < amountOfSongs; i++) {
 
   const duration = await initSpessaSynth({
     index: i, ...options,
-    onlyDuration: true
+    onlyDuration: true,
+    spessasynthLogging
   });
   if (duration === null) continue;
   const durationRounded = Math.floor(duration * 100) / 100;
@@ -531,7 +547,8 @@ for (let i = 0; i < amountOfSongs; i++) {
     progressBuffers, options, FO_CONSTANTS,
     index: i, filesListLength,
     verboseLevel: Options.verboseLevel,
-    logFilePath:  Options.logFilePath
+    logFilePath:  Options.logFilePath,
+    spessasynthLogging
   };
   const currentWorker = workers[currentThread] ??= new Worker(
     import.meta.dirname+"/fileWriter_worker.mjs",
@@ -540,6 +557,10 @@ for (let i = 0; i < amountOfSongs; i++) {
   if (!isVerboseLevelSet
       && !processingMessageCleaned && !i) {
     currentWorker.once("online", () => {
+      // With spessasynth's logging on,
+      // it becomes too unpredictable so skip this
+      if (spessasynthLogging.warning
+          || spessasynthLogging.info) return;
       process.stderr.write("\x1b[F" + clearCurrentLine)
       processingMessageCleaned = true;
     })

@@ -346,7 +346,8 @@ const actUpOnPassedArgs = async args => {
     } = newArguments;
 
     switch (arg) {
-      // Skip verboseLevel and logFilePath flags
+      // Skip verboseLevel, logFilePath
+      // and spessasynthLogging flags
       case "--verbose":  case "/verbose":
       case "-v":         case "/v": {
         const nextArgument = Number(nextArg);
@@ -357,6 +358,9 @@ const actUpOnPassedArgs = async args => {
       case "--log-file": case "/log-file":
       case "-lf":        case "/lf":
       case regexes.logFile.test(arg) && arg: break;
+      case "--enable-spessasynth-logging":
+      case "--enable-spessasynth-warn-logging":
+      case "--enable-spessasynth-info-logging": break;
 
       case (
         (lastParam === "input" || !lastParam) &&
@@ -1449,6 +1453,16 @@ const help = async ({ errorText = "" } = "") => {
       ["-v "+grayBoldText("n"), "/v "+grayBoldText("n")]
     )}:
       ${multiLine("Sets the verbosity (default: 2)")}
+
+    ${green}--enable-spessasynth${optional("-warn|-info")+green}-logging${normal}:
+      ${multiLine(
+      `Enables spessasynth's logging system,
+      basically only used for debugging.
+
+      It can be used in 2 ways:
+        - Info and warn enabled
+        - Only 1 of the two types enabled`
+      )}
 
     ${param(
       ["--log-file"+optional("=path"), "/log-file"+optional("=path")],

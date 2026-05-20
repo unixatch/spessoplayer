@@ -35,18 +35,21 @@
 /**
  * @typedef initObjectParameters
  * @type {Object}
- * @property {Number}  [loopAmount=0]          the loop amount
- * @property {Number}  [volume=100/100]        the volume to set
- * @property {String}  midiFile                midi file
- * @property {String}  soundfontFile           soundfont file
- * @property {Number}  [sampleRate=48000]      sample rate
- * @property {Number}  loopStart               start of loop
- * @property {Number}  loopEnd                 end of loop
- * @property {Number}  indexOfGroup            index of the Set/group the song is in
- * @property {Boolean} [isToFile=false]        if it's the toFile function
- * @property {Boolean} [isStartPlayer=false]   if it's the startPlayer function
- * @property {Boolean} [onlySampleCount=false] if it should return just the sample count of the song and do nothing else
- * @property {Boolean} [onlyDuration=false]    if it should return just the duration of the song and do nothing else
+ * @property {Number}  [loopAmount=0]             the loop amount
+ * @property {Number}  [volume=100/100]           the volume to set
+ * @property {String}  midiFile                   midi file
+ * @property {String}  soundfontFile              soundfont file
+ * @property {Number}  [sampleRate=48000]         sample rate
+ * @property {Number}  loopStart                  start of loop
+ * @property {Number}  loopEnd                    end of loop
+ * @property {Number}  indexOfGroup               index of the Set/group the song is in
+ * @property {Boolean} [isToFile=false]           if it's the toFile function
+ * @property {Boolean} [isStartPlayer=false]      if it's the startPlayer function
+ * @property {Boolean} [onlySampleCount=false]    if it should return just the sample count of the song and do nothing else
+ * @property {Boolean} [onlyDuration=false]       if it should return just the duration of the song and do nothing else
+ * @property {Object}  spessasynthLogging
+ * @property {Boolean} spessasynthLogging.info    if it should show spessasynth's info logs
+ * @property {Boolean} spessasynthLogging.warning if it should show spessasynth's warning logs
  */
 /**
  * @typedef effectsObjectParams

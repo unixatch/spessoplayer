@@ -29,14 +29,16 @@ if (!process.argv.includes("--verbose")) {
     "-i2", manualMidi,        // Manually adding files
     "-i2", manualSoundfont,
     ...generalCliArguments(),
-    ...perSongCliArguments
+    ...perSongCliArguments,
+    "--enable-spessasynth-warn-logging"
   ];
   addOptionalCliArguments(args)
 
   // Manually setting options at indexes
   const positionalArgs = [];
   for (let i = args.indexOf("--verbose")+1; i < args.length; i++) {
-    if (args[i] === "-lf") continue;
+    if (args[i] === "-lf"
+        || args[i] === "--enable-spessasynth-warn-logging") continue;
     if (args[i].startsWith("-")) {
       positionalArgs.push(args[i]+indexOfParameter)
       continue;

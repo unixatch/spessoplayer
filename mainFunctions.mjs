@@ -396,14 +396,19 @@ async function initSpessaSynth({
   index, indexOfGroup,
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
-  isStartPlayer = false
+  isStartPlayer = false, spessasynthLogging
 }) {
   const {
     BasicMIDI,
     SoundBankLoader,
     SpessaSynthProcessor,
-    SpessaSynthSequencer
+    SpessaSynthSequencer,
+    SpessaSynthLogging
   } = SpessaSynth ??= await import("spessasynth_core");
+  if (onlySampleCount || onlyDuration || isToFile) {
+    const { info, warning } = spessasynthLogging;
+    SpessaSynthLogging(info, warning, false)
+  }
 
   let midi;
   try {
@@ -928,6 +933,7 @@ async function toStdout({
  * Reads the generated samples from spessasynth_core
  * and renders them to a wav file
  * @param {Object}      toFileObjectParameters
+ * @param {Boolean}     toFileObjectParameters.spessasynthLogging      if it should print spessasynth's logs
  * @param {Boolean}     toFileObjectParameters.createNewFileNameAnyway if it's necessary to create a new file name
  * @param {Number}      toFileObjectParameters.index                   index of the song
  * @param {Object}      toFileObjectParameters.progressBuffers         progress shared buffers used by Progress class
@@ -937,6 +943,7 @@ async function toStdout({
  * @return {Promise<module:typeDefinitions~toFileArray>} array that contains the fileOutputs array and a promise
  */
 async function toFile({
+  spessasynthLogging,
   createNewFileNameAnyway, index,
   progressBuffers,
   options, options: {
@@ -962,7 +969,8 @@ async function toFile({
       synthFloat,
       sampleCountFloat;
   const initSpessaSynthObjParam = {
-    index, ...options, isToFile: true
+    index, ...options,
+    spessasynthLogging, isToFile: true
   };
   if (!onlyFloat) {
     const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
@@ -1207,8 +1215,9 @@ class Progress {
  * Reads the generated samples from spessasynth_core
  * and plays them using mpv
  * @param {Options} Options Options class
+ * @param {Boolean} spessasynthLogging if spessasynth's logging system should be enabled
  */
-async function startPlayer(Options) {
+async function startPlayer(Options, spessasynthLogging) {
   const {
     files: filesList,
     sampleRate,
@@ -1236,7 +1245,8 @@ async function startPlayer(Options) {
           options = Options.getOptionsOfSong(realIndex);
     const length = await initSpessaSynth({
       index: realIndex, ...options,
-      onlySampleCount: true, isStartPlayer: true
+      onlySampleCount: true, isStartPlayer: true,
+      spessasynthLogging
     });
     if (length === null) {
       res.statusCode = 204;

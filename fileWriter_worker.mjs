@@ -19,14 +19,17 @@ let processToClose;
  * @param {Object} workerDataObj.FO_CONSTANTS
  * @param {Number} workerDataObj.index
  * @param {Number} workerDataObj.filesListLength
+ * @param {Boolean} workerDataObj.spessasynthLogging
  */
 async function runTask({
   progressBuffers, options,
-  FO_CONSTANTS, index, filesListLength
+  FO_CONSTANTS, index, filesListLength,
+  spessasynthLogging
 }) {
   processToClose?.stdin?.end()
 
   const toFileValue = await toFile({
+    spessasynthLogging,
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
     progressBuffers,
     index, options, FO_CONSTANTS

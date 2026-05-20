@@ -99,6 +99,14 @@ can be useful when trying to debug with log options
 #### &nbsp;&nbsp;-v **n**, /v **n**:
 Sets the verbosity (*default: 2*)
 
+### --enable-spessasynth[-warn|-info]-logging:
+Enables spessasynth's logging system,
+basically only used for debugging.
+
+It can be used in 2 ways:
+- Info and warn enabled
+- Only 1 of the two types enabled
+
 ### --log-file[=path], /log-file[=path],
 #### &nbsp;&nbsp;-lf[=path], /lf[=path]:
 Sets path to the log file (*default: ./spesso.log*)
