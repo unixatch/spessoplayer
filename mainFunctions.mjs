@@ -424,6 +424,14 @@ async function initSpessaSynth({
     }
     return null;
   }
+  if (midi.duration <= .2) {
+    if (!onlySampleCount && !onlyDuration || isStartPlayer) {
+      log(WARNING_LVL,
+        midiFile,
+        " has a duration <= 200 ms, looping will be disabled"
+      )
+    }
+  }
 
   if (!onlySampleCount && !onlyDuration) {
     // Memory cleanup
@@ -953,15 +961,18 @@ async function toFile({
       seqFloat,
       synthFloat,
       sampleCountFloat;
+  const initSpessaSynthObjParam = {
+    index, ...options, isToFile: true
+  };
   if (!onlyFloat) {
-    const initSpessaSynthObj = await initSpessaSynth({ index, ...options, isToFile: true });
+    const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
     if (initSpessaSynthObj === null) return null;
     ({
       seq, synth, sampleCount
     } = initSpessaSynthObj);
   }
   if (hasf32le) {
-    const initSpessaSynthObj = await initSpessaSynth({ index, ...options, isToFile: true });
+    const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
     if (initSpessaSynthObj === null) return null;
     ({
       seq: seqFloat,
