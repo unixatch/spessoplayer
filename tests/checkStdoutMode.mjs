@@ -20,9 +20,9 @@ if (process.argv.includes("-h")) {
 }
 
 process.on("SIGINT", () => {
+  process.exitCode = 130;
   realTest?.kill()
-  console.log(grayedOutText, "Closed tester with Ctrl+c")
-  process.exit(130)
+  console.log(grayedOutText, " Closed tester with Ctrl+c")
 })
 // Other arguments and run it
 const args = [
@@ -48,7 +48,10 @@ await new Promise((resolve, reject) => {
   realTest.once("exit", resolve)
   realTest.once("error", reject)
 })
-  .then(process.exit)
+  .then(exitCode => {
+    if (process.exitCode === 130) return process.exit();
+    process.exit(exitCode)
+  })
   .catch(error => {
     console.error(error)
     process.exit(error.errno)
