@@ -1,0 +1,131 @@
+# Copyright (C) 2026  unixatch
+#
+#   it under the terms of the GNU General Public License as published by
+#   This program is free software: you can redistribute it and/or modify
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with spessoplayer.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+_spessoplayer() {
+  # Enables file/folder completion when COMPREPLY is empty
+  compopt -o default -o bashdefault
+
+  case $3 in
+    --input | -i | --input[0-9]* | -i[0-9]*) ;;
+    --log-file | -lf) ;;
+
+    --volume | \
+    --reverb-volume | \
+    -vol | -rvb | \
+    --volume[0-9]* | \
+    --reverb-volume[0-9]* | \
+    -vol[0-9]* | \
+    -rvb[0-9]*)
+      COMPREPLY=({0..100})
+    ;;
+    --effects | -e | --effects[0-9]* | -e[0-9]*)
+      COMPREPLY=(
+        "firfit"      "flanger"    "bass"
+        "loudness"    "lowpass"    "compand"
+        "mcompand"    "noiseprof"  "dither"
+        "allpass"     "band"       "echos"
+        "bandpass"    "bandreject" "fir"
+        "bend"        "biquad"     "ladspa"
+        "chorus"      "channels"   "overdrive"
+        "contrast"    "dcshift"    "remix"
+        "deemph"      "delay"      "sinc"
+        "divide"      "downsample" "stats"
+        "earwax"      "echo"       "treble"
+        "equalizer"   "fade"       "vol"
+        "gain"        "highpass"   "repeat"
+        "hilbert"     "input"
+        "noisered"    "norm"
+        "oops"        "output"
+        "pad"         "phaser"
+        "pitch"       "rate"
+        "reverb"      "reverse"
+        "riaa"        "silence"
+        "spectrogram" "speed"
+        "splice"      "stat"
+        "stretch"     "swap"
+        "synth"       "tempo"
+        "tremolo"     "trim"
+        "upsample"    "vad"
+      )
+    ;;
+    --loop | \
+    --loop-start | \
+    --loop-end | \
+    -l | -ls | -le | \
+    --loop[0-9]* | \
+    --loop-start[0-9]* | \
+    --loop-end[0-9]* | \
+    -l[0-9]* | \
+    -ls[0-9]* | \
+    -le[0-9]*)
+      COMPREPLY=({0..10})
+    ;;
+    --sample-rate | \
+    -r | \
+    --sample-rate[0-9]* | \
+    -r[0-9]*)
+      COMPREPLY=({0..96000})
+    ;;
+    --threads | -T | --max-threads | -mt)
+      COMPREPLY=({1..16})
+    ;;
+    --format | -f)
+      COMPREPLY=(
+        "wav"
+        "flac" "mp3"
+        "pcm" "f32le"
+      )
+    ;;
+    --text-delay | -d)
+      COMPREPLY=({50..10000})
+    ;;
+    --verbose | -v)
+      COMPREPLY=({0..3})
+    ;;
+  esac
+  [[ -n "${COMPREPLY[*]}" || $2 != -* ]] && return 0
+
+  mapfile -t COMPREPLY <<< "${
+    compgen -W '
+      --input         -i
+      --volume        -vol
+      --reverb-volume -rvb
+      --effects       -e
+      --loop          -l
+      --loop-start    -ls
+      --loop-end      -le
+      --sample-rate   -r
+      --format        -f
+      --max-threads   -mt
+      --threads       -T
+      --show-usage    -U
+      --text-delay    -d
+      --no-progress   -np
+      --ask           -a   --confirm -c
+      --no-table      -nt
+      --dry-run       -dr  --test -t --null -0
+      --verbose       -v
+      --log-file      -lf
+      --uninstall     -u
+      --help          -h
+      --version       -V
+      --enable-spessasynth-logging
+      --enable-spessasynth-warn-logging
+      --enable-spessasynth-info-logging
+    ' -- "$2"
+  }"
+  return 0
+} && complete -F _spessoplayer spessoplayer
