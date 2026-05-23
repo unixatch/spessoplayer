@@ -39,6 +39,7 @@ let readline,
  * @param {String} [noInstallMsg=""] - the message to show when the user refuses to install it
  */
 async function runCheck(program, noInstallMsg = "") {
+  let exists = true;
   try {
     runProgramSync({ spawnSync, program })
   } catch (e) {
@@ -50,42 +51,44 @@ async function runCheck(program, noInstallMsg = "") {
       )
       process.exit(1)
     }
-    console.warn(
-      normalYellow+underline+"%s"+normal+normalYellow+" %s"+normal,
-      program, "is not installed or it's not visible globally"
-    )
-    if (!readline) {
-      readline = await import("readline/promises");
-      ({ stdin, stdout, stderr } = process);
-    }
-
-    async function question() {
-      let answer;
-      try {
-        const rl = readline.createInterface({ input: stdin, output: stdout });
-        answer = await rl.question("Do you want to install it [Y|n]? ");
-        rl.close()
-      } catch (e2) {
-        if (e2.name === "AbortError") {
-          console.error(
-            formatStrings.grayedOutText,
-            "\nInstallation of dependencies interrupted with Ctrl+c"
-          )
-          process.exit(2)
-        }
-      }
-      //                                    ↓ In case it's empty
-      if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) {
-        return tryToInstall(program, spawnSync, { stdout, stderr })
-      }
-      if (/^(?:n|no)$/i.test(answer)) {
-        console.warn(normalYellow+noInstallMsg+normal)
-      }
-      clearLastLines(-1)
-      return await question();
-    }
-    await question();
+    exists = false;
   }
+  if (exists) return;
+
+  console.warn(
+    normalYellow+underline+"%s"+normal+normalYellow+" %s"+normal,
+    program, "is not installed or it's not visible globally"
+  )
+  readline ??= await import("readline/promises");
+
+  async function question() {
+    let answer;
+    try {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      answer = await rl.question("Do you want to install it [Y|n]? ");
+      rl.close()
+    } catch (e2) {
+      if (e2.name === "AbortError") {
+        console.error(
+          formatStrings.grayedOutText,
+          "\nInstallation of dependencies interrupted with Ctrl+c"
+        )
+        process.exit(2)
+      }
+    }
+    //                                    ↓ In case it's empty
+    if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) {
+      return tryToInstall(program, spawnSync, {
+        stdout: process.stdout, stderr: process.stderr
+      })
+    }
+    if (/^(?:n|no)$/i.test(answer)) {
+      console.warn(normalYellow+noInstallMsg+normal)
+    }
+    clearLastLines(-1)
+    return await question();
+  }
+  await question();
 }
 // ffmpeg check
 await runCheck(
