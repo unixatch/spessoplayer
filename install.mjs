@@ -56,7 +56,7 @@ async function runCheck(program, noInstallMsg = "") {
     )
     if (!readline) {
       readline = await import("readline/promises");
-      ({ stdin, stdout, stderr } = await import ("process"));
+      ({ stdin, stdout, stderr } = process);
     }
 
     async function question() {

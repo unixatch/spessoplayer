@@ -1336,6 +1336,7 @@ async function startPlayer(Options, spessasynthLogging) {
   const mpv = spawn("mpv", [
     ...msgLevel,
     "-ytdl=no", // so that it doesn't retry twice
+    "--prefetch-playlist=yes",
     ...isRawAudio,
     ...listOfURLs
   ], { stdio: "inherit" });

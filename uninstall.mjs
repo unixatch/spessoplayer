@@ -44,7 +44,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
 
     if (!readline) {
       readline = await import("readline/promises");
-      ({ stdin, stdout, stderr } = await import ("process"));
+      ({ stdin, stdout, stderr } = process);
     }
 
     const rl = readline.createInterface({ input: stdin, output: stdout });
