@@ -646,80 +646,22 @@ function addEvent({ eventType, func }) {
       return addAndCheckEvent("SIGINT", func);
     }
     case "SIGINT": {
-      function SIGINTFunction() {
+      return addAndCheckEvent("SIGINT", () => {
         console.error(
           formatStrings.grayedOutText,
           "\nClosed with Ctrl+c"
         )
         global.SIGINT = true;
         if (process.argv.includes("-")) process.exit(130)
-      }
-      return addAndCheckEvent("SIGINT", SIGINTFunction);
+      });
     }
     case "stdoutExit": {
-      return new Promise(resolve => {
-        if (child_process) return resolve(child_process.spawnSync);
+      return addAndCheckEvent("exit", () => {
+        if (!doneStreaming && !global.SIGINT) return;
 
-        import("child_process")
-          .then(module => {
-            child_process ??= module;
-            resolve(module.spawnSync)
-          })
-      }).then(spawnSync => {
-        function stdoutExit() {
-          if (!doneStreaming && !global.SIGINT) return;
-
-          // Necessary for programs like mpv
-          const commandToSend = (
-            (process.platform === "win32")
-              ? () => spawnSync("taskkill", [
-                  "/PID", process.pid, "/T", "/F"
-                ])
-              : () => process.kill(process.pid, "SIGKILL")
-          );
-          const argumentsForCommand = [],
-                searchCommand = (process.platform === "win32") ? "tasklist" : "ps";
-          let regexForCommand;
-
-          // Windows
-          if (process.platform === "win32") {
-            const arrayOfProgramsWinVersion = ["mpv.exe"];
-            regexForCommand = new RegExp(
-              `(?:${arrayOfProgramsWinVersion.join("|")})\\s*(?<pid>\\d+)`,
-              "g"
-            );
-          } else {
-            // Unix
-            const arrayOfPrograms = ["mpv"];
-            argumentsForCommand.push(
-              "-o", "pid,comm",
-              "-C", "node,"+arrayOfPrograms.join(",")
-            )
-            regexForCommand = new RegExp(
-              `(?<pid>\\d+) (?:${arrayOfPrograms.join("|")})`,
-              "g"
-            );
-          }
-
-          // Get PIDs by group name ?<pid>
-          const iteratorObject = (
-            spawnSync(searchCommand, argumentsForCommand)
-               .stdout.toString()
-               .matchAll(regexForCommand)
-               .map(i => i.groups)
-          );
-          // If it matches something,
-          // check whether it's a connected pipe to the program before SIGKILLing
-          for (const foundProgram of iteratorObject) {
-            const pid = Number(foundProgram.pid);
-            if (pid >= process.pid && pid <= process.pid+20
-                || process.platform === "win32") {
-              commandToSend()
-              break;
-            }
-          }
-        }
-        return addAndCheckEvent("exit", stdoutExit);
+        // Necessary for programs like mpv
+        // (e.g. input controls don't work without this)
+        fs.close(0); fs.close(1); fs.close(2)
       });
     }
   }
