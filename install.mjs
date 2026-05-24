@@ -25,7 +25,8 @@ const {
   clearLastLines,
   formatStrings,
   runProgramSync,
-  tryToInstall
+  tryToInstall,
+  manageAutocomplete
 } = await import("./utils/install_uninstall.mjs");
 
 let readline,
@@ -105,4 +106,56 @@ await runCheck(
   "mpv",
   "Continuing installation, but you'll get errors when trying to play songs directly"
 )
+
+// Auto-complete installation
+const { platform } = process;
+const isUnix = (
+  platform === "darwin"  ||
+  platform === "linux"   ||
+  platform === "android"
+);
+let zshFailed = false;
+const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${normal+gray} %s${normal}`;
+
+/**
+ * Manages errors that occur in the try block
+ * @param {String} shell   shell being checked
+ * @param {Error}  error   Error object
+ * @param {String} message message to print
+ */
+function manageAutocompleteErrors(shell, error, message) {
+  if (error.message !== "Program doesn't exist") {
+    console.error(formatStrings.errorText, error)
+    process.exit(1)
+  }
+  if (!isUnix) return;
+
+  console.error(autoCompleteErrorMessageFormat,
+    "[autocomplete]:", shell, message
+  )
+  if (shell === "zsh") zshFailed = true;
+}
+
+// zsh auto-complete
+try {
+  runProgramSync({ spawnSync, program: "zsh" })
+  await manageAutocomplete("zsh", isUnix)
+} catch (error) {
+  manageAutocompleteErrors("zsh", error,
+    "was not found, moving on to bash..."
+  )
+}
+// bash auto-complete
+try {
+  runProgramSync({ spawnSync, program: "bash" })
+  await manageAutocomplete("bash", isUnix)
+} catch (error) {
+  manageAutocompleteErrors("bash", error,
+    `was not found${
+      zshFailed
+        ? ", no autocomplete will be installed"
+        : ""
+    }`
+  )
+}
 
