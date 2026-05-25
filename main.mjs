@@ -130,7 +130,7 @@ if (isToStdout) {
     processingMessageCleaned = true;
   }
   const {
-    sampleRate: stdoutSampleRate,
+    sampleRate: stdoutSampleRate = 48000,
     format: stdoutFormat,
     effects: effectsList, reverbVolume
   } = listOfOptions;
@@ -166,9 +166,9 @@ if (isToStdout) {
   // Creating the header
   const sumOfLengths = (index, previous) => index + previous;
   const stdoutHeader = getWavHeader({
-    length: lengthOfFiles.reduce(sumOfLengths),
+    length: lengthOfFiles.reduce(sumOfLengths, 0),
     numChannels: 2
-  }, stdoutSampleRate ?? 48000);
+  }, stdoutSampleRate);
 
   const ffmpegFormats   = /(?:flac|mp3)/,
         losslessFormats = /(?:pcm|s16le|f32le)/;
