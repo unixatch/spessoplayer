@@ -255,12 +255,15 @@ async function manageAutocomplete(shell, isUnix) {
     isZsh ? "_spessoplayer" : "spessoplayer"
   );
 
-  if (!existsSync(destination)) symlinkSync(
-    isZsh
-      ? process.cwd() + "/zsh_completion"
-      : process.cwd() + "/bash_completion",
-    destination
-  )
+  if (!existsSync(destination)) {
+    symlinkSync(
+      isZsh
+        ? process.cwd() + "/zsh_completion"
+        : process.cwd() + "/bash_completion",
+      destination
+    )
+    return true;
+  }
 }
 
 export {

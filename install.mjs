@@ -116,7 +116,8 @@ const isUnix = (
 );
 let zshFailed = false;
 const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${normal+gray} %s${normal}`,
-      installedMessageFormat = `${green}[autocomplete]: Successfully installed %s auto-completion${normal}`;
+      installedMessageFormat = `${green}[autocomplete]: Successfully installed ${underline}%s${normal+green} auto-completion${normal}`,
+      existingInstallationMessageFormat = `${normalYellow}[autocomplete]: ${underline}%s${normal+normalYellow} auto-completion already installed${normal}`;
 
 /**
  * Manages errors that occur in the try block
@@ -140,8 +141,11 @@ function manageAutocompleteErrors(shell, error, message) {
 // zsh auto-complete
 try {
   runProgramSync({ spawnSync, program: "zsh" })
-  await manageAutocomplete("zsh", isUnix)
-  console.log(installedMessageFormat, "zsh")
+  if (await manageAutocomplete("zsh", isUnix)) {
+    console.log(installedMessageFormat, "zsh")
+  } else {
+    console.log(existingInstallationMessageFormat, "zsh")
+  }
 } catch (error) {
   manageAutocompleteErrors("zsh", error,
     "was not found, moving on to bash..."
@@ -150,8 +154,11 @@ try {
 // bash auto-complete
 try {
   runProgramSync({ spawnSync, program: "bash" })
-  await manageAutocomplete("bash", isUnix)
-  console.log(installedMessageFormat, "bash")
+  if (await manageAutocomplete("bash", isUnix)) {
+    console.log(installedMessageFormat, "bash")
+  } else {
+    console.log(existingInstallationMessageFormat, "bash")
+  }
 } catch (error) {
   manageAutocompleteErrors("bash", error,
     `was not found${
