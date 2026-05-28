@@ -235,7 +235,7 @@ async function manageAutocomplete(shell, isUnix) {
   if (!isUnix) return;
 
   const {
-    existsSync, cpSync
+    existsSync, symlinkSync
   } = await import("fs");
   const {
     env: { TERMUX__ROOTFS_DIR }
@@ -251,12 +251,14 @@ async function manageAutocomplete(shell, isUnix) {
       ? "share/zsh/site-functions"
       : "share/bash-completion/completions"
   }`;
-  const destination = completionFolder+(
+  const destination = completionFolder+"/"+(
     isZsh ? "_spessoplayer" : "spessoplayer"
   );
 
-  if (!existsSync(destination)) cpSync(
-    isZsh ? "./zsh_completion" : "./bash_completion",
+  if (!existsSync(destination)) symlinkSync(
+    isZsh
+      ? process.cwd() + "/zsh_completion"
+      : process.cwd() + "/bash_completion",
     destination
   )
 }
