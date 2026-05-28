@@ -115,7 +115,8 @@ const isUnix = (
   platform === "android"
 );
 let zshFailed = false;
-const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${normal+gray} %s${normal}`;
+const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${normal+gray} %s${normal}`,
+      installedMessageFormat = `${green}[autocomplete]: Successfully installed %s auto-completion${normal}`;
 
 /**
  * Manages errors that occur in the try block
@@ -140,6 +141,7 @@ function manageAutocompleteErrors(shell, error, message) {
 try {
   runProgramSync({ spawnSync, program: "zsh" })
   await manageAutocomplete("zsh", isUnix)
+  console.log(installedMessageFormat, "zsh")
 } catch (error) {
   manageAutocompleteErrors("zsh", error,
     "was not found, moving on to bash..."
@@ -149,6 +151,7 @@ try {
 try {
   runProgramSync({ spawnSync, program: "bash" })
   await manageAutocomplete("bash", isUnix)
+  console.log(installedMessageFormat, "bash")
 } catch (error) {
   manageAutocompleteErrors("bash", error,
     `was not found${
