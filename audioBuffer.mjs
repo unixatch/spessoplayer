@@ -19,11 +19,13 @@
  * @module audioBuffer
  */
 
-import {
-  IndexedByteArray,
-  DEFAULT_WAV_WRITE_OPTIONS
-} from "spessasynth_core"
+import { IndexedByteArray } from "spessasynth_core"
 // This section is identical to what's inside spessasynth_core but not being exported, that's why it's here
+const DEFAULT_WAV_WRITE_OPTIONS = {
+  normalizeAudio: true,
+  loop: void 0,
+  metadata: {}
+};
 function fillWithDefaults(obj, defObj) {
   return { ...defObj, ...obj ?? {} };
 }

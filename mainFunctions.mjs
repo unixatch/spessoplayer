@@ -403,11 +403,12 @@ async function initSpessaSynth({
     SoundBankLoader,
     SpessaSynthProcessor,
     SpessaSynthSequencer,
-    SpessaSynthLogging
+    SpessaLog
   } = SpessaSynth ??= await import("spessasynth_core");
   if (onlySampleCount || onlyDuration || isToFile) {
     const { info, warning } = spessasynthLogging;
-    SpessaSynthLogging(info, warning, false)
+    SpessaLog.infoEnabled = info;
+    SpessaLog.warnEnabled = warning;
   }
 
   let midi;
@@ -490,8 +491,8 @@ async function initSpessaSynth({
     enableEventSystem: false,
     enableEffects: false
   });
-  synth.setMasterParameter("masterGain", volume)
-  synth.soundBankManager.addSoundBank(
+  synth.setSystemParameter("gain", volume)
+  synth.synthCore.soundBankManager.addSoundBank(
     soundFontList[indexOfGroup],
     "main"
   )
@@ -858,7 +859,8 @@ async function toStdout({
       finished(readStream, { cleanup: true })
         .then(() => {
           doneStreaming = true;
-          synth.soundBankManager.soundBankList.splice(0)
+          synth.synthCore
+            .soundBankManager.soundBankList.splice(0)
           synth.destroySynthProcessor()
           return [
             promisesOfPrograms, pipingFunction,
@@ -1006,8 +1008,10 @@ async function toFile({
         readStream    && finished(readStream,    finishedOptions)
       ])
         .then(() => {
-          synth?.soundBankManager.soundBankList.splice(0)
-          synthFloat?.soundBankManager.soundBankList.splice(0)
+          synth?.synthCore
+            ?.soundBankManager?.soundBankList.splice(0)
+          synthFloat?.synthCore
+            ?.soundBankManager?.soundBankList.splice(0)
           synth?.destroySynthProcessor()
           synthFloat?.destroySynthProcessor()
           if (seq) seq.songs.length = 0;
