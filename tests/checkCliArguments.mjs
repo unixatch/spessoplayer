@@ -24,10 +24,10 @@ if (process.argv.includes("-h")) {
 const indexOfParameter = "2";
 if (!process.argv.includes("--verbose")) {
   const args = [
-    ...globs.midis,           // Automatically adding files
-    ...globs.soundfonts,
     "-i2", manualMidi,        // Manually adding files
     "-i2", manualSoundfont,
+    ...globs.midis,           // Automatically adding files
+    ...globs.soundfonts,
     ...generalCliArguments(),
     ...perSongCliArguments,
     "--enable-spessasynth-warn-logging"

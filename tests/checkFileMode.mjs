@@ -27,10 +27,10 @@ process.on("SIGINT", () => {
 // Other arguments and run it
 const args = [
   "--enable-spessasynth-warn-logging",
-  ...globs.midis,         // Automatically adding files
-  ...globs.soundfonts,
   "-i2", manualMidi,      // Manually adding files
   "-i2", manualSoundfont,
+  ...globs.midis,         // Automatically adding files
+  ...globs.soundfonts,
   ...generalCliArguments("toFile"),
   ...(process.argv.includes("-ps") ? perSongCliArguments : []),
   "out.wav"
