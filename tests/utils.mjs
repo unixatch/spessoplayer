@@ -34,8 +34,14 @@ if (!process.argv.includes("-h")) {
 }
 
 function addOptionalArgumentsToStdout(args) {
+  // Confirmation
+  if (process.argv.includes("-a"))   args.push("-a")
+  if (process.argv.includes("-nt"))  args.push("-nt")
+  // Format
   if (process.argv.includes("-f"))   args.push("-f", "flac")
+  // SoX reverb effect
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
+  // Looping
   if (process.argv.includes("-l"))   args.push("-l", "1")
   return args;
 }
@@ -44,11 +50,18 @@ function addOptionalArgumentsToFile(args) {
     "out.flac", "out.mp3",
     "out.pcm"
   )
+  // Confirmation
+  if (process.argv.includes("-a"))   args.push("-a")
+  if (process.argv.includes("-nt"))  args.push("-nt")
+  // Progress options
   if (process.argv.includes("-U"))   args.push("-U")
   if (process.argv.includes("-d"))   args.push("-d=1000")
   if (process.argv.includes("-np"))  args.push("-np")
+  // SoX reverb effect
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
+  // Looping
   if (process.argv.includes("-l"))   args.push("-l", "1")
+  // Threads count
   if (process.argv.includes("-T"))   args.push("-T", "4")
   return args;
 }
