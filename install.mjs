@@ -66,7 +66,9 @@ async function runCheck(program, noInstallMsg = "") {
     let answer;
     try {
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      answer = await rl.question("Do you want to install it [Y|n]? ");
+      answer = await rl.question(
+        `[${underline+program+normal}]: Do you want to install it [Y|n]? `
+      );
       rl.close()
     } catch (e2) {
       if (e2.name === "AbortError") {
@@ -77,14 +79,15 @@ async function runCheck(program, noInstallMsg = "") {
         process.exit(2)
       }
     }
-    //                                    ↓ In case it's empty
-    if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) {
-      return tryToInstall(program, spawnSync, {
-        stdout: process.stdout, stderr: process.stderr
-      })
-    }
-    if (/^(?:n|no)$/i.test(answer)) {
-      console.warn(normalYellow+noInstallMsg+normal)
+    switch (answer.trim().toLowerCase()) {
+      // In case it's empty
+      case "":
+      case "y": case "yes":
+        return tryToInstall(program, spawnSync, {
+          stdout: process.stdout, stderr: process.stderr
+        })
+      case "n": case "no":
+        return console.warn(normalYellow+noInstallMsg+normal);
     }
     clearLastLines(-1)
     return await question();
@@ -138,11 +141,13 @@ function manageAutocompleteErrors(shell, error, message) {
   if (shell === "zsh") zshFailed = true;
 }
 
+let someAutoCompleteInstalled = false;
 // zsh auto-complete
 try {
   runProgramSync({ spawnSync, program: "zsh" })
   if (await manageAutocomplete("zsh", isUnix)) {
     console.log(installedMessageFormat, "zsh")
+    someAutoCompleteInstalled = true;
   } else {
     console.log(existingInstallationMessageFormat, "zsh")
   }
@@ -156,6 +161,7 @@ try {
   runProgramSync({ spawnSync, program: "bash" })
   if (await manageAutocomplete("bash", isUnix)) {
     console.log(installedMessageFormat, "bash")
+    someAutoCompleteInstalled ||= true;
   } else {
     console.log(existingInstallationMessageFormat, "bash")
   }
@@ -166,6 +172,12 @@ try {
         ? ", no autocomplete will be installed"
         : ""
     }`
+  )
+}
+if (someAutoCompleteInstalled) {
+  console.log(
+    formatStrings.noteText,
+    "NOTE: Restart your shell if auto-complete doesn't work"
   )
 }
 

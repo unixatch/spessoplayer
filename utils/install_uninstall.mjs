@@ -50,8 +50,7 @@ const clearLastLines = lineY => {
  */
 function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) {
   const code = spawnSync(
-    program,
-    args,
+    program, args,
     { stdio: stdioArray }
   )?.error?.code
 
@@ -61,6 +60,7 @@ function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) 
 }
 export const formatStrings = {
   errorText: red+"%s"+normal,
+  noteText: normalYellow+"%s"+normal,
   warningText: yellow+"%s"+normal,
   grayedOutText: gray+"%s"+normal
 };
@@ -267,6 +267,7 @@ async function manageAutocomplete(shell, isUnix) {
 }
 
 export {
+  clearLastLines,
   runProgramSync,
   tryToInstall,
   tryToUninstall,

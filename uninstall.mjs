@@ -48,27 +48,28 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
       input: process.stdin, output: process.stdout
     });
     const isSox = (program === "sox") ? "[Y|n]" : "[y|N]";
-    const answer = await rl.question("Do you want to uninstall it " + isSox + "? ");
+    const answer = await rl.question(
+      `[${underline+program+normal}]: Do you want to uninstall it ${isSox}? `
+    );
     rl.close()
 
-    //      ↓ In case it's empty
-    if (!/^\s*$/.test(answer)) {
-      if (program === "sox") {
+    switch (answer.trim().toLowerCase()) {
+      case "y": case "yes":
         return tryToUninstall(program, spawnSync, {
           stdout: process.stdout, stderr: process.stderr
         });
-      }
-      return console.warn(normalYellow + noUninstallMsg + normal)
-    }
-    if (/^(?:y|yes)$/i.test(answer)) {
-      return tryToUninstall(program, spawnSync, {
-        stdout: process.stdout, stderr: process.stderr
-      });
-    }
-    if (/^(?:n|no)$/i.test(answer)) {
-      console.warn(normalYellow + noUninstallMsg + normal)
-    }
+      case "n": case "no":
+        return console.warn(normalYellow + noUninstallMsg + normal);
 
+      case "":
+        // In case it's empty
+        if (program === "sox") {
+          return tryToUninstall(program, spawnSync, {
+            stdout: process.stdout, stderr: process.stderr
+          });
+        }
+        return console.warn(normalYellow + noUninstallMsg + normal)
+    }
     clearLastLines(-1)
     return await runCheck(program, noUninstallMsg, true);
   } catch (e) {
