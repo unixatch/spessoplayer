@@ -111,3 +111,18 @@ await runCheck(
   "Continuing uninstallation, keeping mpv"
 )
 
+// Auto-complete installation
+const { platform } = process;
+const isUnix = (
+  platform === "darwin"  ||
+  platform === "linux"   ||
+  platform === "android"
+);
+const removedMessageFormat = `${green}[autocomplete]: Successfully uninstalled ${underline}%s${normal+green} auto-completion${normal}`;
+if (await manageAutocomplete("zsh",  isUnix, true)) {
+  console.log(removedMessageFormat, "zsh")
+}
+if (await manageAutocomplete("bash", isUnix, true)) {
+  console.log(removedMessageFormat, "bash")
+}
+

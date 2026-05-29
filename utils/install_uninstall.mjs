@@ -230,12 +230,13 @@ function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
  * Tries to install auto completion scripts on Unix
  * @param {String}  shell  shell to manage
  * @param {Boolean} isUnix if it's a unix os
+ * @param {Boolean} [uninstall=false] if it should remove the symlink instead of adding it
  */
-async function manageAutocomplete(shell, isUnix) {
+async function manageAutocomplete(shell, isUnix, uninstall = false) {
   if (!isUnix) return;
 
   const {
-    existsSync, symlinkSync
+    existsSync, symlinkSync, unlinkSync
   } = await import("fs");
   const {
     env: { TERMUX__ROOTFS_DIR }
@@ -256,12 +257,16 @@ async function manageAutocomplete(shell, isUnix) {
   );
 
   if (!existsSync(destination)) {
+    if (uninstall) return;
     symlinkSync(
       isZsh
         ? process.cwd() + "/zsh_completion"
         : process.cwd() + "/bash_completion",
       destination
     )
+    return true;
+  } else if (uninstall) {
+    unlinkSync(destination)
     return true;
   }
 }
