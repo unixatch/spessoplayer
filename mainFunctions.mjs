@@ -1203,7 +1203,9 @@ async function startPlayer(Options, spessasynthLogging) {
     let effectsProcess,
         converterProcess;
     // Creating the header
-    const stdoutHeader = getWavHeader({ length, numChannels: 2 }, sampleRate ?? 48000);
+    const stdoutHeader = getWavHeader({
+      length, numChannels: 2
+    }, options.sampleRate ?? 48000);
 
     // Needed even if it's wrong because
     // otherwise mpv gives out a fatal error
