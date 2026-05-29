@@ -384,7 +384,7 @@ const {
   unlinkSync
 } = fs;
 for (let i = 0; i < filesListLength; i++) {
-  const [soundfontFile] = filesList[i] ?? 0;
+  const [soundfontFile] = filesList[i] ?? "";
   if (!soundfontFile) continue;
 
   promisesOfSharedFiles.push(
