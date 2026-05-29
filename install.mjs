@@ -44,6 +44,7 @@ async function runCheck(program, noInstallMsg = "") {
   try {
     runProgramSync({ spawnSync, program })
   } catch (e) {
+    // Other errors
     if (e.message !== "Program doesn't exist") {
       console.error(e)
       console.error(
@@ -52,6 +53,7 @@ async function runCheck(program, noInstallMsg = "") {
       )
       process.exit(1)
     }
+    // Normal error
     exists = false;
   }
   if (exists) return;
@@ -79,13 +81,14 @@ async function runCheck(program, noInstallMsg = "") {
         process.exit(2)
       }
     }
+    // Response to the answer
     switch (answer.trim().toLowerCase()) {
       // In case it's empty
       case "":
       case "y": case "yes":
         return tryToInstall(program, spawnSync, {
           stdout: process.stdout, stderr: process.stderr
-        })
+        });
       case "n": case "no":
         return console.warn(normalYellow+noInstallMsg+normal);
     }
