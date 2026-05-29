@@ -103,7 +103,7 @@ function log(level, ...messages) {
   const messageLength = message.length,
         escapeSequenceRemover = /\x1b\[[0-9;]*m/g;
 
-  for (let i = 1; i < messageLength; i++) {
+  for (let i = 0; i < messageLength; i++) {
     message[i] = message[i].replaceAll(escapeSequenceRemover, "");
   }
   message.push("\n")
