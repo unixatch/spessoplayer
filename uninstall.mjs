@@ -20,13 +20,14 @@
  * @module uninstall
  */
 
-const { spawnSync } = await import("child_process");
-const {
+import { spawnSync } from "child_process"
+import {
   clearLastLines,
   formatStrings,
   runProgramSync,
   tryToUninstall,
-} = await import("./utils/install_uninstall.mjs");
+  manageAutocomplete
+} from "./utils/install_uninstall.mjs"
 
 let readline,
     stdin,
