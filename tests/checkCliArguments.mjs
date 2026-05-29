@@ -90,12 +90,10 @@ await actUpOnPassedArgs(process.argv)
 console.log(Options.all)
 console.log(
   "Argv files:",
-  process.argv
-    .slice(2, process.argv.lastIndexOf("-i"+indexOfParameter)+2)
+  process.argv.slice(2, process.argv.lastIndexOf("-f"))
 )
 console.log(
   "other args:",
-  process.argv
-    .slice(process.argv.lastIndexOf("-i"+indexOfParameter)+2)
+  process.argv.slice(process.argv.lastIndexOf("-f"))
 )
 
