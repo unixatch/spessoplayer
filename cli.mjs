@@ -240,7 +240,7 @@ async function manageVerboseOptions({
       [index]: argvString,
       [index]: { 0: firstChar }
     } = newArguments;
-    if (firstChar === "-" || firstChar === "/") continue;
+    if (firstChar !== "-" && firstChar !== "/") continue;
     if (
       !argvString.startsWith("--log-file") &&
       !argvString.startsWith("/log-file") &&
