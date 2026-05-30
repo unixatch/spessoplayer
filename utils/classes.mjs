@@ -273,6 +273,13 @@ class EffectsOptions {
     )
   }
   /**
+   * Sets the stdout array of effects
+   * @param {Array} arrayOfObjects - an array of object effects
+   */
+  static set stdoutEffects(arrayOfObjects) {
+    addProperty(this, "stdoutEffects", arrayOfObjects, true)
+  }
+  /**
    * Change reverb's volume of a specific file
    * @param {Number} index - index of the file's option
    * @param {Number} number - the volume value as a float or integer

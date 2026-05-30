@@ -199,9 +199,9 @@ if (isToStdout) {
       stdoutHeader,
       stdout: converterProcess?.stdin ?? dryRunStream,
       promisesOfPrograms,
-      reverbVolume
-      // TODO: effects system needs to overhauled
-      //effects: listOfOptions?.effects[0]
+      reverbVolume,
+      effects: effectsList,
+      addErrorEventToDest: dest => dest.on("error", () => {})
     });
     log(INFO_LVL, "Done setting up SoX")
   } else if (needsConvertion) {

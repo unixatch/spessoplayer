@@ -549,7 +549,7 @@ const actUpOnPassedArgs = async args => {
       case "-e":       case "/e":
       case regexes.effects.test(arg) && arg: {
         lastIndex = arg.match(regexes.effects)?.groups;
-        setEffects(nextArg, lastIndex)
+        setEffects(nextArg, lastIndex, newArgumentsSet)
         i++
         break;
       }
@@ -991,9 +991,10 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
+ * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setEffects = (arg, lastIndex) => {
+const setEffects = (arg, lastIndex, newArgumentsSet) => {
   const regexListOfEffects = (
     "allpass|band|bandpass|bandreject|bass|bend|biquad" +
     "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
@@ -1039,7 +1040,11 @@ const setEffects = (arg, lastIndex) => {
       process.exit(1)
     }
 
-    Options.effects(Number(lastIndex?.index), list)
+    if (testFunctions.stdout(newArgumentsSet)) {
+      Options.stdoutEffects = list;
+    } else {
+      Options.effects(Number(lastIndex?.index), list)
+    }
     log(INFO_LVL, "Set list of SoX effects as ", JSON.stringify(list))
     return;
   }

@@ -161,6 +161,7 @@ async function formatManager({
           await applyEffects({
             program: "sox",
             stdoutHeader, readStream,
+            addErrorEventToDest,
             promisesOfPrograms,
             stdout: "ignore",
             destination: outFile,
@@ -233,6 +234,7 @@ async function formatManager({
         await applyEffects({
           program: "sox",
           stdoutHeader, readStream,
+          addErrorEventToDest,
           promisesOfPrograms,
           stdout: ffmpeg.stdin,
           effects, reverbVolume
@@ -520,6 +522,7 @@ async function initSpessaSynth({
 async function applyEffects({
   program,
   stdoutHeader, readStream,
+  addErrorEventToDest,
   promisesOfPrograms,
   stdout = process.stdout,
   destination = "-",
@@ -597,14 +600,18 @@ async function applyEffects({
   })
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
-      sox.once("exit", resolve)
-         .once("error", reject)
+      sox.once("exit", exitCode => {
+        if (!exitCode) return resolve(exitCode);
+        reject(`sox child_process closed with ${exitCode}\n`);
+      })
+      .once("error", reject)
     })
+      .catch(reason => log(DEBUG_LVL, reason))
   )
   log(DEBUG_LVL, "Added SoX promise")
 
   sox.stdin.write(stdoutHeader)
-  readStream?.pipe(sox.stdin)
+  addErrorEventToDest(readStream?.pipe(sox.stdin) ?? sox.stdin)
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
@@ -1235,7 +1242,10 @@ async function startPlayer(Options, spessasynthLogging) {
         stdout: converterProcess.stdin,
         promisesOfPrograms,
         reverbVolume: options.reverbVolume,
-        effects: options.effects
+        effects: options.effects,
+        addErrorEventToDest: (
+          dest => dest.on("error", () => mpv.kill())
+        )
       });
       log(INFO_LVL, "Done setting up SoX")
     } else if (needsConvertion) {

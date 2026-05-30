@@ -57,6 +57,7 @@
  * @param {String}              program                 the process to spawn, sox usually
  * @param {Stream}              stdoutHeader            the header to process
  * @param {Stream}              [readStream]            the data to process
+ * @param {Function}            addErrorEventToDest     adds the error event handler to sox's stdin
  * @param {Promise[]}           promisesOfPrograms      list of promises for ffmpeg and SoX
  * @param {Stream}              [stdout=process.stdout] the destination
  * @param {String}              [destination="-"]       the destination path

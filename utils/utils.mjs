@@ -366,6 +366,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Array of objects
+      case "stdoutEffects":
       case "effects": {
         if (!needsToBeSet) return;
 
@@ -383,6 +384,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
               throw new TypeError("effect property is not a string")
             }
           }
+        }
+        if (index === undefined && property === "stdoutEffects") {
+          property = "effects";
+          return setValue();
         }
         if (Number.isInteger(index)) setIndex(); else pushValue()
         break;
