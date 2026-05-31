@@ -1293,6 +1293,21 @@ const help = async ({ errorText = "" } = "") => {
       -i2 song.mid -i2 song2.mid -i2 soundfontfile.sf2`
     )}
 
+  Parameter Indexes:
+    Each parameter can take an optional index
+    that points to each song's index (${optional("n")})
+
+    The only exception is the input parameter
+    which instead points to a group index
+    (e.g. midi.mid and sf.sf2 as group 0 and so on)
+
+    If no index is provided, it can be:
+      ${underline}0${normal} or the ${underline}last index${normal} of the parameter
+
+    ${normalYellow+italics}NOTE${normal}: Some options in stdout mode don't let you
+    choose an index because it'd break audio players,
+    like for example sample-rate
+
   Available parameters:
     ${param(
       ["--input"+optional("n")+" "+grayBoldText("file"),
