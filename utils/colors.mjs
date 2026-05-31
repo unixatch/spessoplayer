@@ -32,8 +32,11 @@ const colors = {
   // Custom formatting
   normal:        `${esc}0m`,
   bold:          `${esc}1m`,
+  endBold:       `${esc}22m`,
   italics:       `${esc}3m`,
+  endItalics:    `${esc}23m`,
   underline:     `${esc}4m`,
+  endUnderline:  `${esc}24m`,
   // Actual colors
   yellow:        `${esc}33;1m`,
   normalYellow:  `${esc}33m`,
