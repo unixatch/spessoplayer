@@ -541,7 +541,7 @@ const actUpOnPassedArgs = async args => {
       case "-rvb":            case "/rvb":
       case regexes.reverbVolume.test(arg) && arg: {
         lastIndex = arg.match(regexes.reverbVolume)?.groups;
-        setReverb(nextArg, lastIndex)
+        setReverb(nextArg, lastIndex, newArgumentsSet)
         i++
         break;
       }
@@ -1101,25 +1101,34 @@ const setVolume = (arg, lastIndex) => {
 /**
  * Sets the Options.reverb variable
  * @param {String} arg - the volume in either percentage, decibels or decimals
+ * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setReverb = (arg, lastIndex) => {
+const setReverb = (arg, lastIndex, newArgumentsSet) => {
   const number = Number(arg),
         lastIndexNumber = Number(lastIndex?.index),
         lastIndexString = lastIndex?.index ?? "0";
 
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
-    Options.reverbVolume(lastIndexNumber, dBNumber)
-    Options.effects(lastIndexNumber, [])
+    if (testFunctions.stdout(newArgumentsSet)) {
+      Options.stdoutReverbVolume = dBNumber;
+    } else {
+      Options.reverbVolume(lastIndexNumber, dBNumber)
+      Options.effects(lastIndexNumber, [])
+    }
     log(INFO_LVL, `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     const toDB = 10 * 10**(percentage/100);
-    Options.reverbVolume(lastIndexNumber, toDB)
-    Options.effects(lastIndexNumber, [])
+    if (testFunctions.stdout(newArgumentsSet)) {
+      Options.stdoutReverbVolume = toDB;
+    } else {
+      Options.reverbVolume(lastIndexNumber, toDB)
+      Options.effects(lastIndexNumber, [])
+    }
     log(INFO_LVL, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
   }
@@ -1133,8 +1142,12 @@ const setReverb = (arg, lastIndex) => {
     process.exit(1)
   }
   if (isRealNumber(number, true)) {
-    Options.reverbVolume(lastIndexNumber, number)
-    Options.effects(Number(lastIndex?.index), [])
+    if (testFunctions.stdout(newArgumentsSet)) {
+      Options.stdoutReverbVolume = number;
+    } else {
+      Options.reverbVolume(lastIndexNumber, number)
+      Options.effects(Number(lastIndex?.index), [])
+    }
     log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
   }

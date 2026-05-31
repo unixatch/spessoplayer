@@ -307,6 +307,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       }
       // Numbers
       case "verboseLevel":
+      case "stdoutReverbVolume":
       case "reverbVolume":
       case "volume":
       case "sampleRate":
@@ -321,6 +322,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           value, "number", (needsAnArray) ? property : undefined
         )
         if (setter) {
+          if (property === "stdoutReverbVolume") {
+            property = "reverbVolume";
+          }
           setValue()
           break;
         }

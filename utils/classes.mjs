@@ -292,6 +292,13 @@ class EffectsOptions {
       number
     )
   }
+  /**
+   * Sets reverb's volume for stdout mode
+   * @param {Number} number - the volume value as a float or integer
+   */
+  static set stdoutReverbVolume(number) {
+    addProperty(this, "stdoutReverbVolume", number, true)
+  }
 }
 
 export let classes = [
