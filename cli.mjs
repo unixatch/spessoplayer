@@ -1208,21 +1208,27 @@ const uninstall = async () => {
   const uninstallScriptPath = join(import.meta.dirname, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
 
-  log(INFO_LVL, `Launched ${uninstallScriptPath}`)
   try {
+    log(INFO_LVL, `Launched ${uninstallScriptPath}`)
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
-  } catch (e) {
-    if (e.status !== 0 && e.status !== 2) {
-      console.error(
-        formatStrings.errorText,
-        `[uninstall]: Uninstallation interrupted with error ${e.status}`
-      )
-      process.exit(2)
+  } catch ({status}) {
+    switch (status) {
+      case 0: break;
+      case 2: process.exit(status);
+
+      default:
+        console.error(
+          formatStrings.errorText,
+          `[uninstall]: Uninstallation interrupted with error ${status}`
+        )
+        process.exit(status)
     }
-    if (e.status === 2) process.exit(2)
   }
   log(INFO_LVL, "Uninstalling spessoplayer")
-  execSync(`npm uninstall ${(isGloballyInstalled) ? "-g" : ""} spessoplayer`, { cwd: ".", stdio: "inherit" })
+  execSync(
+    `npm uninstall ${isGloballyInstalled ? "-g" : ""} spessoplayer`,
+    { cwd: ".", stdio: "inherit" }
+  )
 }
 /**
  * Shows the help text

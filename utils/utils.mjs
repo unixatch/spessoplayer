@@ -310,7 +310,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "reverbVolume":
       case "volume":
       case "sampleRate":
-      case "loopN":
       case "loopAmount":
       case "loopStart":
       case "maxThreads":
