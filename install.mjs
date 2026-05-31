@@ -59,7 +59,7 @@ async function runCheck(program, noInstallMsg = "") {
   if (exists) return;
 
   console.warn(
-    normalYellow+underline+"%s"+normal+normalYellow+" %s"+normal,
+    normalYellow+underline+"%s"+endUnderline+" %s"+normal,
     program, "is not installed or it's not visible globally"
   )
   readline ??= await import("readline/promises");
@@ -121,9 +121,9 @@ const isUnix = (
   platform === "android"
 );
 let zshFailed = false;
-const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${normal+gray} %s${normal}`,
-      installedMessageFormat = `${green}[autocomplete]: Successfully installed ${underline}%s${normal+green} auto-completion${normal}`,
-      existingInstallationMessageFormat = `${normalYellow}[autocomplete]: ${underline}%s${normal+normalYellow} auto-completion already installed${normal}`;
+const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${endUnderline} %s${normal}`,
+      installedMessageFormat = `${green}[autocomplete]: Successfully installed ${underline}%s${endUnderline} auto-completion${normal}`,
+      existingInstallationMessageFormat = `${normalYellow}[autocomplete]: ${underline}%s${endUnderline} auto-completion already installed${normal}`;
 
 /**
  * Manages errors that occur in the try block

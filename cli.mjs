@@ -813,7 +813,7 @@ const setLoop = (arg, lastIndex) => {
   if (number < 0) {
     log(WARNING_LVL,
       `Converted ${
-        underline+number+normal+normalYellow
+        underline+number+endUnderline
       } to 0 because it was negative`
     )
     number = 0;

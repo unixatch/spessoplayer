@@ -63,7 +63,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
       process.exit(2)
     }
     if (e.message === "Program doesn't exist") {
-      const unrecognisedProgramFormat = `${normalYellow+underline}%s${normal+normalYellow} %s${normal}`;
+      const unrecognisedProgramFormat = `${normalYellow+underline}%s${endUnderline} %s${normal}`;
       console.warn(
         unrecognisedProgramFormat,
         program, "is not installed or it's not visible globally"
@@ -122,7 +122,7 @@ const isUnix = (
   platform === "linux"   ||
   platform === "android"
 );
-const removedMessageFormat = `${green}[autocomplete]: Successfully uninstalled ${underline}%s${normal+green} auto-completion${normal}`;
+const removedMessageFormat = `${green}[autocomplete]: Successfully uninstalled ${underline}%s${endUnderline} auto-completion${normal}`;
 if (await manageAutocomplete("zsh",  isUnix, true)) {
   console.log(removedMessageFormat, "zsh")
 }
