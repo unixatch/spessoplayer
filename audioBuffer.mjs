@@ -23,7 +23,7 @@ import { IndexedByteArray } from "spessasynth_core"
 // This section is identical to what's inside spessasynth_core but not being exported, that's why it's here
 const DEFAULT_WAV_WRITE_OPTIONS = {
   normalizeAudio: true,
-  loop: void 0,
+  loop: undefined,
   metadata: {}
 };
 function fillWithDefaults(obj, defObj) {
@@ -113,9 +113,9 @@ function getWavHeader({ length, numChannels },
   sampleRate = 48000, options = DEFAULT_WAV_WRITE_OPTIONS
 ) {
   const bytesPerSample = 2;
-  const fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS);
-  const loop = fullOptions.loop;
-  const metadata = fullOptions.metadata;
+  const {
+    loop, metadata
+  } = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS);
   let infoChunk = new IndexedByteArray(0);
   const infoOn = Object.keys(metadata).length > 0;
   if (infoOn) {
@@ -230,13 +230,15 @@ const MAX_SIGNED_16INT = 32767,
 /**
  * Translates to audible PCM data
  * @param {Array} audioData - An array that contains the audio buffers
- * @param {Object} options - Optional, adds loop timestamps and more
+ * //param {Object} options - Optional, adds loop timestamps and more
  * @returns {Uint8Array} the translated data
  */
-function getData(audioData, options = DEFAULT_WAV_WRITE_OPTIONS) {
-  const length = audioData[0].length,
-        numChannels = audioData.length,
-        fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS),
+function getData(audioData/*, options = DEFAULT_WAV_WRITE_OPTIONS*/) {
+  const {
+    length: numChannels,
+    0: { length }
+  } = audioData;
+  const // fullOptions = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS),
         bytesPerSample = 2;
 
   const [left, right] = audioData;
