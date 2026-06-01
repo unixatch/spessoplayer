@@ -1115,7 +1115,6 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
       Options.stdoutReverbVolume = dBNumber;
     } else {
       Options.reverbVolume(lastIndexNumber, dBNumber)
-      Options.effects(lastIndexNumber, [])
     }
     log(INFO_LVL, `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
     return;
@@ -1127,7 +1126,6 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
       Options.stdoutReverbVolume = toDB;
     } else {
       Options.reverbVolume(lastIndexNumber, toDB)
-      Options.effects(lastIndexNumber, [])
     }
     log(INFO_LVL, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
     return;
@@ -1146,7 +1144,6 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
       Options.stdoutReverbVolume = number;
     } else {
       Options.reverbVolume(lastIndexNumber, number)
-      Options.effects(Number(lastIndex?.index), [])
     }
     log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
     return;
