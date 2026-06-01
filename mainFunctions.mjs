@@ -1168,7 +1168,7 @@ class Progress {
  * Reads the generated samples from spessasynth_core
  * and plays them using mpv
  * @param {Options} Options Options class
- * @param {Boolean} spessasynthLogging if spessasynth's logging system should be enabled
+ * @param {Object<Boolean>} spessasynthLogging if spessasynth's logging system should be enabled
  */
 async function startPlayer(Options, spessasynthLogging) {
   const {

@@ -471,7 +471,7 @@ let renderTextsInterval,
     finalFileOutputs = [];
 /**
  * Main function that renders progress text
- * @param {class} progress class used to get information
+ * @param {Progress} progressClass class used to get information
  */
 const renderTextsFunction = progressClass => {
   const moreInfos = showUsage ? (

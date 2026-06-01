@@ -38,7 +38,7 @@ function checkValue(value, requiredType) {
  * @param {MainOptions} that
  * @param {String} property name of property to add
  * @param {*} value what to add to the property
- * @param {Boolean} isSetter if it's a setter
+ * @param {Boolean} [isSetter] if it's a setter
  */
 function addProperty(that, property, value, isSetter) {
   that._manageOption({
@@ -144,7 +144,6 @@ class MainOptions {
   }
   /**
    * Sets dryRun path string
-   * @param {Boolean} value - path to use for the dry run
    */
   static dryRun() {
     addProperty(this, "dryRun", "")

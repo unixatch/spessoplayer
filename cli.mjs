@@ -199,7 +199,7 @@ async function get20BytesFromFile(path) {
  * @param {String} variableObj.DEBUG_FILE_SPESSO   terminal value for file path
  * @param {String} variableObj.debugLevelSpessoMsg
  * @param {String} variableObj.debugFileSpessoMsg
- * @return {Boolean} true if verboseLevel is set or false otherwise
+ * @return {Promise<Boolean|undefined>} true if verboseLevel is set, false otherwise or undefined if it has found an env variable
  */
 async function manageVerboseOptions({
   DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
@@ -271,7 +271,7 @@ export const FO_CONSTANTS = {
 const newArgs = process.argv.slice(2);
 /**
  * Sets necessary variables in Options class for main.mjs
- * @param {String[]} args - The process.argv to analyse
+ * @param {String[]} [args] - The process.argv to analyse
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
 const actUpOnPassedArgs = async args => {
@@ -788,7 +788,7 @@ const setFile = async ({
 /**
  * Checks if the given number is an actual number
  * @param {*} number the value to check
- * @param {Boolean} checkForInfinity if it's also not Infinity
+ * @param {Boolean} [checkForInfinity] if it's also not Infinity
  * @return {Boolean} if it's an actual number or not
  */
 const isRealNumber = (number, checkForInfinity) => {
@@ -903,7 +903,7 @@ const negativeNumberErrorString = "must be above or equal to 0";
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
+ * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
  */
 const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   const number = Number(arg),
@@ -991,7 +991,7 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
- * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
+ * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setEffects = (arg, lastIndex, newArgumentsSet) => {
@@ -1101,7 +1101,7 @@ const setVolume = (arg, lastIndex) => {
 /**
  * Sets the Options.reverb variable
  * @param {String} arg - the volume in either percentage, decibels or decimals
- * @param {String[]} newArgumentsSet - process.argv without 2 starting indexes in Set form
+ * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setReverb = (arg, lastIndex, newArgumentsSet) => {
@@ -1243,7 +1243,7 @@ const uninstall = async () => {
 /**
  * Shows the help text
  * @param {Object} [errorObject=""] - an object containing additional info that should be printed alongside help
- * @param {String} [errorObject.errorText] - error text that should be printed before helpText
+ * @param {String} [errorObject.errorText=""] - error text that should be printed before helpText
  */
 const help = async ({ errorText = "" } = "") => {
   const optional = text => normal+"["+dimGray+text+normal+"]",

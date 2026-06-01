@@ -282,7 +282,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {Boolean} manageOptionObjectParameters.setter
    * @param {Boolean} needsToBeSet
    * @param {Boolean} needsAnArray
-   * @return {(undefined|Number|String)}
+   * @return {(undefined|Number|String|Boolean)}
    * @throws {(TypeError|Error)} if a value is not the right type or the property doesn't exist
    */
   static _manageOption(

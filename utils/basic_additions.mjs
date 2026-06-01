@@ -22,7 +22,7 @@
 /**
  * Creates a new promise with
  * a pending state property attached to it
- * @param {Function} executor function that will be run just like new Promise
+ * @param {Function} func function that will be run just like new Promise
  * @return {Promise} a stateable promise
  */
 Promise.stateable = function (func) {
