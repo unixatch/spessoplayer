@@ -21,8 +21,7 @@
 
 import { join, parse } from "path"
 import {
-  ERROR_LVL, WARNING_LVL,
-  INFO_LVL,  DEBUG_LVL,
+  WARNING_LVL, INFO_LVL,
   debugMaxLevel,
   formatStrings,
   log, Options

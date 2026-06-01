@@ -81,7 +81,6 @@ async function formatManager({
   readStream, rawReadStream,
   res, dryRun,
   effects, reverbVolume,
-  index,
   createNewFileNameAnyway,
   fileOutputs, FO_CONSTANTS,
   stdoutHeader,
@@ -854,8 +853,7 @@ async function toStdout({
 
   let promisesOfPrograms = [];
   let pipingFunction = await formatManager({
-    format, readStream,
-    index, res,
+    format, readStream, res,
     ...options,
     promisesOfPrograms
   });
@@ -979,7 +977,7 @@ async function toFile({
       await formatManager({
         readStream:    isf32le || readStream,
         rawReadStream: isf32le ? rawReadStream : undefined,
-        index, ...options,
+        ...options,
         createNewFileNameAnyway,
         stdoutHeader,
         promisesOfPrograms,
@@ -1172,9 +1170,7 @@ class Progress {
  */
 async function startPlayer(Options, spessasynthLogging) {
   const {
-    files: filesList,
-    sampleRate,
-    format,
+    sampleRate, format,
     effects, reverbVolume
   } = Options.all;
   const { getWavHeader } = await import("./audioBuffer.mjs"),
@@ -1222,8 +1218,7 @@ async function startPlayer(Options, spessasynthLogging) {
       res.flushHeaders()
     }
 
-    const ffmpegFormats   = /(?:flac|mp3)/,
-          losslessFormats = /(?:pcm|s16le|f32le)/;
+    const ffmpegFormats   = /(?:flac|mp3)/;
     const needsConvertion = format?.match(ffmpegFormats);
 
     if (needsConvertion) {

@@ -29,10 +29,7 @@ import {
   manageAutocomplete
 } from "./utils/install_uninstall.mjs"
 
-let readline,
-    stdin,
-    stdout,
-    stderr;
+let readline;
 /**
  * Checks if a program exists, if it doesn't exist,
  * it asks the user for confirmation to install via package managers

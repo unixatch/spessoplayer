@@ -29,10 +29,7 @@ import {
   manageAutocomplete
 } from "./utils/install_uninstall.mjs"
 
-let readline,
-    stdin,
-    stdout,
-    stderr;
+let readline;
 /**
  * Checks if a program exists, if it doesn't exist,
  * it asks the user for confirmation to install via package managers
@@ -67,7 +64,9 @@ async function runCheck(program, noInstallMsg = "") {
   async function question() {
     let answer;
     try {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const rl = readline.createInterface({
+        input: process.stdin, output: process.stdout
+      });
       answer = await rl.question(
         `[${underline+program+normal}]: Do you want to install it [Y|n]? `
       );

@@ -21,10 +21,8 @@
  */
 
 import {
-  ERROR_LVL, WARNING_LVL,
-  INFO_LVL,  DEBUG_LVL,
-  formatStrings,
-  log,
+  INFO_LVL, DEBUG_LVL,
+  formatStrings, log,
   clearLastLines,
   getSizes, getUsageEstimate,
   ffmpegExitHandler
