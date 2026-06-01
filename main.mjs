@@ -129,6 +129,18 @@ if (isToStdout) {
     process.stderr.write("\x1b[F\x1b[2K")
     processingMessageCleaned = true;
   }
+  process.stdout.on("error", error => {
+    if (global.SIGINT) process.exit(130)
+
+    if (error.code === "EPIPE") {
+      console.error(
+        formatStrings.grayedOutText,
+        "Stdout was closed before finishing to render"
+      )
+      process.exit(error.errno)
+    }
+    console.error(error)
+  })
   const {
     sampleRate: stdoutSampleRate = 48000,
     format: stdoutFormat,
