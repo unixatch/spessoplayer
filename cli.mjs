@@ -459,7 +459,7 @@ const actUpOnPassedArgs = async args => {
           setMaxThreads(nextArg)
         } else {
           log(WARNING_LVL,
-            "Ignoring this flag since stdout mode is enabled"
+            "Ignoring threads flag since stdout mode is enabled"
           )
         }
         i++
