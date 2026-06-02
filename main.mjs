@@ -56,7 +56,7 @@ if (!spessasynthLogging.info && !spessasynthLogging.warning) {
     spessasynthLogging.warning = true;
   }
 }
-let isVerboseLevelSet = false;
+let isVerboseLevelSet;
 const {
   env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
 } = process;

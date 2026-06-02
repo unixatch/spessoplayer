@@ -159,11 +159,13 @@ function newFileName(path, createAnyway = false) {
         return String.fromCharCode(randomInteger);
     }
   };
-  const MAX_LENGTH = 8,
-        parsedPath = parse(path),
-        { dir: pathDir, ext: pathExt } = parsedPath;
-  let newString = "",
-      pathFileName = parsedPath.name;
+  const MAX_LENGTH = 8;
+  let {
+    dir: pathDir,
+    name: pathFileName, ext: pathExt
+  } = parse(path);
+  let newString = "";
+
   for (let i = 0; i < MAX_LENGTH; i++) newString += randomCharCode();
 
   pathFileName += "__"+newString+"__";
@@ -306,7 +308,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Numbers
-      case "verboseLevel":
       case "stdoutReverbVolume":
       case "reverbVolume":
       case "volume":
@@ -343,7 +344,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       }
       // Strings
       case "fileOutputs":
-      case "logFilePath":
       case "dryRun":
       case "format": {
         if (!needsToBeSet) {

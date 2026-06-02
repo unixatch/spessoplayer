@@ -29,8 +29,8 @@ Promise.stateable = function (func) {
   function runWithState(resolve, reject) {
     const done = () => newPromise.pending = false;
     func(
-      value => (done(), resolve(value)),
-      reason => (done(), reject(reason))
+      value  => { done(); resolve(value) },
+      reason => { done(); reject(reason) }
     )
   }
   const newPromise = new Promise(runWithState);
@@ -39,11 +39,11 @@ Promise.stateable = function (func) {
 }
 /**
  * Adds unshift functionality to Set
- * @param {Array} value - value to add
+ * @param {Array} valueToAdd - value to add
  * @return {Set} - an updated set with the values added on the left
  */
-Set.prototype.addLeft = function (value) {
-  const newValue = new Set([value]).union(this);
+Set.prototype.addLeft = function (valueToAdd) {
+  const newValue = new Set([valueToAdd]).union(this);
   this.clear()
   for (const value of newValue) this.add(value)
   return this;
@@ -103,6 +103,8 @@ Set.prototype.get = function (valueToFind) {
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   Only modifications include:
+  - let → const aggregate;
+  - let → const copyProps;
   - propsToIgnore variable;
   - new lines inside copyProps;
 */
@@ -115,7 +117,7 @@ Set.prototype.get = function (valueToFind) {
  */
 export default function Mixin(base, mixins) {
   /*  create aggregation class  */
-  let aggregate = class __Aggregate extends base {
+  const aggregate = class __Aggregate extends base {
     constructor (...args) {
       /*  call base class constructor  */
       super(...args)
@@ -134,7 +136,7 @@ export default function Mixin(base, mixins) {
                         "toString|"+
                         "length";
   /*  copy properties  */
-  let copyProps = (target, source) => {
+  const copyProps = (target, source) => {
     Object.getOwnPropertyNames(source)
       .concat(Object.getOwnPropertySymbols(source))
       .forEach((prop) => {
@@ -154,6 +156,6 @@ export default function Mixin(base, mixins) {
     copyProps(aggregate, mixin)
   })
 
-  return aggregate
+  return aggregate;
 }
 

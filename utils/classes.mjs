@@ -300,7 +300,7 @@ class EffectsOptions {
   }
 }
 
-export let classes = [
+export const classes = [
   MainOptions, EffectsOptions
 ];
 
