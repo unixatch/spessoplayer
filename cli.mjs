@@ -1185,7 +1185,7 @@ const setTextDelay = (arg) => {
   // Default
   if (isNaN(number)) {
     Options.textDelay = 500;
-    log(INFO_LVL, `Set text delay to ${number}`)
+    log(INFO_LVL, `Set text delay to 500`)
     return;
   }
   if (isRealNumber(number, true) && number >= 50) {
