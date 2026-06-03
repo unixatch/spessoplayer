@@ -917,7 +917,7 @@ const setLoopFadeStart = (arg, lastIndex) => {
   if (number === Infinity) {
     console.error(
       formatStrings.failedCliParam,
-      `[loop|${lastIndexString}]: Can't use infinity, sorry`
+      `[loop-fade-start|${lastIndexString}]: Can't use infinity, sorry`
     )
     process.exit(1)
   }
