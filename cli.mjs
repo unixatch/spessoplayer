@@ -608,6 +608,7 @@ const actUpOnPassedArgs = async args => {
           break;
         }
         Options.loopFade = true;
+        log(INFO_LVL, "Set loop-fade flag")
         break;
       }
       case "--loop-fade-start": case "/loop-fade-start":

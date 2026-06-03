@@ -43,6 +43,10 @@ function addOptionalArgumentsToStdout(args) {
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
   // Looping
   if (process.argv.includes("-l"))   args.push("-l", "1")
+  // Loop fading
+  if (process.argv.includes("-lF"))  args.push("-lF")
+  // Loop fading start
+  if (process.argv.includes("-lFs")) args.push("-lFs", "3")
   return args;
 }
 function addOptionalArgumentsToFile(args) {
@@ -61,6 +65,10 @@ function addOptionalArgumentsToFile(args) {
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
   // Looping
   if (process.argv.includes("-l"))   args.push("-l", "1")
+  // Loop fading
+  if (process.argv.includes("-lF"))  args.push("-lF")
+  // Loop fading start
+  if (process.argv.includes("-lFs")) args.push("-lFs", "3")
   // Threads count
   if (process.argv.includes("-T"))   args.push("-T", "4")
   return args;
@@ -95,6 +103,7 @@ function generalCliArguments(mode) {
         "--no-table",         // Plain files object
         "--confirm",          // confirmation
         "--max-threads", "4", // threads to use for toFile
+        "--loop-fade",        // adds 1 loop on top of loop but only has a fade
         "--verbose"           // verboseLevel, must be the last
       ];
   }
@@ -106,7 +115,8 @@ const perSongCliArguments = [
   "-vol", "1",    // volume
   "-rvb", "20",   // reverbVolume
   "-ls", "1",     // loopStart
-  "-le", "40"     // loopEnd
+  "-le", "40",    // loopEnd
+  "-lFs", "3"     // loopFadeStart
 ];
 
 export {
