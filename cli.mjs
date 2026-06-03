@@ -621,7 +621,7 @@ const actUpOnPassedArgs = async args => {
           i++
           break;
         }
-        lastIndex = arg.match(regexes.loopEnd)?.groups;
+        lastIndex = arg.match(regexes.loopFadeStart)?.groups;
         setLoopFadeStart(nextArg, lastIndex)
         i++
         break;
@@ -832,7 +832,12 @@ const isRealNumber = (number, checkForInfinity) => {
       : isNumber
   );
 };
-const invalidNumberString = "isn't a valid number";
+// Error/invalid strings/messages
+const invalidNumberString       = "isn't a valid number",
+      invalidNumberOrISOString  = "isn't a valid number or a valid ISO string format",
+      negativeNumberErrorString = "must be above or equal to 0",
+      invalidVolumeString       = "isn't a valid number/dB/percentage";
+
 /**
  * Sets the Options.loopAmount variable
  * @param {String} arg - the loop amount
@@ -913,7 +918,6 @@ const setLoopFadeStart = (arg, lastIndex) => {
   )
   process.exit(1)
 }
-const invalidNumberOrISOString = "isn't a valid number or a valid ISO string format";
 /**
  * Sets the Options.loopStart variable
  * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
@@ -974,7 +978,6 @@ const setLoopEnd = (arg, lastIndex) => {
   )
   process.exit(1)
 }
-const negativeNumberErrorString = "must be above or equal to 0";
 /**
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
@@ -1130,7 +1133,6 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
   )
   process.exit(1)
 }
-const invalidVolumeString = "isn't a valid number/dB/percentage";
 /**
  * Sets the Options.volume variable for the masterGain
  * @param {String} arg - the volume in either percentage, decibels or decimals
