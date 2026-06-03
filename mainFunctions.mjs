@@ -941,12 +941,10 @@ async function toFile({
     hasf32le &&
     !fileOutputs[WAV_INDEX] && foLength === 2
   );
-  let seq,
-      synth,
-      sampleCount,
-      seqFloat,
-      synthFloat,
-      sampleCountFloat;
+  let seq, synth,
+      seqFloat, synthFloat,
+      sampleCount, sampleCountFloat,
+      startFading;
   const initSpessaSynthObjParam = {
     index, ...options,
     spessasynthLogging, isToFile: true
