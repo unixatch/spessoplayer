@@ -832,6 +832,17 @@ const isRealNumber = (number, checkForInfinity) => {
       : isNumber
   );
 };
+/**
+ * Translates the given strings into useful values
+ * @param {String} arg argument of the parameter
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ * @return {Object} infos about the argument
+ */
+const getArgInfos = (arg, lastIndex) => ({
+  number: Number(arg),
+  lastIndexNumber: Number(lastIndex?.index),
+  lastIndexString: lastIndex?.index ?? "0"
+});
 // Error/invalid strings/messages
 const invalidNumberString       = "isn't a valid number",
       invalidNumberOrISOString  = "isn't a valid number or a valid ISO string format",
@@ -844,9 +855,10 @@ const invalidNumberString       = "isn't a valid number",
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoop = (arg, lastIndex) => {
-  let number = Number(arg);
-  const lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { lastIndexNumber, lastIndexString } = argInfos;
+  let number = argInfos.number;
+
   // Negative conversion
   if (number < 0) {
     log(WARNING_LVL,
@@ -881,9 +893,10 @@ const setLoop = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopFadeStart = (arg, lastIndex) => {
-  let number = Number(arg);
-  const lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { lastIndexNumber, lastIndexString } = argInfos;
+  let number = argInfos.number;
+
   // Default
   if (isNaN(number)) {
     Options.loopFadeStart(lastIndexNumber, 1)
@@ -924,9 +937,9 @@ const setLoopFadeStart = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopStart = (arg, lastIndex) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
 
   const argAsADate = Date.parse(`1970T${arg}Z`);
   if (
@@ -956,12 +969,16 @@ const setLoopStart = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopEnd = (arg, lastIndex) => {
-  const number = Math.abs(Number(arg)),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number: ogNumber, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
+  const number = Math.abs(ogNumber);
 
   const argAsADate = Date.parse(`1970T${arg}Z`);
-  if (isRealNumber(number, true) || !isNaN(argAsADate)) {
+  if (
+    isRealNumber(number, true)
+    && !(number < 0) || !isNaN(argAsADate)
+  ) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = argAsADate / 1000;
       Options.loopEnd(lastIndexNumber, seconds)
@@ -985,8 +1002,10 @@ const setLoopEnd = (arg, lastIndex) => {
  * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
  */
 const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
-  const number = Number(arg),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
+
   if (number < 0) {
     console.error(
       formatStrings.failedCliParam,
@@ -1000,7 +1019,7 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
       log(INFO_LVL, `Set sample rate for all to ${number} because output is stdout`)
       return;
     }
-    Options.sampleRate(Number(lastIndex?.index), number)
+    Options.sampleRate(lastIndexNumber, number)
     log(INFO_LVL, `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
@@ -1139,9 +1158,9 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setVolume = (arg, lastIndex) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
@@ -1183,9 +1202,9 @@ const setVolume = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setReverb = (arg, lastIndex, newArgumentsSet) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
@@ -1260,7 +1279,11 @@ const setMaxThreads = async (arg) => {
  * @param {String} arg - delay to set
  */
 const setTextDelay = (arg) => {
-  const number = Number(arg.match(regexes.textDelay).groups.number);
+  const {
+    groups: { number: matchNumberString }
+  } = arg.match(regexes.textDelay);
+  const number = Number(matchNumberString);
+
   // Default
   if (isNaN(number)) {
     Options.textDelay = 500;
