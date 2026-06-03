@@ -31,6 +31,8 @@
  * @property {Number}    [loopAmount]       The amount of loops to do
  * @property {Number}    [loopStart=midi.midiTicksToSeconds(midi.loop.start)] start of loop
  * @property {Number}    [loopEnd]          end of loop
+ * @property {Number}    [loopFade]         if it should loop fade
+ * @property {Number}    [loopFadeStart=1]  when the loop fade starts
  */
 /**
  * @typedef initObjectParameters
@@ -42,6 +44,8 @@
  * @property {Number}  [sampleRate=48000]         sample rate
  * @property {Number}  loopStart                  start of loop
  * @property {Number}  loopEnd                    end of loop
+ * @property {Number}  [loopFade]                 if it should loop fade
+ * @property {Number}  [loopFadeStart=1]          when the loop fade starts
  * @property {Number}  indexOfGroup               index of the Set/group the song is in
  * @property {Boolean} [isToFile=false]           if it's the toFile function
  * @property {Boolean} [isStartPlayer=false]      if it's the startPlayer function
@@ -121,6 +125,8 @@
  * @property {Function}             getData            translator: Float32Arrays → Uint8Arrays
  * @property {Boolean}              isf32le            if the requested format is f32le
  * @property {Boolean}              doNotRepeat        if it should skip updating the progress
+ * @property {Boolean}              [loopFade]         if it should do 1 last loop and after some time, fade away slowly
+ * @property {Number}               [startFading]      start of loop fade
  * @property {Object}               progressBuffers    Object that contains SharedArrayBuffers
  */
 

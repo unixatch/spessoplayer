@@ -115,6 +115,12 @@ const regexes = {
     "|-le(?<index>\\d+)*",
     "|\\/le(?<index>\\d+)*)$"
   ].join("")),
+  loopFadeStart: new RegExp([
+    "^(?:--loop-fade-start(?<index>\\d+)*",
+    "|\\/loop-fade-start(?<index>\\d+)*",
+    "|-lFs(?<index>\\d+)*",
+    "|\\/lFs(?<index>\\d+)*)$"
+  ].join("")),
 
   //                          HH:MM:SS.sss
   ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
@@ -592,6 +598,34 @@ const actUpOnPassedArgs = async args => {
         i++
         break;
       }
+      case "--loop-fade": case "/loop-fade":
+      case "-lF":         case "/lF": {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade because loop isn't set"
+          )
+          break;
+        }
+        Options.loopFade = true;
+        break;
+      }
+      case "--loop-fade-start": case "/loop-fade-start":
+      case "-lFs":              case "/lFs":
+      case regexes.loopFadeStart.test(arg) && arg: {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade-start because loop isn't set"
+          )
+          i++
+          break;
+        }
+        lastIndex = arg.match(regexes.loopEnd)?.groups;
+        setLoopFadeStart(nextArg, lastIndex)
+        i++
+        break;
+      }
 
       default:
         await help({
@@ -833,6 +867,49 @@ const setLoop = (arg, lastIndex) => {
   console.error(
     formatStrings.failedCliParamWithArg,
     `[loop|${lastIndexString}]:`, arg, invalidNumberString
+  )
+  process.exit(1)
+}
+/**
+ * Sets the Options.loopFadeStart variable
+ * @param {String} arg - the loop fade delay amount in seconds
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ */
+const setLoopFadeStart = (arg, lastIndex) => {
+  let number = Number(arg);
+  const lastIndexNumber = Number(lastIndex?.index),
+        lastIndexString = lastIndex?.index ?? "0";
+  // Default
+  if (isNaN(number)) {
+    Options.loopFadeStart(lastIndexNumber, 1)
+    log(INFO_LVL, `Set loop fade start to 1 at ${lastIndex?.index} index`)
+    return;
+  }
+  // Negative conversion
+  if (number < 0) {
+    log(WARNING_LVL,
+      `Converted ${
+        underline+number+endUnderline
+      } to 0 because it was negative`
+    )
+    number = 0;
+  }
+
+  if (number === Infinity) {
+    console.error(
+      formatStrings.failedCliParam,
+      `[loop|${lastIndexString}]: Can't use infinity, sorry`
+    )
+    process.exit(1)
+  }
+  if (isRealNumber(number)) {
+    Options.loopFadeStart(lastIndexNumber, number)
+    log(INFO_LVL, `Set loop fade start to ${number} at ${lastIndex?.index} index`)
+    return;
+  }
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    `[loop-fade-start|${lastIndexString}]:`, arg, invalidNumberString
   )
   process.exit(1)
 }
@@ -1387,6 +1464,23 @@ const help = async ({ errorText = "" } = "") => {
     )}:
       ${multiLine(
       `The loop will restart at ${optional("-")+grayBoldText("seconds")+dimGray+italics} from the end`
+      )}
+
+    ${param(["--loop-fade", "/loop-fade"], ["-lF", "/lF"])}:
+      ${multiLine(
+      `It does 1 more loop on top of yours
+      and then it fades away slowly based on loop-fade-start
+        (Doesn't work without the loop parameter turned on)`
+      )}
+
+    ${param(
+      ["--loop-fade-start"+optional("n")+" "+grayBoldText("seconds"),
+       "/loop-fade-start"+optional("n")+" "+grayBoldText("seconds")],
+      ["-lFs"+optional("n")+" "+grayBoldText("seconds"),
+       "/lFs"+optional("n")+" "+grayBoldText("seconds")]
+    )}:
+      ${multiLine(
+      `When the loop fade starts (default: 1)`
       )}
 
     ${param(

@@ -316,7 +316,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "loopStart":
       case "maxThreads":
       case "textDelay":
-      case "loopEnd": {
+      case "loopEnd":
+      case "loopFadeStart": {
         if (!needsToBeSet) return;
 
         this.#checkValueAndExistence(
@@ -333,6 +334,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Boolean
+      case "loopFade":
       case "confirmation":
       case "noTable":
       case "showUsage":

@@ -328,7 +328,8 @@ function getSampleCount({
   sampleRate = 48000,
   loopAmount,
   loopStart = midi.midiTicksToSeconds(midi.loop.start),
-  loopEnd
+  loopEnd,
+  loopFade, loopFadeStart = 1
 }) {
   let loopDetectedInMidi = false;
   if (midi.loop.start > 0) {
@@ -336,7 +337,7 @@ function getSampleCount({
     loopStart = midi.midiTicksToSeconds(midi.loop.start);
     loopEnd = midi.midiTicksToSeconds(midi.loop.end);
   }
-  const possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
+  let possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
   let sampleCount,
       durationInSeconds = midi.duration;
   if ((loopAmount ?? 0) === 0) {
@@ -349,14 +350,21 @@ function getSampleCount({
       end = durationInSeconds - loopEnd;
     } else end = loopEnd;
 
+    if (loopFade) possibleLoopAmount++
     durationInSeconds += (end - loopStart) * possibleLoopAmount;
+    if (loopFade) {
+      durationInSeconds -= (midi.duration - loopFadeStart) - 8;
+    }
     sampleCount = Math.ceil(sampleRate * durationInSeconds);
   }
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
+  let startFading;
+  if (loopFade) startFading = (durationInSeconds - 8) * sampleRate;
+
   return {
     loopDetectedInMidi,
     durationInSeconds,
-    sampleCount
+    sampleCount, startFading
   };
 }
 /**
@@ -394,6 +402,7 @@ async function initSpessaSynth({
   midiFile, soundfontFile,
   sampleRate = 48000,
   loopStart, loopEnd,
+  loopFade, loopFadeStart = 1,
   index, indexOfGroup,
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
@@ -459,12 +468,13 @@ async function initSpessaSynth({
   const {
     sampleCount,
     durationInSeconds,
-    loopDetectedInMidi
+    loopDetectedInMidi, startFading
   } = getSampleCount({
     midi,
     sampleRate,
     loopAmount,
-    loopStart, loopEnd
+    loopStart, loopEnd,
+    loopFade, loopFadeStart
   });
   if (onlySampleCount) return sampleCount;
   if (onlyDuration) return durationInSeconds;
@@ -501,13 +511,15 @@ async function initSpessaSynth({
   const seq = new SpessaSynthSequencer(synth);
   seq.loadNewSongList([midi])
   seq.loopCount = loopAmount;
+  if (loopFade) seq.loopCount++
   seq.play();
 
   log(INFO_LVL, "Finished setting up SpessaSynth")
   return {
     seq, synth,
     midi,
-    sampleCount, durationInSeconds
+    sampleCount, durationInSeconds,
+    startFading
   }
 }
 /**
@@ -685,6 +697,7 @@ function createReadable(Readable, isStdout = false, {
   seq, synth,
   getData, isf32le,
   doNotRepeat,
+  loopFade, startFading,
   progressBuffers
 }) {
   // Creates the variable without losing "this" context
@@ -729,6 +742,18 @@ function createReadable(Readable, isStdout = false, {
     progress.updateProgress(SCurrentTime)
   }
   /**
+   * Calculates the new volume when fading
+   * @return {Number} new volume
+   */
+  function calculateFade() {
+    const {
+      systemParameters: { gain }
+    } = synth;
+    const percentage = (gain > .8 || gain < .2) ? 0.2 : 0.3;
+
+    return gain - gain * percentage / 100;
+  }
+  /**
    * @typedef interleavedFloat32Channels
    * @type {Array}
    * @property {Float32Array} left  left channel
@@ -770,13 +795,17 @@ function createReadable(Readable, isStdout = false, {
   const readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
+      if (loopFade) loopFadeBlock: {
+        if (synth.systemParameters.gain <= .001) return this.push(null);
+
+        if (filledSamples < startFading) break loopFadeBlock;
+        // Start of fade
+        synth.setSystemParameter("gain", calculateFade())
+      }
       seq.processTick()
-      synth.process(
-        left, right,
-        0,
-        bufferSize
-      )
+      synth.process(left, right, 0, bufferSize)
       filledSamples += bufferSize;
+
       if (!isStdout) toFileTextRendering: {
         textRenderingIndex++
         if (!lastBytes) {
@@ -831,7 +860,7 @@ async function toStdout({
   const initSpessaSynthObj = await initSpessaSynth({ index, ...options });
   if (initSpessaSynthObj === null) return null;
   let {
-    seq, synth, sampleCount
+    seq, synth, sampleCount, startFading
   } = initSpessaSynthObj;
 
   if (!res && !process.listenerCount("exit")) {
@@ -848,7 +877,8 @@ async function toStdout({
   let readStream = createReadable(Readable, true, {
     sampleCount,
     seq, synth,
-    getData, isf32le: format === "f32le"
+    getData, isf32le: format === "f32le",
+    loopFade: options.loopFade, startFading
   });
 
   let promisesOfPrograms = [];
@@ -925,7 +955,7 @@ async function toFile({
     const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
     if (initSpessaSynthObj === null) return null;
     ({
-      seq, synth, sampleCount
+      seq, synth, sampleCount, startFading
     } = initSpessaSynthObj);
   }
   if (hasf32le) {
@@ -934,7 +964,8 @@ async function toFile({
     ({
       seq: seqFloat,
       synth: synthFloat,
-      sampleCount: sampleCountFloat
+      sampleCount: sampleCountFloat,
+      startFading
     } = initSpessaSynthObj);
   }
 
@@ -956,7 +987,8 @@ async function toFile({
       sampleCount,
       seq, synth,
       getData,
-      index, progressBuffers
+      index, progressBuffers,
+      loopFade: options.loopFade, startFading
     })
   );
   let rawReadStream = (
@@ -966,7 +998,8 @@ async function toFile({
       seq: seqFloat, synth: synthFloat,
       getData, isf32le: hasf32le,
       index, progressBuffers,
-      doNotRepeat: readStream && true
+      doNotRepeat: readStream && true,
+      loopFade: options.loopFade, startFading
     })
   );
   let promisesOfPrograms = [],

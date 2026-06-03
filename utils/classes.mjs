@@ -250,6 +250,26 @@ class MainOptions {
       number
     )
   }
+  /**
+   * Sets the sample rate of the stdout output
+   * @param {Boolean} boolean - value to set for loopFade
+   */
+  static set loopFade(boolean) {
+    addProperty(this, "loopFade", boolean, true)
+  }
+  /**
+   * Sets when the loop fade should start
+   * @param {Number} index - index of the file
+   * @param {Number} number - start of the loop fade
+   */
+  static loopFadeStart(index, number) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "loopFadeStart",
+      !isNaN(index) ? index : undefined,
+      number
+    )
+  }
 }
 
 /**
