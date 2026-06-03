@@ -308,15 +308,13 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Numbers
-      case "stdoutReverbVolume":
-      case "reverbVolume":
       case "volume":
+      case "stdoutReverbVolume": case "reverbVolume":
       case "sampleRate":
       case "loopAmount":
-      case "loopStart":
+      case "loopStart": case "loopEnd":
       case "maxThreads":
       case "textDelay":
-      case "loopEnd":
       case "loopFadeStart": {
         if (!needsToBeSet) return;
 
@@ -335,10 +333,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       }
       // Boolean
       case "loopFade":
-      case "confirmation":
-      case "noTable":
-      case "showUsage":
-      case "noProgress":
+      case "confirmation": case "noTable":
+      case "showUsage":    case "noProgress":
       case "toStdout": {
         this.#checkValueAndExistence(value, "boolean")
         setValue()
