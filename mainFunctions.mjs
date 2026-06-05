@@ -356,6 +356,7 @@ function getSampleCount({
       durationInSeconds -= (midi.duration - loopFadeStart) - 8;
     }
     sampleCount = Math.ceil(sampleRate * durationInSeconds);
+    sampleCount = Math.ceil(sampleRate * durationInSeconds + 2);
   }
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
   let startFading;
