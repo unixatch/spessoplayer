@@ -270,6 +270,19 @@ class MainOptions {
       number
     )
   }
+  /**
+   * Sets the duration of the loop fade
+   * @param {Number} index - index of the file
+   * @param {Number} number - start of the loop fade
+   */
+  static loopFadeDuration(index, number) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "loopFadeDuration",
+      !isNaN(index) ? index : undefined,
+      number
+    )
+  }
 }
 
 /**

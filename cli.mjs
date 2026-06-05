@@ -627,6 +627,22 @@ const actUpOnPassedArgs = async args => {
         i++
         break;
       }
+      case "--loop-fade-duration": case "/loop-fade-duration":
+      case "-lFd":                 case "/lFd":
+      case regexes.loopFadeDuration.test(arg) && arg: {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade-duration because loop isn't set"
+          )
+          i++
+          break;
+        }
+        lastIndex = arg.match(regexes.loopFadeDuration)?.groups;
+        setLoopFadeDuration(nextArg, lastIndex)
+        i++
+        break;
+      }
 
       default:
         await help({
@@ -929,6 +945,44 @@ const setLoopFadeStart = (arg, lastIndex) => {
   console.error(
     formatStrings.failedCliParamWithArg,
     `[loop-fade-start|${lastIndexString}]:`, arg, invalidNumberString
+  )
+  process.exit(1)
+}
+/**
+ * Sets the Options.loopFadeDuration variable
+ * @param {String} arg - the loop fade duration amount in seconds
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ */
+const setLoopFadeDuration = (arg, lastIndex) => {
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { lastIndexNumber, lastIndexString } = argInfos;
+  let number = argInfos.number;
+
+  // Negative conversion
+  if (number < 0) {
+    log(WARNING_LVL,
+      `Converted ${
+        underline+number+endUnderline
+      } to 0 because it was negative`
+    )
+    number = 0;
+  }
+
+  if (number === Infinity) {
+    console.error(
+      formatStrings.failedCliParam,
+      `[loop-fade-duration|${lastIndexString}]: Can't use infinity, sorry`
+    )
+    process.exit(1)
+  }
+  if (isRealNumber(number)) {
+    Options.loopFadeDuration(lastIndexNumber, number)
+    log(INFO_LVL, `Set loop fade duration to ${number} at ${lastIndex?.index} index`)
+    return;
+  }
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    `[loop-fade-duration|${lastIndexString}]:`, arg, invalidNumberString
   )
   process.exit(1)
 }
@@ -1507,6 +1561,16 @@ const help = async ({ errorText = "" } = "") => {
     )}:
       ${multiLine(
       `When the loop fade starts (default: 1)`
+      )}
+
+    ${param(
+      ["--loop-fade-duration"+optional("n")+" "+grayBoldText("seconds"),
+       "/loop-fade-duration"+optional("n")+" "+grayBoldText("seconds")],
+      ["-lFd"+optional("n")+" "+grayBoldText("seconds"),
+       "/lFd"+optional("n")+" "+grayBoldText("seconds")]
+    )}:
+      ${multiLine(
+      `How much the loop fade should last (default: 4)`
       )}
 
     ${param(

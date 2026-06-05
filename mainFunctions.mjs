@@ -329,7 +329,7 @@ function getSampleCount({
   loopAmount,
   loopStart = midi.midiTicksToSeconds(midi.loop.start),
   loopEnd,
-  loopFade, loopFadeStart = 1
+  loopFade, loopFadeStart = 1, loopFadeDuration = 4
 }) {
   let loopDetectedInMidi = false;
   if (midi.loop.start > 0) {
@@ -353,19 +353,20 @@ function getSampleCount({
     if (loopFade) possibleLoopAmount++
     durationInSeconds += (end - loopStart) * possibleLoopAmount;
     if (loopFade) {
-      durationInSeconds -= (midi.duration - loopFadeStart) - 8;
-    }
-    sampleCount = Math.ceil(sampleRate * durationInSeconds);
+      durationInSeconds -= (
+        midi.duration - loopFadeStart - loopFadeDuration
+      );
+    } //                                             Padding ↓
     sampleCount = Math.ceil(sampleRate * durationInSeconds + 2);
   }
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
-  let startFading;
-  if (loopFade) startFading = (durationInSeconds - 8) * sampleRate;
 
   return {
     loopDetectedInMidi,
     durationInSeconds,
-    sampleCount, startFading
+    sampleCount, startFading: loopFade && (
+      (durationInSeconds - loopFadeDuration) * sampleRate
+    )
   };
 }
 /**
@@ -403,7 +404,7 @@ async function initSpessaSynth({
   midiFile, soundfontFile,
   sampleRate = 48000,
   loopStart, loopEnd,
-  loopFade, loopFadeStart = 1,
+  loopFade, loopFadeStart = 1, loopFadeDuration = 4,
   index, indexOfGroup,
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
@@ -475,7 +476,7 @@ async function initSpessaSynth({
     sampleRate,
     loopAmount,
     loopStart, loopEnd,
-    loopFade, loopFadeStart
+    loopFade, loopFadeDuration, loopFadeStart
   });
   if (onlySampleCount) return sampleCount;
   if (onlyDuration) return durationInSeconds;
@@ -698,9 +699,16 @@ function createReadable(Readable, isStdout = false, {
   seq, synth,
   getData, isf32le,
   doNotRepeat,
-  loopFade, startFading,
+  loopFade, loopFadeDuration = 4,
+  startFading,
   progressBuffers
 }) {
+  if (typeof startFading !== "number" && startFading !== undefined) {
+    throw new TypeError(
+      "startFading must be a number, " +
+      `but instead received ${startFading}`
+    )
+  }
   // Creates the variable without losing "this" context
   const {
     midiData: { midiTicksToSeconds: tmpMTS }
@@ -750,9 +758,8 @@ function createReadable(Readable, isStdout = false, {
     const {
       systemParameters: { gain }
     } = synth;
-    const percentage = (gain > .8 || gain < .2) ? 0.2 : 0.3;
 
-    return gain - gain * percentage / 100;
+    return gain - .015 * (gain / loopFadeDuration);
   }
   /**
    * @typedef interleavedFloat32Channels
@@ -879,7 +886,9 @@ async function toStdout({
     sampleCount,
     seq, synth,
     getData, isf32le: format === "f32le",
-    loopFade: options.loopFade, startFading
+    loopFade: options.loopFade,
+    loopFadeDuration: options.loopFadeDuration,
+    startFading
   });
 
   let promisesOfPrograms = [];
@@ -987,7 +996,9 @@ async function toFile({
       seq, synth,
       getData,
       index, progressBuffers,
-      loopFade: options.loopFade, startFading
+      loopFade: options.loopFade,
+      loopFadeDuration: options.loopFadeDuration,
+      startFading
     })
   );
   let rawReadStream = (
@@ -998,7 +1009,9 @@ async function toFile({
       getData, isf32le: hasf32le,
       index, progressBuffers,
       doNotRepeat: readStream && true,
-      loopFade: options.loopFade, startFading
+      loopFade: options.loopFade,
+      loopFadeDuration: options.loopFadeDuration,
+      startFading
     })
   );
   let promisesOfPrograms = [],
