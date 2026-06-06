@@ -77,9 +77,15 @@ __spessoplayer() {
     --loop[0-9]* | \
     --loop-start[0-9]* | \
     --loop-end[0-9]* | \
+    --loop-fade | \
+    --loop-fade-start[0-9]* | \
+    --loop-fade-duration[0-9]* | \
     -l[0-9]* | \
     -ls[0-9]* | \
-    -le[0-9]*)
+    -le[0-9]* | \
+    -lF | \
+    -lFs[0-9]* | \
+    -lFd[0-9]*)
       local numbers=({0..10})
       _arguments "*: :(${numbers[@]})"
       return 0
@@ -121,28 +127,31 @@ __spessoplayer() {
 
   [[ $cur =~ .* ]] && {
     local all_arguments=(
-      "--input"         "-i"
-      "--volume"        "-vol"
-      "--reverb-volume" "-rvb"
-      "--effects"       "-e"
-      "--loop"          "-l"
-      "--loop-start"    "-ls"
-      "--loop-end"      "-le"
-      "--sample-rate"   "-r"
-      "--format"        "-f"
-      "--max-threads"   "-mt"
-      "--threads"       "-T"
-      "--show-usage"    "-U"
-      "--text-delay"    "-d"
-      "--no-progress"   "-np"
-      "--ask"           "-a"   "--confirm" "-c"
-      "--no-table"      "-nt"
-      "--dry-run"       "-dr"  "--test" "-t" "--null" "-0"
-      "--verbose"       "-v"
-      "--log-file"      "-lf"
-      "--uninstall"     "-u"
-      "--help"          "-h"
-      "--version"       "-V"
+      "--input"                "-i"
+      "--volume"             "-vol"
+      "--reverb-volume"      "-rvb"
+      "--effects"              "-e"
+      "--loop"                 "-l"
+      "--loop-start"          "-ls"
+      "--loop-end"            "-le"
+      "--loop-fade"           "-lF"
+      "--loop-fade-start"    "-lFs"
+      "--loop-fade-duration" "-lFd"
+      "--sample-rate"          "-r"
+      "--format"               "-f"
+      "--max-threads"         "-mt"
+      "--threads"              "-T"
+      "--show-usage"           "-U"
+      "--text-delay"           "-d"
+      "--no-progress"         "-np"
+      "--ask"                  "-a" "--confirm" "-c"
+      "--no-table"            "-nt"
+      "--dry-run"             "-dr" "--test" "-t" "--null" "-0"
+      "--verbose"              "-v"
+      "--log-file"            "-lf"
+      "--uninstall"            "-u"
+      "--help"                 "-h"
+      "--version"              "-V"
       "--enable-spessasynth-logging"
       "--enable-spessasynth-warn-logging"
       "--enable-spessasynth-info-logging"
