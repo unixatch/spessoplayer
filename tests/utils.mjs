@@ -47,6 +47,10 @@ function addOptionalArgumentsToStdout(args) {
   if (process.argv.includes("-lF"))  args.push("-lF")
   // Loop fading start
   if (process.argv.includes("-lFs")) args.push("-lFs", "3")
+  // Loop fading duration
+  if (process.argv.includes("-lFd")) args.push("-lFd", "6")
+  // Loop fading interpolation
+  if (process.argv.includes("-lFi")) args.push("-lFi", "2")
   return args;
 }
 function addOptionalArgumentsToFile(args) {
@@ -69,6 +73,10 @@ function addOptionalArgumentsToFile(args) {
   if (process.argv.includes("-lF"))  args.push("-lF")
   // Loop fading start
   if (process.argv.includes("-lFs")) args.push("-lFs", "3")
+  // Loop fading duration
+  if (process.argv.includes("-lFd")) args.push("-lFd", "6")
+  // Loop fading interpolation
+  if (process.argv.includes("-lFi")) args.push("-lFi", "2")
   // Threads count
   if (process.argv.includes("-T"))   args.push("-T", "4")
   return args;
@@ -116,7 +124,9 @@ const perSongCliArguments = [
   "-rvb", "20",   // reverbVolume
   "-ls", "1",     // loopStart
   "-le", "40",    // loopEnd
-  "-lFs", "3"     // loopFadeStart
+  "-lFs", "3",    // loopFadeStart
+  "-lFd", "6",    // loopFadeDuration
+  "-lFi", "2"     // loopFadeInterpolation
 ];
 
 export {
