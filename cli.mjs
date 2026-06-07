@@ -121,6 +121,12 @@ const regexes = {
     "|-lFs(?<index>\\d+)*",
     "|\\/lFs(?<index>\\d+)*)$"
   ].join("")),
+  loopFadeDuration: new RegExp([
+    "^(?:--loop-fade-duration(?<index>\\d+)*",
+    "|\\/loop-fade-duration(?<index>\\d+)*",
+    "|-lFd(?<index>\\d+)*",
+    "|\\/lFd(?<index>\\d+)*)$"
+  ].join("")),
 
   //                          HH:MM:SS.sss
   ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
@@ -1560,7 +1566,7 @@ const help = async ({ errorText = "" } = "") => {
        "/lFs"+optional("n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
-      `When the loop fade starts (default: 1)`
+      "When the loop fade starts (default: 1)"
       )}
 
     ${param(
@@ -1570,7 +1576,7 @@ const help = async ({ errorText = "" } = "") => {
        "/lFd"+optional("n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
-      `How much the loop fade should last (default: 4)`
+      "How much the loop fade should last (default: 4)"
       )}
 
     ${param(
