@@ -283,6 +283,19 @@ class MainOptions {
       number
     )
   }
+  /**
+   * Sets the interpolation type for loop fade
+   * @param {Number} index - index of the file
+   * @param {String} string - type of interpolation
+   */
+  static loopFadeInterpolation(index, string) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "loopFadeInterpolation",
+      !isNaN(index) ? index : undefined,
+      string
+    )
+  }
 }
 
 /**

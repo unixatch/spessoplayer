@@ -343,7 +343,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       // Strings
       case "fileOutputs":
       case "dryRun":
-      case "format": {
+      case "format": case "loopFadeInterpolation": {
         if (!needsToBeSet) {
           return (
             property === "fileOutputs"
@@ -362,6 +362,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
               : "/dev/null"
           );
           break;
+        }
+        if (property === "loopFadeInterpolation") {
+          if (Number.isInteger(index)) setIndex(); else pushValue()
+          return;
         }
         if (Number.isInteger(index)) setIndex(); else setValue()
         break;

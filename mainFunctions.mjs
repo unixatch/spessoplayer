@@ -699,7 +699,8 @@ function createReadable(Readable, isStdout = false, {
   seq, synth,
   getData, isf32le,
   doNotRepeat,
-  loopFade, loopFadeDuration = 4,
+  loopFade,
+  loopFadeDuration = 4, loopFadeInterpolation,
   startFading,
   progressBuffers
 }) {
@@ -750,6 +751,9 @@ function createReadable(Readable, isStdout = false, {
 
     progress.updateProgress(SCurrentTime)
   }
+  const CHANGE_IN_VOLUME     = .015,
+        EASEOUTQUAD_STRENGTH = 1.25,
+        EASEOUTSINE_STRENGTH = 2.25;
   /**
    * Calculates the new volume when fading
    * @return {Number} new volume
@@ -758,8 +762,24 @@ function createReadable(Readable, isStdout = false, {
     const {
       systemParameters: { gain }
     } = synth;
+    const percentage = gain / loopFadeDuration;
 
-    return gain - .015 * (gain / loopFadeDuration);
+    switch (loopFadeInterpolation) {
+      case "sine": case 2:
+        return gain - (
+          CHANGE_IN_VOLUME *
+          Math.sin(percentage * (Math.PI / EASEOUTSINE_STRENGTH))
+        );
+      case "quad": case 3:
+        return gain - (
+          -CHANGE_IN_VOLUME * percentage
+          * (percentage - EASEOUTQUAD_STRENGTH)
+        );
+
+      default:
+      case "linear": case 1:
+        return gain - CHANGE_IN_VOLUME * percentage;
+    }
   }
   /**
    * @typedef interleavedFloat32Channels
@@ -888,6 +908,7 @@ async function toStdout({
     getData, isf32le: format === "f32le",
     loopFade: options.loopFade,
     loopFadeDuration: options.loopFadeDuration,
+    loopFadeInterpolation: options.loopFadeInterpolation,
     startFading
   });
 
@@ -998,6 +1019,7 @@ async function toFile({
       index, progressBuffers,
       loopFade: options.loopFade,
       loopFadeDuration: options.loopFadeDuration,
+      loopFadeInterpolation: options.loopFadeInterpolation,
       startFading
     })
   );
@@ -1011,6 +1033,7 @@ async function toFile({
       doNotRepeat: readStream && true,
       loopFade: options.loopFade,
       loopFadeDuration: options.loopFadeDuration,
+      loopFadeInterpolation: options.loopFadeInterpolation,
       startFading
     })
   );

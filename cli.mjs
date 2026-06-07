@@ -127,6 +127,12 @@ const regexes = {
     "|-lFd(?<index>\\d+)*",
     "|\\/lFd(?<index>\\d+)*)$"
   ].join("")),
+  loopFadeInterpolation: new RegExp([
+    "^(?:--loop-fade-interpolation(?<index>\\d+)*",
+    "|\\/loop-fade-interpolation(?<index>\\d+)*",
+    "|-lFi(?<index>\\d+)*",
+    "|\\/lFi(?<index>\\d+)*)$"
+  ].join("")),
 
   //                          HH:MM:SS.sss
   ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
@@ -649,6 +655,23 @@ const actUpOnPassedArgs = async args => {
         i++
         break;
       }
+      case "--loop-fade-interpolation":
+      case "/loop-fade-interpolation":
+      case "-lFi": case "/lFi":
+      case regexes.loopFadeInterpolation.test(arg) && arg: {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade-interpolation because loop isn't set"
+          )
+          i++
+          break;
+        }
+        lastIndex = arg.match(regexes.loopFadeInterpolation)?.groups;
+        setLoopFadeInterpolation(nextArg, lastIndex)
+        i++
+        break;
+      }
 
       default:
         await help({
@@ -991,6 +1014,47 @@ const setLoopFadeDuration = (arg, lastIndex) => {
     `[loop-fade-duration|${lastIndexString}]:`, arg, invalidNumberString
   )
   process.exit(1)
+}
+/**
+ * Sets the Options.loopFadeInterpolation variable
+ * @param {String} arg - the loop fade duration amount in seconds
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ */
+const setLoopFadeInterpolation = (arg, lastIndex) => {
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { number, lastIndexNumber, lastIndexString } = argInfos;
+
+  // Out of range error check
+  if (number < 0 || number > 3) {
+    console.error(
+      formatStrings.failedCliParamWithArg,
+      `[loop-fade-interpolation|${lastIndexString}]:`, arg,
+      "is out of range of valid interpolation types"
+    )
+  }
+
+  let type;
+  switch (arg) {
+    case "linear": case "1":
+      type = "linear";
+      break;
+    case "sine":   case "2":
+      type = "sine";
+      break;
+    case "quad":   case "3":
+      type = "quad";
+      break;
+
+    default:
+      console.error(
+        formatStrings.failedCliParamWithArg,
+        `[loop-fade-interpolation|${lastIndexString}]:`, arg,
+        "is an invalid interpolation type"
+      )
+      process.exit(1)
+  }
+  Options.loopFadeInterpolation(lastIndexNumber, type)
+  log(INFO_LVL, `Set loop fade interpolation to ${arg} at ${lastIndex?.index} index`)
 }
 /**
  * Sets the Options.loopStart variable
@@ -1577,6 +1641,22 @@ const help = async ({ errorText = "" } = "") => {
     )}:
       ${multiLine(
       "How much the loop fade should last (default: 4)"
+      )}
+
+    ${param(
+      ["--loop-fade-interpolation"+optional("n")+" "+grayBoldText("type"),
+       "/loop-fade-interpolation"+optional("n")+" "+grayBoldText("type")],
+      ["-lFi"+optional("n")+" "+grayBoldText("type"),
+       "/lFi"+optional("n")+" "+grayBoldText("type")]
+    )}:
+      ${multiLine(
+      `What type of interpolation to use for loop-fade
+      (default: linear, 1)
+
+      Available fomrats:
+        - linear, 1
+        - sine,   2
+        - quad,   3`
       )}
 
     ${param(
