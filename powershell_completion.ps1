@@ -15,7 +15,144 @@
 #
 
 [scriptblock] $ScriptBlock = {
-    param($wordToComplete)
+    param( $wordToComplete, $commandAst )
+
+    function getCustomValue($type) {
+        # The argument that comes right after the parameter
+        # like -vol <tab>
+
+        switch ($type) {
+            "verbose"    { return 0..3      }
+            "volume"     { return 0..100    }
+            "seconds"    { return 0..10     }
+            "threads"    { return 1..16     }
+            "sampleRate" { return 0..96000  }
+            "textDelay"  { return 50..10000 }
+            "sampleRate" { return 0..96000  }
+            "format" {
+                return @(
+                    "wav",
+                    "flac", "mp3",
+                    "pcm",  "f32le"
+                )
+            }
+            "effects" {
+                return @(
+                    "firfit",      "flanger",    "bass",
+                    "loudness",    "lowpass",    "compand",
+                    "mcompand",    "noiseprof",  "dither",
+                    "allpass",     "band",       "echos",
+                    "bandpass",    "bandreject", "fir",
+                    "bend",        "biquad",     "ladspa",
+                    "chorus",      "channels",   "overdrive",
+                    "contrast",    "dcshift",    "remix",
+                    "deemph",      "delay",      "sinc",
+                    "divide",      "downsample", "stats",
+                    "earwax",      "echo",       "treble",
+                    "equalizer",   "fade",       "vol",
+                    "gain",        "highpass",   "repeat",
+                    "hilbert",     "input",
+                    "noisered",    "norm",
+                    "oops",        "output",
+                    "pad",         "phaser",
+                    "pitch",       "rate",
+                    "reverb",      "reverse",
+                    "riaa",        "silence",
+                    "spectrogram", "speed",
+                    "splice",      "stat",
+                    "stretch",     "swap",
+                    "synth",       "tempo",
+                    "tremolo",     "trim",
+                    "upsample",    "vad"
+                )
+            }
+        }
+    }
+    function createCompletion($list, $lastValue, $toolTip) {
+        if ($list -isnot [array]) {throw "No valid array was provided"}
+
+        $list.Where({
+            $_ -like "$($lastValue ? $lastValue : $_)*"
+        }) | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new(
+                $_, $_, "ParameterValue",
+                $ToolTip
+            )
+        }
+    }
+
+    [array]  $parameters = $commandAst -split " "
+    [int32]  $paramCount = $parameters.Count
+    [string] $lastParameter = $parameters[$paramCount-1]
+    [string] $lastValue = $lastParameter
+    <#
+      It might see it as a value
+      when in reality it's the parameter,
+        so if necessary use nothing instead
+    #>
+    [string] $actualLastValue = ( `
+        $lastValue -like "-*" `
+            ? "" : $lastValue `
+    )
+    # Might be the same value but not yet complete
+    # so use the one before it
+    if ($lastParameter -notlike "-*") {
+        $lastParameter = $parameters[$paramCount-2]
+    }
+
+    $listToPass = $null
+    $toolTipToPass = $null
+    switch -Regex ($lastParameter) {
+        '^(--verbose[0-9]*|-v[0-9]*)$' {
+            [array] $listToPass = getCustomValue verbose
+            [string] $toolTipToPass = "Verbosity levels"
+            break
+        }
+        '^(--loop[0-9]*|-l[0-9]*|--loop-start[0-9]*|-ls[0-9]*|--loop-end[0-9]*|-le[0-9]*|--loop-fade-start[0-9]*|-lFs[0-9]*|--loop-fade-duration[0-9]*|-lFd[0-9]*)$'
+        {
+            [array] $listToPass = getCustomValue seconds
+            [string] $toolTipToPass = "Seconds"
+            break
+        }
+        '^(--threads[0-9]*|-T[0-9]*|--max-threads[0-9]*|-mt[0-9]*)$' {
+            [array] $listToPass = getCustomValue threads
+            [string] $toolTipToPass = "Thread"
+            break
+        }
+        '^(--sample-rate[0-9]*|-r[0-9]*)$' {
+            [array] $listToPass = getCustomValue sampleRate
+            [string] $toolTipToPass = "Sample rate"
+            break
+        }
+        '^(--text-delay[0-9]*|-d[0-9]*)$' {
+            [array] $listToPass = getCustomValue textDelay
+            [string] $toolTipToPass = "Milliseconds"
+            break
+        }
+        '^(--volume[0-9]*|-vol[0-9]*|--reverb-volume[0-9]*|-rvb[0-9]*)$'
+        {
+            [array] $listToPass = getCustomValue volume
+            [string] $toolTipToPass = "Volume number"
+            break
+        }
+        '^(--format[0-9]*|-f[0-9]*)$' {
+            [array] $listToPass = getCustomValue format
+            [string] $toolTipToPass = "Format"
+            break
+        }
+        '^(--effects[0-9]*|-e[0-9]*)$' {
+            [array] $listToPass = getCustomValue effects
+            [string] $toolTipToPass = "SoX effect"
+            break
+        }
+    }
+    if ($listToPass) {
+        createCompletion `
+            -list $listToPass `
+            -lastValue $actualLastValue `
+            -toolTip $toolTipToPass
+        return
+    }
 
     $Options = @(
         @{
@@ -29,6 +166,10 @@
         @{
             CompletionText = "--reverb-volume", "-rvb"
             ToolTip = "Volume to set for reverb (default: none)"
+        },
+        @{
+            CompletionText = "--effects", "-e"
+            ToolTip = "Adds any effects that SoX provides (e.g 'reverb,fade 1')"
         },
         @{
             CompletionText = "--loop", "-l"
@@ -63,7 +204,7 @@
             ToolTip = "Format to use for stdout (default: wav) (formats: wav, mp3, flac, pcm, f32le)"
         },
         @{
-            CompletionText = "--threads", "-T"
+            CompletionText = "--threads", "-T", "--max-threads", "-mt"
             ToolTip = "Sets the amount of threads to use when writing to files."
         },
         @{
@@ -79,7 +220,7 @@
             ToolTip = "Disables progress text rendering (Only works in file mode)"
         },
         @{
-            CompletionText = "--confirmation", "-c"
+            CompletionText = "--confirmation", "-c", "--ask", "-a"
             ToolTip = "Asks for confirmation before proceeding"
         },
         @{
@@ -87,7 +228,7 @@
             ToolTip = "When asking for confirmation, it'll show the information in a JSON-like format instead of a table"
         },
         @{
-            CompletionText = "--dry-run", "-dr"
+            CompletionText = "--dry-run", "-dr", "--null", "-0", "--test", "-t"
             ToolTip = "Runs the program as normal but it'll write to /dev/null on unix and \\.\nul on windows."
         },
         @{
