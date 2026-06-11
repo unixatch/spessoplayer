@@ -1322,10 +1322,13 @@ async function startPlayer(Options, spessasynthLogging) {
       ?? converterProcess?.stdin        // Ffmpeg or
       ?? (res.write(stdoutHeader), res) // ServerResponse
     );
-    const [ func, promise ] = await toStdout({
+    const toStdoutValue = await toStdout({
       index: realIndex,
       options, res
     });
+    if (toStdoutValue === null) return;
+    const [ func, promise ] = toStdoutValue;
+
     func?.(destination, true)
     await Promise.all([promise, promisesOfPrograms])
 
