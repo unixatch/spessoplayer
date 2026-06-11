@@ -76,9 +76,14 @@ const {
 const debugLevelSpessoMsg = `Using variable DEBUG_LEVEL_SPESSO=${DEBUG_LEVEL_SPESSO}`,
       debugFileSpessoMsg  = `Using variable DEBUG_FILE_SPESSO=${DEBUG_FILE_SPESSO}`;
 if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
+  const UTILS_PATH = (
+    globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
+      .find(i => i.includes("utils/utils.mjs"))
+  );
+  const { INFO_LVL, log } = await import(UTILS_PATH);
+
   log(INFO_LVL, debugLevelSpessoMsg)
   log(INFO_LVL, debugFileSpessoMsg)
-  isVerboseLevelSet = true;
 } else {
   await manageVerboseOptions({
     DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,

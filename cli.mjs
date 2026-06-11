@@ -115,6 +115,24 @@ const regexes = {
     "|-le(?<index>\\d+)*",
     "|\\/le(?<index>\\d+)*)$"
   ].join("")),
+  loopFadeStart: new RegExp([
+    "^(?:--loop-fade-start(?<index>\\d+)*",
+    "|\\/loop-fade-start(?<index>\\d+)*",
+    "|-lFs(?<index>\\d+)*",
+    "|\\/lFs(?<index>\\d+)*)$"
+  ].join("")),
+  loopFadeDuration: new RegExp([
+    "^(?:--loop-fade-duration(?<index>\\d+)*",
+    "|\\/loop-fade-duration(?<index>\\d+)*",
+    "|-lFd(?<index>\\d+)*",
+    "|\\/lFd(?<index>\\d+)*)$"
+  ].join("")),
+  loopFadeInterpolation: new RegExp([
+    "^(?:--loop-fade-interpolation(?<index>\\d+)*",
+    "|\\/loop-fade-interpolation(?<index>\\d+)*",
+    "|-lFi(?<index>\\d+)*",
+    "|\\/lFi(?<index>\\d+)*)$"
+  ].join("")),
 
   //                          HH:MM:SS.sss
   ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
@@ -592,6 +610,68 @@ const actUpOnPassedArgs = async args => {
         i++
         break;
       }
+      case "--loop-fade": case "/loop-fade":
+      case "-lF":         case "/lF": {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade because loop isn't set"
+          )
+          break;
+        }
+        Options.loopFade = true;
+        log(INFO_LVL, "Set loop-fade flag")
+        break;
+      }
+      case "--loop-fade-start": case "/loop-fade-start":
+      case "-lFs":              case "/lFs":
+      case regexes.loopFadeStart.test(arg) && arg: {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade-start because loop isn't set"
+          )
+          i++
+          break;
+        }
+        lastIndex = arg.match(regexes.loopFadeStart)?.groups;
+        setLoopFadeStart(nextArg, lastIndex)
+        i++
+        break;
+      }
+      case "--loop-fade-duration": case "/loop-fade-duration":
+      case "-lFd":                 case "/lFd":
+      case regexes.loopFadeDuration.test(arg) && arg: {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade-duration because loop isn't set"
+          )
+          i++
+          break;
+        }
+        lastIndex = arg.match(regexes.loopFadeDuration)?.groups;
+        setLoopFadeDuration(nextArg, lastIndex)
+        i++
+        break;
+      }
+      case "--loop-fade-interpolation":
+      case "/loop-fade-interpolation":
+      case "-lFi": case "/lFi":
+      case regexes.loopFadeInterpolation.test(arg) && arg: {
+        loopExists ??= testFunctions.loop(newArgumentsSet);
+        if (!loopExists) {
+          log(WARNING_LVL,
+            "Skipping loop-fade-interpolation because loop isn't set"
+          )
+          i++
+          break;
+        }
+        lastIndex = arg.match(regexes.loopFadeInterpolation)?.groups;
+        setLoopFadeInterpolation(nextArg, lastIndex)
+        i++
+        break;
+      }
 
       default:
         await help({
@@ -798,16 +878,33 @@ const isRealNumber = (number, checkForInfinity) => {
       : isNumber
   );
 };
-const invalidNumberString = "isn't a valid number";
+/**
+ * Translates the given strings into useful values
+ * @param {String} arg argument of the parameter
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ * @return {Object} infos about the argument
+ */
+const getArgInfos = (arg, lastIndex) => ({
+  number: Number(arg),
+  lastIndexNumber: Number(lastIndex?.index),
+  lastIndexString: lastIndex?.index ?? "0"
+});
+// Error/invalid strings/messages
+const invalidNumberString       = "isn't a valid number",
+      invalidNumberOrISOString  = "isn't a valid number or a valid ISO string format",
+      negativeNumberErrorString = "must be above or equal to 0",
+      invalidVolumeString       = "isn't a valid number/dB/percentage";
+
 /**
  * Sets the Options.loopAmount variable
  * @param {String} arg - the loop amount
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoop = (arg, lastIndex) => {
-  let number = Number(arg);
-  const lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { lastIndexNumber, lastIndexString } = argInfos;
+  let number = argInfos.number;
+
   // Negative conversion
   if (number < 0) {
     log(WARNING_LVL,
@@ -836,16 +933,138 @@ const setLoop = (arg, lastIndex) => {
   )
   process.exit(1)
 }
-const invalidNumberOrISOString = "isn't a valid number or a valid ISO string format";
+/**
+ * Sets the Options.loopFadeStart variable
+ * @param {String} arg - the loop fade delay amount in seconds
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ */
+const setLoopFadeStart = (arg, lastIndex) => {
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { lastIndexNumber, lastIndexString } = argInfos;
+  let number = argInfos.number;
+
+  // Default
+  if (isNaN(number)) {
+    Options.loopFadeStart(lastIndexNumber, 1)
+    log(INFO_LVL, `Set loop fade start to 1 at ${lastIndex?.index} index`)
+    return;
+  }
+  // Negative conversion
+  if (number < 0) {
+    log(WARNING_LVL,
+      `Converted ${
+        underline+number+endUnderline
+      } to 0 because it was negative`
+    )
+    number = 0;
+  }
+
+  if (number === Infinity) {
+    console.error(
+      formatStrings.failedCliParam,
+      `[loop-fade-start|${lastIndexString}]: Can't use infinity, sorry`
+    )
+    process.exit(1)
+  }
+  if (isRealNumber(number)) {
+    Options.loopFadeStart(lastIndexNumber, number)
+    log(INFO_LVL, `Set loop fade start to ${number} at ${lastIndex?.index} index`)
+    return;
+  }
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    `[loop-fade-start|${lastIndexString}]:`, arg, invalidNumberString
+  )
+  process.exit(1)
+}
+/**
+ * Sets the Options.loopFadeDuration variable
+ * @param {String} arg - the loop fade duration amount in seconds
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ */
+const setLoopFadeDuration = (arg, lastIndex) => {
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { lastIndexNumber, lastIndexString } = argInfos;
+  let number = argInfos.number;
+
+  // Negative conversion
+  if (number < 0) {
+    log(WARNING_LVL,
+      `Converted ${
+        underline+number+endUnderline
+      } to 0 because it was negative`
+    )
+    number = 0;
+  }
+
+  if (number === Infinity) {
+    console.error(
+      formatStrings.failedCliParam,
+      `[loop-fade-duration|${lastIndexString}]: Can't use infinity, sorry`
+    )
+    process.exit(1)
+  }
+  if (isRealNumber(number)) {
+    Options.loopFadeDuration(lastIndexNumber, number)
+    log(INFO_LVL, `Set loop fade duration to ${number} at ${lastIndex?.index} index`)
+    return;
+  }
+  console.error(
+    formatStrings.failedCliParamWithArg,
+    `[loop-fade-duration|${lastIndexString}]:`, arg, invalidNumberString
+  )
+  process.exit(1)
+}
+/**
+ * Sets the Options.loopFadeInterpolation variable
+ * @param {String} arg - the loop fade duration amount in seconds
+ * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ */
+const setLoopFadeInterpolation = (arg, lastIndex) => {
+  const argInfos = getArgInfos(arg, lastIndex);
+  const { number, lastIndexNumber, lastIndexString } = argInfos;
+
+  // Out of range error check
+  if (number < 0 || number > 3) {
+    console.error(
+      formatStrings.failedCliParamWithArg,
+      `[loop-fade-interpolation|${lastIndexString}]:`, arg,
+      "is out of range of valid interpolation types"
+    )
+  }
+
+  let type;
+  switch (arg) {
+    case "linear": case "1":
+      type = "linear";
+      break;
+    case "sine":   case "2":
+      type = "sine";
+      break;
+    case "quad":   case "3":
+      type = "quad";
+      break;
+
+    default:
+      console.error(
+        formatStrings.failedCliParamWithArg,
+        `[loop-fade-interpolation|${lastIndexString}]:`, arg,
+        "is an invalid interpolation type"
+      )
+      process.exit(1)
+  }
+  Options.loopFadeInterpolation(lastIndexNumber, type)
+  log(INFO_LVL, `Set loop fade interpolation to ${arg} at ${lastIndex?.index} index`)
+}
 /**
  * Sets the Options.loopStart variable
  * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopStart = (arg, lastIndex) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
 
   const argAsADate = Date.parse(`1970T${arg}Z`);
   if (
@@ -875,12 +1094,16 @@ const setLoopStart = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setLoopEnd = (arg, lastIndex) => {
-  const number = Math.abs(Number(arg)),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number: ogNumber, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
+  const number = Math.abs(ogNumber);
 
   const argAsADate = Date.parse(`1970T${arg}Z`);
-  if (isRealNumber(number, true) || !isNaN(argAsADate)) {
+  if (
+    isRealNumber(number, true)
+    && !(number < 0) || !isNaN(argAsADate)
+  ) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = argAsADate / 1000;
       Options.loopEnd(lastIndexNumber, seconds)
@@ -897,7 +1120,6 @@ const setLoopEnd = (arg, lastIndex) => {
   )
   process.exit(1)
 }
-const negativeNumberErrorString = "must be above or equal to 0";
 /**
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
@@ -905,8 +1127,10 @@ const negativeNumberErrorString = "must be above or equal to 0";
  * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
  */
 const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
-  const number = Number(arg),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
+
   if (number < 0) {
     console.error(
       formatStrings.failedCliParam,
@@ -920,7 +1144,7 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
       log(INFO_LVL, `Set sample rate for all to ${number} because output is stdout`)
       return;
     }
-    Options.sampleRate(Number(lastIndex?.index), number)
+    Options.sampleRate(lastIndexNumber, number)
     log(INFO_LVL, `Set sample rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
@@ -1053,16 +1277,15 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
   )
   process.exit(1)
 }
-const invalidVolumeString = "isn't a valid number/dB/percentage";
 /**
  * Sets the Options.volume variable for the masterGain
  * @param {String} arg - the volume in either percentage, decibels or decimals
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setVolume = (arg, lastIndex) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
@@ -1104,9 +1327,9 @@ const setVolume = (arg, lastIndex) => {
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
 const setReverb = (arg, lastIndex, newArgumentsSet) => {
-  const number = Number(arg),
-        lastIndexNumber = Number(lastIndex?.index),
-        lastIndexString = lastIndex?.index ?? "0";
+  const {
+    number, lastIndexNumber, lastIndexString
+  } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
     const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
@@ -1181,11 +1404,15 @@ const setMaxThreads = async (arg) => {
  * @param {String} arg - delay to set
  */
 const setTextDelay = (arg) => {
-  const number = Number(arg.match(regexes.textDelay).groups.number);
+  const {
+    groups: { number: matchNumberString }
+  } = arg.match(regexes.textDelay);
+  const number = Number(matchNumberString);
+
   // Default
   if (isNaN(number)) {
     Options.textDelay = 500;
-    log(INFO_LVL, `Set text delay to ${number}`)
+    log(INFO_LVL, `Set text delay to 500`)
     return;
   }
   if (isRealNumber(number, true) && number >= 50) {
@@ -1387,6 +1614,49 @@ const help = async ({ errorText = "" } = "") => {
     )}:
       ${multiLine(
       `The loop will restart at ${optional("-")+grayBoldText("seconds")+dimGray+italics} from the end`
+      )}
+
+    ${param(["--loop-fade", "/loop-fade"], ["-lF", "/lF"])}:
+      ${multiLine(
+      `It does 1 more loop on top of yours
+      and then it fades away slowly based on loop-fade-start
+        (Doesn't work without the loop parameter turned on)`
+      )}
+
+    ${param(
+      ["--loop-fade-start"+optional("n")+" "+grayBoldText("seconds"),
+       "/loop-fade-start"+optional("n")+" "+grayBoldText("seconds")],
+      ["-lFs"+optional("n")+" "+grayBoldText("seconds"),
+       "/lFs"+optional("n")+" "+grayBoldText("seconds")]
+    )}:
+      ${multiLine(
+      "When the loop fade starts (default: 1)"
+      )}
+
+    ${param(
+      ["--loop-fade-duration"+optional("n")+" "+grayBoldText("seconds"),
+       "/loop-fade-duration"+optional("n")+" "+grayBoldText("seconds")],
+      ["-lFd"+optional("n")+" "+grayBoldText("seconds"),
+       "/lFd"+optional("n")+" "+grayBoldText("seconds")]
+    )}:
+      ${multiLine(
+      "How much the loop fade should last (default: 4)"
+      )}
+
+    ${param(
+      ["--loop-fade-interpolation"+optional("n")+" "+grayBoldText("type"),
+       "/loop-fade-interpolation"+optional("n")+" "+grayBoldText("type")],
+      ["-lFi"+optional("n")+" "+grayBoldText("type"),
+       "/lFi"+optional("n")+" "+grayBoldText("type")]
+    )}:
+      ${multiLine(
+      `What type of interpolation to use for loop-fade
+      (default: linear, 1)
+
+      Available fomrats:
+        - linear, 1
+        - sine,   2
+        - quad,   3`
       )}
 
     ${param(

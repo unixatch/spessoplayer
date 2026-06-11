@@ -250,6 +250,52 @@ class MainOptions {
       number
     )
   }
+  /**
+   * Sets the sample rate of the stdout output
+   * @param {Boolean} boolean - value to set for loopFade
+   */
+  static set loopFade(boolean) {
+    addProperty(this, "loopFade", boolean, true)
+  }
+  /**
+   * Sets when the loop fade should start
+   * @param {Number} index - index of the file
+   * @param {Number} number - start of the loop fade
+   */
+  static loopFadeStart(index, number) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "loopFadeStart",
+      !isNaN(index) ? index : undefined,
+      number
+    )
+  }
+  /**
+   * Sets the duration of the loop fade
+   * @param {Number} index - index of the file
+   * @param {Number} number - start of the loop fade
+   */
+  static loopFadeDuration(index, number) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "loopFadeDuration",
+      !isNaN(index) ? index : undefined,
+      number
+    )
+  }
+  /**
+   * Sets the interpolation type for loop fade
+   * @param {Number} index - index of the file
+   * @param {String} string - type of interpolation
+   */
+  static loopFadeInterpolation(index, string) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "loopFadeInterpolation",
+      !isNaN(index) ? index : undefined,
+      string
+    )
+  }
 }
 
 /**
@@ -300,7 +346,7 @@ class EffectsOptions {
   }
 }
 
-export let classes = [
+export const classes = [
   MainOptions, EffectsOptions
 ];
 

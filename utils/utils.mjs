@@ -159,11 +159,13 @@ function newFileName(path, createAnyway = false) {
         return String.fromCharCode(randomInteger);
     }
   };
-  const MAX_LENGTH = 8,
-        parsedPath = parse(path),
-        { dir: pathDir, ext: pathExt } = parsedPath;
-  let newString = "",
-      pathFileName = parsedPath.name;
+  const MAX_LENGTH = 8;
+  let {
+    dir: pathDir,
+    name: pathFileName, ext: pathExt
+  } = parse(path);
+  let newString = "";
+
   for (let i = 0; i < MAX_LENGTH; i++) newString += randomCharCode();
 
   pathFileName += "__"+newString+"__";
@@ -306,16 +308,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Numbers
-      case "verboseLevel":
-      case "stdoutReverbVolume":
-      case "reverbVolume":
       case "volume":
+      case "stdoutReverbVolume": case "reverbVolume":
       case "sampleRate":
       case "loopAmount":
-      case "loopStart":
+      case "loopStart": case "loopEnd":
       case "maxThreads":
       case "textDelay":
-      case "loopEnd": {
+      case "loopFadeStart": case "loopFadeDuration": {
         if (!needsToBeSet) return;
 
         this.#checkValueAndExistence(
@@ -332,10 +332,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Boolean
-      case "confirmation":
-      case "noTable":
-      case "showUsage":
-      case "noProgress":
+      case "loopFade":
+      case "confirmation": case "noTable":
+      case "showUsage":    case "noProgress":
       case "toStdout": {
         this.#checkValueAndExistence(value, "boolean")
         setValue()
@@ -343,9 +342,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       }
       // Strings
       case "fileOutputs":
-      case "logFilePath":
       case "dryRun":
-      case "format": {
+      case "format": case "loopFadeInterpolation": {
         if (!needsToBeSet) {
           return (
             property === "fileOutputs"
@@ -364,6 +362,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
               : "/dev/null"
           );
           break;
+        }
+        if (property === "loopFadeInterpolation") {
+          if (Number.isInteger(index)) setIndex(); else pushValue()
+          return;
         }
         if (Number.isInteger(index)) setIndex(); else setValue()
         break;

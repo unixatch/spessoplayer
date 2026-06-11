@@ -58,6 +58,21 @@ The loop will start after **seconds**
 #### &nbsp;&nbsp;-le[n] **seconds**, /le[n] **seconds**:
 The loop will restart at [-] **seconds** from the end
 
+### --loop-fade, /loop-fade,
+#### &nbsp;&nbsp;-lF, /lF:
+It does 1 more loop on top of yours
+and then it fades away slowly based on loop-fade-start
+
+&nbsp;&nbsp;&nbsp;<sub>(Doesn't work without the loop parameter turned on)</sub>
+
+### --loop-fade-start[n] **seconds**, /loop-fade-start[n] **seconds**,
+#### &nbsp;&nbsp;-lFs[n] **seconds**, /lFs[n] **seconds**:
+When the loop fade starts (*default: 1*)
+
+### --loop-fade-interpolation[n] **type**, /loop-fade-interpolation[n] **type**,
+#### &nbsp;&nbsp;-lFi[n] **type**, /lFi[n] **type**:
+How much the loop fade should last (*default: 4*)
+
 ### --sample-rate[n] **samples**, /sample-rate[n] **samples**,
 #### &nbsp;&nbsp;-r[n] **samples**, /r[n] **samples**:
 Sample rate to use (*default: 48000*)
