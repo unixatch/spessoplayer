@@ -314,7 +314,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "loopAmount":
       case "loopStart": case "loopEnd":
       case "maxThreads":
-      case "textDelay":
+      case "progressDelay":
       case "loopFadeStart": case "loopFadeDuration": {
         if (!needsToBeSet) return;
 

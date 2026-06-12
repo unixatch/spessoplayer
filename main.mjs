@@ -356,7 +356,7 @@ const {
   files: {
     length: filesListLength
   },
-  showUsage, textDelay, noProgress,
+  showUsage, progressDelay, noProgress,
   maxThreads: OMaxThreads
 } = listOfOptions;
 // Calculates amountToRender (length of all songs combined)
@@ -522,7 +522,7 @@ const stateablePromiseFunction = function (resolve, reject) {
     renderTextsInterval ??= (
       noProgress ?? setInterval(
         renderTextsFunction,
-        textDelay ?? RENDER_TEXTS_DELAY,
+        progressDelay ?? RENDER_TEXTS_DELAY,
         progress
       )
     );

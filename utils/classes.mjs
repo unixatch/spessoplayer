@@ -136,11 +136,11 @@ class MainOptions {
     addProperty(this, "showUsage", value)
   }
   /**
-   * Sets textDelay number
-   * @param {Number} value - sets the text delay for file mode
+   * Sets progressDelay number
+   * @param {Number} value - sets the progress delay for file mode
    */
-  static set textDelay(value) {
-    addProperty(this, "textDelay", value, true)
+  static set progressDelay(value) {
+    addProperty(this, "progressDelay", value, true)
   }
   /**
    * Sets dryRun path string

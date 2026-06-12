@@ -101,8 +101,8 @@ Useful when you don't have much RAM
 Shows RAM usage and CPU time.
 (Only works in file mode)
 
-### --text-delay[=n], /text-delay[=n],
-#### &nbsp;&nbsp;-d[=n], /d[=n]:
+### --progress-delay **milliseconds**, /progress-delay **milliseconds**,
+#### &nbsp;&nbsp;-d **milliseconds**, /d **milliseconds**:
 Changes how fast it renders text.
 (Only works in file mode)
 NOTE: Going below the default will hurt performance

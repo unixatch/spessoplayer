@@ -46,13 +46,6 @@ const regexes = {
     "|\\/lf(?:=(?<path>\\w+))*)$"
   ].join("")),
 
-  textDelay: new RegExp([
-    "^(?:--text-delay(?:=(?<number>\\d+))*",
-    "|\\/text-delay(?:=(?<number>\\d+))*",
-    "|-d(?:=(?<number>\\d+))*",
-    "|\\/d(?:=(?<number>\\d+))*)$"
-  ].join("")),
-
   wav:  /^.*\.(?:wav|wave)$/,
   flac: /^.*\.flac$/,
   mp3:  /^.*\.mp3$/,
@@ -502,17 +495,18 @@ const actUpOnPassedArgs = async args => {
         setFormat(nextArg); i++
         break;
       }
-      case "--text-delay": case "/text-delay":
-      case "-d":           case "/d":
-      case regexes.textDelay.test(arg) && arg: {
+      case "--progress-delay": case "/progress-delay":
+      case "-d":               case "/d": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
-          setTextDelay(arg)
-          break;
+          setProgressDelay(nextArg)
+          i++; break;
         }
         log(WARNING_LVL,
-          "Ignored text-delay flag since stdout mode is enabled"
+          "Ignored progress-delay flag since stdout mode is enabled"
         )
+        // In case the user passed a number
+        if (!isNaN(Number(nextArg))) i++
         break;
       }
       case "--input": case "/input":
@@ -1400,30 +1394,27 @@ const setMaxThreads = async (arg) => {
   process.exit(1)
 }
 /**
- * Sets the Options.textDelay variable
+ * Sets the Options.progressDelay variable
  * @param {String} arg - delay to set
  */
-const setTextDelay = (arg) => {
-  const {
-    groups: { number: matchNumberString }
-  } = arg.match(regexes.textDelay);
-  const number = Number(matchNumberString);
+const setProgressDelay = (arg) => {
+  const number = Number(arg);
 
   // Default
   if (isNaN(number)) {
-    Options.textDelay = 500;
+    Options.progressDelay = 500;
     log(INFO_LVL, `Set text delay to 500`)
     return;
   }
   if (isRealNumber(number, true) && number >= 50) {
-    Options.textDelay = number;
+    Options.progressDelay = number;
     log(INFO_LVL, `Set text delay to ${number}`)
     return;
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[text-delay]:", arg,
-    "is out of range of valid numbers for text-delay"
+    "[progress-delay]:", arg,
+    "is out of range of valid numbers of milliseconds"
   )
   process.exit(1)
 }
@@ -1711,11 +1702,12 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--text-delay"+optional("=n"), "/text-delay"+optional("=n")],
-      ["-d"+optional("=n"), "/d"+optional("=n")]
+      ["--progress-delay "+grayBoldText("milliseconds"),
+       "/progress-delay "+grayBoldText("milliseconds")],
+      ["-d "+grayBoldText("milliseconds"), "/d "+grayBoldText("milliseconds")]
     )}:
       ${multiLine(
-      `Changes how fast it renders text (default: 500)
+      `Changes how fast it renders text (default: 500ms)
       (Only works in file mode)
       ${normal+normalYellow+italics}NOTE${dimGray}: Going below the default will hurt performance`
       )}

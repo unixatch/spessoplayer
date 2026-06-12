@@ -63,7 +63,7 @@ function addOptionalArgumentsToFile(args) {
   if (process.argv.includes("-nt"))  args.push("-nt")
   // Progress options
   if (process.argv.includes("-U"))   args.push("-U")
-  if (process.argv.includes("-d"))   args.push("-d=1000")
+  if (process.argv.includes("-d"))   args.push("-d", "1000")
   if (process.argv.includes("-np"))  args.push("-np")
   // SoX reverb effect
   if (process.argv.includes("-rvb")) args.push("-rvb", "20")
@@ -103,16 +103,16 @@ function generalCliArguments(mode) {
 
     default:
       return [
-        "-f", "flac",         // format
-        "--dry-run",          // Only test
+        "-f", "flac",             // format
+        "--dry-run",              // Only test
         "--no-progress",
-        "--text-delay=75",    // How fast it renders progress
-        "--show-usage",       // RAM usage and CPU time
-        "--no-table",         // Plain files object
-        "--confirm",          // confirmation
-        "--max-threads", "4", // threads to use for toFile
-        "--loop-fade",        // adds 1 loop on top of loop but only has a fade
-        "--verbose"           // verboseLevel, must be the last
+        "--progress-delay", "75", // How fast it renders progress
+        "--show-usage",           // RAM usage and CPU time
+        "--no-table",             // Plain files object
+        "--confirm",              // confirmation
+        "--max-threads", "4",     // threads to use for toFile
+        "--loop-fade",            // adds 1 loop on top of loop but only has a fade
+        "--verbose"               // verboseLevel, must be the last
       ];
   }
 }
