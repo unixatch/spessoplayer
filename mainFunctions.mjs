@@ -501,8 +501,8 @@ async function initSpessaSynth({
     }
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
-    enableEventSystem: false,
-    enableEffects: false
+    eventsEnabled: false,
+    effectsEnabled: false
   });
   synth.setSystemParameter("gain", volume)
   synth.synthCore.soundBankManager.addSoundBank(
