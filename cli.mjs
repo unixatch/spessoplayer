@@ -551,6 +551,13 @@ const actUpOnPassedArgs = async args => {
       case "--reverb-volume": case "/reverb-volume":
       case "-rvb":            case "/rvb":
       case regexes.reverbVolume.test(arg) && arg: {
+        if (Options.externalEffectProcesser === true) {
+          log(WARNING_LVL,
+            "Ignored reverb-volume flag "+
+            "since effects flag has been used"
+          )
+          i++; break;
+        }
         lastIndex = arg.match(regexes.reverbVolume)?.groups;
         setReverb(nextArg, lastIndex, newArgumentsSet)
         i++
@@ -559,6 +566,14 @@ const actUpOnPassedArgs = async args => {
       case "--effects": case "/effects":
       case "-e":       case "/e":
       case regexes.effects.test(arg) && arg: {
+        if (Options.externalEffectProcesser === false) {
+          log(WARNING_LVL,
+            "Ignored effects flag since "+
+            "a builtin effect option has been used "+
+              "(e.g. reverb-volume)"
+          )
+          i++; break;
+        }
         lastIndex = arg.match(regexes.effects)?.groups;
         setEffects(nextArg, lastIndex, newArgumentsSet)
         i++
@@ -1326,7 +1341,9 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
   } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
-    const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
+    const dB = Number(arg.match(regexes.decibelNumber)[1]);
+    const dBNumber = 10**(dB/20);
+
     if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutReverbVolume = dBNumber;
     } else {
@@ -1337,13 +1354,14 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
-    const toDB = 10 * 10**(percentage/100);
+    const toFloat = percentage / 100;
+
     if (testFunctions.stdout(newArgumentsSet)) {
-      Options.stdoutReverbVolume = toDB;
+      Options.stdoutReverbVolume = toFloat;
     } else {
-      Options.reverbVolume(lastIndexNumber, toDB)
+      Options.reverbVolume(lastIndexNumber, toFloat)
     }
-    log(INFO_LVL, `Set reverb volume to ${toDB} and effects variable to ${lastIndex?.index}`)
+    log(INFO_LVL, `Set reverb volume to ${toFloat} and effects variable to ${lastIndex?.index}`)
     return;
   }
   // Negative conversion
@@ -1566,8 +1584,10 @@ const help = async ({ errorText = "" } = "") => {
        "/rvb"+optional("n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
-      `Volume to set for reverb (default: none)
-      Same formats as volume`
+      `Volume to set for reverb
+      Same formats as volume but with different results
+      because it's a builtin effect
+        (confilcts with --effects) (default: none)`
       )}
 
     ${param(

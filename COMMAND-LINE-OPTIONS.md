@@ -36,9 +36,12 @@
 
 ### --reverb-volume[n] **amount**, /reverb-volume[n] **amount**,
 #### &nbsp;&nbsp;-rvb[n] **amount**, /rvb[n] **amount**:
-  Volume to set for reverb (*default: none*)
+Volume to set for reverb
 
-  Same formats as volume
+Same formats as volume but with different results
+because it's a builtin effect
+
+&nbsp;&nbsp;&nbsp;<sub>(confilcts with --effects) (*default: none*)</sub>
 
 ### --effects **effects_list**, /effects **effects_list**,
 #### &nbsp;&nbsp;-e **effects_list**, /e **effects_list**:

@@ -305,6 +305,15 @@ class MainOptions {
  */
 class EffectsOptions {
   /**
+   * Returns if effects are handled by spessasynth
+   * @return {Boolean} if it's spessasynth or SoX
+   */
+  static get externalEffectProcesser() {
+    const isBuiltin = getProperty(this, "spessaSynthEffects");
+    if (isBuiltin === undefined) return;
+    return !isBuiltin;
+  }
+  /**
    * Adds a list of effects to a specific file
    * @param {Number} index - index of the file
    * @param {Array} arrayOfObjects - an array of object effects
@@ -316,6 +325,7 @@ class EffectsOptions {
       isNaN(index) ? undefined : index,
       arrayOfObjects
     )
+    addProperty(this, "spessaSynthEffects", false)
   }
   /**
    * Sets the stdout array of effects
@@ -323,6 +333,7 @@ class EffectsOptions {
    */
   static set stdoutEffects(arrayOfObjects) {
     addProperty(this, "stdoutEffects", arrayOfObjects, true)
+    addProperty(this, "spessaSynthEffects", false)
   }
   /**
    * Change reverb's volume of a specific file
@@ -336,6 +347,7 @@ class EffectsOptions {
       !isNaN(index) ? index : undefined,
       number
     )
+    addProperty(this, "spessaSynthEffects", true)
   }
   /**
    * Sets reverb's volume for stdout mode
@@ -343,6 +355,7 @@ class EffectsOptions {
    */
   static set stdoutReverbVolume(number) {
     addProperty(this, "stdoutReverbVolume", number, true)
+    addProperty(this, "spessaSynthEffects", true)
   }
 }
 

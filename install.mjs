@@ -104,7 +104,7 @@ await runCheck(
 // SoX check
 await runCheck(
   "sox",
-  "Continuing installation, but you'll get errors when trying to add effects"
+  "Continuing installation, but you'll get errors when trying to use the effects flag"
 )
 // mpv check
 await runCheck(

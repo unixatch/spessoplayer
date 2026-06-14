@@ -335,7 +335,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "loopFade":
       case "confirmation": case "noTable":
       case "showUsage":    case "noProgress":
-      case "toStdout": {
+      case "toStdout":     case "spessaSynthEffects": {
+        if (!needsToBeSet && property === "spessaSynthEffects") {
+          return this.#options[property];
+        }
         this.#checkValueAndExistence(value, "boolean")
         setValue()
         break;

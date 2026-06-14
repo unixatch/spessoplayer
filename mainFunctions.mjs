@@ -157,7 +157,7 @@ async function formatManager({
         if (isStdout) {
           addPipingFunction()
         } else {
-          await applyEffects({
+          if (effects) await applyExternalEffects({
             program: "sox",
             stdoutHeader, readStream,
             addErrorEventToDest,
@@ -167,7 +167,7 @@ async function formatManager({
             effects, reverbVolume
           })
         }
-        log(INFO_LVL, doneSettingUpMsg)
+        if (isStdout) log(INFO_LVL, doneSettingUpMsg)
         break;
       }
       if (isToFile) {
@@ -229,8 +229,8 @@ async function formatManager({
       );
       log(DEBUG_LVL, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
 
-      if (effects || reverbVolume !== undefined) {
-        await applyEffects({
+      if (effects) {
+        await applyExternalEffects({
           program: "sox",
           stdoutHeader, readStream,
           addErrorEventToDest,
@@ -403,6 +403,7 @@ async function initSpessaSynth({
   volume = 100/100,
   midiFile, soundfontFile,
   sampleRate = 48000,
+  spessaSynthEffects = false, reverbVolume,
   loopStart, loopEnd,
   loopFade, loopFadeStart = 1, loopFadeDuration = 4,
   index, indexOfGroup,
@@ -502,9 +503,12 @@ async function initSpessaSynth({
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     eventsEnabled: false,
-    effectsEnabled: false
+    effectsEnabled: spessaSynthEffects
   });
   synth.setSystemParameter("gain", volume)
+  if (spessaSynthEffects) {
+    synth.setSystemParameter("reverbGain", reverbVolume)
+  }
   synth.synthCore.soundBankManager.addSoundBank(
     soundFontList[indexOfGroup],
     "main"
@@ -530,9 +534,9 @@ async function initSpessaSynth({
  * @return {Promise<Array<ChildProcess,Array>>} array containing SoX's process and the array of promises for both ffmpeg and SoX processes
  *
  * @example
- * applyEffects({ program: "sox", stdoutHeader, readStream })
+ * applyExternalEffects({ program: "sox", stdoutHeader, readStream })
  */
-async function applyEffects({
+async function applyExternalEffects({
   program,
   stdoutHeader, readStream,
   addErrorEventToDest,
@@ -1297,9 +1301,8 @@ async function startPlayer(Options, spessasynthLogging) {
       );
     }
     // If it needs effects, excluding lossless/wave formats
-    if ((effects || reverbVolume !== undefined)
-        && format?.match(ffmpegFormats)) {
-      [effectsProcess] = await applyEffects({
+    if (effects && format?.match(ffmpegFormats)) {
+      [effectsProcess] = await applyExternalEffects({
         program: "sox",
         stdoutHeader,
         stdout: converterProcess.stdin,
@@ -1396,7 +1399,7 @@ async function startPlayer(Options, spessasynthLogging) {
 export {
   ffmpegArgs,
   initSpessaSynth,
-  applyEffects,
+  applyExternalEffects,
   addEvent,
   toStdout,
   toFile,

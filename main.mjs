@@ -30,7 +30,7 @@ import {
 import {
   ffmpegArgs,
   initSpessaSynth,
-  applyEffects,
+  applyExternalEffects,
   addEvent,
   toStdout,
   Progress,
@@ -202,9 +202,8 @@ if (isToStdout) {
     })
   }
   // If it needs effects, excluding lossless formats
-  if ((effectsList || reverbVolume !== undefined)
-      && !stdoutFormat?.match(losslessFormats)) {
-    [effectsProcess] = await applyEffects({
+  if (effectsList && !stdoutFormat?.match(losslessFormats)) {
+    [effectsProcess] = await applyExternalEffects({
       program: "sox",
       stdoutHeader,
       stdout: converterProcess?.stdin ?? dryRunStream,
