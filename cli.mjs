@@ -1421,12 +1421,12 @@ const setProgressDelay = (arg) => {
   // Default
   if (isNaN(number)) {
     Options.progressDelay = 500;
-    log(INFO_LVL, `Set text delay to 500`)
+    log(INFO_LVL, `Set progress delay to 500`)
     return;
   }
   if (isRealNumber(number, true) && number >= 50) {
     Options.progressDelay = number;
-    log(INFO_LVL, `Set text delay to ${number}`)
+    log(INFO_LVL, `Set progress delay to ${number}`)
     return;
   }
   console.error(
