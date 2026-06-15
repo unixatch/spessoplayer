@@ -288,7 +288,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @throws {(TypeError|Error)} if a value is not the right type or the property doesn't exist
    */
   static _manageOption(
-    {property, index, value, setter = false},
+    {property, index, value, setter = false, isStdout = false},
     needsToBeSet = true, needsAnArray = false
   ) {
     this.#checkValueAndExistence(property, "string")
@@ -337,9 +337,21 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "showUsage":    case "noProgress":
       case "toStdout":     case "spessaSynthEffects": {
         if (!needsToBeSet && property === "spessaSynthEffects") {
-          return this.#options[property];
+          if (this.#options[property] === undefined) return;
+          if (Number.isNaN(index)) index = this.#options[property].length-1;
+          return (
+            index !== undefined
+              ? this.#options[property][index]
+              : this.#options[property]
+          );
         }
-        this.#checkValueAndExistence(value, "boolean")
+        this.#checkValueAndExistence(
+          value, "boolean", needsAnArray ? property : undefined
+        )
+        if (property === "spessaSynthEffects" && !isStdout) {
+          if (Number.isInteger(index)) setIndex(); else pushValue()
+          return;
+        }
         setValue()
         break;
       }

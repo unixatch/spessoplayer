@@ -40,10 +40,8 @@ function checkValue(value, requiredType) {
  * @param {*} value what to add to the property
  * @param {Boolean} [isSetter] if it's a setter
  */
-function addProperty(that, property, value, isSetter) {
-  that._manageOption({
-    property, value, setter: isSetter
-  });
+function addProperty(that, property, value, isSetter, isStdout) {
+  that._manageOption({ property, value, setter: isSetter, isStdout });
 }
 /**
  * Adds/updates a property with an index to Options class
@@ -53,9 +51,23 @@ function addProperty(that, property, value, isSetter) {
  * @param {*} value value to add
  */
 function addIndexedProperty(that, property, index, value) {
-  that._manageOption({
-    property, index, value
-  }, true, true);
+  that._manageOption({ property, index, value }, true, true);
+}
+/**
+ * Adds/updates properties with an index to Options class
+ * @param {(MainOptions|EffectsOptions)} that
+ * @param {Array<String|Number|*>} list things to add
+ */
+function addIndexedProperties(that, list) {
+  for (let i = list.length; --i;) {
+    if (i < 0) break;
+    const {
+      [i]: value, [i-1]: index, [i-2]: property
+    } = list;
+
+    that._manageOption({ property, index, value }, true, true)
+    i -= 2;
+  }
 }
 /**
  * Gets the property from Options class
@@ -63,8 +75,8 @@ function addIndexedProperty(that, property, index, value) {
  * @param {String} property name of the property to retrieve
  * @return {*} value of the property
  */
-function getProperty(that, property) {
-  return that._manageOption({property}, false);
+function getProperty(that, property, index) {
+  return that._manageOption({ property, index }, false);
 }
 
 /**
@@ -306,10 +318,15 @@ class MainOptions {
 class EffectsOptions {
   /**
    * Returns if effects are handled by spessasynth
+   * @param {String}  parameter paramter that wants to check
+   * @param {Number}  index     index of the song
+   * @param {Boolean} isStdout  if it's stdout mode
    * @return {Boolean} if it's spessasynth or SoX
    */
-  static get externalEffectProcesser() {
-    const isBuiltin = getProperty(this, "spessaSynthEffects");
+  static externalEffectProcesser(index, isStdout) {
+    const isBuiltin = getProperty(
+      this, "spessaSynthEffects", !isStdout ? index : undefined
+    );
     if (isBuiltin === undefined) return;
     return !isBuiltin;
   }
@@ -320,12 +337,11 @@ class EffectsOptions {
    */
   static effects(index, arrayOfObjects) {
     checkValue(index, "number")
-    addIndexedProperty(
-      this, "effects",
-      isNaN(index) ? undefined : index,
-      arrayOfObjects
-    )
-    addProperty(this, "spessaSynthEffects", false)
+    const _index = Number.isNaN(index) ? undefined : index;
+    addIndexedProperties(this, [
+      "effects", _index, arrayOfObjects,
+      "spessaSynthEffects", _index, false
+    ])
   }
   /**
    * Sets the stdout array of effects
@@ -333,7 +349,7 @@ class EffectsOptions {
    */
   static set stdoutEffects(arrayOfObjects) {
     addProperty(this, "stdoutEffects", arrayOfObjects, true)
-    addProperty(this, "spessaSynthEffects", false)
+    addProperty(this, "spessaSynthEffects", false, undefined, true)
   }
   /**
    * Change reverb's volume of a specific file
@@ -342,20 +358,11 @@ class EffectsOptions {
    */
   static reverbVolume(index, number) {
     checkValue(index, "number")
-    addIndexedProperty(
-      this, "reverbVolume",
-      !isNaN(index) ? index : undefined,
-      number
-    )
-    addProperty(this, "spessaSynthEffects", true)
-  }
-  /**
-   * Sets reverb's volume for stdout mode
-   * @param {Number} number - the volume value as a float or integer
-   */
-  static set stdoutReverbVolume(number) {
-    addProperty(this, "stdoutReverbVolume", number, true)
-    addProperty(this, "spessaSynthEffects", true)
+    const _index = !Number.isNaN(index) ? index : undefined;
+    addIndexedProperties(this, [
+      "reverbVolume", _index, number,
+      "spessaSynthEffects", _index, true
+    ])
   }
 }
 

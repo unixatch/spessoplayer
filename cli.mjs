@@ -551,22 +551,31 @@ const actUpOnPassedArgs = async args => {
       case "--reverb-volume": case "/reverb-volume":
       case "-rvb":            case "/rvb":
       case regexes.reverbVolume.test(arg) && arg: {
-        if (Options.externalEffectProcesser === true) {
+        lastIndex = arg.match(regexes.reverbVolume)?.groups;
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        const isExternal = Options.externalEffectProcesser(
+          Number(lastIndex?.index), isStdout
+        );
+        if (isExternal === true) {
           log(WARNING_LVL,
             "Ignored reverb-volume flag "+
             "since effects flag has been used"
           )
           i++; break;
         }
-        lastIndex = arg.match(regexes.reverbVolume)?.groups;
-        setReverb(nextArg, lastIndex, newArgumentsSet)
+        setReverb(nextArg, lastIndex)
         i++
         break;
       }
       case "--effects": case "/effects":
       case "-e":       case "/e":
       case regexes.effects.test(arg) && arg: {
-        if (Options.externalEffectProcesser === false) {
+        lastIndex = arg.match(regexes.effects)?.groups;
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        const isExternal = Options.externalEffectProcesser(
+          Number(lastIndex?.index), isStdout
+        );
+        if (isExternal === false) {
           log(WARNING_LVL,
             "Ignored effects flag since "+
             "a builtin effect option has been used "+
@@ -574,7 +583,6 @@ const actUpOnPassedArgs = async args => {
           )
           i++; break;
         }
-        lastIndex = arg.match(regexes.effects)?.groups;
         setEffects(nextArg, lastIndex, newArgumentsSet)
         i++
         break;
@@ -1335,7 +1343,7 @@ const setVolume = (arg, lastIndex) => {
  * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setReverb = (arg, lastIndex, newArgumentsSet) => {
+const setReverb = (arg, lastIndex) => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1344,24 +1352,16 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
     const dB = Number(arg.match(regexes.decibelNumber)[1]);
     const dBNumber = 10**(dB/20);
 
-    if (testFunctions.stdout(newArgumentsSet)) {
-      Options.stdoutReverbVolume = dBNumber;
-    } else {
-      Options.reverbVolume(lastIndexNumber, dBNumber)
-    }
-    log(INFO_LVL, `Set reverb volume to ${dBNumber} and effects variable to ${lastIndex?.index}`)
+    Options.reverbVolume(lastIndexNumber, dBNumber)
+    log(INFO_LVL, `Set reverb volume to ${dBNumber} to ${lastIndex?.index}`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     const toFloat = percentage / 100;
 
-    if (testFunctions.stdout(newArgumentsSet)) {
-      Options.stdoutReverbVolume = toFloat;
-    } else {
-      Options.reverbVolume(lastIndexNumber, toFloat)
-    }
-    log(INFO_LVL, `Set reverb volume to ${toFloat} and effects variable to ${lastIndex?.index}`)
+    Options.reverbVolume(lastIndexNumber, toFloat)
+    log(INFO_LVL, `Set reverb volume to ${toFloat} to ${lastIndex?.index}`)
     return;
   }
   // Negative conversion
@@ -1374,12 +1374,8 @@ const setReverb = (arg, lastIndex, newArgumentsSet) => {
     process.exit(1)
   }
   if (isRealNumber(number, true)) {
-    if (testFunctions.stdout(newArgumentsSet)) {
-      Options.stdoutReverbVolume = number;
-    } else {
-      Options.reverbVolume(lastIndexNumber, number)
-    }
-    log(INFO_LVL, `Set reverb volume to ${Number(arg)} and effects variable to ${lastIndex?.index}`)
+    Options.reverbVolume(lastIndexNumber, number)
+    log(INFO_LVL, `Set reverb volume to ${number} to ${lastIndex?.index}`)
     return;
   }
   console.error(
