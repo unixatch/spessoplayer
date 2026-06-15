@@ -33,7 +33,7 @@ import "./colors.mjs"
  * clearLastLines(-1)
  */
 const clearLastLines = lineY => {
-  if (typeof lineY !== "number" || isNaN(lineY)) {
+  if (typeof lineY !== "number" || Number.isNaN(lineY)) {
     throw new TypeError("Didn't give a valid number")
   }
   const absoluteNumber = Math.abs(lineY);
@@ -73,7 +73,7 @@ function log(level, ...messages) {
   );
   const logOptions = this?.verboseLevel ? this : Options;
 
-  if (isNaN(debugLevelSpesso)
+  if (Number.isNaN(debugLevelSpesso)
       && logOptions.verboseLevel === undefined) return;
   if (debugLevelSpesso < level
       || logOptions.verboseLevel < level) return;

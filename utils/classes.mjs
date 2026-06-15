@@ -199,7 +199,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "volume",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -219,7 +219,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "sampleRate",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -232,7 +232,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "loopAmount",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -245,7 +245,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "loopStart",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -258,7 +258,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "loopEnd",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -278,7 +278,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "loopFadeStart",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -291,7 +291,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "loopFadeDuration",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       number
     )
   }
@@ -304,7 +304,7 @@ class MainOptions {
     checkValue(index, "number")
     addIndexedProperty(
       this, "loopFadeInterpolation",
-      !isNaN(index) ? index : undefined,
+      !Number.isNaN(index) ? index : undefined,
       string
     )
   }

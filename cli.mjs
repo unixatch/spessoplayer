@@ -236,7 +236,7 @@ async function manageVerboseOptions({
       newArguments[indexOfVerboseLevel+1]
     );
     await setVerboseLevel(
-      isNaN(argumentOfParameter)
+      Number.isNaN(argumentOfParameter)
         ? String(INFO_LVL)
         : argumentOfParameter
     )
@@ -362,7 +362,7 @@ const actUpOnPassedArgs = async args => {
       case "-v":         case "/v": {
         const nextArgument = Number(nextArg);
         // If it also has been provided a valid argument
-        if (!isNaN(nextArgument)) i++
+        if (!Number.isNaN(nextArgument)) i++
         break;
       }
       case "--log-file": case "/log-file":
@@ -506,7 +506,7 @@ const actUpOnPassedArgs = async args => {
           "Ignored progress-delay flag since stdout mode is enabled"
         )
         // In case the user passed a number
-        if (!isNaN(Number(nextArg))) i++
+        if (!Number.isNaN(Number(nextArg))) i++
         break;
       }
       case "--input": case "/input":
@@ -888,7 +888,7 @@ const setFile = async ({
  * @return {Boolean} if it's an actual number or not
  */
 const isRealNumber = (number, checkForInfinity) => {
-  const isNumber = typeof number === "number" && !isNaN(number);
+  const isNumber = typeof number === "number" && !Number.isNaN(number);
   return (
     checkForInfinity
       ? isNumber && number !== Infinity
@@ -961,7 +961,7 @@ const setLoopFadeStart = (arg, lastIndex) => {
   let number = argInfos.number;
 
   // Default
-  if (isNaN(number)) {
+  if (Number.isNaN(number)) {
     Options.loopFadeStart(lastIndexNumber, 1)
     log(INFO_LVL, `Set loop fade start to 1 at ${lastIndex?.index} index`)
     return;
@@ -1086,7 +1086,7 @@ const setLoopStart = (arg, lastIndex) => {
   const argAsADate = Date.parse(`1970T${arg}Z`);
   if (
     isRealNumber(number, true)
-    && !(number < 0) || !isNaN(argAsADate)
+    && !(number < 0) || !Number.isNaN(argAsADate)
   ) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = argAsADate / 1000;
@@ -1119,7 +1119,7 @@ const setLoopEnd = (arg, lastIndex) => {
   const argAsADate = Date.parse(`1970T${arg}Z`);
   if (
     isRealNumber(number, true)
-    && !(number < 0) || !isNaN(argAsADate)
+    && !(number < 0) || !Number.isNaN(argAsADate)
   ) {
     if (regexes.ISOTimestamp.test(arg)) {
       const seconds = argAsADate / 1000;
@@ -1415,7 +1415,7 @@ const setProgressDelay = (arg) => {
   const number = Number(arg);
 
   // Default
-  if (isNaN(number)) {
+  if (Number.isNaN(number)) {
     Options.progressDelay = 500;
     log(INFO_LVL, `Set progress delay to 500`)
     return;
