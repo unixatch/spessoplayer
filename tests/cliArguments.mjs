@@ -1,5 +1,5 @@
-import { globSync } from "fs"
-import { parse } from "path"
+import { globSync } from "node:fs"
+import { parse } from "node:path"
 
 // Setup file path arguments
 const {
@@ -46,7 +46,7 @@ if (!process.argv.includes("--verbose")) {
     positionalArgs.push(args[i])
   }
   // Start the test for real
-  const { fork } = await import("child_process");
+  const { fork } = await import("node:child_process");
   const realTest = fork(process.argv[1], args.concat(positionalArgs));
   await new Promise((resolve, reject) => {
     realTest.once("exit", resolve)

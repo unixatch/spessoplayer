@@ -1,5 +1,5 @@
-import { globSync } from "fs"
-import { parse, join } from "path"
+import { globSync } from "node:fs"
+import { parse, join } from "node:path"
 import "../utils/colors.mjs"
 
 export const grayedOutText = gray+"%s"+normal;

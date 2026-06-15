@@ -83,7 +83,7 @@ if (COLORTERM === "truecolor"
     || TERM?.includes("truecolor")) colorDepth ??= 24;
 if (TERM?.startsWith("xterm-256")) colorDepth ??= 8;
 // If the above fails, let node check
-colorDepth ??= (await import("tty")).WriteStream(1).getColorDepth();
+colorDepth ??= (await import("node:tty")).WriteStream(1).getColorDepth();
 
 if (colorDepth === 1) {
   colors.modify({

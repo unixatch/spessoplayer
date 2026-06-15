@@ -1,6 +1,6 @@
-import { globSync } from "fs"
-import { parse } from "path"
-import { fork } from "child_process"
+import { globSync } from "node:fs"
+import { parse } from "node:path"
+import { fork } from "node:child_process"
 
 // Setup file path arguments
 const {

@@ -17,8 +17,8 @@
 
 import {
   parentPort, workerData
-} from "worker_threads"
-import * as fs from "fs"
+} from "node:worker_threads"
+import * as fs from "node:fs"
 
 const {verboseLevel, logFilePath} = workerData;
 global.logThis = {verboseLevel, logFilePath};

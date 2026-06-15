@@ -237,7 +237,7 @@ async function manageAutocomplete(shell, isUnix, uninstall = false) {
 
   const {
     existsSync, symlinkSync, unlinkSync
-  } = await import("fs");
+  } = await import("node:fs");
   const {
     env: { TERMUX__ROOTFS_DIR }
   } = process;

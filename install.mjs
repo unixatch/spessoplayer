@@ -20,7 +20,7 @@
  * @module install
  */
 
-import { spawnSync } from "child_process"
+import { spawnSync } from "node:child_process"
 import {
   clearLastLines,
   formatStrings,
@@ -59,7 +59,7 @@ async function runCheck(program, noInstallMsg = "") {
     normalYellow+underline+"%s"+endUnderline+" %s"+normal,
     program, "is not installed or it's not visible globally"
   )
-  readline ??= await import("readline/promises");
+  readline ??= await import("node:readline/promises");
 
   async function question() {
     let answer;

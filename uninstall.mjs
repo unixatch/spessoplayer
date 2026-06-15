@@ -20,7 +20,7 @@
  * @module uninstall
  */
 
-import { spawnSync } from "child_process"
+import { spawnSync } from "node:child_process"
 import {
   clearLastLines,
   formatStrings,
@@ -42,7 +42,7 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
   try {
     if (!questionOnly) runProgramSync({ spawnSync, program })
 
-    readline ??= await import("readline/promises");
+    readline ??= await import("node:readline/promises");
     const rl = readline.createInterface({
       input: process.stdin, output: process.stdout
     });

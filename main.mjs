@@ -104,7 +104,7 @@ if (confirmation) {
     for (const i of infos) console.log(i)
   } else console.table(Options.getConfirmationTable())
 
-  const readline = await import("readline/promises");
+  const readline = await import("node:readline/promises");
   async function question() {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     const answer = await rl.question("Is this setup correct [Y|n]? ");
@@ -185,7 +185,7 @@ if (isToStdout) {
   const needsConvertion = stdoutFormat?.match(ffmpegFormats);
 
   if (needsConvertion) {
-    const { spawn } = await import("child_process");
+    const { spawn } = await import("node:child_process");
     converterProcess = spawn("ffmpeg",
       ffmpegArgs()[stdoutFormat],
       {stdio: [
@@ -444,8 +444,8 @@ let calculateMaxThreads;
 const RENDER_TEXTS_DELAY = 500,
       listOfPromises = new Map(),
       unlinkPromises = [];
-const { Worker } = await import("worker_threads"),
-      { availableParallelism } = await import("os");
+const { Worker } = await import("node:worker_threads"),
+      { availableParallelism } = await import("node:os");
 const fileSizes = await getSizes(filesList);
 const resourceLimits = new function () {
   const DEFAULT_MAX_OLD_GEN = 20;

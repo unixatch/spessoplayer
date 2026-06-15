@@ -19,7 +19,7 @@
  * @module utils/utils
  */
 
-import { join, parse, sep } from "path"
+import { join, parse, sep } from "node:path"
 import { classes } from "./classes.mjs"
 import Mixin from "./basic_additions.mjs"
 import "./colors.mjs"

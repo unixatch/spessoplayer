@@ -19,7 +19,7 @@
  * @module cli
  */
 
-import { join, parse } from "path"
+import { join, parse } from "node:path"
 import {
   WARNING_LVL, INFO_LVL,
   debugMaxLevel,
@@ -1179,7 +1179,7 @@ const setVerboseLevel = async (arg) => {
   const number = Number(arg);
   const isFromUser = arg !== undefined;
   arg ??= "2";
-  global.fs ??= await import("fs");
+  global.fs ??= await import("node:fs");
 
   if (
     isRealNumber(number)
@@ -1393,7 +1393,7 @@ const setMaxThreads = async (arg) => {
   const number = Number(arg);
   if (
     isRealNumber(number)
-    && number <= (await import("os")).availableParallelism() * 2
+    && number <= (await import("node:os")).availableParallelism() * 2
     && number >= 1
   ) {
     Options.maxThreads = number;
@@ -1445,7 +1445,7 @@ const setLogFilePath = arg => {
  * Runs uninstall.mjs and uninstall spessoplayer
  */
 const uninstall = async () => {
-  const { execSync } = await import("child_process");
+  const { execSync } = await import("node:child_process");
   const uninstallScriptPath = join(import.meta.dirname, "uninstall.mjs");
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
 
@@ -1802,7 +1802,7 @@ const help = async ({ errorText = "" } = "") => {
     return console.log(helpText);
   }
 
-  const { spawnSync } = await import("child_process");
+  const { spawnSync } = await import("node:child_process");
   const PAGERArguments = PAGER.split(" "),
         [PAGERCommand] = PAGERArguments.splice(0, 1);
 

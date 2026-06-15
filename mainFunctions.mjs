@@ -132,7 +132,7 @@ async function formatManager({
   let spawn;
   if (format !== "wave" && format !== ""
       && Array.isArray(outFile)) {
-    ({ spawn } = child_process ??= await import("child_process"));
+    ({ spawn } = child_process ??= await import("node:child_process"));
   }
 
   const isStdout = format !== true,
@@ -556,7 +556,7 @@ async function applyExternalEffects({
   if (!effects?.length) {
     effects = ["reverb", reverbVolume, "36", "100", "100", "10", "10"];
   }
-  const { spawn } = child_process ??= await import("child_process");
+  const { spawn } = child_process ??= await import("node:child_process");
   // In case it's custom
   if (effects[0]?.effect) {
     // cloning the effects array so that it can be unpacked
@@ -1246,8 +1246,8 @@ async function startPlayer(Options, spessasynthLogging) {
     effects, reverbVolume
   } = Options.all;
   const { getWavHeader } = await import("./audioBuffer.mjs"),
-        { spawn }        = child_process ??= await import("child_process"),
-        { createServer } = await import("http");
+        { spawn }        = child_process ??= await import("node:child_process"),
+        { createServer } = await import("node:http");
 
   const port = 3000,
         server = createServer(),
@@ -1294,7 +1294,7 @@ async function startPlayer(Options, spessasynthLogging) {
     const needsConvertion = format?.match(ffmpegFormats);
 
     if (needsConvertion) {
-      const { spawn } = child_process ??= await import("child_process");
+      const { spawn } = child_process ??= await import("node:child_process");
       converterProcess = spawn("ffmpeg",
         ffmpegArgs()[format],
         {stdio: ["pipe", res.socket, "pipe"]}
@@ -1386,7 +1386,7 @@ async function startPlayer(Options, spessasynthLogging) {
     .then(process.exit)
     .catch(async (code, signal) => {
       const errno = (code === null)
-        ? (await import("util")).convertProcessSignalToExitCode(signal)
+        ? (await import("node:util")).convertProcessSignalToExitCode(signal)
         : code;
       console.error(
         formatStrings.errorText,
