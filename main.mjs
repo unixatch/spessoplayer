@@ -82,8 +82,10 @@ log(DEBUG_LVL, "unhandledRejection event has been added")
 await actUpOnPassedArgs()
 log(INFO_LVL, "Checked passed args")
 
-if (!isVerboseLevelSet) console.error(gray+"Starting..."+normal)
 let processingMessageCleaned = false;
+if (!isVerboseLevelSet) {
+  process.stderr.write(gray+"Starting..."+normal+"\r")
+}
 
 const listOfOptions = Options.all;
 const {
@@ -94,11 +96,7 @@ const {
 } = listOfOptions;
 
 if (confirmation) {
-  if (!isVerboseLevelSet) {
-    process.stderr.write("\x1b[F\x1b[2K")
-    processingMessageCleaned = true;
-  }
-
+  processingMessageCleaned &&= true;
   const infos = Options.getConfirmationTable();
   if (noTable) {
     for (const i of infos) console.log(i)
@@ -123,10 +121,6 @@ if (confirmation) {
 
 // +++ toStdout section +++
 if (isToStdout) {
-  if (!isVerboseLevelSet && !processingMessageCleaned) {
-    process.stderr.write("\x1b[F\x1b[2K")
-    processingMessageCleaned = true;
-  }
   process.stdout.on("error", error => {
     if (global.SIGINT) process.exit(130)
 
@@ -201,6 +195,10 @@ if (isToStdout) {
       ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
     })
   }
+  // Cleans up "Starting..." message if needed
+  if (!isVerboseLevelSet && !processingMessageCleaned) {
+    process.stderr.write("\x1b[2K")
+  }
   // If it needs effects, excluding lossless formats
   if (effectsList && !stdoutFormat?.match(losslessFormats)) {
     [effectsProcess] = await applyExternalEffects({
@@ -244,10 +242,6 @@ if (isToStdout) {
 }
 
 if (!isToStdout && !isToFile?.length > 0) {
-  if (!isVerboseLevelSet && !processingMessageCleaned) {
-    process.stderr.write("\x1b[F\x1b[2K")
-    processingMessageCleaned = true;
-  }
   if (dryRun) {
     console.error(
       formatStrings.warningText,
@@ -563,17 +557,6 @@ for (let i = 0; i < amountOfSongs; i++) {
     import.meta.dirname+"/fileWriter_worker.mjs",
     { workerData, resourceLimits }
   );
-  if (!isVerboseLevelSet
-      && !processingMessageCleaned && !i) {
-    currentWorker.once("online", () => {
-      // With spessasynth's logging on,
-      // it becomes too unpredictable so skip this
-      if (spessasynthLogging.warning
-          || spessasynthLogging.info) return;
-      process.stderr.write("\x1b[F" + clearCurrentLine)
-      processingMessageCleaned = true;
-    })
-  }
 
   listOfPromises.set(currentThread,
     Promise.stateable(
