@@ -1488,7 +1488,7 @@ const uninstall = async () => {
   } catch ({status}) {
     switch (status) {
       case 0: break;
-      case 2: process.exit(status);
+      case 2: process.exit(status); break;
 
       default:
         console.error(

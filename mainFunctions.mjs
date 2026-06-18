@@ -1252,8 +1252,7 @@ class Progress {
  */
 async function startPlayer(Options, spessasynthLogging) {
   const {
-    sampleRate, format,
-    effects, reverbVolume
+    sampleRate, format, effects
   } = Options.all;
   const { getWavHeader } = await import("./audioBuffer.mjs"),
         { spawn }        = child_process ??= await import("node:child_process"),
