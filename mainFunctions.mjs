@@ -830,7 +830,12 @@ function createReadable(Readable, isStdout = false, {
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
       if (loopFade) loopFadeBlock: {
-        if (synth.systemParameters.gain <= .001) return this.push(null);
+        if (synth.systemParameters.gain <= .001 || (
+              seq.midiData.duration.toPrecision(3) === seq.currentTime.toPrecision(3)
+              && !seq.loopCount
+           )) {
+          return this.push(null);
+        }
 
         if (filledSamples < startFading) break loopFadeBlock;
         // Start of fade
