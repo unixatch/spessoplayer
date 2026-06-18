@@ -24,6 +24,7 @@ const {
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
   formatStrings,
+  PlainTime, fromDuration,
   log: tmpLog,
   newFileName,
   asyncSetTimeout,
@@ -1113,6 +1114,7 @@ class Progress {
   #renderedAmount;
   #amountToRender;
   #percentageDone;
+  #date;
   #index;
 
   /**
@@ -1134,6 +1136,7 @@ class Progress {
     this.#amountToRender = new Float32Array(amountToRender);
     this.#renderedAmount = new Float32Array(renderedAmount);
     this.#percentageDone = new Float32Array(percentageDone);
+    if (!PlainTime) this.#date = new Date(0);
   }
   /**
    * Do the sum of all numbers in the array
@@ -1171,23 +1174,30 @@ class Progress {
     const renderedAmountNumber = (
       Math.floor(
         this.#sum(this.#renderedAmount) * 100
-      ) / 100 * 1000
+      ) / 100 * (PlainTime ? 1 : 1000)
     );
-    const upToMinutesRegex = /.*T...(.*)Z/;
+    if (PlainTime) return (
+      magenta
+        // Gets the ISO time format and keeps mm:ss.sss
+        + PlainTime.add(fromDuration(`PT${renderedAmountNumber}S`))
+            .toString().substring(3)
+      + `${normal} / ${brightMagenta}`
+
+        + PlainTime.add(fromDuration(`PT${this.#amountToRender}S`))
+            .toString().substring(3)
+      + `${normal} | `
+    );
+
     return (
       magenta
-        // Gets the ISO format and then gets mm:ss.sss
-        + (
-          new Date(renderedAmountNumber)
-            .toISOString().replace(upToMinutesRegex, "$1")
-          + `${normal} / ${brightMagenta}`
-        )
-        // Same down here
-        + (
-          new Date(this.#amountToRender * 1000)
-            .toISOString().replace(upToMinutesRegex, "$1")
-          + `${normal} | `
-        )
+        // Gets the full ISO format and keeps mm:ss.sss
+        + (this.#date.setTime(renderedAmountNumber), this.#date)
+            .toISOString().substring(14, 23)
+      + `${normal} / ${brightMagenta}`
+
+        + (this.#date.setTime(this.#amountToRender * 1000), this.#date)
+            .toISOString().substring(14, 23)
+      + `${normal} | `
     );
   }
   /**

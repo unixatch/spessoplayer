@@ -24,6 +24,7 @@ import {
   WARNING_LVL, INFO_LVL,
   debugMaxLevel,
   formatStrings,
+  fromInstant,
   log, Options
 } from "./utils/utils.mjs"
 
@@ -127,8 +128,8 @@ const regexes = {
     "|\\/lFi(?<index>\\d+)*)$"
   ].join("")),
 
-  //                          HH:MM:SS.sss
-  ISOTimestamp: /[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9])*/,
+  //                           [HH:]MM:SS.sss
+  ISOTimestamp: /(?<optional>(?:\d{2}:)*)*\d{2}:\d{2}(\.\d)*/,
   areDecibels: /^(?:-|\+*)[\d.]+dB/,
   decibelNumber: /^((?:-|\+*)[\d.]+)dB/,
   isPercentage: /^[\d.]+%$/,
@@ -908,7 +909,7 @@ const getArgInfos = (arg, lastIndex) => ({
 });
 // Error/invalid strings/messages
 const invalidNumberString       = "isn't a valid number",
-      invalidNumberOrISOString  = "isn't a valid number or a valid ISO string format",
+      invalidNumberOrISOString  = "isn't a valid number or a valid ISO time format string",
       negativeNumberErrorString = "must be above or equal to 0",
       invalidVolumeString       = "isn't a valid number/dB/percentage";
 
@@ -1083,17 +1084,32 @@ const setLoopStart = (arg, lastIndex) => {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
 
-  const argAsADate = Date.parse(`1970T${arg}Z`);
-  if (
-    isRealNumber(number, true)
-    && !(number < 0) || !Number.isNaN(argAsADate)
-  ) {
-    if (regexes.ISOTimestamp.test(arg)) {
-      const seconds = argAsADate / 1000;
-      Options.loopStart(lastIndexNumber, seconds)
-      log(INFO_LVL, `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
-      return;
+  const timeStampMatch = arg.match(regexes.ISOTimestamp);
+  if (timeStampMatch) {
+    // ISO Time format checks
+    const {
+      groups: {optional: optionalTime}
+    } = timeStampMatch;
+    if (optionalTime?.length > 3) {
+      console.error(
+        formatStrings.failedCliParamWithArg,
+        `[loop-start|${lastIndexString}]:`, arg,
+        "isn't a valid ISO time string"
+      )
+      process.exit(1)
     }
+    if (!optionalTime) arg = "00:"+arg;
+
+    // Format translation to seconds
+    let argAsADate = fromInstant?.(`1970-01-01T${arg}Z`).epochMilliseconds;
+    argAsADate ??= Date.parse(`1970T${arg}Z`);
+
+    const seconds = argAsADate / 1000;
+    Options.loopStart(lastIndexNumber, seconds)
+    log(INFO_LVL, `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
+    return;
+  }
+  if (isRealNumber(number, true) && !(number < 0)) {
     Options.loopStart(lastIndexNumber, number)
     log(INFO_LVL, `Set loop-start to ${number} at ${lastIndex?.index} index`)
     return;
@@ -1116,17 +1132,32 @@ const setLoopEnd = (arg, lastIndex) => {
   } = getArgInfos(arg, lastIndex);
   const number = Math.abs(ogNumber);
 
-  const argAsADate = Date.parse(`1970T${arg}Z`);
-  if (
-    isRealNumber(number, true)
-    && !(number < 0) || !Number.isNaN(argAsADate)
-  ) {
-    if (regexes.ISOTimestamp.test(arg)) {
-      const seconds = argAsADate / 1000;
-      Options.loopEnd(lastIndexNumber, seconds)
-      log(INFO_LVL, `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
-      return;
+  const timeStampMatch = arg.match(regexes.ISOTimestamp);
+  if (timeStampMatch) {
+    // ISO Time format checks
+    const {
+      groups: {optional: optionalTime}
+    } = timeStampMatch;
+    if (optionalTime?.length > 3) {
+      console.error(
+        formatStrings.failedCliParamWithArg,
+        `[loop-end|${lastIndexString}]:`, arg,
+        "isn't a valid ISO time string"
+      )
+      process.exit(1)
     }
+    if (!optionalTime) arg = "00:"+arg;
+
+    // Format translation to seconds
+    let argAsADate = fromInstant?.(`1970-01-01T${arg}Z`).epochMilliseconds;
+    argAsADate ??= Date.parse(`1970T${arg}Z`);
+
+    const seconds = argAsADate / 1000;
+    Options.loopEnd(lastIndexNumber, seconds)
+    log(INFO_LVL, `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
+    return;
+  }
+  if (isRealNumber(number, true) && !(number < 0)) {
     Options.loopEnd(lastIndexNumber, number)
     log(INFO_LVL, `Set loop-end to ${number} at ${lastIndex?.index} index`)
     return;

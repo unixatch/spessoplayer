@@ -58,14 +58,24 @@ const logMessageColors = {
   0: normalRed, 1: normalYellow,
   2: dimGray,   3: dimGray
 };
+// Temporal API methods if it exists
+let nowInstant, fromInstant, fromDuration, PlainTime;
+if (typeof Temporal !== "undefined") ({
+  Now:      { instant: nowInstant },
+  Instant:  { from: fromInstant   },
+  Duration: { from: fromDuration  }, PlainTime
+} = Temporal);
+PlainTime &&= new PlainTime();
+export { nowInstant, fromInstant, fromDuration, PlainTime }
 /**
  * Logger
  * @param {Number} level - level of the log
  * @param {Array<(String|Uint8Array<ArrayBufferLike>)>} messages - messages to print
  */
 function log(level, ...messages) {
-  const time = performance.now().toFixed(2),
-        date = new Date().toISOString();
+  const time = performance.now().toFixed(2);
+  let date = nowInstant?.().toString();
+  date ??= new Date().toISOString();
   const spacesAmount = (
     date.length +
     LVL_TEXTS[level].length + 2 +
