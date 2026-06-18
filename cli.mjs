@@ -238,8 +238,7 @@ async function manageVerboseOptions({
     );
     await setVerboseLevel(
       Number.isNaN(argumentOfParameter)
-        ? String(INFO_LVL)
-        : argumentOfParameter
+        ? undefined : argumentOfParameter
     )
   } else log(INFO_LVL, debugLevelSpessoMsg)
 
@@ -1207,9 +1206,10 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
  * @param {String} arg - the level of how much it should log
  */
 const setVerboseLevel = async (arg) => {
-  const number = Number(arg);
   const isFromUser = arg !== undefined;
-  arg ??= "2";
+  // Default
+  arg ??= INFO_LVL;
+  const number = Number(arg);
   global.fs ??= await import("node:fs");
 
   if (
@@ -1218,7 +1218,9 @@ const setVerboseLevel = async (arg) => {
   ) {
     Options.verboseLevel = number;
     if (isFromUser) {
-      log(INFO_LVL, `Set verbose level asked by the user to ${number}`)
+      log(INFO_LVL,
+        `Set verbose level asked by the user to ${number}`
+      )
     } else log(INFO_LVL, `Set verbose level to ${number}`)
     return;
   }
