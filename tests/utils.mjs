@@ -117,17 +117,39 @@ function generalCliArguments(mode) {
   }
 }
 const perSongCliArguments = [
-  "-e", "reverb", // effects
   "-r", "48000",  // sampleRate
   "-l", "1",      // loopAmount
   "-vol", "1",    // volume
-  "-rvb", "20",   // reverbVolume
   "-ls", "1",     // loopStart
   "-le", "40",    // loopEnd
   "-lFs", "3",    // loopFadeStart
   "-lFd", "6",    // loopFadeDuration
   "-lFi", "2"     // loopFadeInterpolation
 ];
+
+const indexOfE =   process.argv.indexOf("-e"),   // effects
+      indexOfRvb = process.argv.indexOf("-rvb"); // reverbVolume
+// Adds them in order like it was provided
+if (indexOfE !== -1 && indexOfRvb !== -1) {
+  let direction;
+  if (indexOfE < indexOfRvb) {
+    direction = 0;
+    perSongCliArguments.push("-e", "reverb")
+  } else {
+    direction = 1;
+    perSongCliArguments.push("-rvb", "20")
+  }
+  if (direction) {
+    perSongCliArguments.push("-e", "reverb")
+  } else perSongCliArguments.push("-rvb", "20")
+}
+// In case there's only one of them
+if (indexOfE !== -1 && indexOfRvb === -1) {
+  perSongCliArguments.push("-e", "reverb")
+}
+if (indexOfRvb !== -1 && indexOfE === -1) {
+  perSongCliArguments.push("-rvb", "20")
+}
 
 export {
   globs,

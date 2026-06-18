@@ -15,7 +15,8 @@ if (process.argv.includes("-h")) {
     addOptionalCliArguments
       .toString()
       .replace(/.*includes\((".*")\)\).*/g, "  $1")
-      .replace(/.*\/\/.*\n/g, "")
+      .replace(/.*\/\/.*\n/g, ""),
+    "\n-e, -rvb"
   )
   process.exit(1)
 }

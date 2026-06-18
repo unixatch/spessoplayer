@@ -14,7 +14,8 @@ if (process.argv.includes("-h")) {
   console.log(
     addOptionalArgumentsToFile
       .toString()
-      .replace(/.*includes\((".*")\)\).*/g, "  $1")
+      .replace(/.*includes\((".*")\)\).*/g, "  $1"),
+    "\n-e, -rvb"
   )
   process.exit(1)
 }
