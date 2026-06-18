@@ -332,34 +332,35 @@ function getSampleCount({
   loopEnd,
   loopFade, loopFadeStart = 1, loopFadeDuration = 4
 }) {
-  let loopDetectedInMidi = false;
-  if (midi.loop.start > 0) {
-    loopDetectedInMidi = true;
+  // Spessasynth loop detection
+  const loopDetectedInMidi = midi.loop.start > 0;
+  if (loopDetectedInMidi) {
     loopStart = midi.midiTicksToSeconds(midi.loop.start);
     loopEnd = midi.midiTicksToSeconds(midi.loop.end);
   }
-  let possibleLoopAmount = (loopAmount === 0) ? loopAmount+1 : loopAmount ?? 1;
+
   let sampleCount,
       durationInSeconds = midi.duration;
-  if ((loopAmount ?? 0) === 0) {
-    sampleCount = Math.ceil(sampleRate * durationInSeconds);
-  } else {
-    let end;
-    if (loopEnd === undefined && !loopDetectedInMidi) {
-      end = durationInSeconds;
-    } else if (loopEnd !== undefined && !loopDetectedInMidi) {
-      end = durationInSeconds - loopEnd;
-    } else end = loopEnd;
+  if (loopAmount > 0) {
+    const end = (
+      !loopDetectedInMidi
+        ? durationInSeconds - (loopEnd ?? 0)
+        : loopEnd
+    );
+    const durationWithoutLoopPoints = end - loopStart;
+    if (loopFade) loopAmount++
 
-    if (loopFade) possibleLoopAmount++
-    durationInSeconds += (end - loopStart) * possibleLoopAmount;
+    durationInSeconds += durationWithoutLoopPoints * loopAmount;
     if (loopFade) {
+      // Cut the last loop
+      // except the loopFade delay and duration
       durationInSeconds -= (
-        midi.duration - loopFadeStart - loopFadeDuration
+        durationWithoutLoopPoints - loopFadeStart - loopFadeDuration
       );
     } //                                             Padding ↓
     sampleCount = Math.ceil(sampleRate * durationInSeconds + 2);
   }
+  sampleCount ??= Math.ceil(sampleRate * durationInSeconds);
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
 
   return {
