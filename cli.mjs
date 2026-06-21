@@ -222,13 +222,13 @@ async function manageVerboseOptions({
 
   // +++ verboseLevel section +++
   if (!DEBUG_LEVEL_SPESSO) verboseLevelBlock: {
-    let indexOfVerboseLevel = newArguments.indexOf("--verbose");
+    let indexOfVerboseLevel = newArguments.indexOf("-v");
     // -1 + 1 = 0, false so keep chaining
     // if not -1 then it stops chaining
     indexOfVerboseLevel+1
-    || (indexOfVerboseLevel = newArguments.indexOf("/verbose"))+1
-    || (indexOfVerboseLevel = newArguments.indexOf("-v"))+1
+    || (indexOfVerboseLevel = newArguments.indexOf("--verbose"))+1
     || (indexOfVerboseLevel = newArguments.indexOf("/v"))+1
+    || (indexOfVerboseLevel = newArguments.indexOf("/verbose"))+1
 
     if (indexOfVerboseLevel === -1) break verboseLevelBlock;
 
