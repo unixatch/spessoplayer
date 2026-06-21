@@ -1189,7 +1189,9 @@ class Progress {
             .toString().substring(3)
       + `${normal} / ${brightMagenta}`
 
-        + PlainTime.add(fromDuration(`PT${this.#amountToRender}S`))
+        + PlainTime.add(
+            fromDuration(`PT${this.#amountToRender[0].toFixed(9)}S`)
+          )
             .toString().substring(3)
       + `${normal} | `
     );
@@ -1201,7 +1203,7 @@ class Progress {
             .toISOString().substring(14, 23)
       + `${normal} / ${brightMagenta}`
 
-        + (this.#date.setTime(this.#amountToRender * 1000), this.#date)
+        + (this.#date.setTime(this.#amountToRender[0] * 1000), this.#date)
             .toISOString().substring(14, 23)
       + `${normal} | `
     );
