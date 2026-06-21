@@ -281,10 +281,12 @@ export const FO_CONSTANTS = {
 const newArgs = process.argv.slice(2);
 /**
  * Sets necessary variables in Options class for main.mjs
- * @param {String[]} [args] - The process.argv to analyse
+ * @param {String[]} [args]              - The process.argv to analyse
+ * @param {Boolean}  [isVerboseLevelSet] - if logging is enabled or not
+ * @return {ChildProcess?} process that renders the loading animtion
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
-const actUpOnPassedArgs = async args => {
+const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   let lastParam,
       lastIndex;
   const newArguments = args?.slice(2) ?? newArgs,
@@ -309,6 +311,18 @@ const actUpOnPassedArgs = async args => {
   if (testFunctions.uninstall(newArgumentsSet)) {
     await uninstall()
     process.exit()
+  }
+  let loadingAnimation;
+  if (!isVerboseLevelSet) loadingAnimationBlock: {
+    if (process.platform === "win32") {
+      process.stderr.write(gray+"Loading..."+normal+"\r")
+      break loadingAnimationBlock;
+    }
+    const { spawn } = await import("node:child_process");
+    loadingAnimation = spawn(
+      "sh", ["./loadingAnimation.sh"],
+      {stdio: ["ignore", process.stderr, "ignore"]}
+    );
   }
 
   function clearLastVariables() {
@@ -691,6 +705,10 @@ const actUpOnPassedArgs = async args => {
       }
 
       default:
+        if (!isVerboseLevelSet) {
+          loadingAnimation?.kill()
+          process.stderr.write("\x1b[K")
+        }
         await help({
           errorText: red+`'${
             underline+dimRed +
@@ -723,6 +741,7 @@ const actUpOnPassedArgs = async args => {
     )
     process.exit(1)
   }
+  return loadingAnimation;
 }
 
 /**
@@ -1835,6 +1854,8 @@ const help = async ({ errorText = "" } = "") => {
     return console.log(helpText);
   }
 
+  // Cleans up potential loading text
+  process.stderr.write("\x1b[K")
   const { spawnSync } = await import("node:child_process");
   const PAGERArguments = PAGER.split(" "),
         [PAGERCommand] = PAGERArguments.splice(0, 1);
@@ -1856,7 +1877,8 @@ const version = async () => {
   const { version: versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
 
   log(INFO_LVL, `Taken version number from ${packageJSONPath}`)
-  console.log(`${green + versionNumber + normal}`)
+  //             ↓ Cleans up potential loading text
+  console.log(`\x1b[K${green + versionNumber + normal}`)
 }
 
 export {

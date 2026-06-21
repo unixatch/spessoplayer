@@ -1255,8 +1255,9 @@ class Progress {
  * and plays them using mpv
  * @param {Options} Options Options class
  * @param {Object<Boolean>} spessasynthLogging if spessasynth's logging system should be enabled
+ * @param {ChildProcess?}   loadingAnimation     animation that plays while doing work
  */
-async function startPlayer(Options, spessasynthLogging) {
+async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
   const {
     sampleRate, format, effects
   } = Options.all;
@@ -1382,6 +1383,8 @@ async function startPlayer(Options, spessasynthLogging) {
     ...isRawAudio,
     ...listOfURLs
   ], { stdio: "inherit" });
+  mpv.once("spawn", () => loadingAnimation?.kill())
+
   await new Promise((resolve, reject) => {
     mpv.once("exit", (code, signal) => {
       switch (code) {
