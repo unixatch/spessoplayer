@@ -98,7 +98,7 @@ if (confirmation) {
   } else console.table(Options.getConfirmationTable())
 
   const readline = await import("node:readline/promises");
-  async function question() {
+  const question = async () => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     const answer = await rl.question("Is this setup correct [Y|n]? ");
     rl.close()

@@ -325,11 +325,11 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     );
   }
 
-  function clearLastVariables() {
+  const clearLastVariables = () => {
     lastParam = undefined;
     lastIndex = undefined;
   }
-  function stdoutFileModeConflictError() {
+  const stdoutFileModeConflictError = () => {
     console.error(
       formatStrings.errorText,
       "Can't use both stdout and file mode at the same time"
@@ -340,7 +340,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * Runs the logic that comes before setFile is run
    * @param {String} arg file to check and maybe run
    */
-  function runSetFile(arg) {
+  const runSetFile = (arg) => {
     if (doneFileList.get(arg) === doneSymbol) return;
     doneFileList.set(arg, doneSymbol)
 
