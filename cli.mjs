@@ -318,10 +318,17 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       process.stderr.write(gray+"Loading..."+normal+"\r")
       break loadingAnimationBlock;
     }
+    if (typeof Deno !== "undefined") {
+      loadingAnimation = Deno.spawn("sh", {
+        args: ["./loadingAnimation.sh"],
+        stdin: "null", stdout: "null"
+      });
+      break loadingAnimationBlock;
+    }
     const { spawn } = await import("node:child_process");
     loadingAnimation = spawn(
       "sh", ["./loadingAnimation.sh"],
-      {stdio: ["ignore", process.stderr, "ignore"]}
+      {stdio: ["ignore", "ignore", "inherit"]}
     );
   }
 
