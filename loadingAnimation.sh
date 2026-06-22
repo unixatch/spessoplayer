@@ -23,7 +23,7 @@ sleep 0.01 2>/dev/null || DELAY=1
 counter=1
 while true ;do
     if [ $counter -gt 3 ] ;then
-        printf '%s' "$clearLine"
+        printf '%s' "$clearLine" >&2
         counter=1
         dots=""
     fi
@@ -32,7 +32,7 @@ while true ;do
     printf "%s" "$gray" \
         "Loading" \
         "$dots" \
-        "$normal" "$carraigeReturn"
+        "$normal" "$carraigeReturn" >&2
 
     counter=$((counter + 1))
     sleep $DELAY
