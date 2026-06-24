@@ -314,20 +314,23 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   }
   let loadingAnimation;
   if (!isVerboseLevelSet) loadingAnimationBlock: {
-    if (process.platform === "win32") {
-      process.stderr.write(gray+"Loading..."+normal+"\r")
-      break loadingAnimationBlock;
-    }
+    const isWindows  = process.platform === "win32",
+          executable = !isWindows ? "sh" : "cmd.exe";
+    const script = (
+      !isWindows
+        ? ["./loadingAnimation.sh"]
+        : ["/k", "./loadingAnimation.cmd"]
+    );
     if (typeof Deno !== "undefined") {
-      loadingAnimation = Deno.spawn("sh", {
-        args: ["./loadingAnimation.sh"],
+      loadingAnimation = Deno.spawn(executable, {
+        args: script,
         stdin: "null", stdout: "null"
       });
       break loadingAnimationBlock;
     }
     const { spawn } = await import("node:child_process");
     loadingAnimation = spawn(
-      "sh", ["./loadingAnimation.sh"],
+      executable, script,
       {stdio: ["ignore", "ignore", "inherit"]}
     );
   }
