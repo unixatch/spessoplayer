@@ -238,6 +238,7 @@ if (isToStdout) {
 }
 
 if (!isToStdout && !isToFile?.length > 0) {
+  loadingAnimation?.kill()
   if (dryRun) {
     console.error(
       formatStrings.warningText,
