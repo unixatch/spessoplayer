@@ -321,7 +321,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         ? ["./loadingAnimation.sh"]
         : ["/k", "./loadingAnimation.cmd"]
     );
-    if (typeof Deno !== "undefined") {
+    // Deno.spawn doesn't have windowsHide
+    // so use node on windows
+    if (typeof Deno !== "undefined" && !isWindows) {
       loadingAnimation = Deno.spawn(executable, {
         args: script,
         stdin: "null", stdout: "null"
@@ -331,7 +333,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     const { spawn } = await import("node:child_process");
     loadingAnimation = spawn(
       executable, script,
-      {stdio: ["ignore", "ignore", "inherit"]}
+      {stdio: ["ignore", "ignore", "inherit"], windowsHide: true}
     );
   }
 
