@@ -284,58 +284,37 @@ addEvent({ eventType: "toFileSIGTERM",
 })
 addEvent({ eventType: "toFileSIGINT",
   func: () => {
-    const cleanLine = clearCurrentLine + startOfLine + showCursor;
-    try { renderTextsInterval } catch(error) {
-      if (error.name !== "ReferenceError") return console.error(error);
-      return process.stderr.write(cleanLine);
+    // In case it hasn't even reached the starting point
+    // of the main file mode loop
+    try {
+      clearInterval(renderTextsInterval)
+    } catch (error) {
+      if (error.name === "ReferenceError") return process.exitCode = 130;
+      console.error(error)
+      return process.exitCode = 130;
     }
-    clearInterval(renderTextsInterval)
-    process.stderr.write(cleanLine)
     for (const worker of workers) worker.terminate()
     finalFileOutputs = finalFileOutputs.filter(ifil => ifil);
 
     // Try to cleanup abandoned files
     // only if it's not in dry run mode
     if (dryRun) {
-      try {
-        finishLine // might trigger the catch
-        showFileList(dryRun, true)
-        return process.exit(130);
-      } catch (error) {
-        return (
-          error.name !== "ReferenceError"
-            ? console.error(error) : undefined
-        );
-      }
+      showFileList(dryRun, true)
+      return process.exitCode = 130;
     }
     const notENOENT = error => (
       error.code !== "ENOENT" && console.error(error)
     );
-    let finishLineActive = false;
     for (const {files, finished} of finalFileOutputs) {
       if (finished) continue;
 
       for (const file of files) {
         if (!file) continue;
-        try {
-          // Monkey patch mode
-          if (finishLine) unlinkSync(file)
-          finishLineActive ||= true;
-          continue;
-        } catch (error) {
-          // Normal mode
-          if (error.code === "ENOENT") continue;
-          if (error.name !== "ReferenceError") return console.error(error);
-
-          unlinkPromises.push(asyncUnlink(file).catch(notENOENT))
-          continue;
-        }
+        asyncUnlink(file).catch(notENOENT)
       }
     }
-    if (finishLineActive) {
-      showFileList(dryRun, true)
-      return process.exit(130);
-    }
+    showFileList(dryRun, true)
+    return process.exitCode = 130;
   }
 })
 process.stderr.write(hideCursor)
@@ -380,8 +359,7 @@ const {
   promises: {
     readFile: asyncReadFile,
     unlink: asyncUnlink
-  },
-  unlinkSync
+  }
 } = fs;
 for (let i = 0; i < filesListLength; i++) {
   const [soundfontFile] = filesList[i] ?? "";
@@ -433,8 +411,7 @@ let calculateMaxThreads;
 }
 // Starting the actual work
 const RENDER_TEXTS_DELAY = 500,
-      listOfPromises = new Map(),
-      unlinkPromises = [];
+      listOfPromises = new Map();
 const { Worker } = await import("node:worker_threads"),
       { availableParallelism } = await import("node:os");
 const fileSizes = await getSizes(filesList);
@@ -503,8 +480,8 @@ const addEventOnce = (target, eventName, func) => (
  * @param {Function} reject
  * @this Array<Number, Worker>
  */
-const stateablePromiseFunction = function (resolve, reject) {
-  const [i, currentWorker] = this;
+const workerPromiseFunction = function (resolve, reject) {
+  const [index, currentWorker] = this;
   addEventOnce(currentWorker, "error", reject)
   addEventOnce(currentWorker, "exit", resolve)
 
@@ -524,79 +501,65 @@ const stateablePromiseFunction = function (resolve, reject) {
         || message === "FAILED_INITIALIZATION") {
       currentWorker.removeAllListeners("message")
       return resolve(
-        message !== "FAILED_INITIALIZATION"
-          ? finalFileOutputs[i].finished = true
+        message !== "FAILED_INITIALIZATION" && !global.SIGINT
+          ? finalFileOutputs[index].finished = true
           : null
       );
     }
-    if (typeof message === "object") finalFileOutputs[i] = message;
+    if (typeof message === "object") finalFileOutputs[index] = message;
   })
 };
 
-for (let i = 0; i < amountOfSongs; i++) {
-  const options = perSongOptions[i];
-  if (!options) continue;
+let index = 0;
+/**
+ * Main function that starts the file mode loop.
+ * It maybe starts each thread and then waits for the active threads to finish
+ * then it recursively calls itself to do it all over or it closes the loop
+ * @return {(this|undefined)}
+ */
+async function fileModeMain() {
+  for (
+    let currentThread = 0;
+    currentThread < maxThreads; (index++, currentThread++)
+  ) {
+    if (index >= amountOfSongs) break;
+    const options = perSongOptions[index];
+    if (!options) continue;
 
-  // Waits for all workers to finish
-  // if the max of available threads
-  // at once has been reached
-  const currentThread = (maxThreads === 1) ? 0 : i % maxThreads;
-  if (i && !currentThread) {
-    await Promise.all(listOfPromises.values())
-    if (global.SIGINT) break;
-  }
+    options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
+    const workerData = {
+      progressBuffers, options, FO_CONSTANTS,
+      index, filesListLength,
+      verboseLevel: Options.verboseLevel,
+      logFilePath:  Options.logFilePath,
+      spessasynthLogging
+    };
+    const existentWorker = workers[currentThread] !== undefined;
+    const currentWorker = workers[currentThread] ??= new Worker(
+      import.meta.dirname+"/fileWriter_worker.mjs",
+      { workerData, resourceLimits }
+    );
 
-  options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
-  const workerData = {
-    progressBuffers, options, FO_CONSTANTS,
-    index: i, filesListLength,
-    verboseLevel: Options.verboseLevel,
-    logFilePath:  Options.logFilePath,
-    spessasynthLogging
-  };
-  const currentWorker = workers[currentThread] ??= new Worker(
-    import.meta.dirname+"/fileWriter_worker.mjs",
-    { workerData, resourceLimits }
-  );
-
-  listOfPromises.set(currentThread,
-    Promise.stateable(
-      stateablePromiseFunction.bind([i, currentWorker])
+    listOfPromises.set(currentThread,
+      new Promise(
+        workerPromiseFunction.bind([index, currentWorker])
+      )
     )
-  )
-  if (i >= maxThreads) currentWorker.postMessage(workerData)
-}
-// Terminate last idle workers since they're unused
-const workersEntries = workers.reverse().entries();
-for (const [index, worker] of workersEntries) {
-  const indexOfPromise = (
-    amountOfSongs < maxThreads
-      ? amountOfSongs - 1 - index
-      : maxThreads    - 1 - index
-  );
-  const promise = listOfPromises.get(indexOfPromise);
-  if (promise.pending) break;
-  worker.terminate()
-}
+    if (existentWorker) currentWorker.postMessage(workerData)
+  }
+  await Promise.all(listOfPromises.values())
+  if (index < amountOfSongs-1) return fileModeMain();
 
-const finishLine = true;
-Promise.all(listOfPromises.values()).then(async () => {
+  // Closure from here on
+  // Terminate workers since they're done
+  for (const worker of workers) { worker.terminate() }
+
   clearInterval(renderTextsInterval)
   // Renders the last bit so that it is 100%
-  if (!global.SIGINT) renderTextsFunction(progress)
-  if (global.SIGINT) {
-    await Promise.all(unlinkPromises)
-    showFileList(dryRun, true)
-    process.exit(130)
-  }
-
-  // Close workers before continuing
-  // otherwise it gets stuck
-  for (const worker of workers) worker.terminate()
-
+  renderTextsFunction(progress)
   showFileList(dryRun)
   // Required because some child_processes sometimes blocks node from exiting
   process.exit()
-})
-  .catch(console.error)
+}
+fileModeMain()
 

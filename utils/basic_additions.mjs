@@ -20,24 +20,6 @@
  */
 
 /**
- * Creates a new promise with
- * a pending state property attached to it
- * @param {Function} func function that will be run just like new Promise
- * @return {Promise} a stateable promise
- */
-Promise.stateable = function (func) {
-  function runWithState(resolve, reject) {
-    const done = () => newPromise.pending = false;
-    func(
-      value  => { done(); resolve(value) },
-      reason => { done(); reject(reason) }
-    )
-  }
-  const newPromise = new Promise(runWithState);
-  newPromise.pending = true;
-  return newPromise;
-}
-/**
  * Adds unshift functionality to Set
  * @param {Array} valueToAdd - value to add
  * @return {Set} - an updated set with the values added on the left
