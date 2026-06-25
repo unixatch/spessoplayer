@@ -669,6 +669,9 @@ function addEvent({ eventType, func }) {
     case "toFileSIGTERM": {
       return addAndCheckEvent("SIGTERM", func);
     }
+    case "toFileSIGQUIT": {
+      return addAndCheckEvent("SIGQUIT", func);
+    }
     case "toFileSIGINT": {
       return addAndCheckEvent("SIGINT", func);
     }

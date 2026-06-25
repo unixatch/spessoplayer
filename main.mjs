@@ -255,10 +255,6 @@ const showCursor = "\x1b[?25h",
       clearCurrentLine = "\x1b[2K",
       startOfLine = "\r";
 let isCursorHidden = true;
-const pauseProcess = () => {
-  process.stderr.write(showCursor)
-  process.kill(process.pid, "SIGSTOP")
-};
 const showFileList = (isDryRun, partial = false) => (
   console.log(
     !partial
@@ -276,12 +272,44 @@ const showFileList = (isDryRun, partial = false) => (
       : "\b"
   )
 );
-addEvent({ eventType: "toFileSIGTSTP",
-  func: () => (isCursorHidden &&= false, pauseProcess())
-})
-addEvent({ eventType: "toFileSIGTERM",
-  func: () => (process.stderr.write(showCursor+"\n"), process.exit(143))
-})
+/**
+ * A small handler function only for specific signals
+ * @param {String} signal signal name
+ */
+const signalHandler = signal => {
+  switch (signal) {
+    case "SIGTSTP":
+      isCursorHidden &&= false;
+      process.stderr.write(showCursor)
+      process.kill(process.pid, "SIGSTOP")
+      break;
+    case "SIGQUIT":
+    case "SIGTERM": {
+      const isTermination = signal === "SIGTERM";
+      // Tries to clean up if needed
+      try {
+        clearInterval(renderTextsInterval)
+        for (const worker of workers) worker.terminate()
+      } catch (error) {
+        if (error.name !== "ReferenceError") {
+          console.error(error)
+          return process.exit(isTermination ? 143 : 131);
+        }
+      }
+      process.stderr.write(
+        `\n${gray}${
+          isTermination ? "Terminated" : "Quitted"
+        } the program${normal}\n`
+        + showCursor
+      )
+      process.exit(isTermination ? 143 : 131)
+      break;
+    }
+  }
+};
+addEvent({ eventType: "toFileSIGTSTP", func: signalHandler })
+addEvent({ eventType: "toFileSIGTERM", func: signalHandler })
+addEvent({ eventType: "toFileSIGQUIT", func: signalHandler })
 addEvent({ eventType: "toFileSIGINT",
   func: () => {
     // In case it hasn't even reached the starting point
