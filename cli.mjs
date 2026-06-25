@@ -321,6 +321,17 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         ? ["./loadingAnimation.sh"]
         : ["/k", "./loadingAnimation.cmd"]
     );
+    process.on("exit", () => {
+      // Deno.spawn throws an error when trying to close
+      // an already closed process so let's ignore it
+      try {
+        loadingAnimation?.kill()
+      } catch (error) {
+        if (error.message !== "Child process has already terminated") {
+          console.error(error)
+        }
+      }
+    })
     // Deno.spawn doesn't have windowsHide
     // so use node on windows
     if (typeof Deno !== "undefined" && !isWindows) {
