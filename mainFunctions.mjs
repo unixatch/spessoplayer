@@ -1122,6 +1122,12 @@ class Progress {
   #percentageDone;
   #date;
   #index;
+  #removeAmount;
+  #removeAmountTotal;
+  #toSecondsN  = PlainTime ? 1    : 1000;
+  #hourN       = PlainTime ? 3600 : 3600000;
+  #hourLessYes = PlainTime ? 3 : 14;
+  #hourLessNo  = PlainTime ? 0 : 11;
 
   /**
    * Creates a partial or complete Progress class
@@ -1177,34 +1183,39 @@ class Progress {
   get minutesRenderedText() {
     if (this.#index !== undefined) return;
 
+    this.#removeAmount ??= (
+      (this.#amountToRender[0] * this.#toSecondsN) < this.#hourN
+        ? this.#hourLessYes
+        : this.#hourLessNo
+    );
     const renderedAmountNumber = (
       Math.floor(
         this.#sum(this.#renderedAmount) * 100
-      ) / 100 * (PlainTime ? 1 : 1000)
+      ) / 100 * this.#toSecondsN
     );
     if (PlainTime) return (
       magenta
-        // Gets the ISO time format and keeps mm:ss.sss
+        // Gets the ISO time format
         + PlainTime.add(fromDuration(`PT${renderedAmountNumber}S`))
-            .toString().substring(3)
+            .toString().substring(this.#removeAmount)
       + `${normal} / ${brightMagenta}`
 
         + PlainTime.add(
-            fromDuration(`PT${this.#amountToRender[0].toFixed(9)}S`)
+            fromDuration(`PT${this.#amountToRender[0].toFixed(3)}S`)
           )
-            .toString().substring(3)
+            .toString().substring(this.#removeAmount)
       + `${normal} | `
     );
 
     return (
       magenta
-        // Gets the full ISO format and keeps mm:ss.sss
+        // Gets the full ISO format and keeps the time part
         + (this.#date.setTime(renderedAmountNumber), this.#date)
-            .toISOString().substring(14, 23)
+            .toISOString().substring(this.#removeAmount, 23)
       + `${normal} / ${brightMagenta}`
 
         + (this.#date.setTime(this.#amountToRender[0] * 1000), this.#date)
-            .toISOString().substring(14, 23)
+            .toISOString().substring(this.#removeAmount, 23)
       + `${normal} | `
     );
   }
