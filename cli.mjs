@@ -1035,7 +1035,7 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
       process.exit(1)
   }
   Options.loopFadeInterpolation(lastIndexNumber, type)
-  log(INFO_LVL, `Set loop fade interpolation to ${arg} at ${lastIndex?.index} index`)
+  log(INFO_LVL, `Set loop-fade-interpolation to ${arg} at ${lastIndex?.index} index`)
 }
 /**
  * Sets a loop parameter that uses seconds or a time format
@@ -1107,11 +1107,11 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   if (isRealNumber(number, true)) {
     if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutSampleRate = number;
-      log(INFO_LVL, `Set sample rate for all to ${number} because output is stdout`)
+      log(INFO_LVL, `Set sample-rate for all to ${number} because output is stdout`)
       return;
     }
     Options.sampleRate(lastIndexNumber, number)
-    log(INFO_LVL, `Set sample rate to ${number} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set sample-rate to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(
@@ -1306,7 +1306,7 @@ const setMaxThreads = async (arg) => {
     && number >= 1
   ) {
     Options.maxThreads = number;
-    log(INFO_LVL, `Set max threads to ${number}`)
+    log(INFO_LVL, `Set max-threads to ${number}`)
     return;
   }
   console.error(
@@ -1326,12 +1326,12 @@ const setProgressDelay = (arg) => {
   // Default
   if (Number.isNaN(number)) {
     Options.progressDelay = 500;
-    log(INFO_LVL, `Set progress delay to 500`)
+    log(INFO_LVL, `Set progress-delay to 500`)
     return;
   }
   if (isRealNumber(number, true) && number >= 50) {
     Options.progressDelay = number;
-    log(INFO_LVL, `Set progress delay to ${number}`)
+    log(INFO_LVL, `Set progress-delay to ${number}`)
     return;
   }
   console.error(
@@ -1348,7 +1348,7 @@ const setProgressDelay = (arg) => {
 const setLogFilePath = arg => {
   const pathToUse = arg || "./spesso.log";
   Options.logFilePath = pathToUse;
-  log(INFO_LVL, `Set log file path to ${pathToUse}`)
+  log(INFO_LVL, `Set log-file path to ${pathToUse}`)
 }
 /**
  * Runs uninstall.mjs and uninstall spessoplayer
