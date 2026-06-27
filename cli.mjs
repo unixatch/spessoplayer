@@ -365,14 +365,24 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     Options.fileOutputs(index, arg)
     log(INFO_LVL, "Set file output to " + type)
   };
-  const setLoopParameter = (name, arg, nextArg, regexType, func) => {
+  const setLoopParameter = (
+    name, arg, nextArg, regexType,
+    func, nameRequired, optionsFunc
+  ) => {
     loopExists ??= testFunctions.loop(newArgumentsSet);
     if (!loopExists) {
       log(WARNING_LVL, `Skipping ${name} because loop isn't set`)
       return;
     }
     lastIndex = arg.match(regexType)?.groups;
-    func(nextArg, lastIndex)
+    return (
+      nameRequired
+        ? func.call(undefined,
+          name, nextArg, lastIndex,
+          optionsFunc
+        )
+        : func(nextArg, lastIndex)
+    );
   };
   /**
    * Runs the logic that comes before setFile is run
@@ -576,9 +586,11 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-vol":     case "/vol":
       case regexes.volume.test(arg) && arg: {
         lastIndex = arg.match(regexes.volume)?.groups;
-        setVolume(nextArg, lastIndex)
-        i++
-        break;
+        setVolumeParameter(
+          "volume", nextArg, lastIndex,
+          Options.volume
+        )
+        i++; break;
       }
       case "--sample-rate": case "/sample-rate":
       case "-r":            case "/r":
@@ -603,9 +615,11 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           )
           i++; break;
         }
-        setReverb(nextArg, lastIndex)
-        i++
-        break;
+        setVolumeParameter(
+          "reverb-volume", nextArg, lastIndex,
+          Options.reverbVolume
+        )
+        i++; break;
       }
       case "--effects": case "/effects":
       case "-e":       case "/e":
@@ -631,9 +645,11 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-l":     case "/l":
       case regexes.loop.test(arg) && arg: {
         lastIndex = arg.match(regexes.loop)?.groups;
-        setLoop(nextArg, lastIndex)
-        i++
-        break;
+        setLoopParameterValue(
+          "loop", nextArg, lastIndex,
+          Options.loopAmount
+        )
+        i++; break;
       }
       case "--loop-start": case "/loop-start":
       case "-ls":          case "/ls":
@@ -641,7 +657,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         setLoopParameter(
           "loop-start",
           arg, nextArg, regexes.loopStart,
-          setLoopStart
+          setLoopParameterTimeValue,
+          true, Options.loopStart
         )
         i++; break;
       }
@@ -651,7 +668,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         setLoopParameter(
           "loop-end",
           arg, nextArg, regexes.loopEnd,
-          setLoopEnd
+          setLoopParameterTimeValue,
+          true, Options.loopEnd
         )
         i++; break;
       }
@@ -674,7 +692,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         setLoopParameter(
           "loop-fade-start",
           arg, nextArg, regexes.loopFadeStart,
-          setLoopFadeStart
+          setLoopParameterValue,
+          true, Options.loopFadeStart
         )
         i++; break;
       }
@@ -684,7 +703,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         setLoopParameter(
           "loop-fade-duration",
           arg, nextArg, regexes.loopFadeDuration,
-          setLoopFadeDuration
+          setLoopParameterValue,
+          true, Options.loopFadeDuration
         )
         i++; break;
       }
@@ -928,57 +948,24 @@ const invalidNumberString       = "isn't a valid number",
       invalidVolumeString       = "isn't a valid number/dB/percentage";
 
 /**
- * Sets the Options.loopAmount variable
- * @param {String} arg - the loop amount
+ * Sets a loop parameter value for:
+ * - loop;
+ * - loop-fade-start;
+ * - loop-fade-duration;
+ * @param {String}   name name of the parameter
+ * @param {String}   arg  value of the parameter
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ * @param {Function} func Options' dedicated parameter function
  */
-const setLoop = (arg, lastIndex) => {
+const setLoopParameterValue = (name, arg, lastIndex, func) => {
   const argInfos = getArgInfos(arg, lastIndex);
   const { lastIndexNumber, lastIndexString } = argInfos;
   let number = argInfos.number;
 
-  // Negative conversion
-  if (number < 0) {
-    log(WARNING_LVL,
-      `Converted ${
-        underline+number+endUnderline
-      } to 0 because it was negative`
-    )
-    number = 0;
-  }
-
-  if (number === Infinity) {
-    console.error(
-      formatStrings.failedCliParam,
-      `[loop|${lastIndexString}]: Can't use infinity, sorry`
-    )
-    process.exit(1)
-  }
-  if (isRealNumber(number)) {
-    Options.loopAmount(lastIndexNumber, number)
-    log(INFO_LVL, `Set loop amount to ${number} at ${lastIndex?.index} index`)
-    return;
-  }
-  console.error(
-    formatStrings.failedCliParamWithArg,
-    `[loop|${lastIndexString}]:`, arg, invalidNumberString
-  )
-  process.exit(1)
-}
-/**
- * Sets the Options.loopFadeStart variable
- * @param {String} arg - the loop fade delay amount in seconds
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- */
-const setLoopFadeStart = (arg, lastIndex) => {
-  const argInfos = getArgInfos(arg, lastIndex);
-  const { lastIndexNumber, lastIndexString } = argInfos;
-  let number = argInfos.number;
-
-  // Default
-  if (Number.isNaN(number)) {
-    Options.loopFadeStart(lastIndexNumber, 1)
-    log(INFO_LVL, `Set loop fade start to 1 at ${lastIndex?.index} index`)
+  // loop-fade-start only
+  if (name === "loop-fade-start" && Number.isNaN(number)) {
+    func.call(Options, lastIndexNumber, 1)
+    log(INFO_LVL, `Set ${name} to 1 at ${lastIndex?.index} index`)
     return;
   }
   // Negative conversion
@@ -994,56 +981,18 @@ const setLoopFadeStart = (arg, lastIndex) => {
   if (number === Infinity) {
     console.error(
       formatStrings.failedCliParam,
-      `[loop-fade-start|${lastIndexString}]: Can't use infinity, sorry`
+      `[${name}|${lastIndexString}]: Can't use infinity, sorry`
     )
     process.exit(1)
   }
   if (isRealNumber(number)) {
-    Options.loopFadeStart(lastIndexNumber, number)
-    log(INFO_LVL, `Set loop fade start to ${number} at ${lastIndex?.index} index`)
+    func.call(Options, lastIndexNumber, number)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[loop-fade-start|${lastIndexString}]:`, arg, invalidNumberString
-  )
-  process.exit(1)
-}
-/**
- * Sets the Options.loopFadeDuration variable
- * @param {String} arg - the loop fade duration amount in seconds
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- */
-const setLoopFadeDuration = (arg, lastIndex) => {
-  const argInfos = getArgInfos(arg, lastIndex);
-  const { lastIndexNumber, lastIndexString } = argInfos;
-  let number = argInfos.number;
-
-  // Negative conversion
-  if (number < 0) {
-    log(WARNING_LVL,
-      `Converted ${
-        underline+number+endUnderline
-      } to 0 because it was negative`
-    )
-    number = 0;
-  }
-
-  if (number === Infinity) {
-    console.error(
-      formatStrings.failedCliParam,
-      `[loop-fade-duration|${lastIndexString}]: Can't use infinity, sorry`
-    )
-    process.exit(1)
-  }
-  if (isRealNumber(number)) {
-    Options.loopFadeDuration(lastIndexNumber, number)
-    log(INFO_LVL, `Set loop fade duration to ${number} at ${lastIndex?.index} index`)
-    return;
-  }
-  console.error(
-    formatStrings.failedCliParamWithArg,
-    `[loop-fade-duration|${lastIndexString}]:`, arg, invalidNumberString
+    `[${name}|${lastIndexString}]:`, arg, invalidNumberString
   )
   process.exit(1)
 }
@@ -1089,11 +1038,13 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
   log(INFO_LVL, `Set loop fade interpolation to ${arg} at ${lastIndex?.index} index`)
 }
 /**
- * Sets the Options.loopStart variable
- * @param {String} arg - the start of the loop in seconds or in HH:MM:SS:ms format
+ * Sets a loop parameter that uses seconds or a time format
+ * @param {String}   name name of the parameter
+ * @param {String}   arg  value of the parameter
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ * @param {Function} func Options' dedicated parameter function
  */
-const setLoopStart = (arg, lastIndex) => {
+const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1107,7 +1058,7 @@ const setLoopStart = (arg, lastIndex) => {
     if (optionalTime?.length > 3) {
       console.error(
         formatStrings.failedCliParamWithArg,
-        `[loop-start|${lastIndexString}]:`, arg,
+        `[${name}|${lastIndexString}]:`, arg,
         "isn't a valid ISO time string"
       )
       process.exit(1)
@@ -1119,66 +1070,19 @@ const setLoopStart = (arg, lastIndex) => {
     argAsADate ??= Date.parse(`1970T${arg}Z`);
 
     const seconds = argAsADate / 1000;
-    Options.loopStart(lastIndexNumber, seconds)
-    log(INFO_LVL, `Set loop-start to ${seconds} at ${lastIndex?.index} index`)
+    func.call(Options, lastIndexNumber, seconds)
+    log(INFO_LVL, `Set ${name} to ${seconds} at ${lastIndex?.index} index`)
     return;
   }
   if (isRealNumber(number, true) && !(number < 0)) {
-    Options.loopStart(lastIndexNumber, number)
-    log(INFO_LVL, `Set loop-start to ${number} at ${lastIndex?.index} index`)
+    func.call(Options, lastIndexNumber, number)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[loop-start|${lastIndexString}]:`, arg,
+    `[${name}|${lastIndexString}]:`, arg,
     invalidNumberOrISOString
-  )
-  process.exit(1)
-}
-/**
- * Sets the Options.loopEnd variable
- * @param {String} arg - the end of the loop in seconds or in HH:MM:SS:ms format
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- */
-const setLoopEnd = (arg, lastIndex) => {
-  const {
-    number: ogNumber, lastIndexNumber, lastIndexString
-  } = getArgInfos(arg, lastIndex);
-  const number = Math.abs(ogNumber);
-
-  const timeStampMatch = arg.match(regexes.ISOTimestamp);
-  if (timeStampMatch) {
-    // ISO Time format checks
-    const {
-      groups: {optional: optionalTime}
-    } = timeStampMatch;
-    if (optionalTime?.length > 3) {
-      console.error(
-        formatStrings.failedCliParamWithArg,
-        `[loop-end|${lastIndexString}]:`, arg,
-        "isn't a valid ISO time string"
-      )
-      process.exit(1)
-    }
-    if (!optionalTime) arg = "00:"+arg;
-
-    // Format translation to seconds
-    let argAsADate = fromInstant?.(`1970-01-01T${arg}Z`).epochMilliseconds;
-    argAsADate ??= Date.parse(`1970T${arg}Z`);
-
-    const seconds = argAsADate / 1000;
-    Options.loopEnd(lastIndexNumber, seconds)
-    log(INFO_LVL, `Set loop-end to ${seconds} at ${lastIndex?.index} index`)
-    return;
-  }
-  if (isRealNumber(number, true) && !(number < 0)) {
-    Options.loopEnd(lastIndexNumber, number)
-    log(INFO_LVL, `Set loop-end to ${number} at ${lastIndex?.index} index`)
-    return;
-  }
-  console.error(
-    formatStrings.failedCliParamWithArg,
-    `[loop-end|${lastIndexString}]:`, arg, invalidNumberOrISOString
   )
   process.exit(1)
 }
@@ -1343,93 +1247,50 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
   process.exit(1)
 }
 /**
- * Sets the Options.volume variable for the masterGain
- * @param {String} arg - the volume in either percentage, decibels or decimals
+ * Sets a volume parameter
+ * @param {String}   name name of the parameter
+ * @param {String}   arg  value of the parameter
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ * @param {Function} func Options' dedicated parameter function
  */
-const setVolume = (arg, lastIndex) => {
-  const {
-    number, lastIndexNumber, lastIndexString
-  } = getArgInfos(arg, lastIndex);
-
-  if (regexes.areDecibels.test(arg)) {
-    const dBNumber = Number(arg.match(regexes.decibelNumber)[1]);
-    const toPercentage = 10**(dBNumber/10);
-    Options.volume(lastIndexNumber, toPercentage)
-    log(INFO_LVL, `Set volume to ${toPercentage} at ${lastIndex?.index} index`)
-    return;
-  }
-  if (regexes.isPercentage.test(arg)) {
-    const percentage = Number(arg.match(regexes.percentageNumber)[1]);
-    Options.volume(lastIndexNumber, percentage / 100)
-    log(INFO_LVL, `Set volume to ${percentage / 100} at ${lastIndex?.index} index`)
-    return;
-  }
-  // Negative conversion
-  if (number < 0) {
-    console.error(
-      formatStrings.failedCliParamWithArg,
-      `[volume|${lastIndexString}]:`, arg,
-      negativeNumberErrorString
-    )
-    process.exit(1)
-  }
-  if (isRealNumber(number, true)) {
-    Options.volume(lastIndexNumber, number)
-    log(INFO_LVL, `Set volume to ${number} at ${lastIndex?.index} index`)
-    return;
-  }
-  console.error(
-    formatStrings.failedCliParamWithArg,
-    `[volume|${lastIndexString}]:`, arg, invalidVolumeString
-  )
-  process.exit(1)
-}
-/**
- * Sets the Options.reverb variable
- * @param {String} arg - the volume in either percentage, decibels or decimals
- * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- */
-const setReverb = (arg, lastIndex) => {
+const setVolumeParameter = (name, arg, lastIndex, func) => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
     const dB = Number(arg.match(regexes.decibelNumber)[1]);
-    const dBNumber = 10**(dB/20);
+    const dBNumber = 10**(dB/(name === "volume" ? 10 : 20));
 
-    Options.reverbVolume(lastIndexNumber, dBNumber)
-    log(INFO_LVL, `Set reverb volume to ${dBNumber} to ${lastIndex?.index}`)
+    func.call(Options, lastIndexNumber, dBNumber)
+    log(INFO_LVL, `Set ${name} to ${dBNumber} at ${lastIndex?.index} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
     const toFloat = percentage / 100;
 
-    Options.reverbVolume(lastIndexNumber, toFloat)
-    log(INFO_LVL, `Set reverb volume to ${toFloat} to ${lastIndex?.index}`)
+    func.call(Options, lastIndexNumber, toFloat)
+    log(INFO_LVL, `Set ${name} to ${toFloat} at ${lastIndex?.index} index`)
     return;
   }
   // Negative conversion
   if (number < 0) {
     console.error(
       formatStrings.failedCliParamWithArg,
-      `[reverb-volume|${lastIndexString}]:`, arg,
+      `[${name}|${lastIndexString}]:`, arg,
       negativeNumberErrorString
     )
     process.exit(1)
   }
   if (isRealNumber(number, true)) {
-    Options.reverbVolume(lastIndexNumber, number)
-    log(INFO_LVL, `Set reverb volume to ${number} to ${lastIndex?.index}`)
+    func.call(Options, lastIndexNumber, number)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex?.index} index`)
     return;
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[reverb-volume|${lastIndexString}]:`, arg,
-    invalidVolumeString
+    `[${name}|${lastIndexString}]:`, arg, invalidVolumeString
   )
   process.exit(1)
 }
