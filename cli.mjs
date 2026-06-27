@@ -358,7 +358,22 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       "Can't use both stdout and file mode at the same time"
     )
     process.exit(1)
-  }
+  };
+  const setFileOutputs = (type, index, arg) => {
+    isStdout ??= testFunctions.stdout(newArgumentsSet);
+    if (isStdout) stdoutFileModeConflictError()
+    Options.fileOutputs(index, arg)
+    log(INFO_LVL, "Set file output to " + type)
+  };
+  const setLoopParameter = (name, arg, nextArg, regexType, func) => {
+    loopExists ??= testFunctions.loop(newArgumentsSet);
+    if (!loopExists) {
+      log(WARNING_LVL, `Skipping ${name} because loop isn't set`)
+      return;
+    }
+    lastIndex = arg.match(regexType)?.groups;
+    func(nextArg, lastIndex)
+  };
   /**
    * Runs the logic that comes before setFile is run
    * @param {String} arg file to check and maybe run
@@ -437,34 +452,22 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "out.wav":
       case regexes.wav.test(arg) && arg: {
-        isStdout ??= testFunctions.stdout(newArgumentsSet);
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(WAV_INDEX, arg)
-        log(INFO_LVL, "Set file output to wav")
+        setFileOutputs("wav", WAV_INDEX, arg)
         break;
       }
       case "out.pcm": case "out.s16le": case "out.f32le":
       case regexes.raw.test(arg) && arg: {
-        isStdout ??= testFunctions.stdout(newArgumentsSet);
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(RAW_INDEX, arg)
-        log(INFO_LVL, "Set file output to pcm")
+        setFileOutputs("pcm", RAW_INDEX, arg)
         break;
       }
       case "out.flac":
       case regexes.flac.test(arg) && arg: {
-        isStdout ??= testFunctions.stdout(newArgumentsSet);
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(FLAC_INDEX, arg)
-        log(INFO_LVL, "Set file output to flac")
+        setFileOutputs("flac", FLAC_INDEX, arg)
         break;
       }
       case "out.mp3":
       case regexes.mp3.test(arg) && arg: {
-        isStdout ??= testFunctions.stdout(newArgumentsSet);
-        if (isStdout) stdoutFileModeConflictError()
-        Options.fileOutputs(MP3_INDEX, arg)
-        log(INFO_LVL, "Set file output to mp3")
+        setFileOutputs("mp3", MP3_INDEX, arg)
         break;
       }
       case "--ask":     case "/ask":
@@ -635,34 +638,22 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "--loop-start": case "/loop-start":
       case "-ls":          case "/ls":
       case regexes.loopStart.test(arg) && arg: {
-        loopExists ??= testFunctions.loop(newArgumentsSet);
-        if (!loopExists) {
-          log(WARNING_LVL,
-            "Skipping loop-start because loop isn't set"
-          )
-          i++
-          break;
-        }
-        lastIndex = arg.match(regexes.loopStart)?.groups;
-        setLoopStart(nextArg, lastIndex)
-        i++
-        break;
+        setLoopParameter(
+          "loop-start",
+          arg, nextArg, regexes.loopStart,
+          setLoopStart
+        )
+        i++; break;
       }
       case "--loop-end": case "/loop-end":
       case "-le":        case "/le":
       case regexes.loopEnd.test(arg) && arg: {
-        loopExists ??= testFunctions.loop(newArgumentsSet);
-        if (!loopExists) {
-          log(WARNING_LVL,
-            "Skipping loop-end because loop isn't set"
-          )
-          i++
-          break;
-        }
-        lastIndex = arg.match(regexes.loopEnd)?.groups;
-        setLoopEnd(nextArg, lastIndex)
-        i++
-        break;
+        setLoopParameter(
+          "loop-end",
+          arg, nextArg, regexes.loopEnd,
+          setLoopEnd
+        )
+        i++; break;
       }
       case "--loop-fade": case "/loop-fade":
       case "-lF":         case "/lF": {
@@ -680,51 +671,33 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "--loop-fade-start": case "/loop-fade-start":
       case "-lFs":              case "/lFs":
       case regexes.loopFadeStart.test(arg) && arg: {
-        loopExists ??= testFunctions.loop(newArgumentsSet);
-        if (!loopExists) {
-          log(WARNING_LVL,
-            "Skipping loop-fade-start because loop isn't set"
-          )
-          i++
-          break;
-        }
-        lastIndex = arg.match(regexes.loopFadeStart)?.groups;
-        setLoopFadeStart(nextArg, lastIndex)
-        i++
-        break;
+        setLoopParameter(
+          "loop-fade-start",
+          arg, nextArg, regexes.loopFadeStart,
+          setLoopFadeStart
+        )
+        i++; break;
       }
       case "--loop-fade-duration": case "/loop-fade-duration":
       case "-lFd":                 case "/lFd":
       case regexes.loopFadeDuration.test(arg) && arg: {
-        loopExists ??= testFunctions.loop(newArgumentsSet);
-        if (!loopExists) {
-          log(WARNING_LVL,
-            "Skipping loop-fade-duration because loop isn't set"
-          )
-          i++
-          break;
-        }
-        lastIndex = arg.match(regexes.loopFadeDuration)?.groups;
-        setLoopFadeDuration(nextArg, lastIndex)
-        i++
-        break;
+        setLoopParameter(
+          "loop-fade-duration",
+          arg, nextArg, regexes.loopFadeDuration,
+          setLoopFadeDuration
+        )
+        i++; break;
       }
       case "--loop-fade-interpolation":
       case "/loop-fade-interpolation":
       case "-lFi": case "/lFi":
       case regexes.loopFadeInterpolation.test(arg) && arg: {
-        loopExists ??= testFunctions.loop(newArgumentsSet);
-        if (!loopExists) {
-          log(WARNING_LVL,
-            "Skipping loop-fade-interpolation because loop isn't set"
-          )
-          i++
-          break;
-        }
-        lastIndex = arg.match(regexes.loopFadeInterpolation)?.groups;
-        setLoopFadeInterpolation(nextArg, lastIndex)
-        i++
-        break;
+        setLoopParameter(
+          "loop-fade-interpolation",
+          arg, nextArg, regexes.loopFadeInterpolation,
+          setLoopFadeInterpolation
+        )
+        i++; break;
       }
 
       default:
