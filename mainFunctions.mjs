@@ -1271,7 +1271,7 @@ class Progress {
  * and plays them using mpv
  * @param {Options} Options Options class
  * @param {Object<Boolean>} spessasynthLogging if spessasynth's logging system should be enabled
- * @param {ChildProcess?}   loadingAnimation     animation that plays while doing work
+ * @param {ChildProcess?}   loadingAnimation   animation that plays while doing work
  */
 async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
   const {
@@ -1281,11 +1281,33 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
         { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
-  const port = 3000,
-        server = createServer(),
+  let relistenFunction,
+      port = 3000, failedAttempts = 0;
+  const server = createServer(),
         listOfURLs = [],
         promisesOfPrograms = [];
 
+  server.on("error", ({code, errno, message}) => {
+    if (code !== "EADDRINUSE") {
+      console.error(formatStrings.errorText, message)
+      process.exit(errno)
+    }
+    if (failedAttempts++ > 50) {
+      console.error(formatStrings.errorText,
+        "Failed to open the server too many times, quitting..."
+      )
+      process.exit(errno)
+    }
+
+    log(WARNING_LVL,
+      `[Server]: port ${port++} already in use, trying another one...`
+    )
+    setTimeout(
+      relistenFunction ??= server.listen.bind(server, {
+        host: "localhost", port
+      }), 200
+    )
+  })
   server.on("request", async (req, res) => {
     const fullUrl = new URL(req.url, `http://localhost:${port}`);
     const index = fullUrl.searchParams.get("index");
