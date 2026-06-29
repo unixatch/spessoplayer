@@ -21,7 +21,7 @@
  */
 
 import {
-  INFO_LVL, DEBUG_LVL,
+  INFO_LVL, DEBUG_LVL, WARNING_LVL,
   formatStrings, log,
   clearLastLines,
   getSizes, getUsageEstimate,
@@ -414,22 +414,40 @@ let calculateMaxThreads;
     every time the function starts and
     can't be changed accidentally
   */
-  let _maxThreads;
+  let _maxThreads, beforeAmount;
   const OFFSET_MB = 100;
   /**
    * Calculates the amount of threads
-   * @param {Number} cores amount of cores available
+   * @param {Number}  cores    amount of cores available
+   * @param {Boolean} fromUser if the core count is from the user or it's automatic
    * @return {Number} threads count
    */
-  calculateMaxThreads = cores => {
-    _maxThreads ??= cores;
+  calculateMaxThreads = (cores, fromUser) => {
+    if ((_maxThreads ??= cores) <= 0) {
+      console.error(formatStrings.errorText,
+        "Thread creation isn't possible with currently available RAM"
+      )
+      process.exit(1)
+    }
+    beforeAmount ??= cores;
 
     const limitMB = (process.availableMemory() / 1024**2) - OFFSET_MB;
     if (limitMB < getUsageEstimate(filesList, fileSizes, _maxThreads)) {
-      _maxThreads -= (_maxThreads > 4) ? 2 : 1;
+      if (fromUser) {
+        console.error(formatStrings.errorText,
+          "Memory is too low,",
+          `\ntry lowering the ${underline}amount of threads${endUnderline} or free up RAM`
+        )
+        process.exit(1)
+      }
+      const amount = (_maxThreads > 4) ? 2 : 1;
+      _maxThreads -= amount;
     }
     if (getUsageEstimate(filesList, fileSizes, _maxThreads) > limitMB) {
       return calculateMaxThreads();
+    }
+    if (_maxThreads !== beforeAmount) {
+      log(WARNING_LVL, "Lowered threads amount to ", _maxThreads)
     }
 
     const oldMaxThreads = _maxThreads;
@@ -457,8 +475,10 @@ const resourceLimits = new function () {
     maxYoungGenerationSizeMb: biggestFileSize / 2
   };
 };
-const maxThreads = OMaxThreads ?? calculateMaxThreads(availableParallelism()),
-      workers = [];
+const maxThreads = calculateMaxThreads(
+  OMaxThreads ?? availableParallelism(), OMaxThreads !== undefined
+);
+const workers = [];
 let renderTextsInterval,
     cpuUsageData = process.cpuUsage(),
     finalFileOutputs = [];
