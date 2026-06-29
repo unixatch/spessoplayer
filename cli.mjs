@@ -941,6 +941,11 @@ const getArgInfos = (arg, lastIndex) => ({
   lastIndexNumber: Number(lastIndex?.index),
   lastIndexString: lastIndex?.index ?? "0"
 });
+const maybeTruncate = string => (
+  string.length > 20
+    ? string.substring(0, 20) + "..."
+    : string
+);
 // Error/invalid strings/messages
 const invalidNumberString       = "isn't a valid number",
       invalidNumberOrISOString  = "isn't a valid number or a valid ISO time format string",
@@ -992,7 +997,8 @@ const setLoopParameterValue = (name, arg, lastIndex, func) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[${name}|${lastIndexString}]:`, arg, invalidNumberString
+    `[${name}|${lastIndexString}]:`,
+    maybeTruncate(arg), invalidNumberString
   )
   process.exit(1)
 }
@@ -1009,7 +1015,8 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
   if (number < 0 || number > 3) {
     console.error(
       formatStrings.failedCliParamWithArg,
-      `[loop-fade-interpolation|${lastIndexString}]:`, arg,
+      `[loop-fade-interpolation|${lastIndexString}]:`,
+      maybeTruncate(arg),
       "is out of range of valid interpolation types"
     )
   }
@@ -1029,8 +1036,8 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
     default:
       console.error(
         formatStrings.failedCliParamWithArg,
-        `[loop-fade-interpolation|${lastIndexString}]:`, arg,
-        "is an invalid interpolation type"
+        `[loop-fade-interpolation|${lastIndexString}]:`,
+        maybeTruncate(arg), "is an invalid interpolation type"
       )
       process.exit(1)
   }
@@ -1058,8 +1065,8 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     if (optionalTime?.length > 3) {
       console.error(
         formatStrings.failedCliParamWithArg,
-        `[${name}|${lastIndexString}]:`, arg,
-        "isn't a valid ISO time string"
+        `[${name}|${lastIndexString}]:`,
+        maybeTruncate(arg), "isn't a valid ISO time string"
       )
       process.exit(1)
     }
@@ -1081,8 +1088,8 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[${name}|${lastIndexString}]:`, arg,
-    invalidNumberOrISOString
+    `[${name}|${lastIndexString}]:`,
+    maybeTruncate(arg), invalidNumberOrISOString
   )
   process.exit(1)
 }
@@ -1116,7 +1123,8 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[sample-rate|${lastIndexString}]:`, arg, invalidNumberString
+    `[sample-rate|${lastIndexString}]:`, maybeTruncate(arg),
+    invalidNumberString
   )
   process.exit(1)
 }
@@ -1145,7 +1153,7 @@ const setVerboseLevel = async (arg) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[verbose]:", arg, invalidNumberString
+    "[verbose]:", maybeTruncate(arg), invalidNumberString
   )
   process.exit(1)
 }
@@ -1176,7 +1184,7 @@ const setFormat = arg => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[format]:", arg, "isn't a valid format"
+    "[format]:", maybeTruncate(arg), "isn't a valid format"
   )
   process.exit(1)
 }
@@ -1226,7 +1234,7 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
     ) {
       console.error(
         formatStrings.failedCliParamWithArg,
-        "[effects]: One effect inside", `"${arg}"`,
+        "[effects]: One effect inside", `"${maybeTruncate(arg)}"`,
         "doesn't exist in SoX"
       )
       process.exit(1)
@@ -1242,7 +1250,7 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[effects]:", `"${arg}"`, "is a malformed string"
+    "[effects]:", `"${maybeTruncate(arg)}"`, "is a malformed string"
   )
   process.exit(1)
 }
@@ -1278,7 +1286,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
   if (number < 0) {
     console.error(
       formatStrings.failedCliParamWithArg,
-      `[${name}|${lastIndexString}]:`, arg,
+      `[${name}|${lastIndexString}]:`, maybeTruncate(arg),
       negativeNumberErrorString
     )
     process.exit(1)
@@ -1290,7 +1298,8 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    `[${name}|${lastIndexString}]:`, arg, invalidVolumeString
+    `[${name}|${lastIndexString}]:`, maybeTruncate(arg),
+    invalidVolumeString
   )
   process.exit(1)
 }
@@ -1311,7 +1320,7 @@ const setMaxThreads = async (arg) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[max-threads]:", arg,
+    "[max-threads]:", maybeTruncate(arg),
     "is out of range of valid numbers of threads"
   )
   process.exit(1)
@@ -1336,7 +1345,7 @@ const setProgressDelay = (arg) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[progress-delay]:", arg,
+    "[progress-delay]:", maybeTruncate(arg),
     "is out of range of valid numbers of milliseconds"
   )
   process.exit(1)
