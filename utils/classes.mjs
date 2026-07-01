@@ -331,6 +331,18 @@ class EffectsOptions {
     return !isBuiltin;
   }
   /**
+   * Disables the smooth effect at the end of a song
+   * @param {Number} index - index of the file
+   */
+  static hardStop(index) {
+    checkValue(index, "number")
+    addIndexedProperty(
+      this, "hardStop",
+      Number.isNaN(index) ? undefined : index,
+      true
+    )
+  }
+  /**
    * Adds a list of effects to a specific file
    * @param {Number} index - index of the file
    * @param {Array} arrayOfObjects - an array of object effects

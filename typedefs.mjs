@@ -31,6 +31,7 @@
  * @property {Number}    [loopAmount]         The amount of loops to do
  * @property {Number}    [loopStart=midi.midiTicksToSeconds(midi.loop.start)] start of loop
  * @property {Number}    [loopEnd]            end of loop
+ * @property {Boolean}   [hardStop]           if it should not smooth out the end
  * @property {Number}    [loopFade]           if it should loop fade
  * @property {Number}    [loopFadeStart=1]    when the loop fade starts
  * @property {Number}    [loopFadeDuration=4] duration of the loop fade
@@ -43,6 +44,7 @@
  * @property {String}  midiFile                   midi file
  * @property {String}  soundfontFile              soundfont file
  * @property {Number}  [sampleRate=48000]         sample rate
+ * @property {Boolean} [spessaSynthEffects]       if it's a builtin effect or not
  * @property {Number}  loopStart                  start of loop
  * @property {Number}  loopEnd                    end of loop
  * @property {Number}  [loopFade]                 if it should loop fade
@@ -56,6 +58,7 @@
  * @property {Object}  spessasynthLogging
  * @property {Boolean} spessasynthLogging.info    if it should show spessasynth's info logs
  * @property {Boolean} spessasynthLogging.warning if it should show spessasynth's warning logs
+ * @property {Boolean} [hardStop=false]           if it should not smooth out the end
  */
 /**
  * @typedef effectsObjectParams

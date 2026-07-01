@@ -77,6 +77,16 @@ const regexes = {
     "|-e(?<index>\\d+)*",
     "|\\/e(?<index>\\d+)*)$"
   ].join("")),
+  hardStop: new RegExp([
+    "^(?:--hard-stop(?<index>\\d+)*",
+    "|\\/hard-stop(?<index>\\d+)*",
+    "|-hs(?<index>\\d+)*",
+    "|\\/hs(?<index>\\d+)*",
+    "|--no-smooth-end(?<index>\\d+)*",
+    "|\\/no-smooth-end(?<index>\\d+)*",
+    "|-nose(?<index>\\d+)*",
+    "|\\/nose(?<index>\\d+)*)$"
+  ].join("")),
 
   volume: new RegExp([
     "^(?:--volume(?<index>\\d+)*",
@@ -640,6 +650,27 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         }
         setEffects(nextArg, lastIndex, newArgumentsSet)
         i++
+        break;
+      }
+      case "--no-smooth-end": case "/no-smooth-end":
+      case "--hard-stop":     case "/hard-stop":
+      case "-nose":           case "/nose":
+      case "-hs":             case "/hs":
+      case regexes.hardStop.test(arg) && arg: {
+        lastIndex = arg.match(regexes.effects)?.groups;
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        const isExternal = Options.externalEffectProcesser(
+          Number(lastIndex?.index), isStdout
+        );
+        if (isExternal === false) {
+          log(WARNING_LVL,
+            "Ignored no-smooth-end flag since "+
+            "a builtin effect option has been used "+
+              "(e.g. reverb-volume)"
+          )
+          break;
+        }
+        Options.hardStop(Number(lastIndex?.index))
         break;
       }
       case "--loop": case "/loop":
@@ -1512,6 +1543,18 @@ const help = async ({ errorText = "" } = "") => {
        "/e "+grayBoldText("effects_list")]
     )}:
       ${multiLine('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
+
+    ${param(
+      ["--no-smooth-end"+optional("n"),
+       "/no-smooth-end"+optional("n"),
+       "--hard-stop"+optional("n"),
+       "/hard-stop"+optional("n")],
+      ["-nose"+optional("n"), "/nose"+optional("n"),
+       "/hs"+optional("n"),   "/hs"+optional("n")]
+    )}:
+      ${multiLine(`Disables the gradual/smooth effect
+      that is added at the end of the song
+      (confilcts with a builtin effect such as reverb-volume)`)}
 
     ${param(
       ["--loop"+optional("n")+" "+grayBoldText("seconds"),

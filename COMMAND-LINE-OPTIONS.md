@@ -47,6 +47,13 @@ because it's a builtin effect
 #### &nbsp;&nbsp;-e **effects_list**, /e **effects_list**:
 Adds any effects that SoX provides (*e.g "reverb,fade 1"*)
 
+### --no-smooth-end[n], /no-smooth-end[n], --hard-stop[n], /hard-stop[n],
+#### &nbsp;&nbsp;-nose[n], /nose[n], -hs[n], /hs[n]:
+Disables the gradual/smooth effect
+that is added at the end of the song
+
+&nbsp;&nbsp;&nbsp;<sub>(confilcts with a builtin effect such as *reverb-volume*)
+
 ### --loop[n] **seconds**, /loop[n] **seconds**,
 #### &nbsp;&nbsp;-l[n] **seconds**, /l[n] **seconds**:
   Loop x amount of times (*default: 0*)

@@ -345,7 +345,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "loopFade":
       case "confirmation": case "noTable":
       case "showUsage":    case "noProgress":
-      case "toStdout":     case "spessaSynthEffects": {
+      case "toStdout":     case "spessaSynthEffects":
+      case "hardStop": {
         if (!needsToBeSet && property === "spessaSynthEffects") {
           if (this.#options[property] === undefined) return;
           if (Number.isNaN(index)) index = this.#options[property].length-1;
@@ -358,7 +359,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         this.#checkValueAndExistence(
           value, "boolean", needsAnArray ? property : undefined
         )
-        if (property === "spessaSynthEffects" && !isStdout) {
+        if (property === "spessaSynthEffects" && !isStdout
+            || property === "hardStop") {
           if (Number.isInteger(index)) setIndex(); else pushValue()
           return;
         }

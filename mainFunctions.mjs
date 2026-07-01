@@ -329,8 +329,8 @@ function getSampleCount({
   sampleRate = 48000,
   loopAmount,
   loopStart = midi.midiTicksToSeconds(midi.loop.start),
-  loopEnd,
-  loopFade, loopFadeStart = 1, loopFadeDuration = 4
+  loopEnd, hardStop,
+  loopFade, loopFadeStart = 1, loopFadeDuration = 4,
 }) {
   // Spessasynth loop detection
   const loopDetectedInMidi = midi.loop.start > 0;
@@ -357,10 +357,14 @@ function getSampleCount({
       durationInSeconds -= (
         durationWithoutLoopPoints - loopFadeStart - loopFadeDuration
       );
-    } //                                              Padding ↓
-    sampleCount = Math.ceil(sampleRate * (durationInSeconds + 2));
+    } //                                                 Padding ↓
+    sampleCount = Math.ceil(
+      sampleRate * (durationInSeconds + (hardStop === true ? 0 : 2))
+    );
   }
-  sampleCount ??= Math.ceil(sampleRate * (durationInSeconds + 2));
+  sampleCount ??= Math.ceil(
+    sampleRate * (durationInSeconds + (hardStop === true ? 0 : 2))
+  );
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
 
   return {
@@ -411,7 +415,7 @@ async function initSpessaSynth({
   index, indexOfGroup,
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
-  isStartPlayer = false, spessasynthLogging
+  isStartPlayer = false, spessasynthLogging, hardStop = false
 }) {
   const {
     BasicMIDI,
@@ -478,7 +482,7 @@ async function initSpessaSynth({
     midi,
     sampleRate,
     loopAmount,
-    loopStart, loopEnd,
+    loopStart, loopEnd, hardStop,
     loopFade, loopFadeDuration, loopFadeStart
   });
   if (onlySampleCount) return sampleCount;
@@ -505,7 +509,7 @@ async function initSpessaSynth({
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     eventsEnabled: false,
-    effectsEnabled: spessaSynthEffects
+    effectsEnabled: hardStop === true ? false : spessaSynthEffects
   });
   synth.setSystemParameter("gain", volume)
   if (spessaSynthEffects) {
