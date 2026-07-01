@@ -79,7 +79,9 @@ process.on("unhandledRejection", console.error)
 log(DEBUG_LVL, "unhandledRejection event has been added")
 
 // In case the user passes some arguments
-const loadingAnimation = await actUpOnPassedArgs(undefined, isVerboseLevelSet);
+const [
+  loadingAnimation, loadingAnimationCleanupFunc
+] = await actUpOnPassedArgs(undefined, isVerboseLevelSet);
 log(INFO_LVL, "Checked passed args")
 
 const listOfOptions = Options.all;
@@ -192,6 +194,7 @@ if (isToStdout) {
   }
   // Cleans up "Starting..." message if needed
   if (!isVerboseLevelSet) {
+    process.removeListener("exit", loadingAnimationCleanupFunc)
     loadingAnimation?.kill()
     process.stderr.write("\x1b[K")
   }

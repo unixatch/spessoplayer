@@ -312,7 +312,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     await uninstall()
     process.exit()
   }
-  let loadingAnimation;
+  let loadingAnimation, loadingAnimationCleanupFunc;
   if (!isVerboseLevelSet) loadingAnimationBlock: {
     const isWindows  = process.platform === "win32",
           executable = !isWindows ? "sh" : "cmd.exe";
@@ -321,7 +321,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         ? ["./loadingAnimation.sh"]
         : ["/k", "./loadingAnimation.cmd"]
     );
-    process.on("exit", () => {
+    loadingAnimationCleanupFunc = () => {
       // Deno.spawn throws an error when trying to close
       // an already closed process so let's ignore it
       try {
@@ -331,7 +331,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           console.error(error)
         }
       }
-    })
+    };
+    process.on("exit", loadingAnimationCleanupFunc)
     // Deno.spawn doesn't have windowsHide
     // so use node on windows
     if (typeof Deno !== "undefined" && !isWindows) {
@@ -757,7 +758,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     )
     process.exit(1)
   }
-  return loadingAnimation;
+  return [loadingAnimation, loadingAnimationCleanupFunc];
 }
 
 /**
