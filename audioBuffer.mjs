@@ -205,11 +205,20 @@ function getWavHeader({ length, numChannels },
         I_BitsPerSample = 17, // 36 / 2,   16
         I_dataSize      = 10; // 40 / 4,   32
 
-  uint8.set([ R,I,F,F     ], 0)
+  uint8[0]  = R
+  uint8[1]  =  I
+  uint8[2]  =   F
+  uint8[3]  =    F;
   uint32[I_fileSize] = fileSize;
 
-  uint8.set([ W,A,V,E     ], 8)
-  uint8.set([ f,m,t,space ], 12)
+  uint8[8]  = W
+  uint8[9]  =  A
+  uint8[10] =   V
+  uint8[11] =    E;
+  uint8[12] = f
+  uint8[13] =  m
+  uint8[14] =   t;
+  uint8[15] = space;
 
   uint32[I_BlocSize]      = 16;
   uint16[I_AudioFormat]   = 1;
@@ -220,7 +229,10 @@ function getWavHeader({ length, numChannels },
   uint16[I_BytePerBloc]   = numChannels * bytesPerSample;
   uint16[I_BitsPerSample] = 16;
 
-  uint8.set([ d,a,t,a     ], 36)
+  uint8[36] = d
+  uint8[37] =  a
+  uint8[38] =   t
+  uint8[39] =    a;
   uint32[I_dataSize] = dataSize;
   return uint8;
 }
