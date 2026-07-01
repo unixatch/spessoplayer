@@ -686,6 +686,9 @@ function addEvent({ eventType, func }) {
       });
     }
     case "stdoutExit": {
+      // This event is only for node specifically
+      if (process.argv0 !== "node") return;
+
       return addAndCheckEvent("exit", () => {
         if (!doneStreaming && !global.SIGINT) return;
 
