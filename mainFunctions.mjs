@@ -847,9 +847,11 @@ function createReadable(Readable, isStdout = false, {
         // Start of fade
         synth.setSystemParameter("gain", calculateFade())
       }
-      seq.processTick()
-      synth.process(left, right, 0, bufferSize)
-      filledSamples += bufferSize;
+      if (!lastBytes) {
+        seq.processTick()
+        synth.process(left, right, 0, bufferSize)
+        filledSamples += bufferSize;
+      }
 
       if (!isStdout) toFileTextRendering: {
         textRenderingIndex++
@@ -865,19 +867,18 @@ function createReadable(Readable, isStdout = false, {
         )
       }
 
-      if (filledSamples <= sampleCount && !lastBytes) {
-        if (filledSamples === sampleCount) lastBytes = true;
-        const data = (
-          isf32le
-            ? getInterleavedFloat32Data(stereoChannels)
-            : getData(stereoChannels)
-        );
-        // Clean up old data for both channels
-        left.fill(0, 0, BUFFER_SIZE)
-        right.fill(0, 0, BUFFER_SIZE)
-        return this.push(data)
-      }
-      this.push(null)
+      if (lastBytes) return this.push(null);
+      if (filledSamples >= sampleCount) lastBytes = true;
+
+      const data = (
+        isf32le
+          ? getInterleavedFloat32Data(stereoChannels)
+          : getData(stereoChannels)
+      );
+      // Clean up old data for both channels
+      left.fill(0, 0, BUFFER_SIZE)
+      right.fill(0, 0, BUFFER_SIZE)
+      return this.push(data)
     }
   });
   log(DEBUG_LVL, `Created Readable for ${(isStdout) ? "toStdout" : "toFile"}`)
