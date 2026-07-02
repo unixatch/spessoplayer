@@ -1723,7 +1723,7 @@ const help = async ({ errorText = "" } = "") => {
   // Cleans up potential loading text
   process.stderr.write("\x1b[K")
   const { spawnSync } = await import("node:child_process");
-  const PAGERArguments = PAGER.split(" "),
+  const PAGERArguments = PAGER.trim().split(/ +/),
         [PAGERCommand] = PAGERArguments.splice(0, 1);
 
   spawnSync(
