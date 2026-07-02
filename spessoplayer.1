@@ -1,0 +1,240 @@
+.TH spessoplayer 1 "July 2 2026" "unixatch"
+.SH NAME
+A midi player/converter that uses spessasynth_core
+.SH SYNOPSIS
+.B spessoplayer   
+.BR [\f(CIoptions\fP]
+.BR <midi>
+.BR <soundfont>
+.BR [\f(CIoutFile\fP]
+.PP
+.SH DESCRIPTION
+Spessoplayer is a program that uses the spessasynth_core library to convert midi data to normal audio in different audio formats.
+.SH PARAMETERS
+.IP \fB--input[\f(CIn\fP]\ \fIfile\fR,\ \fB-i[\f(CIn\fP]\ \fIfile\fR:
+.RS
+
+Takes the following \fIfile\fR and puts it in the list by \fIn
+.RE
+.IP \fB--volume[\f(CIn\fP]\ \fIamount\fR,\ \fB-v[\f(CIn\fP]\ \fIamount\fR:
+
+Volume to set (\fIdefault: 100%\fR)
+
+Available formats:
+  - \fBdB\fR (example -10dB);
+  - \fBpercentages\fR (example 70%);
+  - \fBdecimals\fR (example 0.9);
+.RE
+.IP \fB--reverb-volume[\f(CIn\fP]\ \fIamount\fR,\ \fB-rvb[\f(CIn\fP]\ \fIamount\fR:
+.RS
+
+Volume to set for reverb
+
+Same formats as volume but with different results
+because it's a builtin effect
+
+(confilcts with --effects) (\fIdefault: none\fR)
+.RE
+.IP \fB--effects\ \fIeffects_list\fR,\ \fB-e\ \fIeffects_list\fR:
+.RS
+
+Adds any effects that SoX provides (e.g "reverb,fade 1")
+.RE
+.IP \fB--no-smooth-end[\f(CIn\fP]\fR,\ \fB--hard-stop[\f(CIn\fP]\fR,\ \fB-nose[\f(CIn\fP]\fR,\ \fB-hs[\f(CIn\fP]\fR:
+.RS
+
+Disables the gradual/smooth effect
+that is added at the end of the song
+
+(confilcts with a builtin effect such as reverb-volume)
+.RE
+.IP \fB--loop[\f(CIn\fP]\ \fIseconds\fR,\ \fB-l[\f(CIn\fP]\ \fIseconds\fR:
+.RS
+
+Loop x amount of times (\fIdefault: 0\fR)
+
+(It might be slow with bigger numbers)
+.RE
+.IP \fB--loop-start[\f(CIn\fP]\ \fIseconds\fR,\ \fB-ls[\f(CIn\fP]\ \fIseconds\fR:
+.RS
+
+The loop will start after \fIseconds\fR
+.RE
+.IP \fB--loop-end[\f(CIn\fP]\ \fIseconds\fR,\ \fB-le[\f(CIn\fP]\ \fIseconds\fR:
+.RS
+
+The loop will restart at [\f(CI-\fP]\fIseconds\fR from the end
+.RE
+.IP \fB--loop-fade\fR,\ \fB-lF\fR:
+.RS
+
+It does 1 more loop on top of yours
+and then it fades away slowly based on \fBloop-fade-start
+
+(Doesn't work without the loop parameter turned on)
+.RE
+.IP \fB--loop-fade-start[\f(CIn\fP]\ \fIseconds\fR,\ \fB-lFs[\f(CIn\fP]\ \fIseconds\fR:
+.RS
+
+When the loop fade starts (\fIdefault: 1\fR)
+.RE
+.IP \fB--loop-fade-interpolation[\f(CIn\fP]\ \fItype\fR,\ \fB-lFi[\f(CIn\fP]\ \fItype\fR:
+.RS
+
+How much the loop fade should last (\fIdefault: 4\fR)
+.RE
+.IP \fB--sample-rate[\f(CIn\fP]\ \fIsamples\fR,\ \fB-r[\f(CIn\fP]\ \fIsamples\fR:
+.RS
+
+Sample rate to use (\fIdefault: 48000\fR)
+
+(It might be slow with bigger numbers for players like mpv)
+(Some players might downsize it to a smaller frequency)
+.RE
+.IP \fB--format\ \fIformat\fR,\ \fB-f\ \fIformat\fR:
+.RS
+
+Format to use for stdout (\fIdefault: wav\fR)
+
+Available formats:
+  - \fBwav\fR;
+  - \fBmp3\fR;
+  - \fBflac\fR;
+  - \fBpcm (f32le)\fR;
+.RE
+.IP \fB--max-threads\ \fIn\fR,\ \fB--threads\ \fIn\fR,\ \fB-mt\ \fIn\fR,\ \fB-T\ \fIn\fR:
+.RS
+
+Sets the amount of threads to use when writing to files.
+Useful when you don't have much RAM
+.RE
+.IP \fB--show-usage\fR,\ \fB-U\fR:
+.RS
+
+Shows RAM usage and CPU time.
+(Only works in file mode)
+.RE
+.IP \fB--progress-delay\ \fImilliseconds\fR,\ \fB-d\ \fImilliseconds\fR:
+.RS
+
+Changes how fast it renders text. (Only works in file mode)
+
+\fBNOTE\fR: Going below the default will hurt performance
+.RE
+.IP \fB--no-progress\fR,\ \fB-np\fR:
+.RS
+
+Disables progress text rendering
+(Only works in file mode)
+.RE
+.IP \fB--ask\fR,\ \fB--confirm\fR,\ \fB-a\fR,\ \fB-c\fR:
+.RS
+
+Asks for confirmation before proceeding
+.RE
+.IP \fB--no-table\fR,\ \fB-nt\fR:
+.RS
+
+When asking for confirmation,
+it'll show the information in a JSON-like format instead of a table
+.RE
+.IP \fB--dry-run\fR,\ \fB--test\fR,\ \fB--null\fR,\ \fB-dr\fR,\ \fB-t\fR,\ \fB-0\fR:
+.RS
+
+Runs the program as normal but
+it'll write to \fI/dev/null\fR on Unix and \fI\\\\.\\nul\fR on windows.
+
+Mainly used for testing purposes but
+can be useful when trying to debug with log options
+.RE
+.IP \fB--verbose\ \fIn\fR,\ \fB-v\ \fIn\fR:
+.RS
+
+Sets the verbosity (\fIdefault: 2\fR)
+.RE
+.IP \fB--enable-spessasynth[\fI-warn\fP|\fI-info\fP]-logging\fR:
+.RS
+
+Enables spessasynth's logging system,
+basically only used for debugging.
+
+It can be used in 2 ways:
+  - Info and warn enabled
+  - Only 1 of the two types enabled
+.RE
+.IP \fB--log-file[\f(CI=path\fP]\fR,\ \fB-lf[\f(CI=path\fP]\fR:
+.RS
+
+Sets path to the log file (\fIdefault: ./spesso.log\fR)
+
+(Meanwhile it writes to file, it also prints to stderr)
+.RE
+.IP \fB--help\fR,\ \fB-h\fR:
+.RS
+
+Shows this help message
+.RE
+.IP \fB--version\fR,\ \fB-V\fR:
+.RS
+
+Shows the installed version
+.RE
+.SH EXIT STATUS
+.IP \fI0
+Normal (no errors)
+.IP \fI1
+Errors were detected (usually a badly written parameter/argument)
+.IP \fI2
+Basically the same as 1 but more specific in some situations (doesn't have too much meaning)
+.IP \fI4
+When using the player mode, it's mpv's signal
+.IP \fI130
+User pressed Ctrl-C
+.IP \fI131
+Received SIGQUIT
+.IP \fI143
+Received SIGTERM
+.IP \fI147
+Stopped the process with Ctrl-z
+.RE
+.SH ENVIRONMENT
+.IP \fBDEBUG_LEVEL_SPESSO
+Verbose level of logs
+.IP \fBDEBUG_FILE_SPESSO
+Log file path
+.IP \fBFORCE_COLOR
+.RS
+Forcibly use a certain type of color pallet, can be:
+.RS
+.IP \fI0
+No color, just white/gray/black
+.IP \fI4
+16 bit colors
+.IP \fI8
+256 bit colors
+.IP \fI24
+24 bit colors (known also as RGB)
+.SH EXAMPLES
+.TP
+.B spessoplayer song.midi soundfont.sf2
+Starts the player directly, playing the given song in the wav file format
+.TP
+.B spessoplayer -f flac song.midi soundfont.sf2
+Starts the player and plays the song in flac format (only that format for all songs)
+.TP
+.B spessoplayer song.midi soundfont.sf2 \\\\| song2.mid soundfont2.sf2
+Starts the player and plays songs with different soundfonts (\fI\\|\fR is not always necessary, it can be done without it)
+.TP
+.B spessoplayer -i song.midi -i soundfont.sf2 -i1 song2.mid -i1 soundfont2.sf2
+Similar to the previous example but it's more precise and faster
+.TP
+.B spessoplayer song.midi soundfont.sf2 -
+Prints to stdout the song in the wav file format
+.TP
+.B spessoplayer song.midi soundfont.sf2 out.wav
+Writes the song to out.wav in the current directory (can be anywhere else)
+.SH "SEE ALSO"
+mpv(1), ffmpeg-all(1), sox(1)
+.SH AUTHOR
+.TP
+Written by unixatch.
