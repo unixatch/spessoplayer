@@ -10,6 +10,21 @@ A midi player/converter that uses spessasynth_core
 .PP
 .SH DESCRIPTION
 Spessoplayer is a program that uses the spessasynth_core library to convert midi data to normal audio in different audio formats.
+.SH Parameter Indexes
+Each parameter can take an optional index
+that points to each song's index (\fB[\fIn\fP]\fR)
+
+The only exception is the input parameter
+which instead points to a group index
+(e.g. midi.mid and sf.sf2 as group 0 and so on)
+
+If no index is provided, it can be:
+
+\fI0\fR or the \fIlast index\fR of the parameter
+
+\fBNOTE\fR: Some options in stdout mode don't let you
+choose an index because it'd break audio players,
+like for example sample-rate
 .SH PARAMETERS
 .IP \fB--input[\f(CIn\fP]\ \fIfile\fR,\ \fB-i[\f(CIn\fP]\ \fIfile\fR:
 .RS
@@ -69,7 +84,7 @@ The loop will restart at [\f(CI-\fP]\fIseconds\fR from the end
 .RS
 
 It does 1 more loop on top of yours
-and then it fades away slowly based on \fBloop-fade-start
+and then it fades away slowly based on \fBloop-fade-start\fR
 
 (Doesn't work without the loop parameter turned on)
 .RE
