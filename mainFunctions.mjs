@@ -357,13 +357,18 @@ function getSampleCount({
       durationInSeconds -= (
         durationWithoutLoopPoints - loopFadeStart - loopFadeDuration
       );
-    } //                                                 Padding ↓
+    }
     sampleCount = Math.ceil(
-      sampleRate * (durationInSeconds + (hardStop === true ? 0 : 2))
+      //                                                 Padding ↓
+      sampleRate * (
+        durationInSeconds + (hardStop === true || loopFade ? 0 : 2)
+      )
     );
   }
   sampleCount ??= Math.ceil(
-    sampleRate * (durationInSeconds + (hardStop === true ? 0 : 2))
+    sampleRate * (
+      durationInSeconds + (hardStop === true || loopFade ? 0 : 2)
+    )
   );
   log(DEBUG_LVL, "Sample count set to " + sampleCount)
 
