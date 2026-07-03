@@ -318,8 +318,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           executable = !isWindows ? "sh" : "cmd.exe";
     const script = (
       !isWindows
-        ? ["./loadingAnimation.sh"]
-        : ["/k", "./loadingAnimation.cmd"]
+        ? [import.meta.dirname       + "/loadingAnimation.sh" ]
+        : ["/k", import.meta.dirname + "/loadingAnimation.cmd"]
     );
     loadingAnimationCleanupFunc = () => {
       // Deno.spawn throws an error when trying to close
