@@ -611,8 +611,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         );
         if (isExternal === true) {
           log(WARNING_LVL,
-            "Ignored reverb-volume flag "+
-            "since effects flag has been used"
+            "Ignored reverb-volume flag at index " +
+             lastIndex?.index + " since effects flag has been used"
           )
           i++; break;
         }
@@ -632,8 +632,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         );
         if (isExternal === false) {
           log(WARNING_LVL,
-            "Ignored effects flag since "+
-            "a builtin effect option has been used "+
+            "Ignored effects flag at index " + lastIndex?.index
+            + " since a builtin effect option has been used " +
               "(e.g. reverb-volume)"
           )
           i++; break;
