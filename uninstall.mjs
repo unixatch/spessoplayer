@@ -126,4 +126,42 @@ if (await manageAutocomplete("zsh",  isUnix, true)) {
 if (await manageAutocomplete("bash", isUnix, true)) {
   console.log(removedMessageFormat, "bash")
 }
+if (isUnix) {
+  const { stat, unlink } = await import("node:fs");
+  const path = (
+    platform === "android"
+      ? process.env.TERMUX__ROOTFS_DIR + "/usr/share/man/man1/spessoplayer.1.gz"
+      : "/usr/share/man/man1/spessoplayer.1.gz"
+  );
+  stat(path, (error, _infos) => {
+    if (!error) return unlink(path, error => {
+      if (error) return;
+
+      // Tries to update man's database
+      try {
+        console.error(`${gray}[man]: Removing documentation...${normal}`)
+        runProgramSync({
+          spawnSync, program: "makewhatis",
+          args: [
+            platform === "android"
+              ? process.env.TERMUX__ROOTFS_DIR + "/usr/share/man"
+              : "/usr/share/man"
+          ]
+        })
+      } catch(error) {
+        if (error.message !== "Program doesn't exist") {
+          console.error(error)
+          console.error(
+            formatStrings.errorText,
+            "There was an error while trying to check makewhatis, exiting..."
+          )
+          process.exit(1)
+        }
+      }
+      console.error(
+        `${green}[man]: Successfully removed documentation${normal}`
+      )
+    });
+  })
+}
 
