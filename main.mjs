@@ -24,17 +24,13 @@ import {
   INFO_LVL, DEBUG_LVL, WARNING_LVL,
   formatStrings, log,
   clearLastLines,
-  getSizes, getUsageEstimate,
-  ffmpegExitHandler
+  getSizes, getUsageEstimate
 } from "./utils/utils.mjs"
 import {
-  ffmpegArgs,
   initSpessaSynth,
-  applyExternalEffects,
-  addEvent,
-  toStdout,
-  Progress,
-  startPlayer
+  addEvent, toStdout,
+  Progress, startPlayer,
+  prepareDestination
 } from "./mainFunctions.mjs"
 import {
   manageVerboseOptions,
@@ -130,13 +126,6 @@ if (isToStdout) {
     }
     console.error(error)
   })
-  const {
-    sampleRate: stdoutSampleRate = 48000,
-    format: stdoutFormat,
-    effects: effectsList, reverbVolume
-  } = listOfOptions;
-
-  let fatalErrors;
   const perSongOptions = [],
         lengthOfFiles = [],
         promisesOfPrograms = [],
@@ -155,76 +144,12 @@ if (isToStdout) {
     lengthOfFiles.push(sampleCount)
   }
 
-  let effectsProcess,
-      converterProcess;
-  const dryRunStream = (
-    dryRun &&
-    fs.createWriteStream(dryRun,
-      {fd: fs.openSync(dryRun, "r+")}
-    )
-  );
+  const destination = await prepareDestination({
+    isVerboseLevelSet, loadingAnimation, loadingAnimationCleanupFunc,
+    ...listOfOptions, lengthOfFiles,
+    getWavHeader, promisesOfPrograms
+  }, true);
 
-  // Creating the header
-  const sumOfLengths = (index, previous) => index + previous;
-  const stdoutHeader = getWavHeader({
-    length: lengthOfFiles.reduce(sumOfLengths, 0),
-    numChannels: 2
-  }, stdoutSampleRate);
-
-  const ffmpegFormats   = /(?:flac|mp3)/,
-        losslessFormats = /(?:pcm|s16le|f32le)/;
-  const needsConvertion = stdoutFormat?.match(ffmpegFormats);
-
-  if (needsConvertion) {
-    const { spawn } = await import("node:child_process");
-    converterProcess = spawn("ffmpeg",
-      ffmpegArgs()[stdoutFormat],
-      {stdio: [
-        "pipe",
-        dryRunStream ?? process.stdout,
-        "pipe"
-      ]}
-    );
-    converterProcess.stderr.on("data", data => {
-      (fatalErrors ??= []).push(data.toString())
-    })
-    converterProcess.once("exit", exitCode => {
-      ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
-    })
-  }
-  // Cleans up "Starting..." message if needed
-  if (!isVerboseLevelSet) {
-    process.removeListener("exit", loadingAnimationCleanupFunc)
-    loadingAnimation?.kill()
-    process.stderr.write("\x1b[K")
-  }
-  // If it needs effects, excluding lossless formats
-  if (effectsList && !stdoutFormat?.match(losslessFormats)) {
-    [effectsProcess] = await applyExternalEffects({
-      program: "sox",
-      stdoutHeader,
-      stdout: converterProcess?.stdin ?? dryRunStream,
-      promisesOfPrograms,
-      reverbVolume,
-      effects: effectsList,
-      addErrorEventToDest: dest => dest.on("error", () => {})
-    });
-    log(INFO_LVL, "Done setting up SoX")
-  } else if (needsConvertion) {
-    // Or just a conversion/normal processing
-    converterProcess.stdin.write(stdoutHeader)
-  }
-  log(DEBUG_LVL, "Created header file ", stdoutHeader)
-
-  const destination = (
-    effectsProcess?.stdin      // Sox or
-    ?? converterProcess?.stdin // Ffmpeg or
-    ?? (
-      // dryRun/stdout
-      (dryRunStream ?? process.stdout).write(stdoutHeader),
-       dryRunStream ?? process.stdout
-    )
-  );
   for (let i = 0; i < amountOfSongs; i++) {
     const options = perSongOptions[i];
     if (!options) continue;

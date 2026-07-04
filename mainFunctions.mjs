@@ -1295,9 +1295,7 @@ class Progress {
  * @param {ChildProcess?}   loadingAnimation   animation that plays while doing work
  */
 async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
-  const {
-    sampleRate, format, effects
-  } = Options.all;
+  const { sampleRate, format } = Options.all;
   const { getWavHeader } = await import("./audioBuffer.mjs"),
         { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
@@ -1349,14 +1347,6 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
       res.flushHeaders()
       return res.end();
     }
-
-    let effectsProcess,
-        converterProcess;
-    // Creating the header
-    const stdoutHeader = getWavHeader({
-      length, numChannels: 2
-    }, options.sampleRate ?? 48000);
-
     // Needed even if it's wrong because
     // otherwise mpv gives out a fatal error
     // only if it's a flac conversion (buggy ffmpeg?)
@@ -1365,41 +1355,11 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
       res.flushHeaders()
     }
 
-    const ffmpegFormats   = /(?:flac|mp3)/;
-    const needsConvertion = format?.match(ffmpegFormats);
+    const destination = await prepareDestination({
+      ...options, res, mpv, length,
+      getWavHeader, promisesOfPrograms
+    }, false);
 
-    if (needsConvertion) {
-      const { spawn } = child_process ??= await import("node:child_process");
-      converterProcess = spawn("ffmpeg",
-        ffmpegArgs()[format],
-        {stdio: ["pipe", res.socket, "pipe"]}
-      );
-    }
-    // If it needs effects, excluding lossless/wave formats
-    if (effects && format?.match(ffmpegFormats)) {
-      [effectsProcess] = await applyExternalEffects({
-        program: "sox",
-        stdoutHeader,
-        stdout: converterProcess.stdin,
-        promisesOfPrograms,
-        reverbVolume: options.reverbVolume,
-        effects: options.effects,
-        addErrorEventToDest: (
-          dest => dest.on("error", () => mpv.kill())
-        )
-      });
-      log(INFO_LVL, "Done setting up SoX")
-    } else if (needsConvertion) {
-      // Or just a conversion/normal processing
-      converterProcess.stdin.write(stdoutHeader)
-    }
-    log(DEBUG_LVL, "Created header file ", stdoutHeader)
-
-    const destination = (
-      effectsProcess?.stdin             // SoX or
-      ?? converterProcess?.stdin        // Ffmpeg or
-      ?? (res.write(stdoutHeader), res) // ServerResponse
-    );
     const toStdoutValue = await toStdout({
       index: realIndex,
       options, res
@@ -1472,15 +1432,116 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
       process.exit(errno)
     })
 }
+async function prepareDestination({
+  isVerboseLevelSet, res, mpv,
+  loadingAnimation, loadingAnimationCleanupFunc,
+  dryRun, length, lengthOfFiles,
+  getWavHeader,
+  sampleRate, format,
+  promisesOfPrograms,
+  effects, reverbVolume
+}, isStdout) {
+  let effectsProcess, fatalErrors,
+      converterProcess, dryRunStream;
+  if (isStdout) {
+    dryRunStream = (
+      dryRun &&
+      fs.createWriteStream(dryRun,
+        {fd: fs.openSync(dryRun, "r+")}
+      )
+    );
+  }
+
+  // Creating the header
+  const sumOfLengths = (
+    isStdout
+      ? (index, previous) => index + previous
+      : undefined
+  );
+  const stdoutHeader = getWavHeader({
+    length: (
+      isStdout
+        ? lengthOfFiles.reduce(sumOfLengths, 0)
+        : length
+    ),
+    numChannels: 2
+  }, sampleRate ?? 48000);
+
+  const ffmpegFormats   = /(?:flac|mp3)/,
+        losslessFormats = isStdout ? /(?:pcm|s16le|f32le)/ : undefined;
+  const needsConvertion = format?.match(ffmpegFormats);
+
+  if (needsConvertion) {
+    const { spawn } = child_process ??= await import("node:child_process");
+    converterProcess = spawn("ffmpeg",
+      ffmpegArgs()[format],
+      {stdio: [
+        "pipe",
+        res?.socket ?? dryRunStream ?? process.stdout,
+        "pipe"
+      ]}
+    );
+    converterProcess.stderr.on("data", data => {
+      (fatalErrors ??= []).push(data.toString())
+    })
+    converterProcess.once("exit", exitCode => {
+      if (exitCode === 224 && !isStdout) return;
+      ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
+    })
+  }
+  // Cleans up "Starting..." message if needed
+  if (isStdout && !isVerboseLevelSet) {
+    process.removeListener("exit", loadingAnimationCleanupFunc)
+    loadingAnimation?.kill()
+    process.stderr.write("\x1b[K")
+  }
+  // If it needs effects, excluding some formats
+  const isCorrectFormat = (
+    losslessFormats
+      ? !format?.match(losslessFormats)
+      : format?.match(ffmpegFormats)
+  );
+  if (effects && isCorrectFormat) {
+    [effectsProcess] = await applyExternalEffects({
+      program: "sox",
+      stdoutHeader,
+      stdout: converterProcess?.stdin ?? dryRunStream,
+      promisesOfPrograms,
+      reverbVolume, effects,
+      addErrorEventToDest: dest => dest.on(
+        "error", () => mpv?.kill()
+      )
+    });
+    log(INFO_LVL, "Done setting up SoX")
+  } else if (needsConvertion) {
+    // Or just a conversion/normal processing
+    converterProcess.stdin.write(stdoutHeader)
+  }
+  log(DEBUG_LVL, "Created header file ", stdoutHeader)
+
+  let destination = (
+    effectsProcess?.stdin      // Sox or
+    ?? converterProcess?.stdin // Ffmpeg or
+  );
+  if (isStdout) {
+    destination ??= (
+      // dryRun/stdout
+      (dryRunStream ?? process.stdout).write(stdoutHeader),
+       dryRunStream ?? process.stdout
+    );
+  } else {
+    // ServerResponse
+    destination ??= (res.write(stdoutHeader), res);
+  }
+  return destination;
+}
 
 export {
   ffmpegArgs,
   initSpessaSynth,
   applyExternalEffects,
-  addEvent,
-  toStdout,
-  toFile,
-  Progress,
-  startPlayer
+  addEvent, toStdout,
+  toFile, Progress,
+  startPlayer, prepareDestination
 }
 
