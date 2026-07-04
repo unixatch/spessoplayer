@@ -92,7 +92,7 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
   })
 }
 
-const loadingAnimation = await actUpOnPassedArgs(process.argv);
+const [loadingAnimation] = await actUpOnPassedArgs(process.argv);
 loadingAnimation?.kill()
 console.log(
   "Argv files:",
