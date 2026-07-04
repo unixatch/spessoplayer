@@ -715,7 +715,7 @@ function createReadable(Readable, isStdout = false, {
   seq, synth,
   getData, isf32le,
   doNotRepeat,
-  loopFade,
+  hardStop, loopFade,
   loopFadeDuration = 4, loopFadeInterpolation,
   startFading,
   progressBuffers
@@ -826,7 +826,8 @@ function createReadable(Readable, isStdout = false, {
       filledSamples = 0,
       lastCompletelyRenderedSeconds,
       lastLoopCount = seq.loopCount;
-  const BUFFER_SIZE = 128,
+  const startSmoothEnding = sampleCount - (2.5 * synth.sampleRate),
+        BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
         right = new Float32Array(BUFFER_SIZE),
         stereoChannels = [left, right],
@@ -850,6 +851,10 @@ function createReadable(Readable, isStdout = false, {
         if (filledSamples < startFading) break loopFadeBlock;
         // Start of fade
         synth.setSystemParameter("gain", calculateFade())
+      }
+      if (!hardStop && !loopFade && filledSamples > startSmoothEnding
+          && !synth.systemParameters.effectsEnabled) {
+        synth.setSystemParameter("effectsEnabled", true)
       }
       if (!lastBytes) {
         seq.processTick()
@@ -928,6 +933,7 @@ async function toStdout({
     sampleCount,
     seq, synth,
     getData, isf32le: format === "f32le",
+    hardStop: options.hardStop,
     loopFade: options.loopFade,
     loopFadeDuration: options.loopFadeDuration,
     loopFadeInterpolation: options.loopFadeInterpolation,
@@ -1039,6 +1045,7 @@ async function toFile({
       seq, synth,
       getData,
       index, progressBuffers,
+      hardStop: options.hardStop,
       loopFade: options.loopFade,
       loopFadeDuration: options.loopFadeDuration,
       loopFadeInterpolation: options.loopFadeInterpolation,
@@ -1053,6 +1060,7 @@ async function toFile({
       getData, isf32le: hasf32le,
       index, progressBuffers,
       doNotRepeat: readStream && true,
+      hardStop: options.hardStop,
       loopFade: options.loopFade,
       loopFadeDuration: options.loopFadeDuration,
       loopFadeInterpolation: options.loopFadeInterpolation,
