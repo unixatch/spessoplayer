@@ -1452,24 +1452,28 @@ async function prepareDestination({
     );
   }
 
-  // Creating the header
-  const sumOfLengths = (
-    isStdout
-      ? (index, previous) => index + previous
-      : undefined
-  );
-  const stdoutHeader = getWavHeader({
-    length: (
-      isStdout
-        ? lengthOfFiles.reduce(sumOfLengths, 0)
-        : length
-    ),
-    numChannels: 2
-  }, sampleRate ?? 48000);
-
   const ffmpegFormats   = /(?:flac|mp3)/,
         losslessFormats = isStdout ? /(?:pcm|s16le|f32le)/ : undefined;
-  const needsConvertion = format?.match(ffmpegFormats);
+  const needsConvertion = format?.match(ffmpegFormats),
+        isPCM = format?.match(losslessFormats);
+  let stdoutHeader;
+
+  // Maybe create the header
+  if (!isPCM) {
+    const sumOfLengths = (
+      isStdout
+      ? (index, previous) => index + previous
+      : undefined
+    );
+    stdoutHeader = getWavHeader({
+      length: (
+        isStdout
+        ? lengthOfFiles.reduce(sumOfLengths, 0)
+        : length
+      ),
+      numChannels: 2
+    }, sampleRate ?? 48000);
+  }
 
   if (needsConvertion) {
     const { spawn } = child_process ??= await import("node:child_process");
@@ -1517,7 +1521,7 @@ async function prepareDestination({
     // Or just a conversion/normal processing
     converterProcess.stdin.write(stdoutHeader)
   }
-  log(DEBUG_LVL, "Created header file ", stdoutHeader)
+  if (!isPCM) log(DEBUG_LVL, "Created header file ", stdoutHeader)
 
   let destination = (
     effectsProcess?.stdin      // Sox or
@@ -1526,12 +1530,12 @@ async function prepareDestination({
   if (isStdout) {
     destination ??= (
       // dryRun/stdout
-      (dryRunStream ?? process.stdout).write(stdoutHeader),
-       dryRunStream ?? process.stdout
+      !isPCM && (dryRunStream ?? process.stdout).write(stdoutHeader),
+      dryRunStream ?? process.stdout
     );
   } else {
     // ServerResponse
-    destination ??= (res.write(stdoutHeader), res);
+    destination ??= (!isPCM && res.write(stdoutHeader), res);
   }
   return destination;
 }
