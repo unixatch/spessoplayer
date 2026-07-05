@@ -1005,8 +1005,8 @@ async function toFile({
     hasf32le &&
     !fileOutputs[WAV_INDEX] && foLength === 2
   );
-  let seq, synth,
-      seqFloat, synthFloat,
+  let stdoutHeader, getWavHeader, getData,
+      seq, synth, seqFloat, synthFloat,
       sampleCount, sampleCountFloat,
       startFading;
   const initSpessaSynthObjParam = {
@@ -1019,6 +1019,9 @@ async function toFile({
     ({
       seq, synth, sampleCount, startFading
     } = initSpessaSynthObj);
+    ({
+      getWavHeader, getData
+    } = audioBuffer ??= await import("./audioBuffer.mjs"))
   }
   if (hasf32le) {
     const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
@@ -1032,16 +1035,16 @@ async function toFile({
   }
 
   const {
-    getWavHeader,
-    getData
-  } = audioBuffer ??= await import("./audioBuffer.mjs");
-  const {
     promises: { finished },
     Readable
   } = stream ??= await import("node:stream");
 
-  let stdoutHeader = getWavHeader({ length: sampleCount, numChannels: 2 }, options.sampleRate);
-  log(DEBUG_LVL, "Created header file ", stdoutHeader)
+  if (!onlyFloat) {
+    stdoutHeader = getWavHeader({
+      length: sampleCount, numChannels: 2
+    }, options.sampleRate);
+    log(DEBUG_LVL, "Created header file ", stdoutHeader)
+  }
 
   let readStream = (
     !onlyFloat
