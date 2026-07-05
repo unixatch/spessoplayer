@@ -1299,8 +1299,14 @@ class Progress {
  */
 async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
   const { sampleRate, format } = Options.all;
-  const { getWavHeader } = await import("./audioBuffer.mjs"),
-        { spawn }        = child_process ??= await import("node:child_process"),
+  const isPCM = (
+    format === "pcm"   ||
+    format === "f32le" || formatStrings === "s16le"
+  );
+  const getWavHeader = (
+    !isPCM && (await import("./audioBuffer.mjs")).getWavHeader
+  );
+  const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
   let relistenFunction,
@@ -1359,7 +1365,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     }
 
     const destination = await prepareDestination({
-      ...options, res, mpv, length,
+      ...options, isPCM, res, mpv, length,
       getWavHeader, promisesOfPrograms
     }, false);
 
@@ -1436,7 +1442,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     })
 }
 async function prepareDestination({
-  isVerboseLevelSet, res, mpv,
+  isVerboseLevelSet, isPCM, res, mpv,
   loadingAnimation, loadingAnimationCleanupFunc,
   dryRun, length, lengthOfFiles,
   getWavHeader,
@@ -1455,11 +1461,8 @@ async function prepareDestination({
     );
   }
 
-  const ffmpegFormats   = /(?:flac|mp3)/,
-        losslessFormats = isStdout ? /(?:pcm|s16le|f32le)/ : undefined;
-  const needsConvertion = format?.match(ffmpegFormats),
-        isPCM = format?.match(losslessFormats);
   let stdoutHeader;
+  const needsConvertion = format === "mp3" || format === "flac";
 
   // Maybe create the header
   if (!isPCM) {
@@ -1503,12 +1506,7 @@ async function prepareDestination({
     process.stderr.write("\x1b[K")
   }
   // If it needs effects, excluding some formats
-  const isCorrectFormat = (
-    losslessFormats
-      ? !format?.match(losslessFormats)
-      : format?.match(ffmpegFormats)
-  );
-  if (effects && isCorrectFormat) {
+  if (effects && (isStdout ? !isPCM : needsConvertion)) {
     [effectsProcess] = await applyExternalEffects({
       program: "sox",
       stdoutHeader,

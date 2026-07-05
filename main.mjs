@@ -82,7 +82,7 @@ log(INFO_LVL, "Checked passed args")
 
 const listOfOptions = Options.all;
 const {
-  dryRun,
+  dryRun, format,
   confirmation, noTable,
   toStdout: isToStdout,
   fileOutputs: isToFile
@@ -126,10 +126,15 @@ if (isToStdout) {
     }
     console.error(error)
   })
-  const perSongOptions = [],
-        lengthOfFiles = [],
-        promisesOfPrograms = [],
-        { getWavHeader } = await import("./audioBuffer.mjs");
+  const isPCM = (
+    format === "pcm"   ||
+    format === "f32le" || formatStrings === "s16le"
+  );
+  const perSongOptions = [], lengthOfFiles = [],
+        promisesOfPrograms = [];
+  const getWavHeader = (
+    !isPCM && (await import("./audioBuffer.mjs")).getWavHeader
+  );
   const amountOfSongs = Options.amountOfSongs;
   for (let i = 0; i < amountOfSongs; i++) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
@@ -145,7 +150,8 @@ if (isToStdout) {
   }
 
   const destination = await prepareDestination({
-    isVerboseLevelSet, loadingAnimation, loadingAnimationCleanupFunc,
+    isVerboseLevelSet, isPCM,
+    loadingAnimation, loadingAnimationCleanupFunc,
     ...listOfOptions, lengthOfFiles,
     getWavHeader, promisesOfPrograms
   }, true);
