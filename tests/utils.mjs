@@ -117,14 +117,15 @@ function generalCliArguments(mode) {
   }
 }
 const perSongCliArguments = [
-  "-r", "48000",  // sampleRate
-  "-l", "1",      // loopAmount
-  "-vol", "1",    // volume
-  "-ls", "1",     // loopStart
-  "-le", "40",    // loopEnd
-  "-lFs", "3",    // loopFadeStart
-  "-lFd", "6",    // loopFadeDuration
-  "-lFi", "2"     // loopFadeInterpolation
+  "-r", "48000", // sampleRate
+  "-l", "1",     // loopAmount
+  "-vol", "1",   // volume
+  "-ls", "1",    // loopStart
+  "-le", "40",   // loopEnd
+  "-lFs", "3",   // loopFadeStart
+  "-lFd", "6",   // loopFadeDuration
+  "-lFi", "2",   // loopFadeInterpolation
+  "-nose"        // hardStop
 ];
 
 const indexOfE =   process.argv.indexOf("-e"),   // effects
