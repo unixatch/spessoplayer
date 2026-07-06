@@ -657,20 +657,23 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-nose":           case "/nose":
       case "-hs":             case "/hs":
       case regexes.hardStop.test(arg) && arg: {
-        lastIndex = arg.match(regexes.effects)?.groups;
+        lastIndex = arg.match(regexes.hardStop)?.groups;
+        const number = Number(lastIndex?.index);
         isStdout ??= testFunctions.stdout(newArgumentsSet);
-        const isExternal = Options.externalEffectProcesser(
-          Number(lastIndex?.index), isStdout
-        );
+        const isExternal = Options.externalEffectProcesser(number, isStdout);
         if (isExternal === false) {
           log(WARNING_LVL,
-            "Ignored no-smooth-end flag since "+
-            "a builtin effect option has been used "+
+            "Ignored no-smooth-end flag at index "
+            + lastIndex?.index +
+            " since a builtin effect option has been used " +
               "(e.g. reverb-volume)"
           )
           break;
         }
-        Options.hardStop(Number(lastIndex?.index))
+        Options.hardStop(number)
+        log(INFO_LVL,
+          "Set no-smooth-end flag at index " + lastIndex?.index
+        )
         break;
       }
       case "--loop": case "/loop":
