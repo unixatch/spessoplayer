@@ -857,9 +857,16 @@ function createReadable(Readable, isStdout = false, {
         // Start of fade
         synth.setSystemParameter("gain", calculateFade())
       }
-      if (!hardStop && !loopFade && filledSamples > startSmoothEnding
-          && !synth.systemParameters.effectsEnabled) {
-        synth.setSystemParameter("effectsEnabled", true)
+      if (!hardStop && !loopFade && filledSamples > startSmoothEnding) {
+        if (!synth.systemParameters.effectsEnabled) {
+          synth.setSystemParameter("reverbGain", 0)
+          synth.setSystemParameter("effectsEnabled", true)
+        }
+        if (synth.systemParameters.reverbGain < 1) {
+          synth.setSystemParameter("reverbGain",
+            synth.systemParameters.reverbGain + 0.05
+          )
+        }
       }
       if (!lastBytes) {
         seq.processTick()
