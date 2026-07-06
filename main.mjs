@@ -133,7 +133,7 @@ if (isToStdout) {
   const perSongOptions = [], lengthOfFiles = [],
         promisesOfPrograms = [];
   const getWavHeader = (
-    !isPCM && (await import("./audioBuffer.mjs")).getWavHeader
+    !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
   );
   const amountOfSongs = Options.amountOfSongs;
   for (let i = 0; i < amountOfSongs; i++) {
