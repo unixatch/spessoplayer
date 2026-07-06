@@ -610,8 +610,8 @@ async function applyExternalEffects({
       /(-*[0-9]+(?:ms|dB|%|q)*)/g,
       /(\] |\) )(\[)([\w-]*)/g,
       /(parameter )(`\w*')/g,
-      /(sox FAIL \w*)/g,
-      /(sox WARN \w*)/g,
+      /.*(sox FAIL \w*)/g,
+      /.*(sox WARN \w*)/g,
       /(\[[ \w|-]*\])/g,
       /m\[0m/g
     ];
@@ -630,11 +630,17 @@ async function applyExternalEffects({
     new Promise((resolve, reject) => {
       sox.once("exit", exitCode => {
         if (!exitCode) return resolve(exitCode);
-        reject(`sox child_process closed with ${exitCode}\n`);
+        reject([
+          `sox child_process closed with ${exitCode}\n`,
+          exitCode
+        ]);
       })
       .once("error", reject)
     })
-      .catch(reason => log(DEBUG_LVL, reason))
+      .catch(([reason, exitCode]) => {
+        log(DEBUG_LVL, reason)
+        process.exit(exitCode)
+      })
   )
   log(DEBUG_LVL, "Added SoX promise")
 
