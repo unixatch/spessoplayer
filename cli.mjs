@@ -415,7 +415,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     groupSeparator &&= undefined;
   }
   const newArgumentsLength = newArguments.length;
-  let isStdout, loopExists,
+  let isStdout, loopExists, fileExists,
       indexOfSetFile = 0,
       lastAutomaticFile,
       groupSeparator;
@@ -447,7 +447,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 
       case (
         (lastParam === "input" || !lastParam) &&
-        !regexes.allFO.test(arg) && existsSync(arg) && arg
+        !regexes.allFO.test(arg) &&
+        (existsSync(arg) || (fileExists = false)) && arg
       ): {
         runSetFile(arg)
 
@@ -755,19 +756,26 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         i++; break;
       }
 
-      default:
+      default: {
         if (!isVerboseLevelSet) {
           loadingAnimation?.kill()
           process.stderr.write("\x1b[K")
         }
-        await help({
-          errorText: red+`'${
-            underline+dimRed +
-            arg +
-            normal+red
-          }' is an invalid parameter`+normal+"\n"
-        })
+        const fileDetection = fileExists === false && arg[0] !== "-";
+        let errorText = (
+          fileDetection
+            ? yellow+`'${underline+normalYellow + arg + normal+yellow}'`
+            : red+`'${ underline+dimRed + arg + normal+red }'`
+        );
+        if (fileDetection) {
+          errorText += ` doesn't exist${normal}`;
+          console.error(errorText)
+        } else {
+          errorText += ` is an invalid parameter${normal}\n`
+          await help({ errorText })
+        }
         process.exit()
+      }
     }
     if (lastParam || lastIndex) clearLastVariables()
   }
