@@ -193,16 +193,16 @@ async function get20BytesFromFile(path) {
       let messageToPrint;
       switch (code) {
         case "EACCES":
-          messageToPrint = `Can't open '${path}' because permissions aren't enough`;
+          messageToPrint = `Can't open '${dimRed+path+red}' because permissions aren't enough`;
           break;
         case "EISDIR":
-          messageToPrint = "Can't read a directory";
+          messageToPrint = `Can't directly read directory '${dimRed+path+red}'`;
           break;
         case "ENOENT":
-          messageToPrint = `Can't open '${path}' because it doesn't exist`;
+          messageToPrint = `Can't open '${dimRed+path+red}' because it doesn't exist`;
           break;
         case "EPERM":
-          messageToPrint = `Can't read '${path}' because it requires elevated permissions to do so`;
+          messageToPrint = `Can't read '${dimRed+path+red}' because it requires elevated permissions to do so`;
           break;
 
         default:
