@@ -21,7 +21,7 @@
   "license": "GPL-3.0-only",
   "author": "unixatch",
   "type": "module",
-  "main": "main.js",
+  "main": "main.mjs",
   "min-release-age": "4",
   "preferGlobal": true,
   "engines": {
