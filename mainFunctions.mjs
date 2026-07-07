@@ -864,14 +864,23 @@ function createReadable(Readable, isStdout = false, {
         synth.setSystemParameter("gain", calculateFade())
       }
       if (!hardStop && !loopFade && filledSamples > startSmoothEnding) {
-        if (!synth.systemParameters.effectsEnabled) {
-          synth.setSystemParameter("reverbGain", 0)
-          synth.setSystemParameter("effectsEnabled", true)
+        const {
+          systemParameters,
+          systemParameters: { effectsEnabled, reverbGain }
+        } = synth;
+
+        if (!effectsEnabled) {
+          systemParameters.delayGain      = 0;
+          systemParameters.chorusGain     = 0;
+          systemParameters.reverbGain     = 0;
+          systemParameters.effectsEnabled = true;
         }
-        if (synth.systemParameters.reverbGain < 1) {
-          synth.setSystemParameter("reverbGain",
-            synth.systemParameters.reverbGain + 0.05
-          )
+        if (reverbGain < 1) {
+          systemParameters.delayGain = (
+            systemParameters.chorusGain = (
+              systemParameters.reverbGain += 0.05
+            )
+          );
         }
       }
       if (!lastBytes) {
