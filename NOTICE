@@ -1,7 +1,7 @@
-There's some code taken from index.js from spessasynth_core
-so that some functions actually work like "getWavHeader" and "getWavData"
+There's some/part of code taken from index.js from spessasynth_core
+so that some functions actually work like "getWavHeader" and "getData"
 
-This project uses modified code from spessasynth_core, 
+This project uses modified/inspired code from spessasynth_core,
 specifically from the function "audioToWav" for use in printing to stdout
 
 spessasynth_core is copyright of:
