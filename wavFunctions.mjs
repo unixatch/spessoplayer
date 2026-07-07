@@ -16,173 +16,103 @@
 */
 
 /**
- * @module audioBuffer
+ * @module wavFunctions
  */
 
-import { IndexedByteArray } from "spessasynth_core"
-// This section is identical to what's inside spessasynth_core but not being exported, that's why it's here
-const DEFAULT_WAV_WRITE_OPTIONS = {
-  normalizeAudio: true,
-  loop: undefined,
-  metadata: {}
-};
-function fillWithDefaults(obj, defObj) {
-  return { ...defObj, ...obj ?? {} };
-}
-function writeBinaryStringIndexed(outArray, string, padLength = 0) {
-  if (padLength > 0) {
-    if (string.length > padLength) string = string.slice(0, padLength)
-  }
-  for (let i = 0; i < string.length; i++) {
-    outArray[outArray.currentIndex++] = string.charCodeAt(i);
-  }
-  if (padLength > string.length) {
-    for (let i = 0; i < padLength - string.length; i++) {
-      outArray[outArray.currentIndex++] = 0;
-    }
-  }
-  return outArray;
-}
-function writeLittleEndianIndexed(dataArray, number, byteTarget) {
-  for (let i = 0; i < byteTarget; i++) {
-    dataArray[dataArray.currentIndex++] = number >> i * 8 & 255;
-  }
-}
-function writeDword(dataArray, dword) {
-  writeLittleEndianIndexed(dataArray, dword, 4)
-}
-function writeRIFFChunkParts(header, chunks, isList = false) {
-  let dataOffset = 8;
-  let headerWritten = header;
-  const dataLength = chunks.reduce((len, c) => c.length + len, 0);
-  let writtenSize = dataLength;
-  if (isList) {
-    dataOffset += 4;
-    writtenSize += 4;
-    headerWritten = "LIST";
-  }
+/**
+ * Combines multiple RIFF/WAV chunks
+ * @param {String}       header start and title of the chunk list
+ * @param {Uint8Array[]} chunks list of chunks to add
+ * @return {Uint8Array} completed LIST/INFO chunk
+ */
+function writeMultipleChunks(header, chunks) {
+  let dataOffset = 12;
+  let dataLength = 0;
+  for (const {length} of chunks) dataLength += length;
+
+  const writtenSize = dataLength + 4;
   let finalSize = dataOffset + dataLength;
   if (finalSize % 2 !== 0) finalSize++
 
-  const outArray = new IndexedByteArray(finalSize);
-  writeBinaryStringIndexed(outArray, headerWritten)
-  writeDword(outArray, writtenSize)
-  if (isList) writeBinaryStringIndexed(outArray, header)
+  const uint8 = new Uint8Array(finalSize);
+  uint8.set(encoder.encode("LIST"), 0)
+  uint8[4] = writtenSize;
+  uint8[5] = writtenSize >> 8;
+  uint8[6] = writtenSize >> 16;
+  uint8[7] = writtenSize >> 24;
+  uint8.set(encoder.encode(header), 8)
 
-  chunks.forEach(c => {
-    outArray.set(c, dataOffset)
+  for (const c of chunks) {
+    uint8.set(c, dataOffset)
     dataOffset += c.length;
-  })
-  return outArray;
+  }
+  return uint8;
 }
-function writeRIFFChunkRaw(header, data, addZeroByte = false, isList = false) {
-  if (header.length !== 4) {
-    throw new Error(`Invalid header length: ${header}`)
-  }
-  let dataStartOffset = 8;
-  let headerWritten = header;
-  let dataLength = data.length;
+/**
+ * Encodes a single RIFF/WAV chunk
+ * @param {String}     header start and title of the chunk
+ * @param {Uint8Array} data   description of the chunk
+ * @return {Uint8Array} completed chunk
+ */
+function writeSingleChunk(header, data) {
+  const dataStartOffset = 8;
+  //                  padding of 0 ↓
+  const dataLength = data.length + 1;
 
-  if (addZeroByte) dataLength++
-  let writtenSize = dataLength;
-  if (isList) {
-    dataStartOffset += 4;
-    writtenSize += 4;
-    headerWritten = "LIST";
-  }
   let finalSize = dataStartOffset + dataLength;
   if (finalSize % 2 !== 0) finalSize++
 
-  const outArray = new IndexedByteArray(finalSize);
-  writeBinaryStringIndexed(outArray, headerWritten)
-  writeDword(outArray, writtenSize)
+  const uint8 = new Uint8Array(finalSize);
+  uint8.set(encoder.encode(header), 0)
+  uint8[4] = dataLength;
+  uint8[5] = dataLength >> 8;
+  uint8[6] = dataLength >> 16;
+  uint8[7] = dataLength >> 24;
 
-  if (isList) writeBinaryStringIndexed(outArray, header)
-  outArray.set(data, dataStartOffset)
-  return outArray;
+  uint8.set(data, dataStartOffset)
+  return uint8;
 }
 
+let encoder;
 /**
  * WAV Header Generator
  * @param {module:typeDefinitions~getWavHeaderObjectParameters} audioData - An object that contains infos about the audio
- * @param {Number} [sampleRate=48000] - Sample rate of the audio
- * @param {Object} [options=DEFAULT_WAV_WRITE_OPTIONS] - Optional, adds loop timestamps and more
+ * @param {Number} [sampleRate=48000]    - Sample rate of the audio
+ * @param {Object} [options]             - adds metadata and more
+ * @param {Object} [options.metadata={}] - metadata to add to the header
  * @returns {Uint8Array} the wav header
  */
 function getWavHeader({ length, numChannels },
-  sampleRate = 48000, options = DEFAULT_WAV_WRITE_OPTIONS
+  sampleRate = 48000, metadata = {}
 ) {
   const bytesPerSample = 2;
-  const {
-    loop, metadata
-  } = fillWithDefaults(options, DEFAULT_WAV_WRITE_OPTIONS);
-  let infoChunk = new IndexedByteArray(0);
-  const infoOn = Object.keys(metadata).length > 0;
-  if (infoOn) {
-    const encoder = new TextEncoder();
+  let infoChunk = new Uint8Array(0);
+  if (Object.keys(metadata).length > 0) {
+    encoder = new TextEncoder();
     const infoChunks = [
-      writeRIFFChunkRaw(
+      writeSingleChunk(
         "ICMT",
-        encoder.encode("Created with SpessaSynth"),
-        true
+        encoder.encode("Created with SpessaSynth")
       )
     ];
-    if (metadata.artist) {
-      infoChunks.push(
-        writeRIFFChunkRaw("IART", encoder.encode(metadata.artist), true)
-      )
-    }
-    if (metadata.album) {
-      infoChunks.push(
-        writeRIFFChunkRaw("IPRD", encoder.encode(metadata.album), true)
-      )
-    }
-    if (metadata.genre) {
-      infoChunks.push(
-        writeRIFFChunkRaw("IGNR", encoder.encode(metadata.genre), true)
-      )
-    }
-    if (metadata.title) {
-      infoChunks.push(
-        writeRIFFChunkRaw("INAM", encoder.encode(metadata.title), true)
-      )
-    }
-    infoChunk = writeRIFFChunkParts("INFO", infoChunks, true);
-  }
-  let cueChunk = new IndexedByteArray(0);
-  const cueOn = loop?.end !== undefined && loop?.start !== undefined;
-  if (cueOn) {
-    const loopStartSamples = Math.floor(loop.start * sampleRate);
-    const loopEndSamples = Math.floor(loop.end * sampleRate);
-
-    const cueStart = new IndexedByteArray(24);
-    writeLittleEndianIndexed(cueStart, 0, 4)
-    writeLittleEndianIndexed(cueStart, 0, 4)
-    writeBinaryStringIndexed(cueStart, "data")
-    writeLittleEndianIndexed(cueStart, 0, 4)
-    writeLittleEndianIndexed(cueStart, 0, 4)
-    writeLittleEndianIndexed(cueStart, loopStartSamples, 4)
-
-    const cueEnd = new IndexedByteArray(24);
-    writeLittleEndianIndexed(cueEnd, 1, 4)
-    writeLittleEndianIndexed(cueEnd, 0, 4)
-    writeBinaryStringIndexed(cueEnd, "data")
-    writeLittleEndianIndexed(cueEnd, 0, 4)
-    writeLittleEndianIndexed(cueEnd, 0, 4)
-    writeLittleEndianIndexed(cueEnd, loopEndSamples, 4)
-
-    cueChunk = writeRIFFChunkParts("cue ", [
-      new IndexedByteArray([2, 0, 0, 0]),
-      // Cue points count
-      cueStart,
-      cueEnd
-    ]);
+    if (metadata.artist) infoChunks.push(
+      writeSingleChunk("IART", encoder.encode(metadata.artist))
+    )
+    if (metadata.album) infoChunks.push(
+      writeSingleChunk("IPRD", encoder.encode(metadata.album))
+    )
+    if (metadata.genre) infoChunks.push(
+      writeSingleChunk("IGNR", encoder.encode(metadata.genre))
+    )
+    if (metadata.title) infoChunks.push(
+      writeSingleChunk("INAM", encoder.encode(metadata.title))
+    )
+    infoChunk = writeMultipleChunks("INFO", infoChunks);
   }
   const headerSize = 44,
         dataSize = length * numChannels * bytesPerSample;
   const fileSize = (
-    headerSize + dataSize +
-    infoChunk.length + cueChunk.length - 8
+    headerSize + dataSize + infoChunk.length - 8
   );
   const arrayBuffer = new ArrayBuffer(headerSize),
         uint8       = new Uint8Array(arrayBuffer),
