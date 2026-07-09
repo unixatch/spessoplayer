@@ -1071,7 +1071,9 @@ async function toFile({
   if (!onlyFloat) {
     stdoutHeader = getWavHeader({
       length: sampleCount, numChannels: 2
-    }, options.sampleRate);
+    }, options.sampleRate, {
+      title: options.midiFile.replace(/\..*$/, "")
+    });
     log(DEBUG_LVL, "Created header file ", stdoutHeader)
   }
 
@@ -1477,7 +1479,7 @@ async function prepareDestination({
   isVerboseLevelSet, isPCM, res, mpv,
   loadingAnimation, loadingAnimationCleanupFunc,
   dryRun, length, lengthOfFiles,
-  getWavHeader,
+  getWavHeader, midiFile, singleFile,
   sampleRate, format,
   promisesOfPrograms,
   effects, reverbVolume
@@ -1503,14 +1505,19 @@ async function prepareDestination({
       ? (index, previous) => index + previous
       : undefined
     );
-    stdoutHeader = getWavHeader({
-      length: (
-        isStdout
-        ? lengthOfFiles.reduce(sumOfLengths, 0)
-        : length
-      ),
-      numChannels: 2
-    }, sampleRate ?? 48000);
+    stdoutHeader = getWavHeader(
+      {
+        length: (
+          isStdout
+          ? lengthOfFiles.reduce(sumOfLengths, 0)
+          : length
+        ),
+        numChannels: 2
+      }, sampleRate ?? 48000,
+      midiFile && !isStdout
+        ? { title: midiFile.replace(/\..*$/, "") }
+        : singleFile && { title: midiFile.replace(/\..*$/, "") }
+    );
   }
 
   if (needsConvertion) {

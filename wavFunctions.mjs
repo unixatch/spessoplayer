@@ -86,13 +86,14 @@ function getWavHeader({ length, numChannels },
   sampleRate = 48000, metadata = {}
 ) {
   const bytesPerSample = 2;
-  let infoChunk = new Uint8Array(0);
-  if (Object.keys(metadata).length > 0) {
+  let infoChunk;
+  const infoOn = Object.keys(metadata).length > 0;
+  if (infoOn) {
     encoder = new TextEncoder();
     const infoChunks = [
       writeSingleChunk(
         "ICMT",
-        encoder.encode("Created with SpessaSynth")
+        encoder.encode("Created with SpessaSynth and spessoplayer")
       )
     ];
     if (metadata.artist) infoChunks.push(
@@ -109,37 +110,27 @@ function getWavHeader({ length, numChannels },
     )
     infoChunk = writeMultipleChunks("INFO", infoChunks);
   }
-  const headerSize = 44,
+  const headerSize = 44 + (infoChunk?.length ?? 0),
         dataSize = length * numChannels * bytesPerSample;
   const fileSize = (
-    headerSize + dataSize + infoChunk.length - 8
+    headerSize + dataSize + (infoChunk?.length ?? 0) - 8
   );
-  const arrayBuffer = new ArrayBuffer(headerSize),
-        uint8       = new Uint8Array(arrayBuffer),
-        uint16      = new Uint16Array(arrayBuffer),
-        uint32      = new Uint32Array(arrayBuffer);
+  const uint8 = new Uint8Array(headerSize);
 
   // Letters as numbers
   const R=82,  I=73,  F=70,
         W=87,  A=65,  V=86,  E=69,
         f=102, m=109, t=116, space=32,
         d=100, a=97;
-  //                               I      bits
-  const I_fileSize      = 1,  //   4,      32
-        I_BlocSize      = 4,  // 16 / 4,   32
-        I_AudioFormat   = 10, // 20 / 2,   16
-        I_numChannels   = 11, // 22 / 2,   16
-        I_sampleRate    = 6,  // 24 / 4,   32
-        I_byteRate      = 7,  // 28 / 4,   32
-        I_BytePerBloc   = 16, // 32 / 2,   16
-        I_BitsPerSample = 17, // 36 / 2,   16
-        I_dataSize      = 10; // 40 / 4,   32
 
   uint8[0]  = R
   uint8[1]  =  I
   uint8[2]  =   F
   uint8[3]  =    F;
-  uint32[I_fileSize] = fileSize;
+  uint8[4] = fileSize;
+  uint8[5] = fileSize >> 8;
+  uint8[6] = fileSize >> 16;
+  uint8[7] = fileSize >> 24;
 
   uint8[8]  = W
   uint8[9]  =  A
@@ -150,20 +141,58 @@ function getWavHeader({ length, numChannels },
   uint8[14] =   t;
   uint8[15] = space;
 
-  uint32[I_BlocSize]      = 16;
-  uint16[I_AudioFormat]   = 1;
-  uint16[I_numChannels]   = numChannels;
-  uint32[I_sampleRate]    = sampleRate;
-  uint32[I_byteRate]      = sampleRate * numChannels * bytesPerSample;
+  // BlocSize
+  uint8[16] = 16;
+  uint8[17] = 0;
+  uint8[18] = 0;
+  uint8[19] = 0;
+  // AudioFormat
+  uint8[20] = 1;
+  uint8[21] = 0;
+  uint8[22] = numChannels;
+  uint8[23] = numChannels >> 8;
+  uint8[24] = sampleRate;
+  uint8[25] = sampleRate >> 8;
+  uint8[26] = sampleRate >> 16;
+  uint8[27] = sampleRate >> 24;
 
-  uint16[I_BytePerBloc]   = numChannels * bytesPerSample;
-  uint16[I_BitsPerSample] = 16;
+  const fileSampleRate = sampleRate * numChannels * bytesPerSample;
+  // byteRate
+  uint8[28] = fileSampleRate;
+  uint8[29] = fileSampleRate >> 8;
+  uint8[30] = fileSampleRate >> 16;
+  uint8[31] = fileSampleRate >> 24;
 
+  const bytePerBlock = numChannels * bytesPerSample;
+  uint8[32] = bytePerBlock;
+  uint8[33] = bytePerBlock >> 8;
+  // BitsPerSample
+  uint8[34] = 16;
+  uint8[35] = 0;
+
+  if (infoOn) {
+    uint8.set(infoChunk, 36)
+
+    const infoLength = infoChunk.length;
+    let afterInfoOffset = infoLength + 36;
+    uint8[afterInfoOffset++] = d
+    uint8[afterInfoOffset++] =  a
+    uint8[afterInfoOffset++] =   t
+    uint8[afterInfoOffset++] =    a;
+    uint8[afterInfoOffset++] = dataSize;
+    uint8[afterInfoOffset++] = dataSize >> 8;
+    uint8[afterInfoOffset++] = dataSize >> 16;
+    uint8[afterInfoOffset++] = dataSize >> 24;
+    return uint8;
+  }
   uint8[36] = d
   uint8[37] =  a
   uint8[38] =   t
   uint8[39] =    a;
-  uint32[I_dataSize] = dataSize;
+  uint8[40] = dataSize;
+  uint8[41] = dataSize >> 8;
+  uint8[42] = dataSize >> 16;
+  uint8[43] = dataSize >> 24;
   return uint8;
 }
 

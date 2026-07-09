@@ -153,7 +153,13 @@ if (isToStdout) {
     isVerboseLevelSet, isPCM,
     loadingAnimation, loadingAnimationCleanupFunc,
     ...listOfOptions, lengthOfFiles,
-    getWavHeader, promisesOfPrograms
+    getWavHeader, promisesOfPrograms,
+    singleFile: amountOfSongs === 1,
+    midiFile: (
+      amountOfSongs === 1
+        ? perSongOptions[0].midiFile
+        : undefined
+    )
   }, true);
 
   for (let i = 0; i < amountOfSongs; i++) {
