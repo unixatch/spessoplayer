@@ -1337,8 +1337,20 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
   const getWavHeader = (
     !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
   );
-  const { spawn }        = child_process ??= await import("node:child_process"),
-        { createServer } = await import("node:http");
+  let spawn;
+  const spawnStdio = Object.create(null);
+  const isDeno = typeof Deno !== "undefined";
+  if (isDeno) {
+    spawn ??= Deno.spawn;
+    spawnStdio.stdin = (
+      spawnStdio.stdout = spawnStdio.stderr = "inherit"
+    )
+  } else {
+    ({ spawn } = child_process ??= await import("node:child_process"));
+    spawnStdio.stdio = "inherit";
+  }
+
+  const { createServer } = await import("node:http");
 
   let relistenFunction,
       port = 3000, failedAttempts = 0;
@@ -1444,11 +1456,13 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     "--prefetch-playlist=yes",
     ...isRawAudio,
     ...listOfURLs
-  ], { stdio: "inherit" });
-  mpv.once("spawn", () => loadingAnimation?.kill())
+  ], spawnStdio);
+  if (!isDeno) mpv.once("spawn", () => loadingAnimation?.kill())
+  if (isDeno)  loadingAnimation?.kill()
 
   await new Promise((resolve, reject) => {
-    mpv.once("exit", (code, signal) => {
+    function handleMpvExit(code, signal) {
+      if (typeof code === "object") ({ code, signal } = code)
       switch (code) {
         case 0:
         case 4:
@@ -1460,7 +1474,9 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
         default:
           reject(code, signal)
       }
-    })
+    }
+    if (!isDeno) return mpv.once("exit", handleMpvExit)
+    mpv.status.then(handleMpvExit)
   })
     // Required because otherwise it can't exit
     .then(process.exit)
