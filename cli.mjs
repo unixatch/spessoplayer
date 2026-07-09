@@ -608,7 +608,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-r":            case "/r":
       case regexes.sampleRate.test(arg) && arg: {
         lastIndex = arg.match(regexes.sampleRate)?.groups;
-        setSampleRate(nextArg, lastIndex, newArgumentsSet)
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        setSampleRate(nextArg, lastIndex, isStdout)
         i++
         break;
       }
@@ -1140,9 +1141,9 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
  * Sets the Options.sampleRate variable
  * @param {String} arg - the sample rate to set
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
+ * @param {Boolean} isStdout - if it's stdout mode
  */
-const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
+const setSampleRate = (arg, lastIndex, isStdout) => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1155,7 +1156,7 @@ const setSampleRate = (arg, lastIndex, newArgumentsSet) => {
     process.exit(1)
   }
   if (isRealNumber(number, true)) {
-    if (testFunctions.stdout(newArgumentsSet)) {
+    if (isStdout) {
       Options.stdoutSampleRate = number;
       log(INFO_LVL, `Set sample-rate for all to ${number} because output is stdout`)
       return;
