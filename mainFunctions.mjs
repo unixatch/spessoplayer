@@ -1360,9 +1360,9 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
       `[Server]: port ${port++} already in use, trying another one...`
     )
     setTimeout(
-      relistenFunction ??= server.listen.bind(server, {
-        host: "localhost", port
-      }), 200
+      relistenFunction ??= () => {
+        server.listen({ host: "localhost", port })
+      }, 200
     )
   })
   server.on("request", async (req, res) => {
@@ -1410,13 +1410,16 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
 
     return res.end();
   })
+  await new Promise(resolve => {
+    server.listen({ host: "localhost", port })
+      .on("listening", resolve)
+  })
   const amountOfSongs = Options.amountOfSongs;
   const baseUrl = `http://localhost:${port}/song`;
   for (let i = 0; i < amountOfSongs; i++) {
     const filename = Options.getSongName(i);
     listOfURLs.push(`${baseUrl}?index=${i}&name=${filename}`)
   }
-  server.listen({ host: "localhost", port })
 
   const isPcm = (
     format === "f32le"
