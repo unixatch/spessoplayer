@@ -836,7 +836,8 @@ function createReadable(Readable, isStdout = false, {
       lastBytes = false,
       filledSamples = 0,
       lastCompletelyRenderedSeconds,
-      lastLoopCount = seq.loopCount;
+      lastLoopCount = seq.loopCount,
+      smoothEndingAmount;
   const startSmoothEnding = sampleCount - (2.5 * synth.sampleRate),
         BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
@@ -868,6 +869,11 @@ function createReadable(Readable, isStdout = false, {
           systemParameters,
           systemParameters: { effectsEnabled, reverbGain }
         } = synth;
+        let sample_rate;
+        if (!smoothEndingAmount) sample_rate = (
+          synth.soundBankManager.soundBankList[0]
+            .soundBank.samples[0].sampleRate
+        );
 
         if (!effectsEnabled) {
           systemParameters.delayGain      = 0;
@@ -875,10 +881,11 @@ function createReadable(Readable, isStdout = false, {
           systemParameters.reverbGain     = 0;
           systemParameters.effectsEnabled = true;
         }
-        if (reverbGain < 1) {
+        smoothEndingAmount ??= sample_rate < 15000 ? 1 : 1.875;
+        if (reverbGain < smoothEndingAmount) {
           systemParameters.delayGain = (
             systemParameters.chorusGain = (
-              systemParameters.reverbGain += 0.05
+              systemParameters.reverbGain += .02
             )
           );
         }
