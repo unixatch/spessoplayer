@@ -692,6 +692,7 @@ function ffmpegExitHandler(exitCode, resolver) {
 }
 
 export {
+  join, parse, sep,
   clearLastLines,
   log,
   newFileName,
