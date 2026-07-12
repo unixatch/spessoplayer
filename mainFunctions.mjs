@@ -1339,12 +1339,29 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
   const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
-  let relistenFunction,
+  let relistenFunction, closing,
       port = 3000, failedAttempts = 0;
   const server = createServer(),
         listOfURLs = [],
         promisesOfPrograms = [];
 
+  process.on("SIGUSR1", () => {
+    closing = true; mpv?.kill()
+
+    server.close(() => {
+      if (process.platform === "win32") {
+        return spawn(
+          process.argv0, process.argv.slice(1),
+          { stdio: "inherit", detached: true }
+        )
+          .on("spawn", process.exit)
+          .unref();
+      }
+      process.execve(
+        process.argv[0], process.argv
+      )
+    })
+  })
   server.on("error", ({code, errno, message}) => {
     if (code !== "EADDRINUSE") {
       console.error(formatStrings.errorText, message)
@@ -1462,7 +1479,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     })
   })
     // Required because otherwise it can't exit
-    .then(process.exit)
+    .then(exitCode => !closing && process.exit(exitCode))
     .catch(async (code, signal) => {
       const errno = (code === null)
         ? (await import("node:util")).convertProcessSignalToExitCode(signal)
