@@ -55,7 +55,7 @@ const midiList = [],
  */
 function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
   const BASIC_FFMPEG_ARGS = !withoutBasics ? [
-    "-loglevel", "fatal",
+    "-loglevel", "error",
     "-nostdin", // Necessary because of spawn and no shell
     "-hide_banner",
     "-i", "-"
@@ -294,7 +294,7 @@ async function formatManager({
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
-      addPipingFunction((whereToConnect, end) => {
+      addPipingFunction((_, end) => {
         const rawStream = rawReadStream ?? readStream;
         addErrorEventToDest(
           rawStream
