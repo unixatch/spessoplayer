@@ -227,7 +227,10 @@ async function formatManager({
 
       const ffmpeg = spawn(
         "ffmpeg", combinedFfmpegArgs,
-        { stdio: ["pipe", (dryRun ? "ignore" : "pipe"), "pipe"] }
+        {
+          stdio: ["pipe", (dryRun ? "ignore" : "pipe"), "pipe"],
+          windowsHide: true
+        }
       );
       log(DEBUG_LVL, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
 
@@ -587,7 +590,10 @@ async function applyExternalEffects({
     "-t", "wav", "-",
     "-t", "wav", destination,
     ...effects
-  ], {stdio: ["pipe", stdout, "pipe"], detached: true});
+  ], {
+    stdio: ["pipe", stdout, "pipe"],
+    detached: true, windowsHide: true
+  });
   //  For SIGINT event to work, sometimes... ↑
   log(DEBUG_LVL, "Spawned SoX with " + sox.spawnargs.join(" "))
 
@@ -1541,11 +1547,13 @@ async function prepareDestination({
     const { spawn } = child_process ??= await import("node:child_process");
     converterProcess = spawn("ffmpeg",
       ffmpegArgs()[format],
-      {stdio: [
-        "pipe",
-        res?.socket ?? dryRunStream ?? process.stdout,
-        "pipe"
-      ]}
+      {
+        stdio: [
+          "pipe",
+          res?.socket ?? dryRunStream ?? process.stdout,
+          "pipe"
+        ], windowsHide: true
+      }
     );
     converterProcess.stderr.on("data", data => {
       (fatalErrors ??= []).push(data.toString())
