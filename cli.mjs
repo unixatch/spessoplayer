@@ -50,6 +50,7 @@ const regexes = {
   wav:  /^.*\.(?:wav|wave)$/,
   flac: /^.*\.flac$/,
   mp3:  /^.*\.mp3$/,
+  opus: /^.*\.opus$/,
   raw:  /^.*\.(?:s16le|f32le|pcm)$/,
   allFO: new RegExp(`^${
     [".*\\.(?:wav|wave)",
@@ -282,11 +283,11 @@ async function manageVerboseOptions({
 const setFilePromises = [];
 const {
   0: WAV_INDEX,  1: RAW_INDEX,
-  2: FLAC_INDEX, 3: MP3_INDEX
-} = [...Array(4).keys()];
+  2: FLAC_INDEX, 3: MP3_INDEX, 4: OPUS_INDEX
+} = [...Array(5).keys()];
 export const FO_CONSTANTS = {
   WAV_INDEX,  RAW_INDEX,
-  FLAC_INDEX, MP3_INDEX
+  FLAC_INDEX, MP3_INDEX, OPUS_INDEX
 };
 const newArgs = process.argv.slice(2);
 /**
@@ -490,6 +491,11 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "out.mp3":
       case regexes.mp3.test(arg) && arg: {
         setFileOutputs("mp3", MP3_INDEX, arg)
+        break;
+      }
+      case "out.opus":
+      case regexes.opus.test(arg) && arg: {
+        setFileOutputs("opus", OPUS_INDEX, arg)
         break;
       }
       case "--ask":     case "/ask":
@@ -1213,6 +1219,7 @@ const setFormat = arg => {
       return;
     }
     case "flac":
+    case "opus":
     case "mp3": {
       Options.format = arg;
       log(INFO_LVL, `Set stdout format to '${arg}'`)

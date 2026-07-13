@@ -66,8 +66,14 @@ function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
       "-compression_level", "12",
       outFile
     ]),
+    opus: BASIC_FFMPEG_ARGS.concat([
+      "-f",   "opus",
+      "-b:a", "256000",
+      "-vbr", "constrained",
+      outFile
+    ]),
     mp3: BASIC_FFMPEG_ARGS.concat([
-      "-f", "mp3",
+      "-f",  "mp3",
       "-aq", "0",
       outFile
     ])
@@ -187,6 +193,7 @@ async function formatManager({
       break;
     }
     case "flac":
+    case "opus":
     case "mp3": {
       addPipingFunction()
       log(INFO_LVL, `Done setting up ${format} format${(dryRun) ? " in dry run mode" : ""}`)
@@ -196,7 +203,8 @@ async function formatManager({
       const formatsUsed = [],
             combinedFfmpegArgs = [];
       const formats = {
-        [FO_CONSTANTS.MP3_INDEX]: "mp3",
+        [FO_CONSTANTS.OPUS_INDEX]: "opus",
+        [FO_CONSTANTS.MP3_INDEX ]: "mp3",
         [FO_CONSTANTS.FLAC_INDEX]: "flac"
       };
       for (const index of outFile) {
@@ -1412,7 +1420,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     // Needed even if it's wrong because
     // otherwise mpv gives out a fatal error
     // only if it's a flac conversion (buggy ffmpeg?)
-    if (format === "flac") {
+    if (format === "flac" || format === "opus") {
       res.setHeader("Content-Length", length << 4)
       res.flushHeaders()
     }
@@ -1518,7 +1526,10 @@ async function prepareDestination({
   }
 
   let stdoutHeader;
-  const needsConvertion = format === "mp3" || format === "flac";
+  const needsConvertion = (
+    format === "mp3" || format === "opus"
+    || format === "flac"
+  );
 
   // Maybe create the header
   if (!isPCM) {
