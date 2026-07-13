@@ -1404,7 +1404,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     if (fullUrl.pathname !== "/song" && index === null) {
       return res.end();
     }
-    promisesOfPrograms.length = 0;
+    promisesOfPrograms.length &&= 0;
     const realIndex = Number(index),
           options = Options.getOptionsOfSong(realIndex);
     const length = await initSpessaSynth({
@@ -1421,7 +1421,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     // otherwise mpv gives out a fatal error
     // only if it's a flac conversion (buggy ffmpeg?)
     if (format === "flac" || format === "opus") {
-      res.setHeader("Content-Length", length << 4)
+      res.setHeader("Content-Length", length << 1)
       res.flushHeaders()
     }
 
