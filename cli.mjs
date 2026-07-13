@@ -374,6 +374,12 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   const setFileOutputs = (type, index, arg) => {
     isStdout ??= testFunctions.stdout(newArgumentsSet);
     if (isStdout) stdoutFileModeConflictError()
+    if (Options.daemonModeEnabled) {
+      log(WARNING_LVL,
+        `Ignoring ${arg} since daemon mode is enabled`
+      )
+      return;
+    }
     Options.fileOutputs(index, arg)
     log(INFO_LVL, "Set file output to " + type)
   };
@@ -516,6 +522,19 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-np":           case "/np": {
         Options.noProgress = true;
         log(INFO_LVL, "Set no-progress flag")
+        break;
+      }
+      case "--daemon": case "/daemon":
+      case "-D":       case "/D": {
+        isStdout ??= testFunctions.stdout(newArgumentsSet);
+        if (!isStdout) {
+          Options.daemonMode()
+          log(INFO_LVL, "Set daemon mode")
+          break;
+        }
+        log(WARNING_LVL,
+          "Ignoring daemon flag since stdout mode is enabled"
+        )
         break;
       }
       case "--dry-run": case "/dry-run":
@@ -1741,6 +1760,9 @@ const help = async ({ errorText = "" } = "") => {
       Mainly used for testing purposes but
       can be useful when trying to debug with log options`
       )}
+
+    ${param(["--daemon", "/daemon"], ["-D", "/D"])}:
+      ${multiLine("Enables daemon mode (also known as a server)")}
 
     ${param(
       ["--verbose "+grayBoldText("n"), "/verbose "+grayBoldText("n")],

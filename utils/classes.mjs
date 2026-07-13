@@ -161,6 +161,19 @@ class MainOptions {
     addProperty(this, "dryRun", "")
   }
   /**
+   * Enables daemon mode
+   */
+  static daemonMode() {
+    addProperty(this, "daemon", true)
+  }
+  /**
+   * Checks if daemonMode is enabled
+   * @return {Boolean} if it is or not
+   */
+  static get daemonModeEnabled() {
+    return getProperty(this, "daemon");
+  }
+  /**
    * Sets the maximum of threads to use in file mode
    * @param {Boolean} value - number of threads
    */

@@ -139,6 +139,10 @@ it'll write to /dev/null on Unix and \\.\nul on windows.
 Mainly used for testing purposes but
 can be useful when trying to debug with log options
 
+### --daemon, /daemon,
+#### &nbsp;&nbsp;-D, /D:
+Enables daemon mode (also known as a server)
+
 ### --verbose **n**, /verbose **n**,
 #### &nbsp;&nbsp;-v **n**, /v **n**:
 Sets the verbosity (*default: 2*)

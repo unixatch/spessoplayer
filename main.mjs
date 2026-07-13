@@ -185,7 +185,10 @@ if (!isToStdout && !isToFile?.length > 0) {
     )
     process.exit(2)
   }
-  await startPlayer(Options, spessasynthLogging, loadingAnimation)
+  await startPlayer(
+    Options, spessasynthLogging,
+    loadingAnimation, isVerboseLevelSet
+  )
 }
 
 // +++ toFile section +++

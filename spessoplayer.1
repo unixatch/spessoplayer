@@ -162,6 +162,11 @@ it'll write to \fI/dev/null\fR on Unix and \fI\\\\.\\nul\fR on windows.
 Mainly used for testing purposes but
 can be useful when trying to debug with log options
 .RE
+.IP \fB--daemon,\ \fB-D\fR:
+.RS
+
+Enables daemon mode (also known as a server)
+.RE
 .IP \fB--verbose\ \fIn\fR,\ \fB-v\ \fIn\fR:
 .RS
 
@@ -233,6 +238,9 @@ No color, just white/gray/black
 .TP
 .B spessoplayer song.midi soundfont.sf2
 Starts the player directly, playing the given song in the wav file format
+.TP
+.B spessoplayer -D song.midi soundfont.sf2
+Starts daemon mode, usually on localhost:3000. It's useful for debugging mostly.
 .TP
 .B spessoplayer -f flac song.midi soundfont.sf2
 Starts the player and plays the song in flac format (only that format for all songs)

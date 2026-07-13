@@ -39,6 +39,11 @@ Playing audio directly (mpv required):
 $ spessoplayer midi.md soundfont.sf2
 ```
 
+Starting a server (daemon mode):
+```bash
+$ spessoplayer --daemon midi.md soundfont.sf2
+```
+
 For a more comprehensive look at all the options go to [COMMAND-LINE-OPTIONS](./COMMAND-LINE-OPTIONS.md)
 
 <!-- !!! Note -->

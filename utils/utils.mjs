@@ -342,11 +342,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Boolean
-      case "loopFade":
+      case "loopFade":     case "daemon":
       case "confirmation": case "noTable":
       case "showUsage":    case "noProgress":
       case "toStdout":     case "spessaSynthEffects":
       case "hardStop": {
+        if (!needsToBeSet && property === "daemon") {
+          return this.#options[property];
+        }
         if (!needsToBeSet && property === "spessaSynthEffects") {
           if (this.#options[property] === undefined) return;
           if (Number.isNaN(index)) index = this.#options[property].length-1;

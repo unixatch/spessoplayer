@@ -1340,9 +1340,16 @@ class Progress {
  * @param {Options} Options Options class
  * @param {Object<Boolean>} spessasynthLogging if spessasynth's logging system should be enabled
  * @param {ChildProcess?}   loadingAnimation   animation that plays while doing work
+ * @param {Boolean}         isVerboseLevelSet  if logging is enabled
  */
-async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
-  const { sampleRate, format } = Options.all;
+async function startPlayer(
+  Options, spessasynthLogging,
+  loadingAnimation, isVerboseLevelSet
+) {
+  const {
+    sampleRate, format,
+    daemon: daemonMode
+  } = Options.all;
   const isPCM = (
     format === "pcm"   ||
     format === "f32le" || formatStrings === "s16le"
@@ -1353,7 +1360,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
   const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
-  let relistenFunction, closing,
+  let relistenFunction, closing, mpv,
       port = 3000, failedAttempts = 0;
   const server = createServer(),
         listOfURLs = [],
@@ -1446,6 +1453,18 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
     server.listen({ host: "localhost", port })
       .on("listening", resolve)
   })
+  if (daemonMode) {
+    loadingAnimation?.kill()
+    if (!isVerboseLevelSet) console.error(
+      formatStrings.grayedOutText,
+      "Started server on port " + port
+    )
+    log(INFO_LVL, "Started server on port " + port)
+    process.on("SIGINT", () => process.exit(130))
+
+    await new Promise(resolve => server.on("close", resolve))
+    process.exit()
+  }
   const amountOfSongs = Options.amountOfSongs;
   const baseUrl = `http://localhost:${port}/song`;
   for (let i = 0; i < amountOfSongs; i++) {
@@ -1468,7 +1487,7 @@ async function startPlayer(Options, spessasynthLogging, loadingAnimation) {
       ? ["--msg-level=ffmpeg=fatal"] // Hides Content-Length mismatch error
       : ""
   );
-  const mpv = spawn("mpv", [
+  mpv = spawn("mpv", [
     ...msgLevel,
     "-ytdl=no", // so that it doesn't retry twice
     "--prefetch-playlist=yes",
