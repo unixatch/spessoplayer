@@ -262,6 +262,7 @@ async function formatManager({
         new Promise((resolve, reject) => {
           ffmpeg
             .once("exit", exitCode => {
+              log(DEBUG_LVL, "Ffmpeg exited")
               ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode, resolve)
             })
             .once("error", reject)
@@ -644,7 +645,10 @@ async function applyExternalEffects({
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
       sox.once("exit", exitCode => {
-        if (!exitCode) return resolve(exitCode);
+        if (!exitCode) {
+          log(DEBUG_LVL, "SoX exited successfully")
+          return resolve(exitCode);
+        }
         reject([
           `sox child_process closed with ${exitCode}\n`,
           exitCode
@@ -1601,6 +1605,7 @@ async function prepareDestination({
       new Promise(resolve => {
         converterProcess.once("exit", exitCode => {
           if ((exitCode === 224 || exitCode === 255) && !isStdout) {
+            log(DEBUG_LVL, "Ffmpeg exited")
             return resolve();
           }
           ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
