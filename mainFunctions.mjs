@@ -1424,15 +1424,8 @@ async function startPlayer(
       res.flushHeaders()
       return res.end();
     }
-    // Needed even if it's wrong because
-    // otherwise mpv gives out a fatal error
-    // only if it's a flac conversion (buggy ffmpeg?)
-    if (format === "flac" || format === "opus") {
-      res.setHeader("Content-Length", length << 1)
-      res.flushHeaders()
-    }
 
-    const destination = await prepareDestination({
+    const [destination, converterProcess] = await prepareDestination({
       ...options, isPCM, res, mpv, length,
       getWavHeader, promisesOfPrograms
     }, false);
@@ -1442,10 +1435,15 @@ async function startPlayer(
       options, res
     });
     if (toStdoutValue === null) return;
-    const [ func, promise ] = toStdoutValue;
+    const [ func, readStreamPromise ] = toStdoutValue;
 
     func?.(destination, true)
-    await Promise.all([promise, promisesOfPrograms])
+    await readStreamPromise
+    // Wait for SoX if it exists
+    await promisesOfPrograms[1]
+    // Needed because ffmpeg hangs otherwise
+    converterProcess?.kill()
+    await Promise.all(promisesOfPrograms)
 
     return res.end();
   })
@@ -1544,7 +1542,7 @@ async function prepareDestination({
     );
   }
 
-  let stdoutHeader;
+  let stdoutHeader, transferEncodingHandler;
   const needsConvertion = (
     format === "mp3" || format === "opus"
     || format === "flac"
@@ -1572,6 +1570,14 @@ async function prepareDestination({
         : singleFile && { title: midiName }
     );
   }
+  if (needsConvertion || effects) {
+    // Necessary because otherwise the runtime
+    // doesn't write the length in hex before the data
+    transferEncodingHandler = data => {
+      if (res.writableEnded) return;
+      res.write(data)
+    }
+  }
 
   if (needsConvertion) {
     const { spawn } = child_process ??= await import("node:child_process");
@@ -1580,18 +1586,27 @@ async function prepareDestination({
       {
         stdio: [
           "pipe",
-          res?.socket ?? dryRunStream ?? process.stdout,
+          (!isStdout && "pipe" || dryRunStream) ?? process.stdout,
           "pipe"
         ], windowsHide: true
       }
     );
+    if (!isStdout) {
+      converterProcess.stdout.on("data", transferEncodingHandler)
+    }
     converterProcess.stderr.on("data", data => {
       (fatalErrors ??= []).push(data.toString())
     })
-    converterProcess.once("exit", exitCode => {
-      if (exitCode === 224 && !isStdout) return;
-      ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
-    })
+    promisesOfPrograms.push(
+      new Promise(resolve => {
+        converterProcess.once("exit", exitCode => {
+          if ((exitCode === 224 || exitCode === 255) && !isStdout) {
+            return resolve();
+          }
+          ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode)
+        })
+      })
+    )
   }
   // Cleans up "Starting..." message if needed
   if (isStdout && !isVerboseLevelSet) {
@@ -1604,13 +1619,19 @@ async function prepareDestination({
     [effectsProcess] = await applyExternalEffects({
       program: "sox",
       stdoutHeader,
-      stdout: converterProcess?.stdin ?? dryRunStream,
+      stdout: (
+        converterProcess?.stdin
+          ?? (!isStdout && "pipe" || dryRunStream)
+      ),
       promisesOfPrograms,
       reverbVolume, effects,
       addErrorEventToDest: dest => dest.on(
         "error", () => mpv?.kill()
       )
     });
+    if (!converterProcess) {
+      effectsProcess.stdout.on("data", transferEncodingHandler)
+    }
     log(INFO_LVL, "Done setting up SoX")
   } else if (needsConvertion) {
     // Or just a conversion/normal processing
@@ -1632,7 +1653,7 @@ async function prepareDestination({
     // ServerResponse
     destination ??= (!isPCM && res.write(stdoutHeader), res);
   }
-  return destination;
+  return isStdout ? destination : [destination, converterProcess];
 }
 
 export {
