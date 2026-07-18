@@ -458,16 +458,21 @@ async function initSpessaSynth({
     prettyLogSpessaSynthErrors(error, midiFile)
     return null;
   }
-  if (!midi.duration) {
-    if (!onlySampleCount && !onlyDuration || isStartPlayer) {
+  if (!onlySampleCount && !onlyDuration || isStartPlayer) {
+    if (midi.loop.start === Infinity) {
+      log(WARNING_LVL,
+        midiFile,
+        " has a loop start of Infinity which is wrong, skipping..."
+      )
+      return null;
+    }
+    if (!midi.duration) {
       log(WARNING_LVL,
         midiFile, " has a duration of 0 seconds, skipping..."
       )
+      return null;
     }
-    return null;
-  }
-  if (midi.duration <= .2) {
-    if (!onlySampleCount && !onlyDuration || isStartPlayer) {
+    if (midi.duration <= .2) {
       log(WARNING_LVL,
         midiFile,
         " has a duration <= 200 ms, looping will be disabled"
@@ -538,10 +543,15 @@ async function initSpessaSynth({
   )
   await synth.processorInitialized
   const seq = new SpessaSynthSequencer(synth);
-  seq.loadNewSongList([midi])
-  seq.loopCount = loopAmount;
-  if (loopFade) seq.loopCount++
-  seq.play();
+  try {
+    seq.loadNewSongList([midi])
+    seq.loopCount = loopAmount;
+    if (loopFade) seq.loopCount++
+    seq.play();
+  } catch (error) {
+    prettyLogSpessaSynthErrors(error, midiFile)
+    return null;
+  }
 
   log(INFO_LVL, "Finished setting up SpessaSynth")
   return {
