@@ -1429,7 +1429,7 @@ async function startPlayer(
       return res.end();
     }
 
-    const [destination, converterProcess] = await prepareDestination({
+    const destination = await prepareDestination({
       ...options, isPCM, res, mpv, length,
       getWavHeader, promisesOfPrograms
     }, false);
@@ -1443,10 +1443,6 @@ async function startPlayer(
 
     func?.(destination, true)
     await readStreamPromise
-    // Wait for SoX if it exists
-    await promisesOfPrograms[1]
-    // Needed because ffmpeg hangs otherwise
-    converterProcess?.kill()
     await Promise.all(promisesOfPrograms)
 
     return res.end();
@@ -1604,7 +1600,7 @@ async function prepareDestination({
     promisesOfPrograms.push(
       new Promise(resolve => {
         converterProcess.once("exit", exitCode => {
-          if ((exitCode === 224 || exitCode === 255) && !isStdout) {
+          if (!exitCode && !isStdout) {
             log(DEBUG_LVL, "Ffmpeg exited")
             return resolve();
           }
@@ -1658,7 +1654,7 @@ async function prepareDestination({
     // ServerResponse
     destination ??= (!isPCM && res.write(stdoutHeader), res);
   }
-  return isStdout ? destination : [destination, converterProcess];
+  return destination;
 }
 
 export {
