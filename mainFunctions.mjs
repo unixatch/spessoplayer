@@ -252,7 +252,6 @@ async function formatManager({
           effects, reverbVolume
         })
         log(INFO_LVL, doneSettingUpMsg)
-        addPipingFunction(() => (ffmpeg.needToEndStdin = true, ffmpeg))
         break;
       }
       ffmpeg.stderr.on("data", data => {
@@ -600,7 +599,6 @@ async function applyExternalEffects({
     "-t", "wav", destination,
     ...effects
   ], {
-    stdio: ["pipe", stdout, "pipe"],
     detached: true, windowsHide: true
   });
   //  For SIGINT event to work, sometimes... ↑
@@ -665,6 +663,7 @@ async function applyExternalEffects({
 
   sox.stdin.write(stdoutHeader)
   addErrorEventToDest(readStream?.pipe(sox.stdin) ?? sox.stdin)
+  sox.stdout.pipe(stdout)
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }

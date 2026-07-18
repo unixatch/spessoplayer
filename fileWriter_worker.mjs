@@ -26,7 +26,6 @@ const { toFile } = await import("./mainFunctions.mjs")
 global.fs = fs;
 process.on("unhandledRejection", console.error)
 
-let processToClose;
 /**
  * Runs toFile with the provided data and also
  * sends the fileOutputs array back
@@ -43,8 +42,6 @@ async function runTask({
   FO_CONSTANTS, index, filesListLength,
   spessasynthLogging
 }) {
-  processToClose?.stdin?.end()
-
   const toFileValue = await toFile({
     spessasynthLogging,
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
@@ -55,10 +52,7 @@ async function runTask({
 
   const [fileOutputs, pipingFunctions, promiseToWait] = toFileValue;
   parentPort.postMessage({index, files: fileOutputs})
-  for (const func of pipingFunctions) {
-    const returnValue = func?.();
-    if (returnValue?.needToEndStdin) processToClose = returnValue;
-  }
+  for (const func of pipingFunctions) func?.();
 
   await promiseToWait
   parentPort.postMessage("DONE_RENDERING")
