@@ -909,7 +909,7 @@ function createReadable(Readable, isStdout = false, {
           systemParameters.reverbGain     = 0;
           systemParameters.effectsEnabled = true;
         }
-        smoothEndingAmount ??= sample_rate < 15000 ? 1 : 1.875;
+        smoothEndingAmount ??= sample_rate < 15000 ? 1 : 1.78;
         if (reverbGain < smoothEndingAmount) {
           systemParameters.delayGain = (
             systemParameters.chorusGain = (
