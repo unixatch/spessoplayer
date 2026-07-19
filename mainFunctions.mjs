@@ -415,6 +415,7 @@ function prettyLogSpessaSynthErrors({name: eName, message: eMessage}, filename) 
     message,
     normalRed + eMessage
   )
+  return null;
 }
 /**
  * Initializes all the required variables for spessasynth_core usage
@@ -455,8 +456,9 @@ async function initSpessaSynth({
         : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
     );
   } catch (error) {
-    prettyLogSpessaSynthErrors(error, midiFile)
-    return null;
+    return prettyLogSpessaSynthErrors(
+      error, midiFile
+    );
   }
   if (!onlySampleCount && !onlyDuration || isStartPlayer) {
     if (midi.loop.start === Infinity) {
@@ -525,8 +527,9 @@ async function initSpessaSynth({
     try {
       soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
     } catch (error) {
-      prettyLogSpessaSynthErrors(error, soundfontFile)
-      return null;
+      return prettyLogSpessaSynthErrors(
+        error, soundfontFile
+      );
     }
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
@@ -549,8 +552,9 @@ async function initSpessaSynth({
     if (loopFade) seq.loopCount++
     seq.play();
   } catch (error) {
-    prettyLogSpessaSynthErrors(error, midiFile)
-    return null;
+    return prettyLogSpessaSynthErrors(
+      error, midiFile
+    );
   }
 
   log(INFO_LVL, "Finished setting up SpessaSynth")
