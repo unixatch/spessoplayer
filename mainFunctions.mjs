@@ -1464,19 +1464,29 @@ async function startPlayer(
     server.listen({ host: "localhost", port })
       .on("listening", resolve)
   })
+  const amountOfSongs = Options.amountOfSongs;
   if (daemonMode) {
     loadingAnimation?.kill()
     if (!isVerboseLevelSet) console.error(
       formatStrings.grayedOutText,
-      "Started server on port " + port
+      "Started server on port " + port + "\n"
+      + "Available indexes: " + (
+        amountOfSongs === 1
+          ? "0" : "0-"+(amountOfSongs-1)
+      )
     )
-    log(INFO_LVL, "Started server on port " + port)
+    log(INFO_LVL,
+      "Started server on port " + port,
+      "Available indexes: " + (
+        amountOfSongs === 1
+          ? "0" : "0-"+(amountOfSongs-1)
+      )
+    )
     process.on("SIGINT", () => process.exit(130))
 
     await new Promise(resolve => server.on("close", resolve))
     process.exit()
   }
-  const amountOfSongs = Options.amountOfSongs;
   const baseUrl = `http://localhost:${port}/song`;
   for (let i = 0; i < amountOfSongs; i++) {
     const filename = Options.getSongName(i);

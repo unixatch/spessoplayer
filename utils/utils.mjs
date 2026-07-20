@@ -96,6 +96,8 @@ function log(level, ...messages) {
     messages
       .join("")
       // Place the header data on a new line with padding
+      .replace(/Available indexes:/, " ".repeat(spacesAmount+3)+"Available indexes:")
+      // Place the header data on a new line with padding
       .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(spacesAmount)+"$1")
       // Place the SoX arguments on a new line with padding
       .replace(/with (sox -t.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
