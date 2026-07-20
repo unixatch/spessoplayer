@@ -389,7 +389,7 @@ let calculateMaxThreads;
       return calculateMaxThreads();
     }
     if (_maxThreads !== beforeAmount) {
-      log(WARNING_LVL, "Lowered threads amount to ", _maxThreads)
+      log(WARNING_LVL, "Lowered threads amount to", _maxThreads)
     }
 
     const oldMaxThreads = _maxThreads;

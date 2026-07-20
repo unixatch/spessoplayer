@@ -1315,7 +1315,7 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
     } else {
       Options.effects(Number(lastIndex?.index), list)
     }
-    log(INFO_LVL, "Set list of SoX effects as ", JSON.stringify(list))
+    log(INFO_LVL, "Set list of SoX effects as", JSON.stringify(list))
     return;
   }
   console.error(

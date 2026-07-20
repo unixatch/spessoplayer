@@ -240,7 +240,11 @@ async function formatManager({
           windowsHide: true
         }
       );
-      log(DEBUG_LVL, "Spawned ffmpeg with " + ffmpeg.spawnargs.join(" "))
+      log(DEBUG_LVL,
+        "Spawned ffmpeg with", "-",
+        "  " + (ffmpeg.spawnargs.splice(0, 1), ffmpeg.spawnargs)
+          .join(" ")
+      )
 
       if (effects) {
         await applyExternalEffects({
@@ -616,7 +620,11 @@ async function applyExternalEffects({
     detached: true, windowsHide: true
   });
   //  For SIGINT event to work, sometimes... ↑
-  log(DEBUG_LVL, "Spawned SoX with " + sox.spawnargs.join(" "))
+  log(DEBUG_LVL,
+    "Spawned SoX with", "-",
+    "  " + (sox.spawnargs.splice(0, 1), sox.spawnargs)
+      .join(" ")
+  )
 
   sox.stderr.on("data", (data) => {
     const stringOfError = data.toString();
@@ -1104,7 +1112,7 @@ async function toFile({
     stdoutHeader = getWavHeader({
       length: sampleCount, numChannels: 2
     }, options.sampleRate, { title: parse(options.midiFile).name });
-    log(DEBUG_LVL, "Created header file ", stdoutHeader)
+    log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
   }
 
   let readStream = (
@@ -1476,7 +1484,7 @@ async function startPlayer(
       )
     )
     log(INFO_LVL,
-      "Started server on port " + port,
+      "Started server on port " + port, "-",
       "Available indexes: " + (
         amountOfSongs === 1
           ? "0" : "0-"+(amountOfSongs-1)
@@ -1614,6 +1622,11 @@ async function prepareDestination({
         ], windowsHide: true
       }
     );
+    log(DEBUG_LVL,
+      "Spawned ffmpeg with", "-",
+      "  " + (converterProcess.spawnargs.splice(0, 1), converterProcess.spawnargs)
+        .join(" ")
+    )
     if (!isStdout) {
       converterProcess.stdout.on("data", transferEncodingHandler)
     }
@@ -1661,7 +1674,7 @@ async function prepareDestination({
     // Or just a conversion/normal processing
     converterProcess.stdin.write(stdoutHeader)
   }
-  if (!isPCM) log(DEBUG_LVL, "Created header file ", stdoutHeader)
+  if (!isPCM) log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
 
   let destination = (
     effectsProcess?.stdin      // Sox or

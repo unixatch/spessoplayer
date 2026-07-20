@@ -71,16 +71,22 @@ export { nowInstant, fromInstant, fromDuration, PlainTime }
  * Logger
  * @param {Number} level - level of the log
  * @param {Array<(String|Uint8Array<ArrayBufferLike>)>} messages - messages to print
+ * @example
+ *   // 2026-01-01T00:01:01.000Z [100 ms] {INFO_LVL} normal log
+ *   log(INFO_LVL, "normal log")
+ * @example
+ *   // same format like before but with a space
+ *   // in the middle of the 2 strings
+ *   log(DEBUG_LVL, "log with", "multiple strings")
+ * @example
+ *   // 2026-01-01T00:01:01.000Z [100 ms] {INFO_LVL} log with
+ *   // 2026-01-01T00:01:01.000Z [100 ms] {INFO_LVL} multiple lines
+ *   log(WARNING_LVL, "log with", "-", "multiple lines")
  */
 function log(level, ...messages) {
   const time = performance.now().toFixed(2);
   let date = nowInstant?.().toString();
   date ??= new Date().toISOString();
-  const spacesAmount = (
-    date.length +
-    LVL_TEXTS[level].length + 2 +
-    (time.length + 7) + 2
-  );
   const logOptions = this?.verboseLevel ? this : Options;
 
   if (Number.isNaN(debugLevelSpesso)
@@ -92,21 +98,29 @@ function log(level, ...messages) {
     (this === logOptions ? "\r" : "") +
     brightMagenta+date+normal,
     "["+normalYellow+time+" ms"+normal+"]",
-    "{"+gray+LVL_TEXTS[level]+normal+"}",
-    messages
-      .join("")
-      // Place the header data on a new line with padding
-      .replace(/Available indexes:/, " ".repeat(spacesAmount+3)+"Available indexes:")
-      // Place the header data on a new line with padding
-      .replace(/header file (\d+)+/, "header file:\n"+" ".repeat(spacesAmount)+"$1")
-      // Place the SoX arguments on a new line with padding
-      .replace(/with (sox -t.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
-      // Place the ffmpeg arguments on a new line with padding
-      .replace(/with (ffmpeg -i.*)/, "with:\n"+" ".repeat(spacesAmount)+"\"$1\"")
-      // Add dimmed gray to the output
-      .replace(/(.*)/s, `${logMessageColors[level]}$1${normal}`)
+    "{"+gray+LVL_TEXTS[level]+normal+"}"
   ];
   if (messages[0] === "Finished printing to stdout") message.unshift("\n")
+  if (messages.includes("-")) {
+    const length = messages.length;
+    for (let i = 0; i < length; i++) {
+      const needsANewLog = messages[i] === "-";
+
+      if (i > 0 && needsANewLog) message.push(
+        "\n"+message[0], message[1], message[2]
+      )
+      message.push(
+        logMessageColors[level]
+        + messages[needsANewLog ? ++i : i]
+        + normal
+      )
+    }
+  } else {
+    message.push(
+      logMessageColors[level]
+      + messages.join(" ") + normal
+    )
+  }
   console.error(...message)
 
   const path = debugFileSpesso || logOptions.logFilePath;
