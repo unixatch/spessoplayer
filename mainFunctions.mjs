@@ -477,20 +477,20 @@ async function initSpessaSynth({
     if (midi.loop.start === Infinity) {
       log(WARNING_LVL,
         midiFile,
-        " has a loop start of Infinity which is wrong, skipping..."
+        "has a loop start of Infinity which is wrong, skipping..."
       )
       return null;
     }
     if (!midi.duration) {
       log(WARNING_LVL,
-        midiFile, " has a duration of 0 seconds, skipping..."
+        midiFile, "has a duration of 0 seconds, skipping..."
       )
       return null;
     }
     if (midi.duration <= .2) {
       log(WARNING_LVL,
         midiFile,
-        " has a duration <= 200 ms, looping will be disabled"
+        "has a duration <= 200 ms, looping will be disabled"
       )
     }
   }
@@ -1753,7 +1753,9 @@ async function prepareDestination({
     // Or just a conversion/normal processing
     converterProcess.stdin.write(stdoutHeader)
   }
-  if (!isPCM) log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
+  if (!isPCM) log(DEBUG_LVL,
+    "Created header file", "-", " ", stdoutHeader
+  )
 
   let destination;
   if (specificRange) destination = (
