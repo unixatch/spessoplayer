@@ -118,7 +118,10 @@ async function formatManager({
   }
   function addPipingFunction(func) {
     return (!func)
-      ? pipingFunction = (whereToConnect, end) => {
+      ? pipingFunction = (whereToConnect, end, noPipe = false) => {
+        if (noPipe) return addErrorEventToDest(
+          readStream.once("error", streamErrorHandling)
+        );
         addErrorEventToDest(
           readStream
             .once("error", streamErrorHandling)
@@ -306,8 +309,11 @@ async function formatManager({
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
-      addPipingFunction((_, end) => {
+      addPipingFunction((_, end, noPipe = false) => {
         const rawStream = rawReadStream ?? readStream;
+        if (noPipe) return addErrorEventToDest(
+          readStream.once("error", streamErrorHandling)
+        );
         addErrorEventToDest(
           rawStream
             .once("error", streamErrorHandling)
@@ -322,8 +328,11 @@ async function formatManager({
       if (isToFile) break;
 
       const doneSettingUpMsg = "Done setting up" + ((dryRun) ? " dry run" : "");
-      addPipingFunction((whereToConnect, end) => {
+      addPipingFunction((whereToConnect, end, noPipe = false) => {
         const destination = res ?? whereToConnect;
+        if (noPipe) return addErrorEventToDest(
+          readStream.once("error", streamErrorHandling)
+        );
         addErrorEventToDest(
           readStream
             .once("error", streamErrorHandling)
@@ -1450,10 +1459,25 @@ async function startPlayer(
       return res.end();
     }
 
-    const destination = await prepareDestination({
+    let [rangeStart, rangeEnd] = (
+      // Skip "bytes=" and get the numbers
+      req.headers.range
+        .slice(6).split("-")
+    );
+    rangeStart = Number(rangeStart);
+    //    In case it's not specified ↓
+    rangeEnd   = Number(rangeEnd || "_");
+    const specificRange = (
+      !Number.isNaN(rangeEnd) || rangeStart > 0
+    );
+    let destination, header;
+    destination = await prepareDestination({
       ...options, isPCM, res, mpv, length,
-      getWavHeader, promisesOfPrograms
+      getWavHeader, promisesOfPrograms, specificRange
     }, false);
+    if (Array.isArray(destination)) {
+      [destination, header] = destination;
+    }
 
     const toStdoutValue = await toStdout({
       index: realIndex,
@@ -1462,11 +1486,57 @@ async function startPlayer(
     if (toStdoutValue === null) return;
     const [ func, readStreamPromise ] = toStdoutValue;
 
-    func?.(destination, true)
-    await readStreamPromise
-    await Promise.all(promisesOfPrograms)
+    let stream = (
+      destination?.stdin
+        ? func?.(destination?.stdin, true)
+        : func?.(destination, true, specificRange)
+    );
+    if (!specificRange) {
+      await readStreamPromise
+      await Promise.all(promisesOfPrograms)
 
-    return res.end();
+      return res.end();
+    }
+
+    // Managing Range request
+    let bytesWritten = 0, bytesDone = 0;
+    const amountOfBytesToWrite = rangeEnd - rangeStart;
+    stream = stream ?? destination?.stdout;
+
+    // Maybe manage the header
+    // if it exists
+    if (header) headerWriteBlock: {
+      const headerLength = header.length;
+      if (rangeStart > headerLength) break headerWriteBlock;
+
+      const actualHeader = header.subarray(rangeStart, rangeEnd);
+      bytesWritten += actualHeader.length;
+      res.write(actualHeader)
+      if (bytesWritten >= amountOfBytesToWrite) return res.end();
+    }
+
+    let beyondRangeStart, startBytes;
+    // If it goes beyond the header
+    stream.on("data", data => {
+      // Skip until rangeStart is reached or it's equal
+      if (!beyondRangeStart &&
+          (bytesDone += data.length) < rangeStart) return;
+      beyondRangeStart ||= true;
+
+      // Inside range
+      const endBytes = amountOfBytesToWrite - bytesWritten;
+      const dataToWrite = data.subarray(
+        startBytes ?? (startBytes = 0, rangeStart),
+        endBytes
+      );
+      bytesWritten += dataToWrite.length;
+      res.write(dataToWrite)
+
+      if (bytesWritten >= amountOfBytesToWrite) {
+        stream.removeAllListeners("data")
+        res.end()
+      }
+    })
   })
   await new Promise(resolve => {
     server.listen({ host: "localhost", port })
@@ -1560,7 +1630,7 @@ async function prepareDestination({
   getWavHeader, midiFile, singleFile,
   sampleRate, format,
   promisesOfPrograms,
-  effects, reverbVolume
+  effects, reverbVolume, specificRange
 }, isStdout) {
   let effectsProcess, fatalErrors,
       converterProcess, dryRunStream;
@@ -1601,7 +1671,7 @@ async function prepareDestination({
         : singleFile && { title: midiName }
     );
   }
-  if (needsConvertion || effects) {
+  if (needsConvertion || effects && !specificRange) {
     // Necessary because otherwise the runtime
     // doesn't write the length in hex before the data
     transferEncodingHandler = data => {
@@ -1627,7 +1697,7 @@ async function prepareDestination({
       "  " + (converterProcess.spawnargs.splice(0, 1), converterProcess.spawnargs)
         .join(" ")
     )
-    if (!isStdout) {
+    if (!isStdout && !specificRange) {
       converterProcess.stdout.on("data", transferEncodingHandler)
     }
     converterProcess.stderr.on("data", data => {
@@ -1666,7 +1736,7 @@ async function prepareDestination({
         "error", () => mpv?.kill()
       )
     });
-    if (!converterProcess) {
+    if (!converterProcess && !specificRange) {
       effectsProcess.stdout.on("data", transferEncodingHandler)
     }
     log(INFO_LVL, "Done setting up SoX")
@@ -1676,7 +1746,12 @@ async function prepareDestination({
   }
   if (!isPCM) log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
 
-  let destination = (
+  let destination;
+  if (specificRange) destination = (
+    // Sox or Ffmpeg
+    converterProcess ?? effectsProcess
+  );
+  destination ??= (
     effectsProcess?.stdin      // Sox or
     ?? converterProcess?.stdin // Ffmpeg or
   );
@@ -1688,7 +1763,9 @@ async function prepareDestination({
     );
   } else {
     // ServerResponse
-    destination ??= (!isPCM && res.write(stdoutHeader), res);
+    destination ??= !specificRange ? (
+      !isPCM && res.write(stdoutHeader), res
+    ) : [res, stdoutHeader];
   }
   return destination;
 }
