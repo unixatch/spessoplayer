@@ -1664,7 +1664,8 @@ async function prepareDestination({
       ? (index, previous) => index + previous
       : undefined
     );
-    const { name: midiName } = parse(midiFile);
+    let midiName;
+    if (!isStdout) ({ name: midiName } = parse(midiFile));
     stdoutHeader = getWavHeader(
       {
         length: (
