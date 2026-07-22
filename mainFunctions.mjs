@@ -1560,7 +1560,15 @@ async function startPlayer(
           ? "0" : "0-"+(amountOfSongs-1)
       )
     )
-    process.on("SIGINT", () => process.exit(130))
+    process.on("SIGINT",  () => process.exit(130))
+    if (process.argv0 === "node") {
+      process.on("SIGTERM", () => {
+        // Needed otherwise it messes up terminal input/output
+        // (see _stty echo_ and _stty icrnl_)
+        fs.close(0); fs.close(1); fs.close(2)
+        process.exit()
+      })
+    }
 
     await new Promise(resolve => server.on("close", resolve))
     process.exit()
