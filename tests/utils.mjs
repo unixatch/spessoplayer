@@ -55,7 +55,7 @@ function addOptionalArgumentsToStdout(args) {
 }
 function addOptionalArgumentsToFile(args) {
   if (process.argv.includes("-fo")) args.push(
-    "out.flac", "out.mp3",
+    "out.flac", "out.mp3", "out.opus",
     "out.pcm"
   )
   // Confirmation
@@ -87,8 +87,7 @@ function addOptionalCliArguments(args) {
   // fileOutputs
   if (process.argv.includes("-fo")) args.unshift(
     "out.wav",
-    "out.flac",
-    "out.mp3",
+    "out.flac", "out.mp3", "out.opus",
     "out.pcm"
   )
   // logFilePath
@@ -106,6 +105,7 @@ function generalCliArguments(mode) {
         "-f", "flac",             // format
         "--dry-run",              // Only test
         "--no-progress",
+        "--daemon",
         "--progress-delay", "75", // How fast it renders progress
         "--show-usage",           // RAM usage and CPU time
         "--no-table",             // Plain files object
