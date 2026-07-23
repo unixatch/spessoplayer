@@ -95,6 +95,10 @@ async function formatManager({
   promisesOfPrograms,
   outFile
 }) {
+  /**
+   * Error handler for readStream mainly but also for other streams
+   * @param {Error} error error object from "error" event
+   */
   async function streamErrorHandling(error) {
     const { code, errno } = error;
 
@@ -116,6 +120,12 @@ async function formatManager({
     }
     log(ERROR_LVL, `Ignored error ${underline+code}`)
   }
+  /**
+   * Sets a function to pipingFunction variable
+   * to be used later on for writing data
+   * @param {Function} [func] custom function to set
+   * @return {Function} the function that it has been set
+   */
   function addPipingFunction(func) {
     return (!func)
       ? pipingFunction = (whereToConnect, end, noPipe = false) => {
@@ -130,6 +140,13 @@ async function formatManager({
       }
       : pipingFunction = func;
   }
+  /**
+   * Sets the error event handler on the stream at index 0
+   * while also avoiding adding an already set handler
+   * @param {Stream} dest      where the data goes
+   * @param {Stream} [altThis] alternative value to return after setting up the event handler
+   * @return {Stream} destination that has been set
+   */
   function addErrorEventToDest(dest, altThis) {
     const finalDest = altThis ?? dest,
           boundFunction = streamErrorHandling.bind(finalDest),
@@ -1631,6 +1648,26 @@ async function startPlayer(
       process.exit(errno)
     })
 }
+/**
+ * Prepares the destination for stdout and file modes,
+ * while also maybe managing needed child processes
+ * @param {Object}         obj
+ * @param {Boolean}        obj.isVerboseLevelSet           if logging is explicitly enabled
+ * @param {Boolean}        obj.isPCM                       if it's a lossless format without a header
+ * @param {ServerResponse} [obj.res]                         server response object
+ * @param {ChildProcess}   [obj.mpv]                         child process of mpv
+ * @param {ChildProcess}   obj.loadingAnimation            script that prints the loading animation
+ * @param {Function}       obj.loadingAnimationCleanupFunc cleanup function for the loading animation
+ * @param {Number}         obj.length                      length of the song in samples
+ * @param {Number[]}       obj.lengthOfFiles               same as before but multiples ones
+ * @param {Function}       obj.getWavHeader                function that creates the wav header
+ * @param {Promise[]}      obj.promisesOfPrograms          list of promises for programs when they exit
+ * @param {Boolean}        obj.specificRange               if it's a range http header to handle
+ * @param {module:typeDefinitions~toStdoutOptionsObject} obj.toStdoutOptionsObject
+ * @param {Boolean}        isStdout                        if it's stdout mode or player/daemon mode
+ * @return {Readable} the destination, where all the data must go
+ * @throws {UnwantedNonZeroError} if ffmpeg exits with a non-zero status code
+ */
 async function prepareDestination({
   isVerboseLevelSet, isPCM, res, mpv,
   loadingAnimation, loadingAnimationCleanupFunc,
