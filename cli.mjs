@@ -360,7 +360,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   const clearLastVariables = () => {
     lastParam = undefined;
     lastIndex = undefined;
-  }
+  };
   const stdoutFileModeConflictError = () => {
     console.error(
       formatStrings.errorText,
@@ -380,6 +380,17 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     Options.fileOutputs(index, arg)
     log(INFO_LVL, "Set file output to " + type)
   };
+  /**
+   * Handles loop parameters
+   * that use time values or just numbers
+   * @param {String}   name           name of the loop parameter
+   * @param {String}   arg            argument that has been passed
+   * @param {String}   nextArg        argument that comes right after arg
+   * @param {String}   regexType      regex to use for lastIndex
+   * @param {Function} func           function that has to be run for setting the value
+   * @param {Boolean}  [nameRequired] if it's needed to pass the Options' method
+   * @param {Function} [optionsFunc]  Options' method
+   */
   const setLoopParameter = (
     name, arg, nextArg, regexType,
     func, nameRequired, optionsFunc
@@ -417,7 +428,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     )
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
-  }
+  };
   const newArgumentsLength = newArguments.length;
   let isStdout, loopExists, fileExists,
       indexOfSetFile = 0,
