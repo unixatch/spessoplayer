@@ -38,6 +38,15 @@ let argvWithoutFileExts = new Promise(resolve => {
   }
   resolve(newArguments)
 });
+function endsWithSupportedExtension(arg) {
+  return (
+       arg.endsWith(".opus")  || arg.endsWith(".mp3" )
+    || arg.endsWith(".wav" )  || arg.endsWith(".wave")
+    || arg.endsWith(".flac")
+    || arg.endsWith(".pcm" )
+    || arg.endsWith(".s16le") || arg.endsWith(".f32le")
+  );
+}
 const regexes = {
   // These look like --option or --option[=n]
   logFile: new RegExp([
@@ -46,18 +55,6 @@ const regexes = {
     "|-lf(?:=(?<path>\\w+))*",
     "|\\/lf(?:=(?<path>\\w+))*)$"
   ].join("")),
-
-  wav:  /^.*\.(?:wav|wave)$/,
-  flac: /^.*\.flac$/,
-  mp3:  /^.*\.mp3$/,
-  opus: /^.*\.opus$/,
-  raw:  /^.*\.(?:s16le|f32le|pcm)$/,
-  allFO: new RegExp(`^${
-    [".*\\.(?:wav|wave)",
-     ".*\\.flac",
-     ".*\\.mp3",
-     ".*\\.(?:s16le|f32le|pcm)"].join("|")
-  }$`),
 
   // Instead these like --option or --option[n]
   input: new RegExp([
@@ -454,7 +451,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 
       case (
         (lastParam === "input" || !lastParam) &&
-        !regexes.allFO.test(arg) &&
+        !endsWithSupportedExtension(arg) &&
         (existsSync(arg) || (fileExists = false)) && arg
       ): {
         runSetFile(arg)
@@ -462,9 +459,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         if (
           !nextArg ||
           nextArg    === "|" ||
-          nextArg[0] === "-" ||  // Parameters
+          nextArg[0] === "-" || // Parameters
           nextArg[0] === "/" ||
-          regexes.allFO.test(nextArg) // File output
+          endsWithSupportedExtension(nextArg) // File output
         ) break;
         if (!existsSync(nextArg)) { i++; break; }
 
@@ -480,27 +477,30 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         break;
       }
       case "out.wav":
-      case regexes.wav.test(arg) && arg: {
+      case arg.endsWith(".wav") || arg.endsWith(".wave") && arg: {
         setFileOutputs("wav", WAV_INDEX, arg)
         break;
       }
       case "out.pcm": case "out.s16le": case "out.f32le":
-      case regexes.raw.test(arg) && arg: {
+      case (
+        arg.endsWith(".pcm")
+        || arg.endsWith(".s16le") || arg.endsWith(".f32le")
+      ) && arg: {
         setFileOutputs("pcm", RAW_INDEX, arg)
         break;
       }
       case "out.flac":
-      case regexes.flac.test(arg) && arg: {
+      case arg.endsWith(".flac") && arg: {
         setFileOutputs("flac", FLAC_INDEX, arg)
         break;
       }
       case "out.mp3":
-      case regexes.mp3.test(arg) && arg: {
+      case arg.endsWith(".mp3") && arg: {
         setFileOutputs("mp3", MP3_INDEX, arg)
         break;
       }
       case "out.opus":
-      case regexes.opus.test(arg) && arg: {
+      case arg.endsWith(".opus") && arg: {
         setFileOutputs("opus", OPUS_INDEX, arg)
         break;
       }
@@ -602,9 +602,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         if (
           !nextArg ||
           nextArg    === "|" ||
-          nextArg[0] === "-" ||       // Parameters
+          nextArg[0] === "-" || // Parameters
           nextArg[0] === "/" ||
-          regexes.allFO.test(nextArg) // File output
+          endsWithSupportedExtension(nextArg) // File output
         ) {
           console.error(
             formatStrings.errorText,
