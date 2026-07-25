@@ -2,10 +2,32 @@
 
 ### spessoplayer [options] \<midi\> \<soundfont\> [outFile]
 
+### Ways to add files:
+  There are 2 main ways to add files:
+  - Using the _**input**_ parameter with/without an index;
+  - Using the group separator (**\\|** or _**"|"**_);
+
+  First option is for when you need to
+  really force the order of groups
+
+  Second option is more suitable for most common cases
+  and you should it try first when
+  the automatic order is not good enough
+
+  Here some examples:
+
+    song.mid song2.mid soundfontfile.sf2
+
+    song.mid song2.mid soundfontfile.sf2
+    \| another_song.mid another_song2.mid another_soundfont.sf2
+
+    -i song.mid -i song2.mid -i soundfontfile.sf2
+    -i:2 song.mid -i:2 song2.mid -i:2 soundfontfile.sf2
+
 ### Parameter Indexes:
 
   Each parameter can take an optional index
-  that points to each song's index ([n])
+  that points to each song's index ([:n])
 
   The only exception is the input parameter
   which instead points to a group index
@@ -21,12 +43,12 @@
 
 ### Available parameters:
 
-### --input[n] **file**, /input[n] **file**,
-#### -i[n] **file**, /i[n] **file**:
+### --input[:n] **file**, /input[:n] **file**,
+#### -i[:n] **file**, /i[:n] **file**:
   Takes the following **file** and puts it in the list by n
 
-### --volume[n] **amount**, /volume[n] **amount**,
-#### &nbsp;&nbsp;-v[n] **amount**, /v[n] **amount**:
+### --volume[:n] **amount**, /volume[:n] **amount**,
+#### &nbsp;&nbsp;-v[:n] **amount**, /v[:n] **amount**:
   Volume to set (*default: 100%*)
 
   Available formats:
@@ -34,8 +56,8 @@
   - **percentages** (*example 70%*);
   - **decimals** (*example 0.9*);
 
-### --reverb-volume[n] **amount**, /reverb-volume[n] **amount**,
-#### &nbsp;&nbsp;-rvb[n] **amount**, /rvb[n] **amount**:
+### --reverb-volume[:n] **amount**, /reverb-volume[:n] **amount**,
+#### &nbsp;&nbsp;-rvb[:n] **amount**, /rvb[:n] **amount**:
 Volume to set for reverb
 
 Same formats as volume but with different results
@@ -43,29 +65,29 @@ because it's a builtin effect
 
 &nbsp;&nbsp;&nbsp;<sub>(confilcts with --effects) (*default: none*)</sub>
 
-### --effects **effects_list**, /effects **effects_list**,
-#### &nbsp;&nbsp;-e **effects_list**, /e **effects_list**:
+### --effects[:n] **effects_list**, /effects[:n] **effects_list**,
+#### &nbsp;&nbsp;-e[:n] **effects_list**, /e[:n] **effects_list**:
 Adds any effects that SoX provides (*e.g "reverb,fade 1"*)
 
-### --no-smooth-end[n], /no-smooth-end[n], --hard-stop[n], /hard-stop[n],
-#### &nbsp;&nbsp;-nose[n], /nose[n], -hs[n], /hs[n]:
+### --no-smooth-end[:n], /no-smooth-end[:n], --hard-stop[:n], /hard-stop[:n],
+#### &nbsp;&nbsp;-nose[:n], /nose[:n], -hs[:n], /hs[:n]:
 Disables the gradual/smooth effect
 that is added at the end of the song
 
 &nbsp;&nbsp;&nbsp;<sub>(confilcts with a builtin effect such as *reverb-volume*)
 
-### --loop[n] **seconds**, /loop[n] **seconds**,
-#### &nbsp;&nbsp;-l[n] **seconds**, /l[n] **seconds**:
+### --loop[:n] **seconds**, /loop[:n] **seconds**,
+#### &nbsp;&nbsp;-l[:n] **seconds**, /l[:n] **seconds**:
   Loop x amount of times (*default: 0*)
 
 &nbsp;&nbsp;&nbsp;<sub>(It might be slow with bigger numbers)</sub>
 
-### --loop-start[n] **seconds**, /loop-start[n] **seconds**,
-#### &nbsp;&nbsp;-ls[n] **seconds**, /ls[n] **seconds**:
+### --loop-start[:n] **seconds**, /loop-start[:n] **seconds**,
+#### &nbsp;&nbsp;-ls[:n] **seconds**, /ls[:n] **seconds**:
 The loop will start after **seconds**
 
-### --loop-end[n] **seconds**, /loop-end[n] **seconds**,
-#### &nbsp;&nbsp;-le[n] **seconds**, /le[n] **seconds**:
+### --loop-end[:n] **seconds**, /loop-end[:n] **seconds**,
+#### &nbsp;&nbsp;-le[:n] **seconds**, /le[:n] **seconds**:
 The loop will restart at [-] **seconds** from the end
 
 ### --loop-fade, /loop-fade,
@@ -75,16 +97,16 @@ and then it fades away slowly based on loop-fade-start
 
 &nbsp;&nbsp;&nbsp;<sub>(Doesn't work without the loop parameter turned on)</sub>
 
-### --loop-fade-start[n] **seconds**, /loop-fade-start[n] **seconds**,
-#### &nbsp;&nbsp;-lFs[n] **seconds**, /lFs[n] **seconds**:
+### --loop-fade-start[:n] **seconds**, /loop-fade-start[:n] **seconds**,
+#### &nbsp;&nbsp;-lFs[:n] **seconds**, /lFs[:n] **seconds**:
 When the loop fade starts (*default: 1*)
 
-### --loop-fade-interpolation[n] **type**, /loop-fade-interpolation[n] **type**,
-#### &nbsp;&nbsp;-lFi[n] **type**, /lFi[n] **type**:
+### --loop-fade-interpolation[:n] **type**, /loop-fade-interpolation[:n] **type**,
+#### &nbsp;&nbsp;-lFi[:n] **type**, /lFi[:n] **type**:
 How much the loop fade should last (*default: 4*)
 
-### --sample-rate[n] **samples**, /sample-rate[n] **samples**,
-#### &nbsp;&nbsp;-r[n] **samples**, /r[n] **samples**:
+### --sample-rate[:n] **samples**, /sample-rate[:n] **samples**,
+#### &nbsp;&nbsp;-r[:n] **samples**, /r[:n] **samples**:
 Sample rate to use (*default: 48000*)
 
 &nbsp;&nbsp;&nbsp;<sub>(It might be slow with bigger numbers for players like mpv)</sub>

@@ -1465,12 +1465,12 @@ const help = async ({ errorText = "" } = "") => {
       \\| another_song.mid another_song2.mid another_soundfont.sf2
 
       -i song.mid -i song2.mid -i soundfontfile.sf2
-      -i2 song.mid -i2 song2.mid -i2 soundfontfile.sf2`
+      -i:2 song.mid -i:2 song2.mid -i:2 soundfontfile.sf2`
     )}
 
   Parameter Indexes:
     Each parameter can take an optional index
-    that points to each song's index (${optional("n")})
+    that points to each song's index (${optional(":n")})
 
     The only exception is the input parameter
     which instead points to a group index
@@ -1485,18 +1485,18 @@ const help = async ({ errorText = "" } = "") => {
 
   Available parameters:
     ${param(
-      ["--input"+optional("n")+" "+grayBoldText("file"),
-       "/input"+optional("n")+" "+grayBoldText("file")],
-      ["-i"+optional("n")+" "+grayBoldText("file"),
-       "/i"+optional("n")+" "+grayBoldText("file")]
+      ["--input"+optional(":n")+" "+grayBoldText("file"),
+       "/input"+optional(":n")+" "+grayBoldText("file")],
+      ["-i"+optional(":n")+" "+grayBoldText("file"),
+       "/i"+optional(":n")+" "+grayBoldText("file")]
     )}:
       ${multiLine("Takes the following file and puts it in the list by n")}
 
     ${param(
-      ["--volume"+optional("n")+" "+grayBoldText("amount"),
-       "/volume"+optional("n")+" "+grayBoldText("amount")],
-      ["-vol"+optional("n")+" "+grayBoldText("amount"),
-       "/vol"+optional("n")+" "+grayBoldText("amount")]
+      ["--volume"+optional(":n")+" "+grayBoldText("amount"),
+       "/volume"+optional(":n")+" "+grayBoldText("amount")],
+      ["-vol"+optional(":n")+" "+grayBoldText("amount"),
+       "/vol"+optional(":n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
       `Volume to set (default: 100%)
@@ -1508,10 +1508,10 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--reverb-volume"+optional("n")+" "+grayBoldText("amount"),
-       "/reverb-volume"+optional("n")+" "+grayBoldText("amount")],
-      ["-rvb"+optional("n")+" "+grayBoldText("amount"),
-       "/rvb"+optional("n")+" "+grayBoldText("amount")]
+      ["--reverb-volume"+optional(":n")+" "+grayBoldText("amount"),
+       "/reverb-volume"+optional(":n")+" "+grayBoldText("amount")],
+      ["-rvb"+optional(":n")+" "+grayBoldText("amount"),
+       "/rvb"+optional(":n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
       `Volume to set for reverb
@@ -1521,30 +1521,30 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--effects "+grayBoldText("effects_list"),
-       "/effects "+grayBoldText("effects_list")],
-      ["-e "+grayBoldText("effects_list"),
-       "/e "+grayBoldText("effects_list")]
+      ["--effects"+optional(":n")+" "+grayBoldText("effects_list"),
+       "/effects"+optional(":n")+" "+grayBoldText("effects_list")],
+      ["-e"+optional(":n")+" "+grayBoldText("effects_list"),
+       "/e"+optional(":n")+" "+grayBoldText("effects_list")]
     )}:
       ${multiLine('Adds any effects that SoX provides (e.g "reverb,fade 1")')}
 
     ${param(
-      ["--no-smooth-end"+optional("n"),
-       "/no-smooth-end"+optional("n"),
-       "--hard-stop"+optional("n"),
-       "/hard-stop"+optional("n")],
-      ["-nose"+optional("n"), "/nose"+optional("n"),
-       "/hs"+optional("n"),   "/hs"+optional("n")]
+      ["--no-smooth-end"+optional(":n"),
+       "/no-smooth-end"+optional(":n"),
+       "--hard-stop"+optional(":n"),
+       "/hard-stop"+optional(":n")],
+      ["-nose"+optional(":n"), "/nose"+optional(":n"),
+       "/hs"+optional(":n"),   "/hs"+optional(":n")]
     )}:
       ${multiLine(`Disables the gradual/smooth effect
       that is added at the end of the song
       (confilcts with a builtin effect such as reverb-volume)`)}
 
     ${param(
-      ["--loop"+optional("n")+" "+grayBoldText("seconds"),
-        "/loop"+optional("n")+" "+grayBoldText("seconds")],
-      ["-l"+optional("n")+" "+grayBoldText("seconds"),
-       "/l"+optional("n")+" "+grayBoldText("seconds")]
+      ["--loop"+optional(":n")+" "+grayBoldText("seconds"),
+        "/loop"+optional(":n")+" "+grayBoldText("seconds")],
+      ["-l"+optional(":n")+" "+grayBoldText("seconds"),
+       "/l"+optional(":n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
       `Loop x amount of times (default: 0)
@@ -1552,18 +1552,18 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--loop-start"+optional("n")+" "+grayBoldText("seconds"),
-        "/loop-start"+optional("n")+" "+grayBoldText("seconds")],
-      ["-ls"+optional("n")+" "+grayBoldText("seconds"),
-       "/ls"+optional("n")+" "+grayBoldText("seconds")]
+      ["--loop-start"+optional(":n")+" "+grayBoldText("seconds"),
+        "/loop-start"+optional(":n")+" "+grayBoldText("seconds")],
+      ["-ls"+optional(":n")+" "+grayBoldText("seconds"),
+       "/ls"+optional(":n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(`The loop will start after ${grayBoldText("seconds")}`)}
 
     ${param(
-      ["--loop-end"+optional("n")+" "+grayBoldText("seconds"),
-       "/loop-end"+optional("n")+" "+grayBoldText("seconds")],
-      ["-le"+optional("n")+" "+grayBoldText("seconds"),
-       "/le"+optional("n")+" "+grayBoldText("seconds")]
+      ["--loop-end"+optional(":n")+" "+grayBoldText("seconds"),
+       "/loop-end"+optional(":n")+" "+grayBoldText("seconds")],
+      ["-le"+optional(":n")+" "+grayBoldText("seconds"),
+       "/le"+optional(":n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
       `The loop will restart at ${optional("-")+grayBoldText("seconds")+dimGray+italics} from the end`
@@ -1577,30 +1577,30 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--loop-fade-start"+optional("n")+" "+grayBoldText("seconds"),
-       "/loop-fade-start"+optional("n")+" "+grayBoldText("seconds")],
-      ["-lFs"+optional("n")+" "+grayBoldText("seconds"),
-       "/lFs"+optional("n")+" "+grayBoldText("seconds")]
+      ["--loop-fade-start"+optional(":n")+" "+grayBoldText("seconds"),
+       "/loop-fade-start"+optional(":n")+" "+grayBoldText("seconds")],
+      ["-lFs"+optional(":n")+" "+grayBoldText("seconds"),
+       "/lFs"+optional(":n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
       "When the loop fade starts (default: 1)"
       )}
 
     ${param(
-      ["--loop-fade-duration"+optional("n")+" "+grayBoldText("seconds"),
-       "/loop-fade-duration"+optional("n")+" "+grayBoldText("seconds")],
-      ["-lFd"+optional("n")+" "+grayBoldText("seconds"),
-       "/lFd"+optional("n")+" "+grayBoldText("seconds")]
+      ["--loop-fade-duration"+optional(":n")+" "+grayBoldText("seconds"),
+       "/loop-fade-duration"+optional(":n")+" "+grayBoldText("seconds")],
+      ["-lFd"+optional(":n")+" "+grayBoldText("seconds"),
+       "/lFd"+optional(":n")+" "+grayBoldText("seconds")]
     )}:
       ${multiLine(
       "How much the loop fade should last (default: 4)"
       )}
 
     ${param(
-      ["--loop-fade-interpolation"+optional("n")+" "+grayBoldText("type"),
-       "/loop-fade-interpolation"+optional("n")+" "+grayBoldText("type")],
-      ["-lFi"+optional("n")+" "+grayBoldText("type"),
-       "/lFi"+optional("n")+" "+grayBoldText("type")]
+      ["--loop-fade-interpolation"+optional(":n")+" "+grayBoldText("type"),
+       "/loop-fade-interpolation"+optional(":n")+" "+grayBoldText("type")],
+      ["-lFi"+optional(":n")+" "+grayBoldText("type"),
+       "/lFi"+optional(":n")+" "+grayBoldText("type")]
     )}:
       ${multiLine(
       `What type of interpolation to use for loop-fade
@@ -1613,10 +1613,10 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--sample-rate"+optional("n")+" "+grayBoldText("samples"),
-       "/sample-rate"+optional("n")+" "+grayBoldText("samples")],
-      ["-r"+optional("n")+" "+grayBoldText("samples"),
-       "/r"+optional("n")+" "+grayBoldText("samples")]
+      ["--sample-rate"+optional(":n")+" "+grayBoldText("samples"),
+       "/sample-rate"+optional(":n")+" "+grayBoldText("samples")],
+      ["-r"+optional(":n")+" "+grayBoldText("samples"),
+       "/r"+optional(":n")+" "+grayBoldText("samples")]
     )}:
       ${multiLine(
       `Sample rate to use (default: 48000)
@@ -1640,16 +1640,16 @@ const help = async ({ errorText = "" } = "") => {
 
     ${param(
       [
-        "--max-threads "+grayBoldText("n"),
-        "/max-threads "+grayBoldText("n"),
-        "--threads "+grayBoldText("n"),
-        "/threads "+grayBoldText("n")
+        "--max-threads "+grayBoldText(":n"),
+        "/max-threads "+grayBoldText(":n"),
+        "--threads "+grayBoldText(":n"),
+        "/threads "+grayBoldText(":n")
       ],
       [
-        "-mt "+grayBoldText("n"),
-        "/mt "+grayBoldText("n"),
-        "-T "+grayBoldText("n"),
-        "/T "+grayBoldText("n")
+        "-mt "+grayBoldText(":n"),
+        "/mt "+grayBoldText(":n"),
+        "-T "+grayBoldText(":n"),
+        "/T "+grayBoldText(":n")
       ]
     )}:
       ${multiLine(
