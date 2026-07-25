@@ -120,6 +120,7 @@ Format to use for stdout (*default: wav*)
 Available formats:
 - **wav**;
 - **mp3**;
+- **opus**;
 - **flac**;
 - **pcm (f32le)**;
 

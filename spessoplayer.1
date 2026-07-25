@@ -142,6 +142,7 @@ Format to use for stdout (\fIdefault: wav\fR)
 Available formats:
   - \fBwav\fR;
   - \fBmp3\fR;
+  - \fBopus\fR;
   - \fBflac\fR;
   - \fBpcm (f32le)\fR;
 .RE
@@ -283,7 +284,7 @@ Similar to the previous example but it's more precise and faster
 Prints to stdout the song in the wav file format
 .TP
 .B spessoplayer song.midi soundfont.sf2 out.wav
-Writes the song to out.wav in the current directory (can be anywhere else)
+Writes the song to out.wav in the current directory (can be anywhere else) (for available formats, see --format)
 .SH "SEE ALSO"
 mpv(1), ffmpeg-all(1), sox(1)
 .SH AUTHOR

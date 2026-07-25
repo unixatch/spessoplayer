@@ -1648,6 +1648,7 @@ const help = async ({ errorText = "" } = "") => {
       Available formats:
         - wav
         - mp3
+        - opus
         - flac
         - pcm (f32le)`
       )}
