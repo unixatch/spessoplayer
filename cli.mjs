@@ -56,86 +56,6 @@ const regexes = {
     "|\\/lf(?:=(?<path>\\w+))*)$"
   ].join("")),
 
-  // Instead these like --option or --option[n]
-  input: new RegExp([
-    "^(?:--input(?<index>\\d+)*",
-    "|\\/input(?<index>\\d+)*",
-    "|-i(?<index>\\d+)*",
-    "|\\/i(?<index>\\d+)*)$"
-  ].join("")),
-  reverbVolume: new RegExp([
-    "^(?:--reverb-volume(?<index>\\d+)*",
-    "|\\/reverb-volume(?<index>\\d+)*",
-    "|-rvb(?<index>\\d+)*",
-    "|\\/rvb(?<index>\\d+)*)$"
-  ].join("")),
-  effects: new RegExp([
-    "^(?:--effects(?<index>\\d+)*",
-    "|\\/effects(?<index>\\d+)*",
-    "|-e(?<index>\\d+)*",
-    "|\\/e(?<index>\\d+)*)$"
-  ].join("")),
-  hardStop: new RegExp([
-    "^(?:--hard-stop(?<index>\\d+)*",
-    "|\\/hard-stop(?<index>\\d+)*",
-    "|-hs(?<index>\\d+)*",
-    "|\\/hs(?<index>\\d+)*",
-    "|--no-smooth-end(?<index>\\d+)*",
-    "|\\/no-smooth-end(?<index>\\d+)*",
-    "|-nose(?<index>\\d+)*",
-    "|\\/nose(?<index>\\d+)*)$"
-  ].join("")),
-
-  volume: new RegExp([
-    "^(?:--volume(?<index>\\d+)*",
-    "|\\/volume(?<index>\\d+)*",
-    "|-vol(?<index>\\d+)*",
-    "|\\/vol(?<index>\\d+)*)$"
-  ].join("")),
-  sampleRate: new RegExp([
-    "^(?:--sample-rate(?<index>\\d+)*",
-    "|\\/sample-rate(?<index>\\d+)*",
-    "|-r(?<index>\\d+)*",
-    "|\\/r(?<index>\\d+)*)$"
-  ].join("")),
-
-  loop: new RegExp([
-    "^(?:--loop(?<index>\\d+)*",
-    "|\\/loop(?<index>\\d+)*",
-    "|-l(?<index>\\d+)*",
-    "|\\/l(?<index>\\d+)*)$"
-  ].join("")),
-  loopStart: new RegExp([
-    "^(?:--loop-start(?<index>\\d+)*",
-    "|\\/loop-start(?<index>\\d+)*",
-    "|-ls(?<index>\\d+)*",
-    "|\\/ls(?<index>\\d+)*)$"
-  ].join("")),
-  loopEnd: new RegExp([
-    "^(?:--loop-end(?<index>\\d+)*",
-    "|\\/loop-end(?<index>\\d+)*",
-    "|-le(?<index>\\d+)*",
-    "|\\/le(?<index>\\d+)*)$"
-  ].join("")),
-  loopFadeStart: new RegExp([
-    "^(?:--loop-fade-start(?<index>\\d+)*",
-    "|\\/loop-fade-start(?<index>\\d+)*",
-    "|-lFs(?<index>\\d+)*",
-    "|\\/lFs(?<index>\\d+)*)$"
-  ].join("")),
-  loopFadeDuration: new RegExp([
-    "^(?:--loop-fade-duration(?<index>\\d+)*",
-    "|\\/loop-fade-duration(?<index>\\d+)*",
-    "|-lFd(?<index>\\d+)*",
-    "|\\/lFd(?<index>\\d+)*)$"
-  ].join("")),
-  loopFadeInterpolation: new RegExp([
-    "^(?:--loop-fade-interpolation(?<index>\\d+)*",
-    "|\\/loop-fade-interpolation(?<index>\\d+)*",
-    "|-lFi(?<index>\\d+)*",
-    "|\\/lFi(?<index>\\d+)*)$"
-  ].join("")),
-
   //                           [HH:]MM:SS.sss
   ISOTimestamp: /(?<optional>(?:\d{2}:)*)*\d{2}:\d{2}(\.\d)*/,
   areDecibels: /^(?:-|\+*)[\d.]+dB/,
@@ -357,6 +277,34 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     );
   }
 
+  const isIndexedParam = (
+    arg, param1, param2, param3, param4, param5, param6
+  ) => {
+    let noInitials = arg[1] === "-" && arg.slice(2);
+    noInitials ||= (
+      (arg[0] === "-" || arg[0] === "/")
+        && arg.slice(1)
+    );
+    if (!noInitials) return false;
+
+    const index = noInitials.indexOf(":");
+    const name  = noInitials.slice(
+      0,
+      index > 0 ? index : undefined
+    );
+    if (
+      name === param1
+      || name === param2
+      || name === param3
+      || name === param4
+      || name === param5
+      || name === param6
+    ) {
+      //                      excludes : ↓
+      lastIndex = noInitials.slice(index+1);
+      return true;
+    }
+  };
   const clearLastVariables = () => {
     lastParam = undefined;
     lastIndex = undefined;
@@ -384,23 +332,20 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * Handles loop parameters
    * that use time values or just numbers
    * @param {String}   name           name of the loop parameter
-   * @param {String}   arg            argument that has been passed
    * @param {String}   nextArg        argument that comes right after arg
-   * @param {String}   regexType      regex to use for lastIndex
    * @param {Function} func           function that has to be run for setting the value
    * @param {Boolean}  [nameRequired] if it's needed to pass the Options' method
    * @param {Function} [optionsFunc]  Options' method
    */
   const setLoopParameter = (
-    name, arg, nextArg, regexType,
-    func, nameRequired, optionsFunc
+    name, nextArg, func,
+    nameRequired, optionsFunc
   ) => {
     loopExists ??= testFunctions.loop(newArgumentsSet);
     if (!loopExists) {
       log(WARNING_LVL, `Skipping ${name} because loop isn't set`)
       return;
     }
-    lastIndex = arg.match(regexType)?.groups;
     return (
       nameRequired
         ? func.call(undefined,
@@ -609,7 +554,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--input": case "/input":
       case "-i":      case "/i":
-      case regexes.input.test(arg) && arg: {
+      case isIndexedParam(arg, "input", "i") && arg: {
         if (
           !nextArg ||
           nextArg    === "|" ||
@@ -624,7 +569,6 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           process.exit(1)
         }
         lastParam = "input";
-        lastIndex = arg.match(regexes.input)?.groups;
         if (!existsSync(nextArg)) { i++; break; }
 
         runSetFile(nextArg); i++
@@ -632,8 +576,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--volume": case "/volume":
       case "-vol":     case "/vol":
-      case regexes.volume.test(arg) && arg: {
-        lastIndex = arg.match(regexes.volume)?.groups;
+      case isIndexedParam(arg, "volume", "vol") && arg: {
         setVolumeParameter(
           "volume", nextArg, lastIndex,
           Options.volume
@@ -642,8 +585,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--sample-rate": case "/sample-rate":
       case "-r":            case "/r":
-      case regexes.sampleRate.test(arg) && arg: {
-        lastIndex = arg.match(regexes.sampleRate)?.groups;
+      case isIndexedParam(arg, "sample-rate", "r") && arg: {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         setSampleRate(nextArg, lastIndex, isStdout)
         i++
@@ -651,16 +593,15 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--reverb-volume": case "/reverb-volume":
       case "-rvb":            case "/rvb":
-      case regexes.reverbVolume.test(arg) && arg: {
-        lastIndex = arg.match(regexes.reverbVolume)?.groups;
+      case isIndexedParam(arg, "reverb-volume", "rvb") && arg: {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(
-          Number(lastIndex?.index), isStdout
+          Number(lastIndex), isStdout
         );
         if (isExternal === true) {
           log(WARNING_LVL,
             "Ignored reverb-volume flag at index " +
-             lastIndex?.index + " since effects flag has been used"
+             lastIndex + " since effects flag has been used"
           )
           i++; break;
         }
@@ -672,15 +613,14 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--effects": case "/effects":
       case "-e":       case "/e":
-      case regexes.effects.test(arg) && arg: {
-        lastIndex = arg.match(regexes.effects)?.groups;
+      case isIndexedParam(arg, "effects", "e") && arg: {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(
-          Number(lastIndex?.index), isStdout
+          Number(lastIndex), isStdout
         );
         if (isExternal === false) {
           log(WARNING_LVL,
-            "Ignored effects flag at index " + lastIndex?.index
+            "Ignored effects flag at index " + lastIndex
             + " since a builtin effect option has been used " +
               "(e.g. reverb-volume)"
           )
@@ -694,15 +634,16 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "--hard-stop":     case "/hard-stop":
       case "-nose":           case "/nose":
       case "-hs":             case "/hs":
-      case regexes.hardStop.test(arg) && arg: {
-        lastIndex = arg.match(regexes.hardStop)?.groups;
-        const number = Number(lastIndex?.index);
+      case isIndexedParam(
+        arg, "no-smooth-end", "nose", "hard-stop", "hs"
+      ) && arg: {
+        const number = Number(lastIndex);
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(number, isStdout);
         if (isExternal === false) {
           log(WARNING_LVL,
             "Ignored no-smooth-end flag at index "
-            + lastIndex?.index +
+            + lastIndex +
             " since a builtin effect option has been used " +
               "(e.g. reverb-volume)"
           )
@@ -710,14 +651,13 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         }
         Options.hardStop(number)
         log(INFO_LVL,
-          "Set no-smooth-end flag at index " + lastIndex?.index
+          "Set no-smooth-end flag at index " + lastIndex
         )
         break;
       }
       case "--loop": case "/loop":
       case "-l":     case "/l":
-      case regexes.loop.test(arg) && arg: {
-        lastIndex = arg.match(regexes.loop)?.groups;
+      case isIndexedParam(arg, "loop", "l") && arg: {
         setLoopParameterValue(
           "loop", nextArg, lastIndex,
           Options.loopAmount
@@ -726,10 +666,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--loop-start": case "/loop-start":
       case "-ls":          case "/ls":
-      case regexes.loopStart.test(arg) && arg: {
+      case isIndexedParam(arg, "loop-start", "ls") && arg: {
         setLoopParameter(
-          "loop-start",
-          arg, nextArg, regexes.loopStart,
+          "loop-start", nextArg,
           setLoopParameterTimeValue,
           true, Options.loopStart
         )
@@ -737,10 +676,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--loop-end": case "/loop-end":
       case "-le":        case "/le":
-      case regexes.loopEnd.test(arg) && arg: {
+      case isIndexedParam(arg, "loop-end", "le") && arg: {
         setLoopParameter(
-          "loop-end",
-          arg, nextArg, regexes.loopEnd,
+          "loop-end", nextArg,
           setLoopParameterTimeValue,
           true, Options.loopEnd
         )
@@ -761,10 +699,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--loop-fade-start": case "/loop-fade-start":
       case "-lFs":              case "/lFs":
-      case regexes.loopFadeStart.test(arg) && arg: {
+      case isIndexedParam(arg, "loop-fade-start", "lFs") && arg: {
         setLoopParameter(
-          "loop-fade-start",
-          arg, nextArg, regexes.loopFadeStart,
+          "loop-fade-start", nextArg,
           setLoopParameterValue,
           true, Options.loopFadeStart
         )
@@ -772,10 +709,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "--loop-fade-duration": case "/loop-fade-duration":
       case "-lFd":                 case "/lFd":
-      case regexes.loopFadeDuration.test(arg) && arg: {
+      case isIndexedParam(arg, "loop-fade-duration", "lFd") && arg: {
         setLoopParameter(
-          "loop-fade-duration",
-          arg, nextArg, regexes.loopFadeDuration,
+          "loop-fade-duration", nextArg,
           setLoopParameterValue,
           true, Options.loopFadeDuration
         )
@@ -784,10 +720,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "--loop-fade-interpolation":
       case "/loop-fade-interpolation":
       case "-lFi": case "/lFi":
-      case regexes.loopFadeInterpolation.test(arg) && arg: {
+      case isIndexedParam(arg, "loop-fade-interpolation", "lFi") && arg: {
         setLoopParameter(
-          "loop-fade-interpolation",
-          arg, nextArg, regexes.loopFadeInterpolation,
+          "loop-fade-interpolation", nextArg,
           setLoopFadeInterpolation
         )
         i++; break;
@@ -897,7 +832,7 @@ const setFile = async ({
       return;
   }
 
-  const inputIndex = Number(lastIndex?.index ?? 0);
+  const inputIndex = Number(lastIndex ?? 0);
   const logMessages = {
     /**
      * Generates a generic log message
@@ -927,7 +862,7 @@ const setFile = async ({
       return `Replaced soundfont file from "${original}" to "${newOne}" at index ${index}`;
     }
   };
-  if (lastIndex?.index || lastParam) {
+  if (lastIndex || lastParam) {
     return createPromise(async () => {
       let needsToBeReplaced = false;
 
@@ -1018,8 +953,8 @@ const isRealNumber = (number, checkForInfinity) => {
  */
 const getArgInfos = (arg, lastIndex) => ({
   number: Number(arg),
-  lastIndexNumber: Number(lastIndex?.index),
-  lastIndexString: lastIndex?.index ?? "0"
+  lastIndexNumber: Number(lastIndex),
+  lastIndexString: lastIndex ?? "0"
 });
 const maybeTruncate = string => (
   string.length > 20
@@ -1050,7 +985,7 @@ const setLoopParameterValue = (name, arg, lastIndex, func) => {
   // loop-fade-start only
   if (name === "loop-fade-start" && Number.isNaN(number)) {
     func.call(Options, lastIndexNumber, 1)
-    log(INFO_LVL, `Set ${name} to 1 at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to 1 at ${lastIndex} index`)
     return;
   }
   // Negative conversion
@@ -1072,7 +1007,7 @@ const setLoopParameterValue = (name, arg, lastIndex, func) => {
   }
   if (isRealNumber(number)) {
     func.call(Options, lastIndexNumber, number)
-    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
     return;
   }
   console.error(
@@ -1122,7 +1057,7 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
       process.exit(1)
   }
   Options.loopFadeInterpolation(lastIndexNumber, type)
-  log(INFO_LVL, `Set loop-fade-interpolation to ${arg} at ${lastIndex?.index} index`)
+  log(INFO_LVL, `Set loop-fade-interpolation to ${arg} at ${lastIndex} index`)
 }
 /**
  * Sets a loop parameter that uses seconds or a time format
@@ -1158,12 +1093,12 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
 
     const seconds = argAsADate / 1000;
     func.call(Options, lastIndexNumber, seconds)
-    log(INFO_LVL, `Set ${name} to ${seconds} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to ${seconds} at ${lastIndex} index`)
     return;
   }
   if (isRealNumber(number, true) && !(number < 0)) {
     func.call(Options, lastIndexNumber, number)
-    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
     return;
   }
   console.error(
@@ -1198,7 +1133,7 @@ const setSampleRate = (arg, lastIndex, isStdout) => {
       return;
     }
     Options.sampleRate(lastIndexNumber, number)
-    log(INFO_LVL, `Set sample-rate to ${number} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set sample-rate to ${number} at ${lastIndex} index`)
     return;
   }
   console.error(
@@ -1324,7 +1259,7 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
     if (testFunctions.stdout(newArgumentsSet)) {
       Options.stdoutEffects = list;
     } else {
-      Options.effects(Number(lastIndex?.index), list)
+      Options.effects(Number(lastIndex), list)
     }
     log(INFO_LVL, "Set list of SoX effects as", JSON.stringify(list))
     return;
@@ -1352,7 +1287,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     const dBNumber = 10**(dB/(name === "volume" ? 10 : 20));
 
     func.call(Options, lastIndexNumber, dBNumber)
-    log(INFO_LVL, `Set ${name} to ${dBNumber} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to ${dBNumber} at ${lastIndex} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
@@ -1360,7 +1295,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     const toFloat = percentage / 100;
 
     func.call(Options, lastIndexNumber, toFloat)
-    log(INFO_LVL, `Set ${name} to ${toFloat} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to ${toFloat} at ${lastIndex} index`)
     return;
   }
   // Negative conversion
@@ -1374,7 +1309,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
   }
   if (isRealNumber(number, true)) {
     func.call(Options, lastIndexNumber, number)
-    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex?.index} index`)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
     return;
   }
   console.error(

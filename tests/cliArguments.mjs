@@ -25,8 +25,8 @@ if (process.argv.includes("-h")) {
 const indexOfParameter = "2";
 if (!process.argv.includes("--verbose")) {
   const args = [
-    "-i2", manualMidi,        // Manually adding files
-    "-i2", manualSoundfont,
+    "-i:2", manualMidi,        // Manually adding files
+    "-i:2", manualSoundfont,
     ...globs.midis,           // Automatically adding files
     ...globs.soundfonts,
     ...generalCliArguments(),
@@ -41,7 +41,7 @@ if (!process.argv.includes("--verbose")) {
     if (args[i] === "-lf"
         || args[i] === "--enable-spessasynth-warn-logging") continue;
     if (args[i].startsWith("-")) {
-      positionalArgs.push(args[i]+indexOfParameter)
+      positionalArgs.push(args[i]+":"+indexOfParameter)
       continue;
     }
     positionalArgs.push(args[i])

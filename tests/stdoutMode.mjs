@@ -28,8 +28,8 @@ process.on("SIGINT", () => {
 // Other arguments and run it
 const args = [
   "--enable-spessasynth-warn-logging",
-  "-i2", manualMidi,      // Manually adding files
-  "-i2", manualSoundfont,
+  "-i:2", manualMidi,      // Manually adding files
+  "-i:2", manualSoundfont,
   ...globs.midis,         // Automatically adding files
   ...globs.soundfonts,
   ...generalCliArguments("stdout"),
