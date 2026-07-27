@@ -20,20 +20,6 @@
  */
 
 /**
- * @function checkValue
- * @desc type checker
- * @param {*} value - any kind of value to check
- * @param {String} requiredType - type that must be correct
- * @throws {TypeError} - if it's not of valid type
- */
-function checkValue(value, requiredType) {
-  if (requiredType !== "array" || !Array.isArray(value)) {
-    if (typeof value !== requiredType) {
-      throw new TypeError(`${value} is not of type ${requiredType}`)
-    }
-  }
-}
-/**
  * Adds/updates properties with an index to Options class
  * @param {(MainOptions|EffectsOptions)} that
  * @param {Array<String|Number|*>} list things to add
@@ -63,7 +49,6 @@ class MainOptions {
    * @throws {TypeError} if index is not a number or name is not a string
    */
   static addIndexedStringValue(name, index, value) {
-    checkValue(index, "number")
     if (name === "hardStop") value = true;
 
     this._manageOption({
@@ -148,7 +133,6 @@ class EffectsOptions {
    * @param {Array} arrayOfObjects - an array of object effects
    */
   static effects(index, arrayOfObjects) {
-    checkValue(index, "number")
     const _index = Number.isNaN(index) ? undefined : index;
     addIndexedProperties(this, [
       "effects", _index, arrayOfObjects,
@@ -175,7 +159,6 @@ class EffectsOptions {
    * @param {Number} number - the volume value as a float or integer
    */
   static reverbVolume(index, number) {
-    checkValue(index, "number")
     const _index = !Number.isNaN(index) ? index : undefined;
     addIndexedProperties(this, [
       "reverbVolume", _index, number,
