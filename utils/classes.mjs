@@ -55,6 +55,13 @@ function addIndexedProperties(that, list) {
  * @mixin MainOptions
  */
 class MainOptions {
+  /**
+   * Adds a parameter string value by index
+   * @param {String}                  name property's name
+   * @param {(Number|NaN)}            index song's index
+   * @param {(String|Number|Boolean)} value string to add
+   * @throws {TypeError} if index is not a number or name is not a string
+   */
   static addIndexedStringValue(name, index, value) {
     checkValue(index, "number")
     if (name === "hardStop") value = true;
@@ -65,17 +72,32 @@ class MainOptions {
       value
     }, true, true);
   }
+  /** @alias addIndexedStringValue */
   static addIndexedNumberValue  = this.addIndexedStringValue;
+  /** @alias addIndexedStringValue */
   static addIndexedBooleanValue = this.addIndexedStringValue;
 
+  /**
+   * Adds a parameter boolean value
+   * @param {String}           name  property's name
+   * @param {(Boolean|String)} value boolean to add
+   * @throws {TypeError} if name is not a string
+   */
   static addBooleanValue(name, value) {
     if (name === "daemon") value = true;
     if (name === "dryRun") value = "";
 
     this._manageOption({ property: name, value })
   }
+  /** @alias addBooleanValue */
   static addStringValue = this.addBooleanValue;
 
+  /**
+   * Adds a parameter number value
+   * @param {String} name  property's name
+   * @param {Number} value boolean to add
+   * @throws {TypeError} if name is not a string
+   */
   static addNumberValue(name, value) {
     let isSetter;
     switch (name) {
@@ -87,6 +109,12 @@ class MainOptions {
       property: name, value, setter: isSetter
     })
   }
+  /**
+   * Retrieves a property's value
+   * @param {String} name  property's name
+   * @return {*} value of the property
+   * @throws {TypeError} if name is not a string
+   */
   static getValue(name) {
     return this._manageOption({ property: name }, false);
   }
