@@ -88,11 +88,20 @@ function log(level, ...messages) {
   let date = nowInstant?.().toString();
   date ??= new Date().toISOString();
   const logOptions = this?.verboseLevel ? this : Options;
+  const verboseLevel = (
+    logOptions === Options
+      ? logOptions.getValue("verboseLevel")
+      : logOptions.verboseLevel
+  );
+  const logFilePath = (
+    logOptions === Options
+      ? logOptions.getValue("logFilePath")
+      : logOptions.logFilePath
+  );
 
   if (Number.isNaN(debugLevelSpesso)
-      && logOptions.verboseLevel === undefined) return;
-  if (debugLevelSpesso < level
-      || logOptions.verboseLevel < level) return;
+      && verboseLevel === undefined) return;
+  if (debugLevelSpesso < level || verboseLevel < level) return;
 
   const message = [
     (this === logOptions ? "\r" : "") +
@@ -123,7 +132,7 @@ function log(level, ...messages) {
   }
   console.error(...message)
 
-  const path = debugFileSpesso || logOptions.logFilePath;
+  const path = debugFileSpesso || logFilePath;
   if (!path) return;
 
   const messageLength = message.length,

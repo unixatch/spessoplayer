@@ -520,8 +520,8 @@ async function fileModeMain() {
     const workerData = {
       progressBuffers, options, FO_CONSTANTS,
       index, filesListLength,
-      verboseLevel: Options.verboseLevel,
-      logFilePath:  Options.logFilePath,
+      verboseLevel: Options.getValue("verboseLevel"),
+      logFilePath:  Options.getValue("logFilePath" ),
       spessasynthLogging
     };
     const existentWorker = workers[currentThread] !== undefined;

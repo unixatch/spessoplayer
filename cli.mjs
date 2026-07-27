@@ -195,7 +195,7 @@ async function manageVerboseOptions({
     )
     break;
   }
-  return Options.verboseLevel !== undefined;
+  return Options.getValue("verboseLevel") !== undefined;
 }
 const setFilePromises = [];
 const {
@@ -333,13 +333,13 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   const setFileOutputs = (type, index, arg) => {
     isStdout ??= testFunctions.stdout(newArgumentsSet);
     if (isStdout) stdoutFileModeConflictError()
-    if (Options.daemonModeEnabled) {
+    if (Options.getValue("daemon")) {
       log(WARNING_LVL,
         `Ignoring ${arg} since daemon mode is enabled`
       )
       return;
     }
-    Options.fileOutputs(index, arg)
+    Options.addIndexedStringValue("fileOutputs", index, arg)
     log(INFO_LVL, "Set file output to " + type)
   };
   /**
@@ -441,8 +441,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 
       case "|": { groupSeparator = true; break; }
       case "-": {
-        if (Options.isFileMode()) stdoutFileModeConflictError()
-        Options.toStdout = true;
+        if (Options.getValue("fileOutputs")) stdoutFileModeConflictError()
+        Options.addBooleanValue("toStdout", true)
         log(INFO_LVL, "Set stdout mode")
         break;
       }
@@ -478,19 +478,19 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "--confirm": case "/confirm":
       case "-a":        case "/a":
       case "-c":        case "/c": {
-        Options.confirmation = true;
+        Options.addBooleanValue("confirmation", true)
         log(INFO_LVL, "Set confirmation flag")
         break;
       }
       case "--no-table": case "/no-table":
       case "-nt":        case "/nt": {
-        Options.noTable = true;
+        Options.addBooleanValue("noTable", true)
         log(INFO_LVL, "Set no-table flag")
         break;
       }
       case "--no-progress": case "/no-progress":
       case "-np":           case "/np": {
-        Options.noProgress = true;
+        Options.addBooleanValue("noProgress", true)
         log(INFO_LVL, "Set no-progress flag")
         break;
       }
@@ -498,7 +498,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-D":       case "/D": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
-          Options.daemonMode()
+          Options.addBooleanValue("daemon")
           log(INFO_LVL, "Set daemon mode")
           break;
         }
@@ -513,7 +513,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-dr":       case "/dr":
       case "-t":        case "/t":
       case "-0":        case "/0": {
-        Options.dryRun()
+        Options.addStringValue("dryRun")
         log(INFO_LVL, "Set dry-run mode")
         break;
       }
@@ -536,7 +536,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case "-U":           case "/U": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
-          Options.showUsage = true;
+          Options.addBooleanValue("showUsage", true)
           log(INFO_LVL, "Set show-usage flag")
           break;
         }
@@ -593,7 +593,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case isIndexedParam(arg, "volume", "vol") && arg: {
         setVolumeParameter(
           "volume", nextArg, lastIndex,
-          Options.volume
+          Options.addIndexedNumberValue
+            .bind(Options, "volume")
         )
         i++; break;
       }
@@ -663,7 +664,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           )
           break;
         }
-        Options.hardStop(number)
+        Options.addIndexedBooleanValue("hardStop", number)
         log(INFO_LVL,
           "Set no-smooth-end flag at index " + lastIndex
         )
@@ -674,7 +675,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case isIndexedParam(arg, "loop", "l") && arg: {
         setLoopParameterValue(
           "loop", nextArg, lastIndex,
-          Options.loopAmount
+          Options.addIndexedNumberValue
+            .bind(Options, "loopAmount")
         )
         i++; break;
       }
@@ -683,8 +685,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case isIndexedParam(arg, "loop-start", "ls") && arg: {
         setLoopParameter(
           "loop-start", nextArg,
-          setLoopParameterTimeValue,
-          true, Options.loopStart
+          setLoopParameterTimeValue, true,
+          Options.addIndexedNumberValue
+            .bind(Options, "loopStart")
         )
         i++; break;
       }
@@ -693,8 +696,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case isIndexedParam(arg, "loop-end", "le") && arg: {
         setLoopParameter(
           "loop-end", nextArg,
-          setLoopParameterTimeValue,
-          true, Options.loopEnd
+          setLoopParameterTimeValue, true,
+          Options.addIndexedNumberValue
+            .bind(Options, "loopEnd")
         )
         i++; break;
       }
@@ -707,7 +711,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           )
           break;
         }
-        Options.loopFade = true;
+        Options.addBooleanValue("loopFade", true)
         log(INFO_LVL, "Set loop-fade flag")
         break;
       }
@@ -716,8 +720,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case isIndexedParam(arg, "loop-fade-start", "lFs") && arg: {
         setLoopParameter(
           "loop-fade-start", nextArg,
-          setLoopParameterValue,
-          true, Options.loopFadeStart
+          setLoopParameterValue, true,
+          Options.addIndexedNumberValue
+            .bind(Options, "loopFadeStart")
         )
         i++; break;
       }
@@ -726,8 +731,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       case isIndexedParam(arg, "loop-fade-duration", "lFd") && arg: {
         setLoopParameter(
           "loop-fade-duration", nextArg,
-          setLoopParameterValue,
-          true, Options.loopFadeDuration
+          setLoopParameterValue, true,
+          Options.addIndexedNumberValue
+            .bind(Options, "loopFadeDuration")
         )
         i++; break;
       }
@@ -1070,7 +1076,9 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
       )
       process.exit(1)
   }
-  Options.loopFadeInterpolation(lastIndexNumber, type)
+  Options.addIndexedStringValue(
+    "loopFadeInterpolation", lastIndexNumber, type
+  )
   log(INFO_LVL, `Set loop-fade-interpolation to ${arg} at ${lastIndex} index`)
 }
 /**
@@ -1142,11 +1150,13 @@ const setSampleRate = (arg, lastIndex, isStdout) => {
   }
   if (isRealNumber(number, true)) {
     if (isStdout) {
-      Options.stdoutSampleRate = number;
+      Options.addNumberValue("sampleRate", number)
       log(INFO_LVL, `Set sample-rate for all to ${number} because output is stdout`)
       return;
     }
-    Options.sampleRate(lastIndexNumber, number)
+    Options.addIndexedNumberValue(
+      "sampleRate", lastIndexNumber, number
+    )
     log(INFO_LVL, `Set sample-rate to ${number} at ${lastIndex} index`)
     return;
   }
@@ -1172,7 +1182,7 @@ const setVerboseLevel = async (arg) => {
     isRealNumber(number)
     && !(number < 0 && number > debugMaxLevel)
   ) {
-    Options.verboseLevel = number;
+    Options.addNumberValue("verboseLevel", number)
     if (isFromUser) {
       log(INFO_LVL,
         `Set verbose level asked by the user to ${number}`
@@ -1193,21 +1203,21 @@ const setVerboseLevel = async (arg) => {
 const setFormat = arg => {
   switch (arg) {
     case "wav": case "wave": {
-      Options.format = "wave";
+      Options.addStringValue("format", "wave")
       log(INFO_LVL, "Set stdout format to 'wave'")
       return;
     }
     case "flac":
     case "opus":
     case "mp3": {
-      Options.format = arg;
+      Options.addStringValue("format", arg)
       log(INFO_LVL, `Set stdout format to '${arg}'`)
       return;
     }
     case "s16le": case "f32le":
     case "pcm": {
       const formatToUse = (arg === "f32le") ? "f32le" : "pcm";
-      Options.format = formatToUse;
+      Options.addStringValue("format", formatToUse)
       log(INFO_LVL, `Set stdout format to "${formatToUse}"`)
       return;
     }
@@ -1344,7 +1354,7 @@ const setMaxThreads = async (arg) => {
     && number <= (await import("node:os")).availableParallelism() * 2
     && number >= 1
   ) {
-    Options.maxThreads = number;
+    Options.addNumberValue("maxThreads", number)
     log(INFO_LVL, `Set max-threads to ${number}`)
     return;
   }
@@ -1364,12 +1374,12 @@ const setProgressDelay = (arg) => {
 
   // Default
   if (Number.isNaN(number)) {
-    Options.progressDelay = 500;
+    Options.addNumberValue("progressDelay", 500)
     log(INFO_LVL, `Set progress-delay to 500`)
     return;
   }
   if (isRealNumber(number, true) && number >= 50) {
-    Options.progressDelay = number;
+    Options.addNumberValue("progressDelay", number)
     log(INFO_LVL, `Set progress-delay to ${number}`)
     return;
   }
@@ -1386,7 +1396,7 @@ const setProgressDelay = (arg) => {
  */
 const setLogFilePath = arg => {
   const pathToUse = arg || "./spesso.log";
-  Options.logFilePath = pathToUse;
+  Options.addStringValue("logFilePath", pathToUse)
   log(INFO_LVL, `Set log-file path to ${pathToUse}`)
 }
 /**
