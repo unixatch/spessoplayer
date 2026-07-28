@@ -470,7 +470,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     this.#checkValueAndExistence(isSoundfont, "boolean")
     this.#checkValueAndExistence(replace, "boolean")
     const groups = this.#options.files,
-          parsedPath = parse(string);
+          startOfExt = string.lastIndexOf(".");
+    const stringWithoutExt = (
+      startOfExt === -1
+        ? string : string.substring(0, startOfExt)
+    );
     groups[index] ??= new Set();
 
     if (isSoundfont) {
@@ -480,24 +484,21 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
       if (oldIndexZero === groups[index].getIndex(0)) return;
       if (replace) {
-        const oldIndexZeroWithoutExt = join(parse(oldIndexZero).dir, parse(oldIndexZero).name);
+        const startOfExt = oldIndexZero.lastIndexOf(".");
+        const oldIndexZeroWithoutExt = (
+          startOfExt === -1
+            ? oldIndexZero : oldIndexZero.substring(0, startOfExt)
+        );
         this.#listOfSoundfonts.delete(oldIndexZeroWithoutExt)
       }
-      this.#listOfSoundfonts.set(
-        join(parsedPath.dir, parsedPath.name),
-        index
-      )
+      this.#listOfSoundfonts.set(stringWithoutExt, index)
       return;
     }
     const oldSize = groups[index].size;
     groups[index].add(string)
 
     if (oldSize === groups[index].size) return;
-    this.#listOfSongs.push(
-      index,
-      string,
-      join(parsedPath.dir, parsedPath.name)
-    )
+    this.#listOfSongs.push(index, string, stringWithoutExt)
   }
   /**
    * Gives the amount of songs to do
@@ -620,15 +621,16 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
     if (group.size > 2) return false;
     if (group.size < 2) {
-      const {
-        dir: fileDir, name: fileName
-      } = parse(group.getIndex(0));
-      const pathUpToName = join(fileDir, fileName);
-
-      const noExtNewArguments = [...argvWithoutFileExts];
-      const indexOfFile = noExtNewArguments.indexOf(pathUpToName);
-      delete noExtNewArguments[indexOfFile]
-      return noExtNewArguments.includes(pathUpToName);
+      const fileString = group.getIndex(0),
+            startOfExt = fileString.lastIndexOf(".");
+      const pathUpToName = (
+        startOfExt === -1
+          ? fileString : fileString.substring(0, startOfExt)
+      );
+      return argvWithoutFileExts.includes(
+        pathUpToName,
+        argvWithoutFileExts.indexOf(pathUpToName) + 1
+      );
     }
 
     const [soundfont, midi] = [group.getIndex(0), group.getIndex(1)];

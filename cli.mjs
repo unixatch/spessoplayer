@@ -33,8 +33,13 @@ let argvWithoutFileExts = new Promise(resolve => {
   const newArguments = [...new Set(process.argv.slice(2)).values()],
         newArgumentsLength = newArguments.length;
   for (let i = 0; i < newArgumentsLength; i++) {
-    const parsedElement = parse(newArguments[i]);
-    newArguments[i] = join(parsedElement.dir, parsedElement.name);
+    const element = newArguments[i];
+    if (element.startsWith("-")
+        || element.startsWith("/")) continue;
+
+    const startOfExt = element.lastIndexOf(".");
+    if (startOfExt === -1) continue;
+    newArguments[i] = element.substring(0, startOfExt);
   }
   resolve(newArguments)
 });
@@ -815,12 +820,12 @@ const setFile = async ({
    * @return {Boolean} - whether or not it has found a similar file inside process.argv
    */
   function checkForIdenticalName(path) {
-    const indexOfPath = newArguments.indexOf(path);
-    const pathUpToName = join(parse(path).dir, parse(path).name);
-    const noExtNewArguments = [...argvWithoutFileExts];
-
-    delete noExtNewArguments[indexOfPath]
-    return noExtNewArguments.includes(pathUpToName);
+    const startOfExt = path.lastIndexOf(".");
+    return argvWithoutFileExts.includes(
+      // Up to extension and ignores the first occurrence
+      startOfExt === -1 ? path : path.substring(0, startOfExt),
+      newArguments.indexOf(path) + 1
+    );
   }
   /**
    * Returns either a new Promise or attaches a .then Promise to an older one
@@ -911,8 +916,12 @@ const setFile = async ({
        that's why it's seperated otherwise it creates
        a new Set when it already exists)
     */
-    const pathUpToName = join(parse(arg).dir, parse(arg).name);
-    const foundIndex = Options.searchAddedFile(pathUpToName, typeOfFile);
+    const startOfExt = arg.lastIndexOf(".");
+    const foundIndex = Options.searchAddedFile(
+      startOfExt === -1
+        ? arg : arg.substring(0, startOfExt),
+      typeOfFile
+    );
     if (typeof foundIndex === "number") {
       Options.files(foundIndex, arg, !typeOfFile)
       log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, foundIndex))
@@ -931,11 +940,12 @@ const setFile = async ({
     // or maybe to the last automatic group
     // if a file has been added automatically last time
     if (lastAutomaticFile) automaticFileCheck: {
-      const {
-        dir: fileDir, name: fileName
-      } = parse(lastAutomaticFile);
-      const pathUpToName = join(fileDir, fileName);
-      let indexOfGroup = Options.searchAddedFile(pathUpToName);
+      const startOfExt = lastAutomaticFile.lastIndexOf(".");
+      let indexOfGroup = Options.searchAddedFile(
+        startOfExt === -1
+          ? lastAutomaticFile
+          : lastAutomaticFile.substring(0, startOfExt)
+      );
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
 
       if (Options.isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup)) {
