@@ -52,14 +52,6 @@ function endsWithSupportedExtension(arg) {
   );
 }
 const regexes = {
-  // These look like --option or --option[=n]
-  logFile: new RegExp([
-    "^(?:--log-file(?:=(?<path>\\w+))*",
-    "|\\/log-file(?:=(?<path>\\w+))*",
-    "|-lf(?:=(?<path>\\w+))*",
-    "|\\/lf(?:=(?<path>\\w+))*)$"
-  ].join("")),
-
   //                           [HH:]MM:SS.sss
   ISOTimestamp: /(?<optional>(?:\d{2}:)*)*\d{2}:\d{2}(\.\d)*/,
   areDecibels: /^(?:-|\+*)[\d.]+dB/,
@@ -175,27 +167,26 @@ async function manageVerboseOptions({
   } else log(INFO_LVL, debugLevelSpessoMsg)
 
   // +++ logFile section +++
+  if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
+  let indexOfEqualSign;
   for (let index = 0; index < newArgumentsLength; index++) {
-    if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
-
     const {
       [index]: argvString,
       [index]: { 0: firstChar }
     } = newArguments;
     if (firstChar !== "-" && firstChar !== "/") continue;
     if (
-      !argvString.startsWith("--log-file") &&
-      !argvString.startsWith("/log-file") &&
-      !argvString.startsWith("-lf") &&
-      !argvString.startsWith("/lf")
+      !(argvString.startsWith("--log-file") && (indexOfEqualSign = 10)) &&
+      !(argvString.startsWith("/log-file" ) && (indexOfEqualSign = 9 )) &&
+      !(argvString.startsWith("-lf") && (indexOfEqualSign = 3)) &&
+      !(argvString.startsWith("/lf") && (indexOfEqualSign = 3))
     ) continue;
 
     if (!isVerboseLevelSet) await setVerboseLevel(String(INFO_LVL))
     setLogFilePath(
-      argvString
-        ?.match(regexes.logFile)
-          .groups
-          .path
+      argvString[indexOfEqualSign] !== undefined
+        ? argvString.slice(indexOfEqualSign + 1)
+        : undefined
     )
     break;
   }
@@ -407,22 +398,6 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     } = newArguments;
 
     switch (arg) {
-      // Skip verboseLevel, logFilePath
-      // and spessasynthLogging flags
-      case "--verbose":  case "/verbose":
-      case "-v":         case "/v": {
-        const nextArgument = Number(nextArg);
-        // If it also has been provided a valid argument
-        if (!Number.isNaN(nextArgument)) i++
-        break;
-      }
-      case "--log-file": case "/log-file":
-      case "-lf":        case "/lf":
-      case regexes.logFile.test(arg) && arg: break;
-      case "--enable-spessasynth-logging":
-      case "--enable-spessasynth-warn-logging":
-      case "--enable-spessasynth-info-logging": break;
-
       case (
         (lastParam === "input" || !lastParam) &&
         !endsWithSupportedExtension(arg) &&
@@ -442,7 +417,6 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         runSetFile(nextArg); i++
         break;
       }
-
       case "|": { groupSeparator = true; break; }
       case "-": {
         if (Options.getValue("fileOutputs")) stdoutFileModeConflictError()
@@ -751,6 +725,26 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
+      // Skip verboseLevel, logFilePath
+      // and spessasynthLogging flags
+      case "--verbose":  case "/verbose":
+      case "-v":         case "/v": {
+        const nextArgument = Number(nextArg);
+        // If it also has been provided a valid argument
+        if (!Number.isNaN(nextArgument)) i++
+        break;
+      }
+      case "--log-file": case "/log-file":
+      case "-lf":        case "/lf":
+      case (
+        arg.startsWith("--log-file") ||
+        arg.startsWith("/log-file")  ||
+        arg.startsWith("-lf") ||
+        arg.startsWith("/lf")
+      ) && arg: break;
+      case "--enable-spessasynth-logging":
+      case "--enable-spessasynth-warn-logging":
+      case "--enable-spessasynth-info-logging": break;
 
       default: {
         if (!isVerboseLevelSet) {
