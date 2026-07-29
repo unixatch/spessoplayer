@@ -28,21 +28,20 @@ import {
   log, Options
 } from "./utils/utils.mjs"
 
-/** @type {(Promise<String[]>|String[])} */
-let argvWithoutFileExts = new Promise(resolve => {
-  const newArguments = [...new Set(process.argv.slice(2)).values()],
-        newArgumentsLength = newArguments.length;
-  for (let i = 0; i < newArgumentsLength; i++) {
-    const element = newArguments[i];
+/** @type {String[]} */
+const argvWithoutFileExts = [...new Set(process.argv.slice(2)).values()];
+{
+  const length = argvWithoutFileExts.length;
+  for (let i = 0; i < length; i++) {
+    const element = argvWithoutFileExts[i];
     if (element.startsWith("-")
         || element.startsWith("/")) continue;
 
     const startOfExt = element.lastIndexOf(".");
     if (startOfExt === -1) continue;
-    newArguments[i] = element.substring(0, startOfExt);
+    argvWithoutFileExts[i] = element.substring(0, startOfExt);
   }
-  resolve(newArguments)
-});
+}
 function endsWithSupportedExtension(arg) {
   return (
        arg.endsWith(".opus")  || arg.endsWith(".mp3" )
@@ -906,7 +905,7 @@ const setFile = async ({
   }
 
   // --- Automatic addition of files section ---
-  return createPromise(async () => {
+  return createPromise(() => {
     /*
       ⏳ if one group inside Options.all
          has the same basename as arg,
@@ -927,7 +926,6 @@ const setFile = async ({
       log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, foundIndex))
       return;
     }
-    if (argvWithoutFileExts instanceof Promise) argvWithoutFileExts = await argvWithoutFileExts;
     // Creates new Sets for identical basename files
     if (checkForIdenticalName(arg)) {
       const amountOfGroups = Options.amountOfGroups;
