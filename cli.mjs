@@ -157,13 +157,16 @@ async function manageVerboseOptions({
     if (indexOfVerboseLevel === -1) break verboseLevelBlock;
 
     isVerboseLevelSet = newArguments[indexOfVerboseLevel];
+    const indexOfNextArg = indexOfVerboseLevel+1;
     const argumentOfParameter = Number(
-      newArguments[indexOfVerboseLevel+1]
+      newArguments[indexOfNextArg]
     );
     await setVerboseLevel(
-      Number.isNaN(argumentOfParameter)
-        ? undefined : argumentOfParameter
+      !Number.isNaN(argumentOfParameter)
+        ? (delete newArguments[indexOfNextArg], argumentOfParameter)
+        : undefined
     )
+    delete newArguments[indexOfVerboseLevel]
   } else log(INFO_LVL, debugLevelSpessoMsg)
 
   // +++ logFile section +++
@@ -172,8 +175,10 @@ async function manageVerboseOptions({
   for (let index = 0; index < newArgumentsLength; index++) {
     const {
       [index]: argvString,
-      [index]: { 0: firstChar }
+      [index]: { 0: firstChar } = 0
     } = newArguments;
+    if (!argvString) continue;
+
     if (firstChar !== "-" && firstChar !== "/") continue;
     if (
       !(argvString.startsWith("--log-file") && (indexOfEqualSign = 10)) &&
@@ -188,6 +193,7 @@ async function manageVerboseOptions({
         ? argvString.slice(indexOfEqualSign + 1)
         : undefined
     )
+    delete newArguments[index]
     break;
   }
   return Options.getValue("verboseLevel") !== undefined;
@@ -396,6 +402,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         [i]: arg,
       [i+1]: nextArg
     } = newArguments;
+    if (!arg) { if (!nextArg) i++; continue; }
 
     switch (arg) {
       case (
