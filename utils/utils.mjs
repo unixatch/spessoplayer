@@ -633,8 +633,20 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       return extLessFiles[pathUpToName] > 1;
     }
 
-    const [soundfont, midi] = [group.getIndex(0), group.getIndex(1)];
-    return parse(soundfont).name === parse(midi).name;
+    let startOfExt,
+        midi      = group.getIndex(1),
+        soundfont = group.getIndex(0);
+    midi = midi.substring(
+      midi.lastIndexOf(sep) + 1,
+      (startOfExt = midi.lastIndexOf(".")) !== -1
+        ? startOfExt : midi.length
+    );
+    soundfont = soundfont.substring(
+      soundfont.lastIndexOf(sep) + 1,
+      (startOfExt = soundfont.lastIndexOf(".")) !== -1
+        ? startOfExt : soundfont.length
+    );
+    return soundfont === midi;
   }
   /**
    * Creates a new Object similar to this.#options but with only
