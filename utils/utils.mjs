@@ -498,7 +498,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     groups[index].add(string)
 
     if (oldSize === groups[index].size) return;
+    const length = this.#listOfSongs.length;
     this.#listOfSongs.push(index, string, stringWithoutExt)
+    this.#listOfSongs[stringWithoutExt] = this.#listOfSongs[length];
   }
   /**
    * Gives the amount of songs to do
@@ -589,8 +591,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       return (indexOfGroup !== undefined) ? indexOfGroup : false;
     };
     const midiSearch = () => {
-      const indexOfName = this.#listOfSongs.indexOf(name);
-      return (indexOfName !== -1) ? this.#listOfSongs[indexOfName-2] : false;
+      const indexOfName = this.#listOfSongs[name];
+      return (indexOfName !== undefined) ? indexOfName : false;
     };
 
     if (isAMidiSearching === undefined) {
