@@ -142,9 +142,9 @@ async function manageVerboseOptions({
   DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
   debugLevelSpessoMsg, debugFileSpessoMsg
 }) {
-  const newArguments = newArgs,
-        newArgumentsLength = newArguments.length;
-  let isVerboseLevelSet;
+  const newArguments = newArgs;
+  let isVerboseLevelSet,
+      newArgumentsLength = newArguments.length;
 
   // +++ verboseLevel section +++
   if (!DEBUG_LEVEL_SPESSO) verboseLevelBlock: {
@@ -163,16 +163,18 @@ async function manageVerboseOptions({
     const argumentOfParameter = Number(
       newArguments[indexOfNextArg]
     );
+    const notANumber = Number.isNaN(argumentOfParameter);
     await setVerboseLevel(
-      !Number.isNaN(argumentOfParameter)
+      !notANumber
         ? (delete newArguments[indexOfNextArg], argumentOfParameter)
         : undefined
     )
-    delete newArguments[indexOfVerboseLevel]
+    newArguments.splice(indexOfVerboseLevel, notANumber ? 1 : 2)
   } else log(INFO_LVL, debugLevelSpessoMsg)
 
   // +++ logFile section +++
   if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
+  newArgumentsLength = newArguments.length;
   let indexOfEqualSign;
   for (let index = 0; index < newArgumentsLength; index++) {
     const {
@@ -195,10 +197,13 @@ async function manageVerboseOptions({
         ? argvString.slice(indexOfEqualSign + 1)
         : undefined
     )
-    delete newArguments[index]
+    newArguments.splice(index, 1)
     break;
   }
-  return Options.getValue("verboseLevel") !== undefined;
+  return [
+    Options.getValue("verboseLevel") !== undefined,
+    newArguments
+  ];
 }
 const setFilePromises = [];
 const {
@@ -403,7 +408,6 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         [i]: arg,
       [i+1]: nextArg
     } = newArguments;
-    if (!arg) { if (!nextArg) i++; continue; }
 
     switch (arg) {
       case (

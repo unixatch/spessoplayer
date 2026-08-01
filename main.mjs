@@ -38,21 +38,7 @@ import {
   Options, FO_CONSTANTS
 } from "./cli.mjs"
 
-const argv = process.argv,
-      spessasynthLogging = { info: false, warning: false };
-if (argv.includes("--enable-spessasynth-logging")) {
-  spessasynthLogging.info = true;
-  spessasynthLogging.warning = true;
-}
-if (!spessasynthLogging.info && !spessasynthLogging.warning) {
-  if (argv.includes("--enable-spessasynth-info-logging")) {
-    spessasynthLogging.info = true;
-  }
-  if (argv.includes("--enable-spessasynth-warn-logging")) {
-    spessasynthLogging.warning = true;
-  }
-}
-let isVerboseLevelSet;
+let isVerboseLevelSet, argv;
 const {
   env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
 } = process;
@@ -63,10 +49,29 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
   log(INFO_LVL, debugFileSpessoMsg)
   isVerboseLevelSet = true;
 } else {
-  isVerboseLevelSet = await manageVerboseOptions({
+  [isVerboseLevelSet, argv] = await manageVerboseOptions({
     DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
     debugLevelSpessoMsg, debugFileSpessoMsg
   });
+}
+const spessasynthLogging = { info: false, warning: false };
+let spessaOptionIndex = argv.indexOf("--enable-spessasynth-logging");
+if (spessaOptionIndex !== -1) {
+  spessasynthLogging.info = true;
+  spessasynthLogging.warning = true;
+  argv.splice(spessaOptionIndex, 1)
+}
+if (!spessasynthLogging.info && !spessasynthLogging.warning) {
+  const infoOption = "--enable-spessasynth-info-logging",
+        warnOption = "--enable-spessasynth-warn-logging";
+  if ((spessaOptionIndex = argv.indexOf(infoOption)) !== -1) {
+    spessasynthLogging.info = true;
+    argv.splice(spessaOptionIndex, 1)
+  }
+  if ((spessaOptionIndex = argv.indexOf(warnOption)) !== -1) {
+    spessasynthLogging.warning = true;
+    argv.splice(spessaOptionIndex, 1)
+  }
 }
 
 addEvent({ eventType: "SIGINT" })
