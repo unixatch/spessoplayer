@@ -28,18 +28,20 @@ import {
   log, Options
 } from "./utils/utils.mjs"
 
-/** @type {String[]} */
-const argvWithoutFileExts = [...new Set(process.argv.slice(2)).values()];
+/** @type {Object<String, Number>} */
+const extLessFiles = Object.create(null);
 {
-  const length = argvWithoutFileExts.length;
-  for (let i = 0; i < length; i++) {
-    const element = argvWithoutFileExts[i];
-    if (element.startsWith("-")
-        || element.startsWith("/")) continue;
+  const length = process.argv.length;
+  for (let i = 2; i < length; i++) {
+    const element = process.argv[i];
+    if (element[0] === "-" || element[0] === "/"
+        || endsWithSupportedExtension(element)) continue;
 
     const startOfExt = element.lastIndexOf(".");
     if (startOfExt === -1) continue;
-    argvWithoutFileExts[i] = element.substring(0, startOfExt);
+
+    const noExt = element.substring(0, startOfExt);
+    extLessFiles[noExt] = extLessFiles[noExt] + 1 || 1;
   }
 }
 function endsWithSupportedExtension(arg) {
@@ -219,9 +221,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   let lastParam,
       lastIndex;
   const newArguments = args?.slice(2) ?? newArgs,
-        newArgumentsSet = new Set(newArguments),
-        noDuplicates = [...newArgumentsSet.values()];
-        /** @type {Map<String, (String|Symbol)>} */
+        newArgumentsSet = new Set(newArguments);
+  /** @type {Map<String, (String|Symbol)>} */
   const doneFileList = new Map(newArgumentsSet.entries()),
         doneSymbol = Symbol("ALREADY_DONE");
 
@@ -382,8 +383,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       setFile({
         indexOfSetFile: indexOfSetFile++,
         lastParam, lastIndex,
-        lastAutomaticFile, groupSeparator,
-        newArguments: noDuplicates, arg
+        groupSeparator,
+        lastAutomaticFile, arg
       })
     )
     if (!lastParam) lastAutomaticFile = arg;
@@ -808,8 +809,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 const setFile = async ({
   indexOfSetFile,
   lastParam, lastIndex,
-  lastAutomaticFile, groupSeparator,
-  newArguments, arg
+  groupSeparator,
+  lastAutomaticFile, arg
 }) => {
   /**
    * Checks for the same basename as the path given inside process.argv
@@ -821,11 +822,9 @@ const setFile = async ({
    */
   function checkForIdenticalName(path) {
     const startOfExt = path.lastIndexOf(".");
-    return argvWithoutFileExts.includes(
-      // Up to extension and ignores the first occurrence
-      startOfExt === -1 ? path : path.substring(0, startOfExt),
-      newArguments.indexOf(path) + 1
-    );
+    return extLessFiles[
+      startOfExt === -1 ? path : path.substring(0, startOfExt)
+    ] > 1;
   }
   /**
    * Returns either a new Promise or attaches a .then Promise to an older one
@@ -947,7 +946,7 @@ const setFile = async ({
       );
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
 
-      if (Options.isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup)) {
+      if (Options.isAutomaticBasenameGroup(extLessFiles, indexOfGroup)) {
         lastKnownGroupIndex++
         break automaticFileCheck;
       }

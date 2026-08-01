@@ -605,14 +605,17 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   }
   /**
    * Checks if a group is an automatic basename group
-   * @param {String[]} argvWithoutFileExts - process.argv without file extensions
-   * @param {Number} indexOfGroup - index of the group
+   * @param {Object<String, Number>} extLessFiles - an object that contains duplicates count per file
+   * @param {Number}                 indexOfGroup - index of the group
    * @return {(true|false)}
    * @throws {TypeError} - if index is not a number
    */
-  static isAutomaticBasenameGroup(argvWithoutFileExts, indexOfGroup) {
-    if (!Array.isArray(argvWithoutFileExts)) {
-      throw new TypeError("argvWithoutFileExts must be an array")
+  static isAutomaticBasenameGroup(extLessFiles, indexOfGroup) {
+    // FIXME: something is wrong with deno here
+    if (extLessFiles && extLessFiles?.prototype) {
+      throw new TypeError(
+        "extLessFiles must be null prototyped object"
+      )
     }
     if (typeof indexOfGroup !== "number") {
       throw new TypeError("index must be a number")
@@ -627,10 +630,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         startOfExt === -1
           ? fileString : fileString.substring(0, startOfExt)
       );
-      return argvWithoutFileExts.includes(
-        pathUpToName,
-        argvWithoutFileExts.indexOf(pathUpToName) + 1
-      );
+      return extLessFiles[pathUpToName] > 1;
     }
 
     const [soundfont, midi] = [group.getIndex(0), group.getIndex(1)];
