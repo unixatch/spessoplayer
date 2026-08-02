@@ -388,10 +388,12 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   global.fs ??= await import("node:fs");
   const { existsSync } = fs;
   for (let i = 0; i < newArgumentsLength; i++) {
-    const {
+    let {
         [i]: arg,
       [i+1]: nextArg
     } = newArguments;
+    const isParam = manageParam(arg);
+    if (isParam) { arg = isParam; lastParam = "param"; }
 
     switch (arg) {
       case (
@@ -420,56 +422,48 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         log(INFO_LVL, "Set stdout mode")
         break;
       }
-      case "out.wav":
-      case arg.endsWith(".wav") || arg.endsWith(".wave") && arg: {
+
+      case lastParam !== "param" &&
+           (arg.endsWith(".wav") || arg.endsWith(".wave")) && arg: {
         setFileOutputs("wav", WAV_INDEX, arg)
         break;
       }
-      case "out.pcm": case "out.s16le": case "out.f32le":
-      case (
+      case lastParam !== "param" && (
         arg.endsWith(".pcm")
         || arg.endsWith(".s16le") || arg.endsWith(".f32le")
       ) && arg: {
         setFileOutputs("pcm", RAW_INDEX, arg)
         break;
       }
-      case "out.flac":
-      case arg.endsWith(".flac") && arg: {
+      case lastParam !== "param" && arg.endsWith(".flac") && arg: {
         setFileOutputs("flac", FLAC_INDEX, arg)
         break;
       }
-      case "out.mp3":
-      case arg.endsWith(".mp3") && arg: {
+      case lastParam !== "param" && arg.endsWith(".mp3")  && arg: {
         setFileOutputs("mp3", MP3_INDEX, arg)
         break;
       }
-      case "out.opus":
-      case arg.endsWith(".opus") && arg: {
+      case lastParam !== "param" && arg.endsWith(".opus") && arg: {
         setFileOutputs("opus", OPUS_INDEX, arg)
         break;
       }
-      case "--ask":     case "/ask":
-      case "--confirm": case "/confirm":
-      case "-a":        case "/a":
-      case "-c":        case "/c": {
+      case "ask": case "confirm":
+      case "a":   case "c": {
         Options.addBooleanValue("confirmation", true)
         log(INFO_LVL, "Set confirmation flag")
         break;
       }
-      case "--no-table": case "/no-table":
-      case "-nt":        case "/nt": {
+      case "no-table": case "nt": {
         Options.addBooleanValue("noTable", true)
         log(INFO_LVL, "Set no-table flag")
         break;
       }
-      case "--no-progress": case "/no-progress":
-      case "-np":           case "/np": {
+      case "no-progress": case "np": {
         Options.addBooleanValue("noProgress", true)
         log(INFO_LVL, "Set no-progress flag")
         break;
       }
-      case "--daemon": case "/daemon":
-      case "-D":       case "/D": {
+      case "daemon": case "D": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
           Options.addBooleanValue("daemon")
@@ -481,20 +475,14 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         break;
       }
-      case "--dry-run": case "/dry-run":
-      case "--test":    case "/test":
-      case "--null":    case "/null":
-      case "-dr":       case "/dr":
-      case "-t":        case "/t":
-      case "-0":        case "/0": {
+      case "dry-run": case "test": case "null":
+      case "dr":      case "t":    case "0": {
         Options.addStringValue("dryRun")
         log(INFO_LVL, "Set dry-run mode")
         break;
       }
-      case "--max-threads": case "/max-threads":
-      case "--threads":     case "/threads":
-      case "-mt":           case "/mt":
-      case "-T":            case "/T": {
+      case "max-threads": case "threads":
+      case "mt":          case "T": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
           setMaxThreads(nextArg)
@@ -506,8 +494,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         i++
         break;
       }
-      case "--show-usage": case "/show-usage":
-      case "-U":           case "/U": {
+      case "show-usage": case "U": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
           Options.addBooleanValue("showUsage", true)
@@ -521,13 +508,11 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       // Stdout format must be of only 1 kind
       // otherwise players like mpv won't read the output correctly
-      case "--format": case "/format":
-      case "-f":       case "/f": {
+      case "format": case "f": {
         setFormat(nextArg); i++
         break;
       }
-      case "--progress-delay": case "/progress-delay":
-      case "-d":               case "/d": {
+      case "progress-delay": case "d": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         if (!isStdout) {
           setProgressDelay(nextArg)
@@ -540,9 +525,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         if (!Number.isNaN(Number(nextArg))) i++
         break;
       }
-      case "--input": case "/input":
-      case "-i":      case "/i":
-      case isIndexedParam(arg, "input", "i") && arg: {
+      case "input": case "i": {
         if (
           !nextArg ||
           nextArg    === "|" ||
@@ -562,9 +545,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         runSetFile(nextArg); i++
         break;
       }
-      case "--volume": case "/volume":
-      case "-vol":     case "/vol":
-      case isIndexedParam(arg, "volume", "vol") && arg: {
+      case "volume": case "vol": {
         setVolumeParameter(
           "volume", nextArg, lastIndex,
           Options.addIndexedNumberValue
@@ -572,17 +553,13 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--sample-rate": case "/sample-rate":
-      case "-r":            case "/r":
-      case isIndexedParam(arg, "sample-rate", "r") && arg: {
+      case "sample-rate": case "r": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         setSampleRate(nextArg, lastIndex, isStdout)
         i++
         break;
       }
-      case "--reverb-volume": case "/reverb-volume":
-      case "-rvb":            case "/rvb":
-      case isIndexedParam(arg, "reverb-volume", "rvb") && arg: {
+      case "reverb-volume": case "rvb": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(
           Number(lastIndex), isStdout
@@ -600,9 +577,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--effects": case "/effects":
-      case "-e":       case "/e":
-      case isIndexedParam(arg, "effects", "e") && arg: {
+      case "effects": case "e": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(
           Number(lastIndex), isStdout
@@ -619,13 +594,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         i++
         break;
       }
-      case "--no-smooth-end": case "/no-smooth-end":
-      case "--hard-stop":     case "/hard-stop":
-      case "-nose":           case "/nose":
-      case "-hs":             case "/hs":
-      case isIndexedParam(
-        arg, "no-smooth-end", "nose", "hard-stop", "hs"
-      ) && arg: {
+      case "no-smooth-end": case "hard-stop":
+      case "nose":          case "hs": {
         const number = Number(lastIndex);
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(number, isStdout);
@@ -644,9 +614,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         break;
       }
-      case "--loop": case "/loop":
-      case "-l":     case "/l":
-      case isIndexedParam(arg, "loop", "l") && arg: {
+      case "loop": case "l": {
         setLoopParameterValue(
           "loop", nextArg, lastIndex,
           Options.addIndexedNumberValue
@@ -654,9 +622,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--loop-start": case "/loop-start":
-      case "-ls":          case "/ls":
-      case isIndexedParam(arg, "loop-start", "ls") && arg: {
+      case "loop-start": case "ls": {
         setLoopParameter(
           "loop-start", nextArg,
           setLoopParameterTimeValue, true,
@@ -665,9 +631,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--loop-end": case "/loop-end":
-      case "-le":        case "/le":
-      case isIndexedParam(arg, "loop-end", "le") && arg: {
+      case "loop-end": case "le": {
         setLoopParameter(
           "loop-end", nextArg,
           setLoopParameterTimeValue, true,
@@ -676,8 +640,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--loop-fade": case "/loop-fade":
-      case "-lF":         case "/lF": {
+      case "loop-fade": case "lF": {
         loopExists ??= testFunctions.loop(newArgumentsSet);
         if (!loopExists) {
           log(WARNING_LVL,
@@ -689,9 +652,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         log(INFO_LVL, "Set loop-fade flag")
         break;
       }
-      case "--loop-fade-start": case "/loop-fade-start":
-      case "-lFs":              case "/lFs":
-      case isIndexedParam(arg, "loop-fade-start", "lFs") && arg: {
+      case "loop-fade-start": case "lFs": {
         setLoopParameter(
           "loop-fade-start", nextArg,
           setLoopParameterValue, true,
@@ -700,9 +661,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--loop-fade-duration": case "/loop-fade-duration":
-      case "-lFd":                 case "/lFd":
-      case isIndexedParam(arg, "loop-fade-duration", "lFd") && arg: {
+      case "loop-fade-duration": case "lFd": {
         setLoopParameter(
           "loop-fade-duration", nextArg,
           setLoopParameterValue, true,
@@ -711,10 +670,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
-      case "--loop-fade-interpolation":
-      case "/loop-fade-interpolation":
-      case "-lFi": case "/lFi":
-      case isIndexedParam(arg, "loop-fade-interpolation", "lFi") && arg: {
+      case "loop-fade-interpolation": case "lFi": {
         setLoopParameter(
           "loop-fade-interpolation", nextArg,
           setLoopFadeInterpolation
@@ -723,24 +679,19 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       // Skip verboseLevel, logFilePath
       // and spessasynthLogging flags
-      case "--verbose":  case "/verbose":
-      case "-v":         case "/v": {
+      case "verbose": case "v": {
         const nextArgument = Number(nextArg);
         // If it also has been provided a valid argument
         if (!Number.isNaN(nextArgument)) i++
         break;
       }
-      case "--log-file": case "/log-file":
-      case "-lf":        case "/lf":
+      case "log-file": case "lf":
       case (
-        arg.startsWith("--log-file") ||
-        arg.startsWith("/log-file")  ||
-        arg.startsWith("-lf") ||
-        arg.startsWith("/lf")
+        arg.startsWith("log-file") || arg.startsWith("lf")
       ) && arg: break;
-      case "--enable-spessasynth-logging":
-      case "--enable-spessasynth-warn-logging":
-      case "--enable-spessasynth-info-logging": break;
+      case "enable-spessasynth-logging":
+      case "enable-spessasynth-warn-logging":
+      case "enable-spessasynth-info-logging": break;
 
       default: {
         if (!isVerboseLevelSet) {
