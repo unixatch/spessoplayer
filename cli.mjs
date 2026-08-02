@@ -287,44 +287,28 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   /**
    * Checks if the argument has an index attached to it
    * and maybe updates lastIndex variable with its index
-   * (runs only when the static checks fail)
-   * @param {String} arg      main argument to check
-   * @param {String} param1   long parameter without -- or /
-   * @param {String} param2   short parameter without -- or /
-   * @param {String} [param3] see param1
-   * @param {String} [param4] see param2
-   * @param {String} [param5] see param1
-   * @param {String} [param6] see param2
-   * @return {(Boolean|false|undefined)} true if it has an index, false if it has no -- or / or
-   *                                     undefined if it doesn't match a provided parameter
+   * then gives back just the basic name of the parameter
+   * @param {String} arg      argument to check
+   * @return {(String|false)} parameter's name without initials and index
+   *                          or false if it's not a valid parameter
    */
-  const isIndexedParam = (
-    arg, param1, param2, param3, param4, param5, param6
-  ) => {
-    let noInitials = arg[1] === "-" && arg.slice(2);
-    noInitials ||= (
-      (arg[0] === "-" || arg[0] === "/")
-        && arg.slice(1)
+  const manageParam = arg => {
+    const noInitials = (
+      arg[0] === "-" && arg.slice(arg[1] === "-" ? 2 : 1)
+    ) || (
+      arg[0] === "/" && arg.slice(1)
     );
-    if (!noInitials) return false;
+    if (!noInitials) return noInitials;
 
-    const index = noInitials.indexOf(":");
-    const name  = noInitials.slice(
-      0,
-      index > 0 ? index : undefined
+    const index = noInitials.lastIndexOf(":");
+    return (
+      index > 0
+        ? noInitials.slice(
+            //                        excludes : ↓
+          0, (lastIndex = noInitials.slice(index+1), index)
+        )
+        : noInitials
     );
-    if (
-      name === param1
-      || name === param2
-      || name === param3
-      || name === param4
-      || name === param5
-      || name === param6
-    ) {
-      //                      excludes : ↓
-      lastIndex = noInitials.slice(index+1);
-      return true;
-    }
   };
   const clearLastVariables = () => {
     lastParam = undefined;
