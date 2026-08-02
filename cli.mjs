@@ -1130,11 +1130,11 @@ const setVerboseLevel = async (arg) => {
     && !(number < 0 && number > debugMaxLevel)
   ) {
     Options.addNumberValue("verboseLevel", number)
-    if (isFromUser) {
-      log(INFO_LVL,
-        `Set verbose level asked by the user to ${number}`
-      )
-    } else log(INFO_LVL, `Set verbose level to ${number}`)
+    log(INFO_LVL,
+      isFromUser
+        ? `Set verbose level to ${number}`
+        : "Set default verbose level"
+    )
     return;
   }
   console.error(
