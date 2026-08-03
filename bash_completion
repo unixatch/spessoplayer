@@ -19,19 +19,19 @@ _spessoplayer() {
   compopt -o default -o bashdefault
 
   case $3 in
-    --input | -i | --input[0-9]* | -i[0-9]* | \
+    --input | -i | --input:[0-9]* | -i:[0-9]* | \
     --log-file | -lf) ;;
 
     --volume | \
     --reverb-volume | \
     -vol | -rvb | \
-    --volume[0-9]* | \
-    --reverb-volume[0-9]* | \
-    -vol[0-9]* | \
-    -rvb[0-9]*)
+    --volume:[0-9]* | \
+    --reverb-volume:[0-9]* | \
+    -vol:[0-9]* | \
+    -rvb:[0-9]*)
       COMPREPLY=({0..100})
     ;;
-    --effects | -e | --effects[0-9]* | -e[0-9]*)
+    --effects | -e | --effects:[0-9]* | -e:[0-9]*)
       COMPREPLY=(
         "firfit"      "flanger"    "bass"
         "loudness"    "lowpass"    "compand"
@@ -65,22 +65,22 @@ _spessoplayer() {
     --loop-start | \
     --loop-end | \
     -l | -ls | -le | \
-    --loop[0-9]* | \
-    --loop-start[0-9]* | \
-    --loop-end[0-9]* | \
-    --loop-fade-start[0-9]* | \
-    --loop-fade-duration[0-9]* | \
-    -l[0-9]* | \
-    -ls[0-9]* | \
-    -le[0-9]* | \
-    -lFs[0-9]* | \
-    -lFd[0-9]*)
+    --loop:[0-9]* | \
+    --loop-start:[0-9]* | \
+    --loop-end:[0-9]* | \
+    --loop-fade-start:[0-9]* | \
+    --loop-fade-duration:[0-9]* | \
+    -l:[0-9]* | \
+    -ls:[0-9]* | \
+    -le:[0-9]* | \
+    -lFs:[0-9]* | \
+    -lFd:[0-9]*)
       COMPREPLY=({0..10})
     ;;
     --sample-rate | \
     -r | \
-    --sample-rate[0-9]* | \
-    -r[0-9]*)
+    --sample-rate:[0-9]* | \
+    -r:[0-9]*)
       COMPREPLY=({0..96000})
     ;;
     --threads | -T | --max-threads | -mt)
