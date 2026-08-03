@@ -35,7 +35,7 @@ __spessoplayer() {
     -vol[0-9]* | \
     -rvb[0-9]*)
       local numbers=({0..100})
-      _arguments "*: :(${numbers[@]})"
+      _arguments "*: :(${numbers[*]})"
       return 0
     ;;
     --effects | -e | --effects[0-9]* | -e[0-9]*)
@@ -67,7 +67,7 @@ __spessoplayer() {
         "tremolo"     "trim"
         "upsample"    "vad"
       )
-      _arguments "*: :(${effects[@]})"
+      _arguments "*: :(${effects[*]})"
       return 0
     ;;
     --loop | \
@@ -87,7 +87,7 @@ __spessoplayer() {
     -lFs[0-9]* | \
     -lFd[0-9]*)
       local numbers=({0..10})
-      _arguments "*: :(${numbers[@]})"
+      _arguments "*: :(${numbers[*]})"
       return 0
     ;;
     --sample-rate | \
@@ -95,13 +95,13 @@ __spessoplayer() {
     --sample-rate[0-9]* | \
     -r[0-9]*)
       local numbers=({0..96000})
-      _arguments "*: :(${numbers[@]})"
+      _arguments "*: :(${numbers[*]})"
       return 0
     ;;
     --threads | -T | --max-threads | -mt)
       COMPREPLY=({1..16})
       local numbers=({0..16})
-      _arguments "*: :(${numbers[@]})"
+      _arguments "*: :(${numbers[*]})"
       return 0
     ;;
     --format | -f)
@@ -110,17 +110,17 @@ __spessoplayer() {
         "flac" "mp3"
         "pcm" "f32le"
       )
-      _arguments "*: :(${formats[@]})"
+      _arguments "*: :(${formats[*]})"
       return 0
     ;;
     --text-delay | -d)
       local numbers=({50..10000})
-      _arguments "*: :(${numbers[@]})"
+      _arguments "*: :(${numbers[*]})"
       return 0
     ;;
     --verbose | -v)
       local numbers=({0..3})
-      _arguments "*: :(${numbers[@]})"
+      _arguments "*: :(${numbers[*]})"
       return 0
     ;;
   esac
