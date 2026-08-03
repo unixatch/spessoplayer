@@ -107,7 +107,7 @@ __spessoplayer() {
     --format | -f)
       local formats=(
         "wav"
-        "flac" "mp3"
+        "flac" "mp3" "opus"
         "pcm" "f32le"
       )
       _arguments "*: :(${formats[*]})"
@@ -151,6 +151,7 @@ __spessoplayer() {
       "--test[run without applying]"                      "-t[run without applying]"        
       "--null[run without applying]"                      "-0[run without applying]"
       "--verbose[log/verbosity level]"                    "-v[log/verbosity level]"
+      "--daemon[server mode]"                             "-D[server mode]"
       "--log-file[log file path]"                         "-lf[log file path]"
       "--uninstall[uninstall the program]"                "-u[uninstall the program]"
       "--help[help page]"                                 "-h[help page]"
