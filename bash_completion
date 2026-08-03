@@ -64,10 +64,12 @@ _spessoplayer() {
     --loop | \
     --loop-start | \
     --loop-end | \
-    -l | -ls | -le | \
+    -l | -ls | -le | -lFs | -lFd | \
     --loop:[0-9]* | \
     --loop-start:[0-9]* | \
     --loop-end:[0-9]* | \
+    --loop-fade-start | \
+    --loop-fade-duration | \
     --loop-fade-start:[0-9]* | \
     --loop-fade-duration:[0-9]* | \
     -l:[0-9]* | \
