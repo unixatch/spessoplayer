@@ -89,7 +89,7 @@ _spessoplayer() {
     --format | -f)
       COMPREPLY=(
         "wav"
-        "flac" "mp3"
+        "flac" "mp3" "opus"
         "pcm" "f32le"
       )
     ;;
@@ -124,6 +124,7 @@ _spessoplayer() {
       --ask                   -a  --confirm -c
       --no-table             -nt
       --dry-run              -dr  --test -t --null -0
+      --daemon                -D
       --verbose               -v
       --log-file             -lf
       --uninstall             -u
