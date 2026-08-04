@@ -924,9 +924,9 @@ const getArgInfos = (arg, lastIndex) => ({
   lastIndexString: lastIndex ?? "0"
 });
 const maybeTruncate = string => (
-  string.length > 20
+  string?.length > 20
     ? string.substring(0, 20) + "..."
-    : string
+    : string ?? "no argument"
 );
 // Error/invalid strings/messages
 const invalidNumberString       = "isn't a valid number",
