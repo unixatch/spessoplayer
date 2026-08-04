@@ -17,21 +17,18 @@
 _spessoplayer() {
   # Enables file/folder completion when COMPREPLY is empty
   compopt -o default -o bashdefault
+  local prev
+  # it shouldn't break words on : but whatever...
+  _get_comp_words_by_ref -n : prev
 
-  case $3 in
-    --input | -i | --input:[0-9]* | -i:[0-9]* | \
-    --log-file | -lf) ;;
+  #           ↓ removes :<index> at the end
+  case ${prev%:*} in
+    --input | -i | --log-file | -lf) ;;
 
-    --volume | \
-    --reverb-volume | \
-    -vol | -rvb | \
-    --volume:[0-9]* | \
-    --reverb-volume:[0-9]* | \
-    -vol:[0-9]* | \
-    -rvb:[0-9]*)
+    --volume | --reverb-volume | -vol | -rvb)
       COMPREPLY=({0..100})
     ;;
-    --effects | -e | --effects:[0-9]* | -e:[0-9]*)
+    --effects | -e)
       COMPREPLY=(
         "firfit"      "flanger"    "bass"
         "loudness"    "lowpass"    "compand"
@@ -61,28 +58,13 @@ _spessoplayer() {
         "upsample"    "vad"
       )
     ;;
-    --loop | \
-    --loop-start | \
-    --loop-end | \
-    -l | -ls | -le | -lFs | -lFd | \
-    --loop:[0-9]* | \
-    --loop-start:[0-9]* | \
-    --loop-end:[0-9]* | \
-    --loop-fade-start | \
-    --loop-fade-duration | \
-    --loop-fade-start:[0-9]* | \
-    --loop-fade-duration:[0-9]* | \
-    -l:[0-9]* | \
-    -ls:[0-9]* | \
-    -le:[0-9]* | \
-    -lFs:[0-9]* | \
-    -lFd:[0-9]*)
+    --loop | --loop-start | --loop-end | \
+    -l     | -ls          | -le        | \
+    --loop-fade-start     | --loop-fade-duration | \
+    -lFs                  | -lFd)
       COMPREPLY=({0..10})
     ;;
-    --sample-rate | \
-    -r | \
-    --sample-rate:[0-9]* | \
-    -r:[0-9]*)
+    --sample-rate | -r)
       COMPREPLY=({0..96000})
     ;;
     --threads | -T | --max-threads | -mt)
