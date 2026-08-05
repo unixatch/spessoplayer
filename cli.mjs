@@ -866,6 +866,7 @@ const setFile = async ({
       return;
     }
     // Creates new Sets for identical basename files
+    // when there haven't been added any
     if (checkForIdenticalName(arg)) {
       const amountOfGroups = Options.amountOfGroups;
       Options.files(amountOfGroups, arg, !typeOfFile)
@@ -873,10 +874,11 @@ const setFile = async ({
       return;
     }
     // It just adds to the last Set it can reach
-    let lastKnownGroupIndex = Options.lastKnownGroupIndex ?? 0;
-    // or maybe to the last automatic group
-    // if a file has been added automatically last time
+    let autoGroupChecked,
+        lastKnownGroupIndex = Options.lastKnownGroupIndex ?? 0;
     if (lastAutomaticFile) automaticFileCheck: {
+      // or maybe to the last automatic group
+      // if a file has been added automatically last time
       const startOfExt = lastAutomaticFile.lastIndexOf(".");
       let indexOfGroup = Options.searchAddedFile(
         startOfExt === -1
@@ -885,7 +887,11 @@ const setFile = async ({
       );
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
 
-      if (Options.isAutomaticBasenameGroup(extLessFiles, indexOfGroup)) {
+      if (
+        (autoGroupChecked = Options.isAutomaticBasenameGroup(
+          extLessFiles, indexOfGroup
+        ))
+      ) {
         lastKnownGroupIndex++
         break automaticFileCheck;
       }
@@ -893,6 +899,14 @@ const setFile = async ({
       // if the group separator has been used
       lastKnownGroupIndex = groupSeparator ? ++indexOfGroup : indexOfGroup;
     }
+    // In case it reached here without checking
+    // if it's a special group
+    if (
+      autoGroupChecked === undefined &&
+      Options.isAutomaticBasenameGroup(
+        extLessFiles, lastKnownGroupIndex
+      )
+    ) lastKnownGroupIndex++
     Options.files(lastKnownGroupIndex, arg, !typeOfFile)
     log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex))
   });
