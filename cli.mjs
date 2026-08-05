@@ -846,13 +846,44 @@ const setFile = async ({
   // --- Automatic addition of files section ---
   return createPromise(() => {
     /*
-      ⏳ if one group inside Options.all
-         has the same basename as arg,
-         then it adds arg to that group
-      ❌ Otherwise it runs the next check below it
-      (e.g. index 2 and he needs to add to that,
-       that's why it's seperated otherwise it creates
-       a new Set when it already exists)
+      This is how the algorithm for the automatic grouping works
+      Twin file/group = same basename files of different types (.mid|.sf2)
+                      arg
+                       ↓
+          has an added/existing twin file?
+            ↓                          ↓
+           yes                         no
+           ↓                            ↓
+      add it to its group        check in the list
+                                        ↓
+                                    found it?
+                                  ↓           ↓
+                                 yes          no
+                               ↓                 ↓
+                    create a new group    check lastAutomaticFile
+                      and add it to it              |
+                                                    ↓
+                                                it exists?
+                                              ↓            ↓
+                                             yes           no
+                                            ↓               |
+                            found it in added files?        |
+                             ↓                   ↓          |==-|
+                            yes                 no              |
+                             ↓                   |              ↓
+                      is a twin group?           |=–––→ check if it's a twin group
+                     ↓                ↓                   ↓                     ↓
+                    yes               no                it is                it's not
+                     ↓                 |                  ↓                     ↓
+               add a new group         |            add a new group     add it to the last
+               and add it to it        |            and add to it       available Set
+                                       ↓
+                            group separator exists?
+                           ↓                       ↓
+                          yes                      no
+                          ↓                        ↓
+                     add a new group           add it to
+                     and add to it             the last group
     */
     const startOfExt = arg.lastIndexOf(".");
     const foundIndex = Options.searchAddedFile(
@@ -865,20 +896,17 @@ const setFile = async ({
       log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, foundIndex))
       return;
     }
-    // Creates new Sets for identical basename files
-    // when there haven't been added any
     if (checkForIdenticalName(arg)) {
       const amountOfGroups = Options.amountOfGroups;
       Options.files(amountOfGroups, arg, !typeOfFile)
-      log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, amountOfGroups))
+      log(INFO_LVL,
+        logMessages.getMessage(typeOfFile, arg, amountOfGroups)
+      )
       return;
     }
-    // It just adds to the last Set it can reach
     let autoGroupChecked,
         lastKnownGroupIndex = Options.lastKnownGroupIndex ?? 0;
     if (lastAutomaticFile) automaticFileCheck: {
-      // or maybe to the last automatic group
-      // if a file has been added automatically last time
       const startOfExt = lastAutomaticFile.lastIndexOf(".");
       let indexOfGroup = Options.searchAddedFile(
         startOfExt === -1
@@ -895,12 +923,8 @@ const setFile = async ({
         lastKnownGroupIndex++
         break automaticFileCheck;
       }
-      // or it creates a new group
-      // if the group separator has been used
       lastKnownGroupIndex = groupSeparator ? ++indexOfGroup : indexOfGroup;
     }
-    // In case it reached here without checking
-    // if it's a special group
     if (
       autoGroupChecked === undefined &&
       Options.isAutomaticBasenameGroup(
@@ -908,7 +932,9 @@ const setFile = async ({
       )
     ) lastKnownGroupIndex++
     Options.files(lastKnownGroupIndex, arg, !typeOfFile)
-    log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex))
+    log(INFO_LVL,
+      logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex)
+    )
   });
   // --- END of automatic addition of files section ---
 }
