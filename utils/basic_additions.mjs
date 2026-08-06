@@ -53,8 +53,8 @@ Set.prototype.getIndex = function (index) {
  * @return {*} found value or undefined
  */
 Set.prototype.get = function (valueToFind) {
+  if (!valueToFind) return this.values().next().value;
   for (const value of this.values()) {
-    if (!valueToFind) return value;
     if (value === valueToFind) return value;
   }
 }
