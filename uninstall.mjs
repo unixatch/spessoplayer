@@ -44,7 +44,8 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
 
     readline ??= await import("node:readline/promises");
     const rl = readline.createInterface({
-      input: process.stdin, output: process.stdout
+      input: process.stdin, output: process.stdout,
+      history: program === "sox" ? ["Y", "n"] : ["y", "N"]
     });
     const isSox = (program === "sox") ? "[Y|n]" : "[y|N]";
     answer = await rl.question(

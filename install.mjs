@@ -65,7 +65,8 @@ async function runCheck(program, noInstallMsg = "") {
     let answer;
     try {
       const rl = readline.createInterface({
-        input: process.stdin, output: process.stdout
+        input: process.stdin, output: process.stdout,
+        history: ["Y", "n"]
       });
       answer = await rl.question(
         `[${underline+program+normal}]: Do you want to install it [Y|n]? `
