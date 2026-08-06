@@ -102,7 +102,10 @@ if (confirmation) {
 
   const readline = await import("node:readline/promises");
   const question = async () => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const rl = readline.createInterface({
+      input: process.stdin, output: process.stdout,
+      history: ["Y", "n"]
+    });
     const answer = await rl.question("Is this setup correct [Y|n]? ");
     rl.close()
 
