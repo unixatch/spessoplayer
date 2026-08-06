@@ -613,7 +613,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @throws {TypeError} - if index is not a number
    */
   static isAutomaticBasenameGroup(extLessFiles, indexOfGroup) {
-    // FIXME: something is wrong with deno here
     if (extLessFiles && extLessFiles?.prototype) {
       throw new TypeError(
         "extLessFiles must be null prototyped object"
@@ -622,6 +621,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     if (typeof indexOfGroup !== "number") {
       throw new TypeError("index must be a number")
     }
+    if (!this.#options.files) return;
     const group = this.#options.files[indexOfGroup];
 
     if (group.size > 2) return false;
