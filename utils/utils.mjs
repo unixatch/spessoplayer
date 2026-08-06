@@ -286,10 +286,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   static #listOfSongs = [];
   /**
    * List of all soundfonts
-   * @type {Map<String, Number>}
+   * @type {Object<String, Number>}
    * @private
    */
-  static #listOfSoundfonts = new Map();
+  static #listOfSoundfonts = Object.create(null);
 
   /**
    * @function #checkValueAndExistence
@@ -489,9 +489,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           startOfExt === -1
             ? oldIndexZero : oldIndexZero.substring(0, startOfExt)
         );
-        this.#listOfSoundfonts.delete(oldIndexZeroWithoutExt)
+        delete this.#listOfSoundfonts[oldIndexZeroWithoutExt]
       }
-      this.#listOfSoundfonts.set(stringWithoutExt, index)
+      this.#listOfSoundfonts[stringWithoutExt] = index;
       return;
     }
     const oldSize = groups[index].size;
@@ -587,7 +587,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static searchAddedFile(name, isAMidiSearching) {
     const soundfontSearch = () => {
-      const indexOfGroup = this.#listOfSoundfonts.get(name);
+      const indexOfGroup = this.#listOfSoundfonts[name];
       return (indexOfGroup !== undefined) ? indexOfGroup : false;
     };
     const midiSearch = () => {
