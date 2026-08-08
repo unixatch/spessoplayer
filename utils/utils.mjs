@@ -271,6 +271,17 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static #options = {};
   /**
+   * A list of indexes representing groups that have a soundfont
+   * @type {(undefined|Object|null)}
+   * @private
+   */
+  static #lastGroupChecked;
+  /**
+   * If it exists at least a valid group to be used
+   * @type {(Boolean|undefined)}
+   */
+  static existsValidGroup;
+  /**
    * @typedef list_Of_Songs
    * @type {Array}
    * @property {Number} index - group index
@@ -476,6 +487,24 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         ? string : string.substring(0, startOfExt)
     );
     groups[index] ??= new Set();
+
+    // It checks that there's at least
+    // a soundfont + midi couple at any index
+    if (!this.existsValidGroup) validGroupCheckBlock: {
+      this.#lastGroupChecked ??= Object.create(null);
+      const atLeast1File           = groups[index].size >= 1,
+            existsSoundfontAtIndex = this.#lastGroupChecked[index];
+
+      // Guard clause before setting existsValidGroup
+      if (existsSoundfontAtIndex === undefined) {
+        if (!isSoundfont)  break validGroupCheckBlock;
+        this.#lastGroupChecked[index] = null;
+        if (!atLeast1File) break validGroupCheckBlock;
+      }
+      if ((this.existsValidGroup = atLeast1File)) {
+        this.#lastGroupChecked = null; // Cleanup
+      }
+    }
 
     if (isSoundfont) {
       const oldIndexZero = groups[index].getIndex(0);

@@ -730,7 +730,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
      actually adding the file)
   */
   await Promise.all(await Promise.all(setFilePromises))
-  if (!Object.keys(Options.all.files ?? []).length) {
+  if (!Options.existsValidGroup) {
     console.error(
       formatStrings.errorText,
       "Missing required files"
