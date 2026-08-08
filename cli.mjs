@@ -825,21 +825,29 @@ const setFile = async ({
       return `Replaced soundfont file from "${original}" to "${newOne}" at index ${index}`;
     }
   };
+  // Manual addition
   if (lastIndex || lastParam) {
     return createPromise(async () => {
-      let needsToBeReplaced = false;
+      let needsToBeReplaced;
+      const files = Options.all.files;
 
       // Replaces the last soundfont it can reach if it needs to
-      if (!typeOfFile) {
-        const setOfFiles = Options.all.files[inputIndex];
-        const fileMagicNumber = (setOfFiles instanceof Set)
-          ? await get20BytesFromFile(setOfFiles.getIndex(0))
-          : [];
-        if (fileMagicNumber.includes("sfbk")
-            || fileMagicNumber.includes("DLS")) needsToBeReplaced = true;
+      if (!typeOfFile && files) {
+        const setOfFiles = files[inputIndex];
+        const fileMagicNumber = (
+          setOfFiles instanceof Set
+            ? await get20BytesFromFile(setOfFiles.getIndex(0))
+            : ""
+        );
+        if (fileMagicNumber.length) needsToBeReplaced = (
+          fileMagicNumber.includes("sfbk")
+          || fileMagicNumber.includes("DLS")
+        );
       }
       Options.files(inputIndex, arg, !typeOfFile, needsToBeReplaced)
-      log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, inputIndex))
+      log(INFO_LVL,
+        logMessages.getMessage(typeOfFile, arg, inputIndex)
+      )
     });
   }
 
