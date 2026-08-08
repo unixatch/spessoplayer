@@ -422,28 +422,25 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         break;
       }
 
-      case lastParam !== "param" &&
-           (arg.endsWith(".wav") || arg.endsWith(".wave")) && arg: {
-        setFileOutputs("wav", WAV_INDEX, arg)
-        break;
-      }
-      case lastParam !== "param" && (
-        arg.endsWith(".pcm")
-        || arg.endsWith(".s16le") || arg.endsWith(".f32le")
-      ) && arg: {
-        setFileOutputs("pcm", RAW_INDEX, arg)
-        break;
-      }
-      case lastParam !== "param" && arg.endsWith(".flac") && arg: {
-        setFileOutputs("flac", FLAC_INDEX, arg)
-        break;
-      }
-      case lastParam !== "param" && arg.endsWith(".mp3")  && arg: {
-        setFileOutputs("mp3", MP3_INDEX, arg)
-        break;
-      }
-      case lastParam !== "param" && arg.endsWith(".opus") && arg: {
-        setFileOutputs("opus", OPUS_INDEX, arg)
+      case lastParam !== "param" && arg: {
+        const extension = arg.substring(arg.lastIndexOf(".") + 1);
+        switch (extension) {
+          case "wav": case "wave":
+            setFileOutputs(extension, WAV_INDEX, arg)
+            break;
+          case "pcm": case "s16le": case "f32le":
+            setFileOutputs(extension, RAW_INDEX, arg)
+            break;
+          case "flac":
+            setFileOutputs(extension, FLAC_INDEX, arg)
+            break;
+          case "mp3":
+            setFileOutputs(extension, MP3_INDEX, arg)
+            break;
+          case "opus":
+            setFileOutputs(extension, OPUS_INDEX, arg)
+            break;
+        }
         break;
       }
       case "ask": case "confirm":
