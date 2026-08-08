@@ -396,33 +396,14 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     if (isParam) { arg = isParam; lastParam = "param"; }
 
     switch (arg) {
-      case (
-        !lastParam && !endsWithSupportedExtension(arg) &&
-        (existsSync(arg) || (fileExists = false)) && arg
-      ): {
-        runSetFile(arg)
-
-        if (
-          !nextArg ||
-          nextArg    === "|" ||
-          nextArg[0] === "-" || // Parameters
-          nextArg[0] === "/" ||
-          endsWithSupportedExtension(nextArg) // File output
-        ) break;
-        if (!existsSync(nextArg)) { i++; break; }
-
-        runSetFile(nextArg); i++
-        break;
-      }
-      case "|": { groupSeparator = true; break; }
       case "-": {
         if (Options.getValue("fileOutputs")) stdoutFileModeConflictError()
         Options.addBooleanValue("toStdout", true)
         log(INFO_LVL, "Set stdout mode")
         break;
       }
-
-      case lastParam !== "param" && arg: {
+      case !lastParam && arg: {
+        let supportedExtension = true;
         const extension = arg.substring(arg.lastIndexOf(".") + 1);
         switch (extension) {
           case "wav": case "wave":
@@ -440,9 +421,27 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           case "opus":
             setFileOutputs(extension, OPUS_INDEX, arg)
             break;
+
+          default: supportedExtension = false;
+        }
+        if (!supportedExtension
+            && existsSync(arg) || (fileExists = false)) {
+          runSetFile(arg)
+
+          if (
+            !nextArg ||
+            nextArg    === "|" ||
+            nextArg[0] === "-" || // Parameters
+            nextArg[0] === "/" ||
+            endsWithSupportedExtension(nextArg) // File output
+          ) break;
+          if (!existsSync(nextArg)) { i++; break; }
+
+          runSetFile(nextArg); i++
         }
         break;
       }
+      case "|": { groupSeparator = true; break; }
       case "ask": case "confirm":
       case "a":   case "c": {
         Options.addBooleanValue("confirmation", true)
