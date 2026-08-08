@@ -397,8 +397,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 
     switch (arg) {
       case (
-        (lastParam === "input" || !lastParam) &&
-        !endsWithSupportedExtension(arg) &&
+        !lastParam && !endsWithSupportedExtension(arg) &&
         (existsSync(arg) || (fileExists = false)) && arg
       ): {
         runSetFile(arg)
@@ -777,6 +776,8 @@ const setFile = async ({
     const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
     return lastSetFilePromise?.then(func) ?? func();
   }
+  // Prevents any parameter getting here and
+  // doing any undefined behaviour
   if (lastParam && lastParam !== "input") return;
 
   const fileMagicNumber = await get20BytesFromFile(arg);
