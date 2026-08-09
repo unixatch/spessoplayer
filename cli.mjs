@@ -190,13 +190,9 @@ async function manageVerboseOptions({
   ];
 }
 const setFilePromises = [];
-const {
-  0: WAV_INDEX,  1: RAW_INDEX,
-  2: FLAC_INDEX, 3: MP3_INDEX, 4: OPUS_INDEX
-} = [...Array(5).keys()];
 export const FO_CONSTANTS = {
-  WAV_INDEX,  RAW_INDEX,
-  FLAC_INDEX, MP3_INDEX, OPUS_INDEX
+  WAV_INDEX:  0, RAW_INDEX: 1,
+  FLAC_INDEX: 2, MP3_INDEX: 3, OPUS_INDEX: 4
 };
 const newArgs = process.argv.slice(2);
 /**
@@ -410,20 +406,22 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         let supportedExtension = true;
         const extension = arg.substring(arg.lastIndexOf(".") + 1);
         switch (extension) {
-          case "wav": case "wave":
-            setFileOutputs(extension, WAV_INDEX, arg)
+          case "wav":  case "wave":
+          case "flac": case "mp3": case "opus": {
+            const index = (
+              extension === "wave"
+                ? "WAV_INDEX"
+                : extension.toUpperCase() + "_INDEX"
+            );
+            setFileOutputs(
+              extension, FO_CONSTANTS[index], arg
+            )
             break;
+          }
           case "pcm": case "s16le": case "f32le":
-            setFileOutputs(extension, RAW_INDEX, arg)
-            break;
-          case "flac":
-            setFileOutputs(extension, FLAC_INDEX, arg)
-            break;
-          case "mp3":
-            setFileOutputs(extension, MP3_INDEX, arg)
-            break;
-          case "opus":
-            setFileOutputs(extension, OPUS_INDEX, arg)
+            setFileOutputs(
+              extension, FO_CONSTANTS["RAW_INDEX"], arg
+            )
             break;
 
           default: supportedExtension = false;
