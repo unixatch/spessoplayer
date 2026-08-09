@@ -82,12 +82,13 @@
 /**
  * @typedef setFileObjectParameters
  * @type {Object}
- * @property {Number}               indexOfSetFile    index of the current function inside setFilePromises
- * @property {String}               lastParam         last parameter that has been used last time
- * @property {lastIndexGroupObject} lastIndex         last index object
- * @property {String}               lastAutomaticFile last file that has been set automatically
- * @property {Boolean}              groupSeparator    if the group separator has been used
- * @property {String}               arg               argument passed to this function that is also a file path
+ * @property {Number}                 indexOfSetFile    index of the current function inside setFilePromises
+ * @property {Object<String, Number>} extLessFiles      extensionless filenames object
+ * @property {String}                 lastParam         last parameter that has been used last time
+ * @property {lastIndexGroupObject}   lastIndex         last index object
+ * @property {String}                 lastAutomaticFile last file that has been set automatically
+ * @property {Boolean}                groupSeparator    if the group separator has been used
+ * @property {String}                 arg               argument passed to this function that is also a file path
  */
   //-| audioBuffer.mjs |-//
 /**

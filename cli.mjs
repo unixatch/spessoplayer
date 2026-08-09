@@ -28,22 +28,6 @@ import {
   log, Options
 } from "./utils/utils.mjs"
 
-/** @type {Object<String, Number>} */
-const extLessFiles = Object.create(null);
-{
-  const length = process.argv.length;
-  for (let i = 2; i < length; i++) {
-    const element = process.argv[i];
-    if (element[0] === "-" || element[0] === "/"
-        || endsWithSupportedExtension(element)) continue;
-
-    const startOfExt = element.lastIndexOf(".");
-    if (startOfExt === -1) continue;
-
-    const noExt = element.substring(0, startOfExt);
-    extLessFiles[noExt] = extLessFiles[noExt] + 1 || 1;
-  }
-}
 function endsWithSupportedExtension(arg) {
   return (
        arg.endsWith(".opus")  || arg.endsWith(".mp3" )
@@ -364,13 +348,14 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * Runs the logic that comes before setFile is run
    * @param {String} arg file to check and maybe run
    */
-  const runSetFile = (arg) => {
+  const runSetFile = arg => {
     if (doneFileList.get(arg) === doneSymbol) return;
     doneFileList.set(arg, doneSymbol)
 
     setFilePromises.push(
       setFile({
         indexOfSetFile: indexOfSetFile++,
+        extLessFiles,
         lastParam, lastIndex,
         groupSeparator,
         lastAutomaticFile, arg
@@ -379,6 +364,25 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
   };
+  /** @type {Object<String, Number>} */
+  const extLessFiles = Object.create(null);
+  {
+    // Loads extLessFiles with only basenames of the files.
+    // Also code block just because of length variable
+    const length = process.argv.length;
+    for (let i = 2; i < length; i++) {
+      const element = process.argv[i];
+      if (element[0] === "-" || element[0] === "/"
+        || endsWithSupportedExtension(element)) continue;
+
+      const startOfExt = element.lastIndexOf(".");
+      if (startOfExt === -1) continue;
+
+      const noExt = element.substring(0, startOfExt);
+      extLessFiles[noExt] = extLessFiles[noExt] + 1 || 1;
+    }
+  }
+
   const newArgumentsLength = newArguments.length;
   let isStdout, loopExists, fileExists,
       indexOfSetFile = 0,
@@ -741,7 +745,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
  * @return {Promise<Promise|undefined>}
  */
 const setFile = async ({
-  indexOfSetFile,
+  indexOfSetFile, extLessFiles,
   lastParam, lastIndex,
   groupSeparator,
   lastAutomaticFile, arg
