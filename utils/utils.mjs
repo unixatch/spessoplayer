@@ -112,7 +112,7 @@ function log(level, ...messages) {
   if (messages[0] === "Finished printing to stdout") message.unshift("\n")
   if (messages.includes("-")) {
     const length = messages.length;
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length; ++i) {
       const needsANewLog = messages[i] === "-";
 
       if (i > 0 && needsANewLog) message.push(
@@ -138,7 +138,7 @@ function log(level, ...messages) {
   const messageLength = message.length,
         escapeSequenceRemover = /\x1b\[[0-9;]*m/g;
 
-  for (let i = 0; i < messageLength; i++) {
+  for (let i = 0; i < messageLength; ++i) {
     message[i] = message[i].replaceAll(escapeSequenceRemover, "");
   }
   message.push("\n")
@@ -201,7 +201,7 @@ function newFileName(path, createAnyway = false) {
   } = parse(path);
   let newString = "";
 
-  for (let i = 0; i < MAX_LENGTH; i++) newString += randomCharCode();
+  for (let i = 0; i < MAX_LENGTH; ++i) newString += randomCharCode();
 
   pathFileName += "__"+newString+"__";
   path = join(pathDir, pathFileName + pathExt);
@@ -701,7 +701,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     simplifiedOptionsObject["midiFile"]      = group.get(songFile);
     simplifiedOptionsObject["indexOfGroup"]  = indexOfGroup;
 
-    for (let i = 0; i < allOptionsLength; i++) {
+    for (let i = 0; i < allOptionsLength; ++i) {
       const key = allOptions[i];
       const property = this.#options[key];
       if (key === "files") continue;

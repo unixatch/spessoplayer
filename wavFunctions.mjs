@@ -221,10 +221,10 @@ function getData(audioData/*, options = DEFAULT_WAV_WRITE_OPTIONS*/) {
   /*if (fullOptions.normalizeAudio) {
     const numSamples = audioData[0].length;
     let maxAbsValue = 0;
-    for (let ch = 0; ch < numChannels; ch++) {
+    for (let ch = 0; ch < numChannels; ++ch) {
       const data = audioData[ch];
 
-      for (let i = 0; i < numSamples; i++) {
+      for (let i = 0; i < numSamples; ++i) {
         const sample = Math.abs(data[i]);
         if (sample > maxAbsValue) {
           maxAbsValue = sample;
@@ -236,7 +236,7 @@ function getData(audioData/*, options = DEFAULT_WAV_WRITE_OPTIONS*/) {
       : 1;
   }*/
   let currentSample = 0;
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < length; ++i) {
     /*
       Basically it amplifies the float 32bit little endian data
       and caps it to the 16bit signed integer limits.

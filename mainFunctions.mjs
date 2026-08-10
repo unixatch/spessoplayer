@@ -891,7 +891,7 @@ function createReadable(Readable, isStdout = false, {
           buffer = Buffer.alloc(bufferLength);
 
     let currentSample = 0;
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length; ++i) {
       buffer.writeFloatLE(left[i],  currentSample++ << 2)
       buffer.writeFloatLE(right[i], currentSample++ << 2)
     }
@@ -1192,7 +1192,7 @@ async function toFile({
       })
     )
   };
-  for (let foIndex = 0; foIndex < foLength; foIndex++) {
+  for (let foIndex = 0; foIndex < foLength; ++foIndex) {
     const outFile = fileOutputs[foIndex];
     if (!outFile) continue;
 
@@ -1280,7 +1280,7 @@ class Progress {
   #sum(array) {
     if (this.#index !== undefined) return;
     let sumOfAll = 0;
-    for (let i = 0; i <= this.amountOfSongs; i++) {
+    for (let i = 0; i <= this.amountOfSongs; ++i) {
       const number = array[i];
       if (number) sumOfAll += number;
     }
@@ -1591,7 +1591,7 @@ async function startPlayer(
     process.exit()
   }
   const baseUrl = `http://localhost:${port}/song`;
-  for (let i = 0; i < amountOfSongs; i++) {
+  for (let i = 0; i < amountOfSongs; ++i) {
     const filename = Options.getSongName(i);
     listOfURLs.push(`${baseUrl}?index=${i}&name=${filename}`)
   }

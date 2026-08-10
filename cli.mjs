@@ -160,7 +160,7 @@ async function manageVerboseOptions({
   if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
   newArgumentsLength = newArguments.length;
   let indexOfEqualSign;
-  for (let index = 0; index < newArgumentsLength; index++) {
+  for (let index = 0; index < newArgumentsLength; ++index) {
     const {
       [index]: argvString,
       [index]: { 0: firstChar } = 0
@@ -366,7 +366,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     // Loads extLessFiles with only basenames of the files.
     // Also code block just because of length variable
     const length = process.argv.length;
-    for (let i = 2; i < length; i++) {
+    for (let i = 2; i < length; ++i) {
       const element = process.argv[i];
       if (element[0] === "-" || element[0] === "/"
         || endsWithSupportedExtension(element)) continue;
@@ -387,7 +387,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 
   global.fs ??= await import("node:fs");
   const { existsSync } = fs;
-  for (let i = 0; i < newArgumentsLength; i++) {
+  for (let i = 0; i < newArgumentsLength; ++i) {
     let {
         [i]: arg,
       [i+1]: nextArg
@@ -1435,7 +1435,7 @@ const help = async ({ errorText = "" } = "") => {
   const multiLine = text => {
     const lines = text.split("\n"),
           lengthOfLines = lines.length;
-    for (let i = 0; i < lengthOfLines; i++) {
+    for (let i = 0; i < lengthOfLines; ++i) {
       lines[i] = (
         !multilineMode
           ? italics+lines[i]
@@ -1446,7 +1446,7 @@ const help = async ({ errorText = "" } = "") => {
   };
   const param = (text, secondText) => {
     const length = secondText.length;
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < length; ++i) {
       text[i] &&= green+text[i]+normal;
       secondText[i] &&= green+secondText[i]+normal;
     }

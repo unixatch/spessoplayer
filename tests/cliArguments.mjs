@@ -37,7 +37,7 @@ if (!process.argv.includes("--verbose")) {
 
   // Manually setting options at indexes
   const positionalArgs = [];
-  for (let i = args.indexOf("--verbose")+1; i < args.length; i++) {
+  for (let i = args.indexOf("--verbose")+1; i < args.length; ++i) {
     if (args[i] === "-lf"
         || args[i] === "--enable-spessasynth-warn-logging") continue;
     if (args[i].startsWith("-")) {

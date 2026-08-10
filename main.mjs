@@ -144,7 +144,7 @@ if (isToStdout) {
     !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
   );
   const amountOfSongs = Options.amountOfSongs;
-  for (let i = 0; i < amountOfSongs; i++) {
+  for (let i = 0; i < amountOfSongs; ++i) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
 
@@ -170,7 +170,7 @@ if (isToStdout) {
     )
   }, true);
 
-  for (let i = 0; i < amountOfSongs; i++) {
+  for (let i = 0; i < amountOfSongs; ++i) {
     const options = perSongOptions[i];
     if (!options) continue;
     const toStdoutValue = await toStdout({ index: i, options });
@@ -315,7 +315,7 @@ const progressBuffers = {
   percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
 };
 const progress = new Progress(amountOfSongs, undefined, progressBuffers);
-for (let i = 0; i < amountOfSongs; i++) {
+for (let i = 0; i < amountOfSongs; ++i) {
   const options = perSongOptions[i] = Options.getOptionsOfSong(i);
   if (!options) continue;
 
@@ -339,7 +339,7 @@ const {
     unlink: asyncUnlink
   }
 } = fs;
-for (let i = 0; i < filesListLength; i++) {
+for (let i = 0; i < filesListLength; ++i) {
   const [soundfontFile] = filesList[i] ?? "";
   if (!soundfontFile) continue;
 
