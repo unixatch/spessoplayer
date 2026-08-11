@@ -1698,8 +1698,8 @@ async function prepareDestination({
   if (!isPCM) {
     const sumOfLengths = (
       isStdout
-      ? (index, previous) => index + previous
-      : undefined
+        ? (index, previous) => index + previous
+        : undefined
     );
     let midiName;
     if (!isStdout) ({ name: midiName } = parse(midiFile));

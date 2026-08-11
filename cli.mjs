@@ -922,11 +922,10 @@ const setFile = async ({
       );
       if (typeof indexOfGroup !== "number") break automaticFileCheck;
 
-      if (
-        (autoGroupChecked = Options.isAutomaticBasenameGroup(
-          extLessFiles, indexOfGroup
-        ))
-      ) {
+      if (Options.isAutomaticBasenameGroup(
+        extLessFiles, indexOfGroup
+      )) {
+        autoGroupChecked = null;
         lastKnownGroupIndex++
         break automaticFileCheck;
       }
