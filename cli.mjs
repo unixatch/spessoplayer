@@ -748,32 +748,6 @@ const setFile = async ({
   groupSeparator,
   lastAutomaticFile, arg
 }) => {
-  /**
-   * Checks for the same basename as the path given inside process.argv
-   * @param {String} path - full file path to compare with another one
-   * @inner
-   * @private
-   * @memberof module:cli
-   * @return {Boolean} - whether or not it has found a similar file inside process.argv
-   */
-  function checkForIdenticalName(path) {
-    const startOfExt = path.lastIndexOf(".");
-    return extLessFiles[
-      startOfExt === -1 ? path : path.substring(0, startOfExt)
-    ] > 1;
-  }
-  /**
-   * Returns either a new Promise or attaches a .then Promise to an older one
-   * @param {Function} func function to run within a Promise
-   * @inner
-   * @private
-   * @memberof module:cli
-   * @return {(Promise|undefined)} - a new Promise that'll fulfill when the given function returns
-   */
-  function createPromise(func) {
-    const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
-    return lastSetFilePromise?.then(func) ?? func();
-  }
   // Prevents any parameter getting here and
   // doing any undefined behaviour
   if (lastParam && lastParam !== "input") return;
@@ -795,44 +769,55 @@ const setFile = async ({
   }
 
   const inputIndex = Number(lastIndex ?? 0);
-  const logMessages = {
-    /**
-     * Generates a generic log message
-     * @param {Boolean} type    file type
-     * @param {String}  msgArg  filename
-     * @param {Number}  [index] group index of the file
-     * @inner
-     * @private
-     * @memberof module:cli
-     * @return {String} generic log message
-     */
-    getMessage(type, msgArg, index) {
-      const typeOfFile = type ? "midi" : "soundfont";
-      return `Set ${typeOfFile} file to "${msgArg}" at index ${index}`;
-    },
-    /**
-     * Generates a log message replacer
-     * @param {String} original original soundfont
-     * @param {String} newOne   new soundfont
-     * @param {Number} [index]  group index of the file
-     * @inner
-     * @private
-     * @memberof module:cli
-     * @return {String} log message replacer
-     */
-    getReplacedSoundfont(original, newOne, index) {
-      return `Replaced soundfont file from "${original}" to "${newOne}" at index ${index}`;
-    }
-  };
+  /**
+   * Checks for the same basename as the path given inside process.argv
+   * @param {String} path - full file path to compare with another one
+   * @inner
+   * @private
+   * @memberof module:cli
+   * @return {Boolean} - whether or not it has found a similar file inside process.argv
+   */
+  const checkForIdenticalName = path => {
+    const startOfExt = path.lastIndexOf(".");
+    return extLessFiles[
+      startOfExt === -1 ? path : path.substring(0, startOfExt)
+    ] > 1;
+  }
+  /**
+   * Returns either a new Promise or attaches a .then Promise to an older one
+   * @param {Function} func function to run within a Promise
+   * @inner
+   * @private
+   * @memberof module:cli
+   * @return {(Promise|undefined)} - a new Promise that'll fulfill when the given function returns
+   */
+  const createPromise = func => {
+    const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
+    return lastSetFilePromise?.then(func) ?? func();
+  }
+  /**
+   * Generates a generic log message
+   * @param {Boolean} type    file type
+   * @param {String}  msgArg  filename
+   * @param {Number}  [index] group index of the file
+   * @inner
+   * @private
+   * @memberof module:cli
+   * @return {String} generic log message
+   */
+  const getMessage = (type, msgArg, index) => {
+    const typeOfFile = type ? "midi" : "soundfont";
+    return `Set ${typeOfFile} file to "${msgArg}" at index ${index}`;
+  }
   // Manual addition
   if (lastIndex || lastParam) {
     return createPromise(async () => {
-      let needsToBeReplaced;
+      let needsToBeReplaced, setOfFiles;
       const files = Options.all.files;
 
       // Replaces the last soundfont it can reach if it needs to
       if (!typeOfFile && files) {
-        const setOfFiles = files[inputIndex];
+        setOfFiles = files[inputIndex];
         const fileMagicNumber = (
           setOfFiles instanceof Set
             ? await get20BytesFromFile(setOfFiles.getIndex(0))
@@ -845,7 +830,11 @@ const setFile = async ({
       }
       Options.files(inputIndex, arg, !typeOfFile, needsToBeReplaced)
       log(INFO_LVL,
-        logMessages.getMessage(typeOfFile, arg, inputIndex)
+        needsToBeReplaced
+          ? `Replaced soundfont file from "${
+              setOfFiles.getIndex(0)
+            }" to "${arg}" at index ${inputIndex}`
+          : getMessage(typeOfFile, arg, inputIndex)
       )
     });
   }
@@ -903,14 +892,14 @@ const setFile = async ({
     );
     if (typeof foundIndex === "number") {
       Options.files(foundIndex, arg, !typeOfFile)
-      log(INFO_LVL, logMessages.getMessage(typeOfFile, arg, foundIndex))
+      log(INFO_LVL, getMessage(typeOfFile, arg, foundIndex))
       return;
     }
     if (checkForIdenticalName(arg)) {
       const amountOfGroups = Options.amountOfGroups;
       Options.files(amountOfGroups, arg, !typeOfFile)
       log(INFO_LVL,
-        logMessages.getMessage(typeOfFile, arg, amountOfGroups)
+        getMessage(typeOfFile, arg, amountOfGroups)
       )
       return;
     }
@@ -953,7 +942,7 @@ const setFile = async ({
     Options.lastRegularGroupIndex = lastKnownGroupIndex;
     Options.files(lastKnownGroupIndex, arg, !typeOfFile)
     log(INFO_LVL,
-      logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex)
+      getMessage(typeOfFile, arg, lastKnownGroupIndex)
     )
   });
   // --- END of automatic addition of files section ---
