@@ -875,22 +875,25 @@ const setFile = async ({
                                              yes           no
                                             ↓               |
                             found it in added files?        |
-                             ↓                   ↓          |==-|
+                             ↓                   ↓          |=--|
                             yes                 no              |
                              ↓                   |              ↓
-                      is a twin group?           |=–––→ check if it's a twin group
+                   is it in a twin group?        |=–––→ check if it's a twin group
                      ↓                ↓                   ↓                     ↓
                     yes               no                it is                it's not
-                     ↓                 |                  ↓                     ↓
-               add a new group         |            add a new group     add it to the last
-               and add it to it        |            and add to it       available Set
-                                       ↓
-                            group separator exists?
-                           ↓                       ↓
-                          yes                      no
-                          ↓                        ↓
-                     add a new group           add it to
-                     and add to it             the last group
+                     |                 |                  |                     ↓
+                     |                 |                  |             add it to the last
+            |-------=|=----------------|-----------------=|             available Set
+            |                          |
+            ↓                          |=---------=|
+    exists a normal group?                         ↓
+      |                |                group separator exists?
+      ↓                ↓               ↓                       ↓
+     yes              no              yes                      no
+      ↓                ↓               ↓                       ↓
+   add to that     add to         add a new group          add it to
+   group           a new group    and add to it            the last group
+
     */
     const startOfExt = arg.lastIndexOf(".");
     const foundIndex = Options.searchAddedFile(
@@ -926,7 +929,11 @@ const setFile = async ({
         extLessFiles, indexOfGroup
       )) {
         autoGroupChecked = null;
-        lastKnownGroupIndex++
+        lastKnownGroupIndex = (
+          Options.lastRegularGroupIndex !== undefined
+            ? Options.lastRegularGroupIndex
+            : lastKnownGroupIndex + 1
+        );
         break automaticFileCheck;
       }
       lastKnownGroupIndex = groupSeparator ? ++indexOfGroup : indexOfGroup;
@@ -936,7 +943,14 @@ const setFile = async ({
       Options.isAutomaticBasenameGroup(
         extLessFiles, lastKnownGroupIndex
       )
-    ) lastKnownGroupIndex++
+    ) {
+      lastKnownGroupIndex = (
+        Options.lastRegularGroupIndex !== undefined
+          ? Options.lastRegularGroupIndex
+          : lastKnownGroupIndex + 1
+      );
+    }
+    Options.lastRegularGroupIndex = lastKnownGroupIndex;
     Options.files(lastKnownGroupIndex, arg, !typeOfFile)
     log(INFO_LVL,
       logMessages.getMessage(typeOfFile, arg, lastKnownGroupIndex)

@@ -265,6 +265,13 @@ const {
  */
 class Options extends Mixin(classes[0], classes.slice(1)) {
   /**
+   * Last added regular group (no twin/same basenames)
+   * @name lastRegularGroupIndex
+   * @type {Number}
+   * @public
+   * @example Options.lastRegularGroupIndex = 2;
+   */
+  /**
    * Main private object that contains the data
    * @type {Object}
    * @private
@@ -536,6 +543,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {Number} the amount
    */
   static get amountOfSongs() {
+    // Cleanup of a now unused variable
+    if (this.lastRegularGroupIndex !== undefined) {
+      delete this.lastRegularGroupIndex
+    }
     return this.#listOfSongs.length / 3;
   }
   /**
