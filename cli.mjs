@@ -738,6 +738,48 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
 }
 
 /**
+ * Checks for the same basename as the path given inside process.argv
+ * @param {String}                 path         full file path to compare with another one
+ * @param {Object<String, Number>} extLessFiles list of duplicated files without extensions
+ * @inner
+ * @private
+ * @memberof module:cli
+ * @return {Boolean} - whether or not it has found a similar file inside process.argv
+ */
+const checkForIdenticalName = (path, extLessFiles) => {
+  const startOfExt = path.lastIndexOf(".");
+  return extLessFiles[
+    startOfExt === -1 ? path : path.substring(0, startOfExt)
+  ] > 1;
+}
+/**
+ * Returns either a new Promise or attaches a .then Promise to an older one
+ * @param {Number}   indexOfSetFile index of the current setFile instance
+ * @param {Function} func           function to run within a Promise
+ * @inner
+ * @private
+ * @memberof module:cli
+ * @return {(Promise|undefined)} - a new Promise that'll fulfill when the given function returns
+ */
+const createSetFilePromise = (indexOfSetFile, func) => {
+  const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
+  return lastSetFilePromise?.then(func) ?? func();
+}
+/**
+ * Generates a generic log message used inside setFile
+ * @param {Boolean} type    file type
+ * @param {String}  msgArg  filename
+ * @param {Number}  [index] group index of the file
+ * @inner
+ * @private
+ * @memberof module:cli
+ * @return {String} generic log message
+ */
+const getSetFileMessage = (type, msgArg, index) => {
+  const typeOfFile = type ? "midi" : "soundfont";
+  return `Set ${typeOfFile} file to "${msgArg}" at index ${index}`;
+}
+/**
  * Sets a supported file inside a group in Options class
  * @param {module:typeDefinitions~setFileObjectParameters} setFileObjectParameters
  * @return {Promise<Promise|undefined>}
@@ -769,49 +811,9 @@ const setFile = async ({
   }
 
   const inputIndex = Number(lastIndex ?? 0);
-  /**
-   * Checks for the same basename as the path given inside process.argv
-   * @param {String} path - full file path to compare with another one
-   * @inner
-   * @private
-   * @memberof module:cli
-   * @return {Boolean} - whether or not it has found a similar file inside process.argv
-   */
-  const checkForIdenticalName = path => {
-    const startOfExt = path.lastIndexOf(".");
-    return extLessFiles[
-      startOfExt === -1 ? path : path.substring(0, startOfExt)
-    ] > 1;
-  }
-  /**
-   * Returns either a new Promise or attaches a .then Promise to an older one
-   * @param {Function} func function to run within a Promise
-   * @inner
-   * @private
-   * @memberof module:cli
-   * @return {(Promise|undefined)} - a new Promise that'll fulfill when the given function returns
-   */
-  const createPromise = func => {
-    const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
-    return lastSetFilePromise?.then(func) ?? func();
-  }
-  /**
-   * Generates a generic log message
-   * @param {Boolean} type    file type
-   * @param {String}  msgArg  filename
-   * @param {Number}  [index] group index of the file
-   * @inner
-   * @private
-   * @memberof module:cli
-   * @return {String} generic log message
-   */
-  const getMessage = (type, msgArg, index) => {
-    const typeOfFile = type ? "midi" : "soundfont";
-    return `Set ${typeOfFile} file to "${msgArg}" at index ${index}`;
-  }
   // Manual addition
   if (lastIndex || lastParam) {
-    return createPromise(async () => {
+    return createSetFilePromise(indexOfSetFile, async () => {
       let needsToBeReplaced, setOfFiles;
       const files = Options.all.files;
 
@@ -834,13 +836,13 @@ const setFile = async ({
           ? `Replaced soundfont file from "${
               setOfFiles.getIndex(0)
             }" to "${arg}" at index ${inputIndex}`
-          : getMessage(typeOfFile, arg, inputIndex)
+          : getSetFileMessage(typeOfFile, arg, inputIndex)
       )
     });
   }
 
   // --- Automatic addition of files section ---
-  return createPromise(() => {
+  return createSetFilePromise(indexOfSetFile, () => {
     /*
       This is how the algorithm for the automatic grouping works
       Twin file/group = same basename files of different types (.mid|.sf2)
@@ -892,14 +894,14 @@ const setFile = async ({
     );
     if (typeof foundIndex === "number") {
       Options.files(foundIndex, arg, !typeOfFile)
-      log(INFO_LVL, getMessage(typeOfFile, arg, foundIndex))
+      log(INFO_LVL, getSetFileMessage(typeOfFile, arg, foundIndex))
       return;
     }
-    if (checkForIdenticalName(arg)) {
+    if (checkForIdenticalName(arg, extLessFiles)) {
       const amountOfGroups = Options.amountOfGroups;
       Options.files(amountOfGroups, arg, !typeOfFile)
       log(INFO_LVL,
-        getMessage(typeOfFile, arg, amountOfGroups)
+        getSetFileMessage(typeOfFile, arg, amountOfGroups)
       )
       return;
     }
@@ -942,7 +944,7 @@ const setFile = async ({
     Options.lastRegularGroupIndex = lastKnownGroupIndex;
     Options.files(lastKnownGroupIndex, arg, !typeOfFile)
     log(INFO_LVL,
-      getMessage(typeOfFile, arg, lastKnownGroupIndex)
+      getSetFileMessage(typeOfFile, arg, lastKnownGroupIndex)
     )
   });
   // --- END of automatic addition of files section ---
