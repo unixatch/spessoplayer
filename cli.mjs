@@ -372,7 +372,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         || endsWithSupportedExtension(element)) continue;
 
       const startOfExt = element.lastIndexOf(".");
-      if (startOfExt === -1) continue;
+      if (startOfExt === -1 || startOfExt === 0) continue;
 
       const noExt = element.substring(0, startOfExt);
       extLessFiles[noExt] = extLessFiles[noExt] + 1 || 1;
