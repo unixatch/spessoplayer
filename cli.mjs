@@ -276,7 +276,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     const noInitials = (
       arg[0] === "-" && arg.slice(arg[1] === "-" ? 2 : 1)
     ) || (
-      arg[0] === "/" && arg.slice(1)
+      arg[0] === "/" &&
+      process.platform === "win32" && arg.slice(1)
     );
     if (!noInitials) return noInitials;
 
