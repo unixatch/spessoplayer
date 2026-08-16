@@ -479,9 +479,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   }
   /**
    * If all groups are valid to be used
-   * @type {Boolean}
+   * @return {Boolean}
    */
-  static get existsValidGroup() {
+  static areGroupsValid() {
     return this.#addedGroupCount === this.#groupsChecked.length;
   }
   /**
