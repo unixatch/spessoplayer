@@ -282,12 +282,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @type {(undefined|Object|null)}
    * @private
    */
-  static #lastGroupChecked;
+  static #groupsChecked;
   /**
-   * If it exists at least a valid group to be used
-   * @type {(Boolean|undefined)}
+   * How many groups have been created
+   * (doesn't include empty slots)
+   * @type {Number}
+   * @private
    */
-  static existsValidGroup;
+  static #addedGroupCount = 0;
   /**
    * @typedef list_Of_Songs
    * @type {Array}
@@ -476,6 +478,13 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     }
   }
   /**
+   * If all groups are valid to be used
+   * @type {Boolean}
+   */
+  static get existsValidGroup() {
+    return this.#addedGroupCount === this.#groupsChecked.length;
+  }
+  /**
    * The main method to add a file to the list of Sets
    * @param {Number} index - index of the group of files
    * @param {String} string - file to add
@@ -493,24 +502,33 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       startOfExt === -1
         ? string : string.substring(0, startOfExt)
     );
-    groups[index] ??= new Set();
+    groups[index] ??= (this.#addedGroupCount += 1, new Set());
 
     // It checks that there's at least
     // a soundfont + midi couple at any index
-    if (!this.existsValidGroup) validGroupCheckBlock: {
-      this.#lastGroupChecked ??= Object.create(null);
-      const atLeast1File           = groups[index].size >= 1,
-            existsSoundfontAtIndex = this.#lastGroupChecked[index];
-
-      // Guard clause before setting existsValidGroup
-      if (existsSoundfontAtIndex === undefined) {
-        if (!isSoundfont)  break validGroupCheckBlock;
-        this.#lastGroupChecked[index] = null;
-        if (!atLeast1File) break validGroupCheckBlock;
+    if (!this.#groupsChecked?.[index]) validGroupCheckBlock: {
+      this.#groupsChecked ??= Object.create(null, {
+        length: { value: 0, writable: true }
+      });
+      switch (this.#groupsChecked[index]) {
+        case undefined: default: { // init
+          this.#groupsChecked[index] ||= isSoundfont ? false : null;
+          break validGroupCheckBlock;
+        }
+        case null: { // a song file
+          if (!isSoundfont) break validGroupCheckBlock;
+          if (groups[index].size >= 1) break;
+          break validGroupCheckBlock;
+        }
+        case false: { // a soundbank
+          if (!isSoundfont) break;
+          break validGroupCheckBlock;
+        }
       }
-      if ((this.existsValidGroup = atLeast1File)) {
-        this.#lastGroupChecked = null; // Cleanup
-      }
+      // Switch breaks then
+      // it greenlights the group down here
+      this.#groupsChecked[index] = true;
+      this.#groupsChecked.length += 1;
     }
 
     if (isSoundfont) {
