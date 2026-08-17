@@ -207,9 +207,6 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       lastIndex;
   const newArguments = args?.slice(2) ?? newArgs,
         newArgumentsSet = new Set(newArguments);
-  /** @type {Map<String, (String|Symbol)>} */
-  const doneFileList = new Map(newArgumentsSet.entries()),
-        doneSymbol = Symbol("ALREADY_DONE");
 
   if (newArguments.length === 0) {
     await help()
@@ -362,6 +359,10 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
   };
+  /** @type {Map<String, (String|Symbol)>} */
+  const doneFileList = new Map(newArgumentsSet.entries()),
+        doneSymbol = Symbol("ALREADY_DONE");
+
   /** @type {Object<String, Number>} */
   const extLessFiles = Object.create(null);
   {
