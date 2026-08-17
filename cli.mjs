@@ -343,9 +343,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * @param {String} arg file to check and maybe run
    */
   const runSetFile = arg => {
-    if (doneFileList.get(arg) === doneSymbol
+    if (doneFileList[arg] === doneSymbol
         && lastParam !== "input") return;
-    doneFileList.set(arg, doneSymbol)
+    doneFileList[arg] = doneSymbol;
 
     setFilePromises.push(
       setFile({
@@ -359,8 +359,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
   };
-  /** @type {Map<String, (String|Symbol)>} */
-  const doneFileList = new Map(newArgumentsSet.entries()),
+  /** @type {Object<String, Symbol>} */
+  const doneFileList = Object.create(null),
         doneSymbol = Symbol("ALREADY_DONE");
 
   /** @type {Object<String, Number>} */
