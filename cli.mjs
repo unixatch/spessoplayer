@@ -346,7 +346,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * @param {String} arg file to check and maybe run
    */
   const runSetFile = arg => {
-    if (doneFileList.get(arg) === doneSymbol) return;
+    if (doneFileList.get(arg) === doneSymbol
+        && lastParam !== "input") return;
     doneFileList.set(arg, doneSymbol)
 
     setFilePromises.push(
