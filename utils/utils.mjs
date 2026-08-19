@@ -648,10 +648,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           listOfFiles = this.#options.files;
     let indexOfSets = 0;
     for (const setOfFiles of listOfFiles) {
-      if (!setOfFiles) {
-        indexOfSets++
-        continue;
-      }
+      if (!setOfFiles) { indexOfSets++; continue; }
       const values = [...setOfFiles],
             parsedValues = [],
             MAX_DEEP_LEVEL = 3;
@@ -659,23 +656,26 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       // Truncate after MAX_DEEP_LEVEL folders deep
       let indexInsideSet = 0;
       for (const v of values) {
-        const basename = getFilename(v, true),
-              dirname  = getDirname(v);
+        const dirname  = getDirname(v);
 
         if (!dirname) {
-          parsedValues[indexInsideSet] = v;
-          indexInsideSet++
+          parsedValues[indexInsideSet++] = v;
           continue;
         }
-        const splitDir = dirname.split(sep).slice(0, MAX_DEEP_LEVEL);
-        parsedValues[indexInsideSet] = splitDir.join(sep) + sep + "..." + basename;
-        indexInsideSet++
+        const splitDir = dirname.split(sep);
+        if (!(splitDir.length > MAX_DEEP_LEVEL)) {
+          parsedValues[indexInsideSet++] = v;
+          continue;
+        }
+
+        const basename = sep + getFilename(v, true);
+        splitDir.splice(MAX_DEEP_LEVEL)
+        parsedValues[indexInsideSet++] = `${splitDir.join(sep) + sep}...${basename}`;
       }
 
       const soundfont = parsedValues[0],
             midis = parsedValues.slice(1);
-      table[indexOfSets] = { soundfont, midis };
-      indexOfSets++
+      table[indexOfSets++] = { soundfont, midis };
     }
     return table;
   }
