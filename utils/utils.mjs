@@ -524,7 +524,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {Boolean}
    */
   static areGroupsValid() {
-    return this.#addedGroupCount === this.#groupsChecked.length;
+    return this.#addedGroupCount === this.#groupsChecked?.length;
   }
   /**
    * The main method to add a file to the list of Sets
