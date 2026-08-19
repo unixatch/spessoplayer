@@ -33,7 +33,7 @@ export const sep = process.platform === "win32" ? "\\" : "/";
  * // Clears only the last line
  * clearLastLines(-1)
  */
-const clearLastLines = lineY => {
+function clearLastLines(lineY) {
   if (typeof lineY !== "number" || Number.isNaN(lineY)) {
     throw new TypeError("Didn't give a valid number")
   }
