@@ -21,7 +21,7 @@
  */
 
 const {
-  parse,
+  getFilename,
   ERROR_LVL, WARNING_LVL,
   INFO_LVL,  DEBUG_LVL,
   formatStrings,
@@ -1137,7 +1137,7 @@ async function toFile({
   if (!onlyFloat) {
     stdoutHeader = getWavHeader({
       length: sampleCount, numChannels: 2
-    }, options.sampleRate, { title: parse(options.midiFile).name });
+    }, options.sampleRate, { title: getFilename(options.midiFile) });
     log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
   }
 
@@ -1701,8 +1701,7 @@ async function prepareDestination({
         ? (index, previous) => index + previous
         : undefined
     );
-    let midiName;
-    if (!isStdout) ({ name: midiName } = parse(midiFile));
+    const midiName = !isStdout ? getFilename(midiFile) : undefined;
     stdoutHeader = getWavHeader(
       {
         length: (

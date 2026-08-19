@@ -19,10 +19,11 @@
  * @module utils/utils
  */
 
-import { join, parse, sep } from "node:path"
 import { classes } from "./classes.mjs"
 import Mixin from "./basic_additions.mjs"
 import "./colors.mjs"
+
+export const sep = process.platform === "win32" ? "\\" : "/";
 
 /**
  * Clears lines from the last line up
@@ -41,6 +42,39 @@ const clearLastLines = lineY => {
         clearScreenDown = "\x1b[0J";
 
   process.stdout.write(upNLines + clearScreenDown)
+}
+/**
+ * Gets the filename with/without extension
+ * @param {String}  path              path to parse
+ * @param {Boolean} extensionIncluded if it should keep the extension
+ * @return {String} basename
+ */
+function getFilename(path, extensionIncluded) {
+  const afterLastSlashIndex = path.lastIndexOf(sep) + 1,
+        extStart            = path.lastIndexOf(".");
+
+  return path.substring(
+    afterLastSlashIndex,
+    //    no ext  ↓       ↓ not a hidden file ↓
+    extStart !== -1 && extStart !== afterLastSlashIndex
+    && !extensionIncluded
+      ? extStart : undefined
+  );
+}
+/**
+ * Gets the dirname of a path
+ * @param {String} path path to parse
+ * @return {String} dirname
+ */
+function getDirname(path) {
+  let dirname;
+  const lastSlashIndex = path.lastIndexOf(sep);
+
+  // Root only
+  if (lastSlashIndex ===  0) dirname = sep;
+  // Doesn't exist
+  if (lastSlashIndex === -1) dirname = "";
+  return dirname ?? path.substring(0, lastSlashIndex);
 }
 const debugLevels = Array(4).keys();
 export const debugMaxLevel = debugLevels.length-1;
@@ -194,17 +228,25 @@ function newFileName(path, createAnyway = false) {
         return String.fromCharCode(randomInteger);
     }
   };
-  const MAX_LENGTH = 8;
-  let {
-    dir: pathDir,
-    name: pathFileName, ext: pathExt
-  } = parse(path);
-  let newString = "";
+  let pathDir = getDirname(path);
+  if (pathDir !== "" && pathDir !== sep) pathDir += sep;
 
+  // Name without extension
+  let pathFileName = getFilename(path);
+
+  // Extension
+  const extStart = path.lastIndexOf(".");
+  const pathExt = (
+    extStart === -1 || extStart === 0
+      ? "" : path.substring(extStart)
+  );
+
+  let newString = "";
+  const MAX_LENGTH = 8;
   for (let i = 0; i < MAX_LENGTH; ++i) newString += randomCharCode();
 
   pathFileName += "__"+newString+"__";
-  path = join(pathDir, pathFileName + pathExt);
+  path = pathDir + pathFileName + pathExt;
 
   if (fs.existsSync(path)) return newFileName(path, createAnyway);
   return path;
@@ -617,15 +659,16 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       // Truncate after MAX_DEEP_LEVEL folders deep
       let indexInsideSet = 0;
       for (const v of values) {
-        const parsedPath = parse(v);
+        const basename = getFilename(v, true),
+              dirname  = getDirname(v);
 
-        if (!parsedPath.dir) {
+        if (!dirname) {
           parsedValues[indexInsideSet] = v;
           indexInsideSet++
           continue;
         }
-        const splitDir = parsedPath.dir.split(sep).slice(0, MAX_DEEP_LEVEL);
-        parsedValues[indexInsideSet] = join(splitDir.join(sep), "...") + parsedPath.base;
+        const splitDir = dirname.split(sep).slice(0, MAX_DEEP_LEVEL);
+        parsedValues[indexInsideSet] = splitDir.join(sep) + sep + "..." + basename;
         indexInsideSet++
       }
 
@@ -794,7 +837,7 @@ function ffmpegExitHandler(exitCode, resolver) {
 }
 
 export {
-  join, parse, sep,
+  getFilename,
   clearLastLines,
   log,
   newFileName,

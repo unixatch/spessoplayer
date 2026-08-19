@@ -19,13 +19,12 @@
  * @module cli
  */
 
-import { join, parse } from "node:path"
 import {
   WARNING_LVL, INFO_LVL,
   debugMaxLevel,
   formatStrings,
   fromInstant,
-  log, Options
+  log, Options, sep
 } from "./utils/utils.mjs"
 
 function endsWithSupportedExtension(arg) {
@@ -1404,7 +1403,7 @@ const setLogFilePath = arg => {
  */
 const uninstall = async () => {
   const { execSync } = await import("node:child_process");
-  const uninstallScriptPath = join(import.meta.dirname, "uninstall.mjs");
+  const uninstallScriptPath = `${import.meta.dirname}${sep}uninstall.mjs`;
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
 
   try {
@@ -1795,7 +1794,7 @@ const help = async ({ errorText = "" } = "") => {
  */
 const version = async () => {
   const fs = await import("node:fs");
-  const packageJSONPath = join(import.meta.dirname, "package.json");
+  const packageJSONPath = `${import.meta.dirname}${sep}package.json`;
   const { version: versionNumber } = JSON.parse(fs.readFileSync(packageJSONPath).toString());
 
   log(INFO_LVL, `Taken version number from ${packageJSONPath}`)
@@ -1806,7 +1805,6 @@ const version = async () => {
 export {
   manageVerboseOptions,
   actUpOnPassedArgs,
-  join, parse,
   Options
 }
 
