@@ -205,23 +205,27 @@ const showCursor = "\x1b[?25h",
       clearCurrentLine = "\x1b[2K",
       startOfLine = "\r";
 let isCursorHidden = true;
-const showFileList = (isDryRun, partial = false) => (
+const showFileList = (isDryRun, partial = false) => {
+  const len = finalFileOutputs.length;
+  for (let i = 0; i < len; ++i) {
+    const obj = finalFileOutputs[i];
+
+    if (obj?.finished) {
+      delete obj.finished;
+    } else {
+      delete finalFileOutputs[i]; // Failed to render
+    }
+  }
   console.log(
     !partial
       ? clearCurrentLine + startOfLine + showCursor + "Written"
       : "Written only",
-    finalFileOutputs.filter(i => {
-      if (i.finished) {
-        delete i.finished;
-        return true;
-      }
-      return false;
-    }),
+    finalFileOutputs,
     isDryRun
       ? `\b\nbut actually ${bold}nothing${normal} was written...`
       : "\b"
   )
-);
+};
 /**
  * A small handler function only for specific signals
  * @param {String} signal signal name
