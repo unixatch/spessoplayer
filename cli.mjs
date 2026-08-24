@@ -881,10 +881,18 @@ const setFile = async ({
     exists a normal group?                         ↓
       |                |                group separator exists?
       ↓                ↓               ↓                       ↓
-     yes              no              yes                      no
-      ↓                ↓               ↓                       ↓
-   add to that     add to         add a new group          add it to
-   group           a new group    and add to it            the last group
+     yes              no -=|          yes                      no
+      |                    |           |                       ↓
+      |                    |           |                    add it to
+      |                    |=---------=|=--------=|         the last group
+   is arg a soundfont?                            |
+    ↓            ↓                                |
+   yes           no ------------=|                |
+     ↓                           ↓                ↓
+   Does the group            add to that      add a new group
+   already have one? → no →  group            and add to it
+       ↓                                             ↑
+      yes ------------------------------------------=|
 
     */
     const startOfExt = arg.lastIndexOf(".");
@@ -942,7 +950,10 @@ const setFile = async ({
           : lastKnownGroupIndex + 1
       );
     }
-    Options.lastRegularGroupIndex = lastKnownGroupIndex;
+    Options.lastRegularGroupIndex = (
+      !typeOfFile && Options.isLastRegularGroupOccupied()
+        ? ++lastKnownGroupIndex : lastKnownGroupIndex
+    );
     Options.files(lastKnownGroupIndex, arg, !typeOfFile)
     log(INFO_LVL,
       getSetFileMessage(typeOfFile, arg, lastKnownGroupIndex)

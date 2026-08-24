@@ -680,6 +680,26 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     return table;
   }
   /**
+   * Checks if the last regular group
+   * has already a soundfont
+   * @return {Boolean} true if it exists or otherwise false
+   */
+  static isLastRegularGroupOccupied() {
+    const files     = this.#options.files,
+          lastIndex = this.lastRegularGroupIndex;
+    if (!files || lastIndex === undefined) return false;
+
+    const fullName = files[lastIndex]?.getIndex(0);
+    const indexOfGroup = this.searchAddedFile(
+      fullName.substring(0, fullName.lastIndexOf(".")),
+      true
+    );
+    return (
+      files[indexOfGroup]?.size > 1
+      && indexOfGroup === lastIndex
+    );
+  }
+  /**
    * Checks if there's a file somewhere
    * that has exactly the same name as the user needs
    * @param {String} name - basename to search for
