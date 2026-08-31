@@ -33,10 +33,10 @@ let readline;
 /**
  * Checks if a program exists, if it doesn't exist,
  * it asks the user for confirmation to install via package managers
- * @param {String} program - the program to check
- * @param {String} [noInstallMsg=""] - the message to show when the user refuses to install it
+ * @param {String} program     - the program to check
+ * @param {String} installDesc - the description of what's about to be installed
  */
-async function runCheck(program, noInstallMsg = "") {
+async function runCheck(program, installDesc) {
   let exists = true;
   try {
     runProgramSync({ spawnSync, program })
@@ -69,7 +69,8 @@ async function runCheck(program, noInstallMsg = "") {
         history: ["Y", "n"]
       });
       answer = await rl.question(
-        `[${underline+program+normal}]: Do you want to install it [Y|n]? `
+        normalYellow+installDesc+normal +
+        `\nDo you want to install it [Y|n]? `
       );
       rl.close()
     } catch (e2) {
@@ -90,7 +91,7 @@ async function runCheck(program, noInstallMsg = "") {
           stdout: process.stdout, stderr: process.stderr
         });
       case "n": case "no":
-        return console.warn(normalYellow+noInstallMsg+normal);
+        return null;
     }
     clearLastLines(-1)
     return await question();
@@ -100,17 +101,17 @@ async function runCheck(program, noInstallMsg = "") {
 // ffmpeg check
 await runCheck(
   "ffmpeg",
-  "Continuing installation, but you'll get errors when trying to convert to other formats"
+  `${underline}ffmpeg${normal} is needed to convert to other formats`
 )
 // SoX check
 await runCheck(
   "sox",
-  "Continuing installation, but you'll get errors when trying to use the effects flag"
+  `${underline}sox${normal} is needed to use its effects (effects flag)`
 )
 // mpv check
 await runCheck(
   "mpv",
-  "Continuing installation, but you'll get errors when trying to play songs directly"
+  `To play songs directly, ${underline}mpv${normal}'s needed`
 )
 
 // Auto-complete installation
