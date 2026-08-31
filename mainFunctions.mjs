@@ -1592,7 +1592,7 @@ async function startPlayer(
   }
   const baseUrl = `http://localhost:${port}/song`;
   for (let i = 0; i < amountOfSongs; ++i) {
-    const filename = Options.getSongName(i);
+    const filename = encodeURI(getFilename(Options.getSongName(i)));
     listOfURLs.push(`${baseUrl}?index=${i}&name=${filename}`)
   }
 
