@@ -100,23 +100,31 @@ if (confirmation) {
     for (const i of infos) console.log(i)
   } else console.table(Options.getConfirmationTable())
 
-  const readline = await import("node:readline/promises");
+  const rl = (
+    (await import("node:readline/promises"))
+      .createInterface({
+        input: process.stdin, output: process.stdout,
+        history: ["Y", "n"]
+      })
+  );
   const question = async () => {
-    const rl = readline.createInterface({
-      input: process.stdin, output: process.stdout,
-      history: ["Y", "n"]
-    });
-    const answer = await rl.question("Is this setup correct [Y|n]? ");
-    rl.close()
+    const answer = (
+      await rl.question("Is this setup correct [Y|n]? ")
+    ).toLowerCase().trim();
 
-    if (/^(?:y|yes)$/i.test(answer) || /^\s*$/.test(answer)) return;
-    if (/^(?:n|no)$/i.test(answer)) {
-      console.warn(`${gray}Closing then...${normal}`)
-      process.exit()
+    switch (answer) {
+      case "n": case "no":
+        console.warn(`${gray}Closing then...${normal}`)
+        return process.exit();
+
+      case "y": case "yes": case "":
+        return rl.close();
+
+      default:
+        clearLastLines(-1)
+        return await question();
     }
-    clearLastLines(-1)
-    return await question();
-  }
+  };
   await question()
 }
 
