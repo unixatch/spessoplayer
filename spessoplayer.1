@@ -1,4 +1,4 @@
-.TH spessoplayer 1 "July 2 2026" "unixatch"
+.TH spessoplayer 1 "September 6 2026" "unixatch"
 .SH NAME
 A midi player/converter that uses spessasynth_core
 .SH SYNOPSIS
@@ -59,7 +59,7 @@ like for example sample-rate
 
 Takes the following \fIfile\fR and puts it in the list by \fIn
 .RE
-.IP \fB--volume[:\f(CIn\fP]\ \fIamount\fR,\ \fB-v[:\f(CIn\fP]\ \fIamount\fR:
+.IP \fB--volume[:\f(CIn\fP]\ \fIamount\fR,\ \fB-vol[:\f(CIn\fP]\ \fIamount\fR:
 
 Volume to set (\fIdefault: 100%\fR)
 
@@ -67,6 +67,12 @@ Available formats:
   - \fBdB\fR (example -10dB);
   - \fBpercentages\fR (example 70%);
   - \fBdecimals\fR (example 0.9);
+.RE
+.IP \fB--drums-volume[:\f(CIn\fP]\ \fIamount\fR,\ \fB-dvol[:\f(CIn\fP]\ \fIamount\fR:
+
+Volume to set for the drum channel (\fIdefault: 100%\fR)
+
+Same formats as volume
 .RE
 .IP \fB--reverb-volume[:\f(CIn\fP]\ \fIamount\fR,\ \fB-rvb[:\f(CIn\fP]\ \fIamount\fR:
 .RS

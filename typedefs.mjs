@@ -41,6 +41,7 @@
  * @type {Object}
  * @property {Number}  [loopAmount=0]             the loop amount
  * @property {Number}  [volume=100/100]           the volume to set
+ * @property {Number}  [drumsVolume=100/100]      the volume to set for drums
  * @property {String}  midiFile                   midi file
  * @property {String}  soundfontFile              soundfont file
  * @property {Number}  [sampleRate=48000]         sample rate

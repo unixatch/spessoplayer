@@ -552,6 +552,14 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
+      case "drums-volume": case "dvol": {
+        setVolumeParameter(
+          "drums-volume", nextArg, lastIndex,
+          Options.addIndexedNumberValue
+            .bind(Options, "drumsVolume")
+        )
+        i++; break;
+      }
       case "sample-rate": case "r": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         setSampleRate(nextArg, lastIndex, isStdout)
@@ -1539,6 +1547,16 @@ const help = async ({ errorText = "" } = "") => {
         - dB (example -10dB)
         - percentages (example 70%)
         - decimals (example 0.9)`
+      )}
+    ${param(
+      ["--drums-volume"+optional(":n")+" "+grayBoldText("amount"),
+       "/drums-volume"+optional(":n")+" "+grayBoldText("amount")],
+      ["-dvol"+optional(":n")+" "+grayBoldText("amount"),
+       "/dvol"+optional(":n")+" "+grayBoldText("amount")]
+    )}:
+      ${multiLine(
+      `Volume to set for the drum channel (default: 100%)
+      Same formats as volume`
       )}
 
     ${param(

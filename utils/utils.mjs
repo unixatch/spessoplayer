@@ -405,7 +405,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Numbers
-      case "volume":
+      case "volume": case "drumsVolume":
       case "stdoutReverbVolume": case "reverbVolume":
       case "sampleRate":
       case "loopAmount":

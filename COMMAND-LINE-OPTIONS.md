@@ -60,6 +60,13 @@ Available formats:
 - **percentages** (*example 70%*);
 - **decimals** (*example 0.9*);
 
+### --drums-volume[:n] **amount**, /drums-volume[:n] **amount**,
+####   -dvol[:n] **amount**, /dvol[:n] **amount**
+
+Volume to set for the drum channel (*default: 100%*)
+
+Same formats as volume
+
 ### --reverb-volume[:n] **amount**, /reverb-volume[:n] **amount**,
 ####   -rvb[:n] **amount**, /rvb[:n] **amount**:
 
