@@ -455,7 +455,7 @@ function prettyLogSpessaSynthErrors({name: eName, message: eMessage}, filename) 
 async function initSpessaSynth({
   loopAmount = 0,
   volume = 100/100,
-  drumsVolume = 100/100, channelVolume,
+  drumsVolume, channelVolume,
   midiFile, soundfontFile,
   sampleRate = 48000,
   spessaSynthEffects = false, reverbVolume,

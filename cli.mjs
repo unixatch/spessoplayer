@@ -1375,7 +1375,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     log(INFO_LVL, `Set ${name} to ${toFloat} at ${lastIndex} index`)
     return;
   }
-  // Negative conversion
+  // Negative error
   if (number < 0) {
     console.error(
       formatStrings.failedCliParamWithArg,
@@ -1591,6 +1591,7 @@ const help = async ({ errorText = "" } = "") => {
         - percentages (example 70%)
         - decimals (example 0.9)`
       )}
+
     ${param(
       ["--drums-volume"+optional(":n")+" "+grayBoldText("amount"),
        "/drums-volume"+optional(":n")+" "+grayBoldText("amount")],
@@ -1598,7 +1599,7 @@ const help = async ({ errorText = "" } = "") => {
        "/dvol"+optional(":n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
-      `Volume to set for the drum channel (default: 100%)
+      `Volume to set for the drum channel
       Same formats as volume`
       )}
 

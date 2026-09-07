@@ -443,7 +443,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         if (!needsToBeSet && property === "daemon") {
           return this.#options[property];
         }
-        if (!needsToBeSet && property === "spessaSynthEffects") {
+        else if (!needsToBeSet && property === "spessaSynthEffects") {
           if (this.#options[property] === undefined) return;
           if (Number.isNaN(index)) index = this.#options[property].length-1;
           return (
@@ -452,6 +452,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
               : this.#options[property]
           );
         }
+        else if (!needsToBeSet) return;
+
         this.#checkValueAndExistence(
           value, "boolean", needsAnArray ? property : undefined
         )
@@ -467,13 +469,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "fileOutputs":
       case "dryRun":
       case "format": case "loopFadeInterpolation": {
-        if (!needsToBeSet) {
-          return (
-            property === "fileOutputs"
-              ? "fileOutputs" in this.#options
-              : undefined
-          );
-        }
+        if (!needsToBeSet) return (
+          property === "fileOutputs"
+            ? "fileOutputs" in this.#options
+            : undefined
+        );
 
         this.#checkValueAndExistence(
           value, "string", (needsAnArray) ? property : undefined
