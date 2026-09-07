@@ -405,7 +405,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
       }
       // Numbers
-      case "volume": case "drumsVolume":
+      case "volume": case "drumsVolume": case "channelVolume":
       case "stdoutReverbVolume": case "reverbVolume":
       case "sampleRate":
       case "loopAmount":
@@ -413,10 +413,16 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "maxThreads":
       case "progressDelay":
       case "loopFadeStart": case "loopFadeDuration": {
-        if (!needsToBeSet) return;
+        if (!needsToBeSet) return (
+          property === "channelVolume"
+            ? this.#options?.[property]?.[index]
+            : undefined
+        );
 
         this.#checkValueAndExistence(
-          value, "number", (needsAnArray) ? property : undefined
+          value,
+          property === "channelVolume" ? "array" : "number",
+          (needsAnArray) ? property : undefined
         )
         if (setter) {
           if (property === "stdoutReverbVolume") {

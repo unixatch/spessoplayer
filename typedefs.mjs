@@ -39,27 +39,28 @@
 /**
  * @typedef initObjectParameters
  * @type {Object}
- * @property {Number}  [loopAmount=0]             the loop amount
- * @property {Number}  [volume=100/100]           the volume to set
- * @property {Number}  [drumsVolume=100/100]      the volume to set for drums
- * @property {String}  midiFile                   midi file
- * @property {String}  soundfontFile              soundfont file
- * @property {Number}  [sampleRate=48000]         sample rate
- * @property {Boolean} [spessaSynthEffects]       if it's a builtin effect or not
- * @property {Number}  loopStart                  start of loop
- * @property {Number}  loopEnd                    end of loop
- * @property {Number}  [loopFade]                 if it should loop fade
- * @property {Number}  [loopFadeStart=1]          when the loop fade starts
- * @property {Number}  [loopFadeDuration=4]       duration of the loop fade
- * @property {Number}  indexOfGroup               index of the Set/group the song is in
- * @property {Boolean} [isToFile=false]           if it's the toFile function
- * @property {Boolean} [isStartPlayer=false]      if it's the startPlayer function
- * @property {Boolean} [onlySampleCount=false]    if it should return just the sample count of the song and do nothing else
- * @property {Boolean} [onlyDuration=false]       if it should return just the duration of the song and do nothing else
- * @property {Object}  spessasynthLogging
- * @property {Boolean} spessasynthLogging.info    if it should show spessasynth's info logs
- * @property {Boolean} spessasynthLogging.warning if it should show spessasynth's warning logs
- * @property {Boolean} [hardStop=false]           if it should not smooth out the end
+ * @property {Number}   [loopAmount=0]             the loop amount
+ * @property {Number}   [volume=100/100]           the volume to set
+ * @property {Number}   [drumsVolume=100/100]      the volume to set for drums
+ * @property {Number[]} [channelVolume]            the volume that a specific channel will use
+ * @property {String}   midiFile                   midi file
+ * @property {String}   soundfontFile              soundfont file
+ * @property {Number}   [sampleRate=48000]         sample rate
+ * @property {Boolean}  [spessaSynthEffects]       if it's a builtin effect or not
+ * @property {Number}   loopStart                  start of loop
+ * @property {Number}   loopEnd                    end of loop
+ * @property {Number}   [loopFade]                 if it should loop fade
+ * @property {Number}   [loopFadeStart=1]          when the loop fade starts
+ * @property {Number}   [loopFadeDuration=4]       duration of the loop fade
+ * @property {Number}   indexOfGroup               index of the Set/group the song is in
+ * @property {Boolean}  [isToFile=false]           if it's the toFile function
+ * @property {Boolean}  [isStartPlayer=false]      if it's the startPlayer function
+ * @property {Boolean}  [onlySampleCount=false]    if it should return just the sample count of the song and do nothing else
+ * @property {Boolean}  [onlyDuration=false]       if it should return just the duration of the song and do nothing else
+ * @property {Object}   spessasynthLogging
+ * @property {Boolean}  spessasynthLogging.info    if it should show spessasynth's info logs
+ * @property {Boolean}  spessasynthLogging.warning if it should show spessasynth's warning logs
+ * @property {Boolean}  [hardStop=false]           if it should not smooth out the end
  */
 /**
  * @typedef effectsObjectParams

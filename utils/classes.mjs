@@ -43,9 +43,9 @@ function addIndexedProperties(that, list) {
 class MainOptions {
   /**
    * Adds a parameter string value by index
-   * @param {String}                  name property's name
-   * @param {(Number|NaN)}            index song's index
-   * @param {(String|Number|Boolean)} value string to add
+   * @param {String}                           name property's name
+   * @param {(Number|NaN)}                     index song's index
+   * @param {(String|Number|Boolean|Number[])} value string to add
    * @throws {TypeError} if index is not a number or name is not a string
    */
   static addIndexedStringValue(name, index, value) {
@@ -61,6 +61,8 @@ class MainOptions {
   static addIndexedNumberValue  = this.addIndexedStringValue;
   /** @alias addIndexedStringValue */
   static addIndexedBooleanValue = this.addIndexedStringValue;
+  /** @alias addIndexedStringValue */
+  static addIndexedArrayValue = this.addIndexedStringValue;
 
   /**
    * Adds a parameter boolean value
@@ -102,6 +104,16 @@ class MainOptions {
    */
   static getValue(name) {
     return this._manageOption({ property: name }, false);
+  }
+  /**
+   * Retrieves a property's value
+   * @param {String} name  property's name
+   * @param {Number} index property's index
+   * @return {*} value of the property
+   * @throws {TypeError} if name is not a string
+   */
+  static getIndexedValue(name, index) {
+    return this._manageOption({ property: name, index }, false);
   }
 }
 

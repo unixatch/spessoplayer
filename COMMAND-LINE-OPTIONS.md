@@ -67,6 +67,13 @@ Volume to set for the drum channel (*default: 100%*)
 
 Same formats as volume
 
+### --channel-volume[:n] **index,amount**, /channel-volume[:n] **index,amount**,
+####   -cvol[:n] **index,amount**, /cvol[:n] **index,amount**
+
+Volume to set for a specific channel (**index**ed instrument)
+
+Same formats as volume
+
 ### --reverb-volume[:n] **amount**, /reverb-volume[:n] **amount**,
 ####   -rvb[:n] **amount**, /rvb[:n] **amount**:
 

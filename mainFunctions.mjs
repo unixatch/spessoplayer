@@ -454,7 +454,8 @@ function prettyLogSpessaSynthErrors({name: eName, message: eMessage}, filename) 
  */
 async function initSpessaSynth({
   loopAmount = 0,
-  volume = 100/100, drumsVolume = 100/100,
+  volume = 100/100,
+  drumsVolume = 100/100, channelVolume,
   midiFile, soundfontFile,
   sampleRate = 48000,
   spessaSynthEffects = false, reverbVolume,
@@ -567,6 +568,7 @@ async function initSpessaSynth({
     effectsEnabled: hardStop === true ? false : spessaSynthEffects
   });
   synth.setSystemParameter("gain", volume)
+  // Drum channel volume change
   if (drumsVolume !== undefined) {
     let foundDrums = (
       synth.midiChannels[DEFAULT_PERCUSSION].drumChannel
@@ -577,6 +579,16 @@ async function initSpessaSynth({
     }
     synth.midiChannels[foundDrums ?? DEFAULT_PERCUSSION]
       .setSystemParameter("gain", drumsVolume)
+  }
+  // Channel volume change
+  if (channelVolume !== undefined) {
+    for (const i in channelVolume) {
+      const indexedVolume = channelVolume[i];
+      if (indexedVolume === undefined) continue;
+
+      synth.midiChannels[i]
+        .setSystemParameter("gain", indexedVolume)
+    }
   }
   if (spessaSynthEffects) {
     synth.setSystemParameter("reverbGain", reverbVolume)

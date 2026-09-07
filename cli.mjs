@@ -560,6 +560,14 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         )
         i++; break;
       }
+      case "channel-volume": case "cvol": {
+        setVolumeParameter(
+          "channel-volume", nextArg, lastIndex,
+          Options.addIndexedArrayValue
+            .bind(Options, "channelVolume")
+        )
+        i++; break;
+      }
       case "sample-rate": case "r": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         setSampleRate(nextArg, lastIndex, isStdout)
@@ -1320,22 +1328,49 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
  * @param {Function} func Options' dedicated parameter function
  */
 const setVolumeParameter = (name, arg, lastIndex, func) => {
+  let channelVolumeArray, channelVolumeIndex;
+  const isChannelVolume = name === "channel-volume";
+
+  if (isChannelVolume) {
+    channelVolumeArray = Options.getIndexedValue(
+      "channelVolume", Number(lastIndex)
+    ) ?? [];
+    const sepIndex = arg.indexOf(",");
+    channelVolumeIndex = arg.substring(0, sepIndex);
+    if (channelVolumeIndex < 0) {
+      console.error(
+        formatStrings.failedCliParamWithArg,
+        `[${name}|${lastIndex ?? "0"}]:`, arg,
+        `channel index ${channelVolumeIndex} must be above or equal to 0`
+      )
+      process.exit(1)
+    }
+    arg = arg.substring(sepIndex+1);
+  }
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
     const dB = Number(arg.match(regexes.decibelNumber)[1]);
-    const dBNumber = 10**(dB/(name === "volume" ? 10 : 20));
+    let dBNumber = 10**(dB/(name === "volume" ? 10 : 20));
 
+    if (isChannelVolume) dBNumber = (
+      channelVolumeArray[channelVolumeIndex] = dBNumber,
+      channelVolumeArray
+    )
     func.call(Options, lastIndexNumber, dBNumber)
     log(INFO_LVL, `Set ${name} to ${dBNumber} at ${lastIndex} index`)
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)[1]);
-    const toFloat = percentage / 100;
+    let toFloat = percentage / 100;
 
+    if (isChannelVolume) toFloat = (
+      channelVolumeArray[channelVolumeIndex] = toFloat,
+      channelVolumeArray
+    )
     func.call(Options, lastIndexNumber, toFloat)
     log(INFO_LVL, `Set ${name} to ${toFloat} at ${lastIndex} index`)
     return;
@@ -1350,7 +1385,15 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     process.exit(1)
   }
   if (isRealNumber(number, true)) {
-    func.call(Options, lastIndexNumber, number)
+    func.call(
+      Options, lastIndexNumber,
+      isChannelVolume
+        ? (
+          channelVolumeArray[channelVolumeIndex] = number,
+          channelVolumeArray
+        )
+        : number
+    )
     log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
     return;
   }
@@ -1556,6 +1599,17 @@ const help = async ({ errorText = "" } = "") => {
     )}:
       ${multiLine(
       `Volume to set for the drum channel (default: 100%)
+      Same formats as volume`
+      )}
+
+    ${param(
+      ["--channel-volume"+optional(":n")+" "+grayBoldText("index,amount"),
+       "/channel-volume"+optional(":n")+" "+grayBoldText("index,amount")],
+      ["-cvol"+optional(":n")+" "+grayBoldText("index,amount"),
+       "/cvol"+optional(":n")+" "+grayBoldText("index,amount")]
+    )}:
+      ${multiLine(
+      `Volume to set for a specific channel (${underline+grayBoldText("index")+endUnderline+dimGray+italics}ed instrument)
       Same formats as volume`
       )}
 
