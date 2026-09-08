@@ -1336,12 +1336,14 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
       "channelVolume", Number(lastIndex)
     ) ?? [];
     const sepIndex = arg.indexOf(",");
-    channelVolumeIndex = arg.substring(0, sepIndex);
-    if (channelVolumeIndex < 0) {
+    channelVolumeIndex = Number(arg.substring(0, sepIndex) || undefined);
+    if (channelVolumeIndex < 0 || Number.isNaN(channelVolumeIndex)) {
       console.error(
         formatStrings.failedCliParamWithArg,
         `[${name}|${lastIndex ?? "0"}]:`, arg,
-        `channel index ${channelVolumeIndex} must be above or equal to 0`
+        Number.isNaN(channelVolumeIndex)
+          ? `\b, channel index isn't valid (undefined/not an integer)`
+          : `\b, channel index ${channelVolumeIndex} must be above or equal to 0`
       )
       process.exit(1)
     }
