@@ -1362,7 +1362,11 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
       channelVolumeArray
     )
     func.call(Options, lastIndexNumber, dBNumber)
-    log(INFO_LVL, `Set ${name} to ${dBNumber} at ${lastIndex} index`)
+    log(INFO_LVL,
+      isChannelVolume
+        ? `Set ${name} of channel ${channelVolumeIndex} to ${channelVolumeArray[channelVolumeIndex]} at ${lastIndex} index`
+        : `Set ${name} to ${dBNumber} at ${lastIndex} index`
+    )
     return;
   }
   if (regexes.isPercentage.test(arg)) {
@@ -1374,7 +1378,11 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
       channelVolumeArray
     )
     func.call(Options, lastIndexNumber, toFloat)
-    log(INFO_LVL, `Set ${name} to ${toFloat} at ${lastIndex} index`)
+    log(INFO_LVL,
+      isChannelVolume
+        ? `Set ${name} of channel ${channelVolumeIndex} to ${channelVolumeArray[channelVolumeIndex]} at ${lastIndex} index`
+        : `Set ${name} to ${toFloat} at ${lastIndex} index`
+    )
     return;
   }
   // Negative error
@@ -1396,7 +1404,11 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
         )
         : number
     )
-    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
+    log(INFO_LVL,
+      isChannelVolume
+        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray[chanVolIndex]} at ${lastIndex} index`
+        : `Set ${name} to ${number} at ${lastIndex} index`
+    )
     return;
   }
   console.error(
