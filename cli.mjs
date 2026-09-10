@@ -1119,6 +1119,11 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
 
+  if (isRealNumber(number, true) && !(number < 0)) {
+    func.call(Options, lastIndexNumber, number)
+    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
+    return;
+  }
   const timeStampMatch = arg.match(regexes.ISOTimestamp);
   if (timeStampMatch) {
     // ISO Time format checks
@@ -1142,11 +1147,6 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     const seconds = argAsADate / 1000;
     func.call(Options, lastIndexNumber, seconds)
     log(INFO_LVL, `Set ${name} to ${seconds} at ${lastIndex} index`)
-    return;
-  }
-  if (isRealNumber(number, true) && !(number < 0)) {
-    func.call(Options, lastIndexNumber, number)
-    log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
     return;
   }
   console.error(
