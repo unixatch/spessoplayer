@@ -97,8 +97,8 @@ that is added at the end of the song
 
    <sub>(confilcts with a builtin effect such as *reverb-volume*)
 
-### --loop[:n] **seconds**, /loop[:n] **seconds**,
-####   -l[:n] **seconds**, /l[:n] **seconds**:
+### --loop[:n] **amount**, /loop[:n] **amount**,
+####   -l[:n] **amount**, /l[:n] **amount**:
 
 Loop x amount of times (*default: 0*)
 

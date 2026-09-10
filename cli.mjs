@@ -1688,10 +1688,10 @@ const help = async ({ errorText = "" } = "") => {
       (confilcts with a builtin effect such as reverb-volume)`)}
 
     ${param(
-      ["--loop"+optional(":n")+" "+grayBoldText("seconds"),
-        "/loop"+optional(":n")+" "+grayBoldText("seconds")],
-      ["-l"+optional(":n")+" "+grayBoldText("seconds"),
-       "/l"+optional(":n")+" "+grayBoldText("seconds")]
+      ["--loop"+optional(":n")+" "+grayBoldText("amount"),
+        "/loop"+optional(":n")+" "+grayBoldText("amount")],
+      ["-l"+optional(":n")+" "+grayBoldText("amount"),
+       "/l"+optional(":n")+" "+grayBoldText("amount")]
     )}:
       ${multiLine(
       `Loop x amount of times (default: 0)
