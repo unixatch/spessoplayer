@@ -1501,8 +1501,9 @@ async function startPlayer(
 
     let [rangeStart, rangeEnd] = (
       // Skip "bytes=" and get the numbers
+      // if it's possible to do so
       req.headers.range
-        .slice(6).split("-")
+        ?.slice(6).split("-") ?? ""
     );
     rangeStart = Number(rangeStart);
     //    In case it's not specified ↓
