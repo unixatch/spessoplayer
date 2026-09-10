@@ -110,15 +110,22 @@ Loop x amount of times (\fIdefault: 0\fR)
 
 (It might be slow with bigger numbers)
 .RE
-.IP \fB--loop-start[:\f(CIn\fP]\ \fIseconds\fR,\ \fB-ls[:\f(CIn\fP]\ \fIseconds\fR:
+.IP \fB--loop-start[:\f(CIn\fP]\ \fItime\fR,\ \fB-ls[:\f(CIn\fP]\ \fItime\fR:
 .RS
 
-The loop will start after \fIseconds\fR
+The loop will start after \fItime\fR
+
+It refers to one of these formats:
+  - \fBseconds\fR (example 10);
+  - \fBISO time format\fR (example 00:01:20.245);
+  - \fBmiditicks\fR (example @1500);
 .RE
-.IP \fB--loop-end[:\f(CIn\fP]\ \fIseconds\fR,\ \fB-le[:\f(CIn\fP]\ \fIseconds\fR:
+.IP \fB--loop-end[:\f(CIn\fP]\ \fItime\fR,\ \fB-le[:\f(CIn\fP]\ \fItime\fR:
 .RS
 
-The loop will restart at [\f(CI-\fP]\fIseconds\fR from the end
+The loop will restart at \fItime\fR from the end
+
+It uses the same formats as loop-start
 .RE
 .IP \fB--loop-fade\fR,\ \fB-lF\fR:
 .RS

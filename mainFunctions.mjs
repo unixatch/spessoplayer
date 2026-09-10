@@ -529,6 +529,15 @@ async function initSpessaSynth({
       isToFile ? soundfontFile : fs.readFileSync(soundfontFile)
     );
   }
+  let areMidiTicks_Start, areMidiTicks_End;
+  if (loopStart?.length) {
+    areMidiTicks_Start = true;
+    loopStart = Number(loopStart.substring(1));
+  }
+  if (loopEnd?.length) {
+    areMidiTicks_End = true;
+    loopEnd = Number(loopEnd.substring(1));
+  }
   const {
     sampleCount,
     durationInSeconds,
@@ -537,19 +546,36 @@ async function initSpessaSynth({
     midi,
     sampleRate,
     loopAmount,
-    loopStart, loopEnd, hardStop,
-    loopFade, loopFadeDuration, loopFadeStart
+    loopStart: (
+      areMidiTicks_Start
+        ? midi.midiTicksToSeconds(loopStart) : loopStart
+    ),
+    loopEnd: (
+      areMidiTicks_End
+        ? midi.midiTicksToSeconds(loopEnd) : loopEnd
+    ),
+    hardStop, loopFade, loopFadeDuration, loopFadeStart
   });
   if (onlySampleCount) return sampleCount;
   if (onlyDuration) return durationInSeconds;
 
   if (loopStart > 0 && !loopDetectedInMidi) {
     // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * loopStart;
-    midi.loop.start = midi.secondsToMIDITicks(loopStart);
+    midi.loop.start = (
+      areMidiTicks_Start
+          // Miditicks format
+        ? loopStart
+        : midi.secondsToMIDITicks(loopStart)
+    );
   }
   if (loopEnd && loopEnd !== midi.duration && !loopDetectedInMidi) {
     // (midi.duration - loopEnd) * (midi.tempoChanges[1].tempo/60) * midi.timeDivision;
-    midi.loop.end = midi.secondsToMIDITicks(midi.duration - loopEnd);
+    midi.loop.end = (
+      areMidiTicks_End
+          // Miditicks format
+        ? midi.secondsToMIDITicks(midi.duration) - loopEnd
+        : midi.secondsToMIDITicks(midi.duration - loopEnd)
+    );
   }
   // Save the SoundFont2 class to soundFontList so that
   // it's a reference and not a copy next time

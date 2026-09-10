@@ -104,15 +104,22 @@ Loop x amount of times (*default: 0*)
 
    <sub>(It might be slow with bigger numbers)</sub>
 
-### --loop-start[:n] **seconds**, /loop-start[:n] **seconds**,
-####   -ls[:n] **seconds**, /ls[:n] **seconds**:
+### --loop-start[:n] **time**, /loop-start[:n] **time**,
+####   -ls[:n] **time**, /ls[:n] **time**:
 
-The loop will start after **seconds**
+The loop will start after **time**
 
-### --loop-end[:n] **seconds**, /loop-end[:n] **seconds**,
-####   -le[:n] **seconds**, /le[:n] **seconds**:
+It refers to one of these formats:
+- seconds (*example 10*);
+- ISO time format (*example 00:01:20.245*);
+- miditicks (*example @1500*);
 
-The loop will restart at [-] **seconds** from the end
+### --loop-end[:n] **time**, /loop-end[:n] **time**,
+####   -le[:n] **time**, /le[:n] **time**:
+
+The loop will restart at **time** from the end
+
+It uses the same formats as loop-start
 
 ### --loop-fade, /loop-fade,
 ####   -lF, /lF:

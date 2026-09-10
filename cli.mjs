@@ -1009,7 +1009,7 @@ const maybeTruncate = string => (
 );
 // Error/invalid strings/messages
 const invalidNumberString       = "isn't a valid number",
-      invalidNumberOrISOString  = "isn't a valid number or a valid ISO time format string",
+      invalidTimeFormat         = "isn't a valid number/ISO time format string/miditick",
       negativeNumberErrorString = "must be above or equal to 0",
       invalidVolumeString       = "isn't a valid number/dB/percentage";
 
@@ -1119,6 +1119,7 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
 
+  // Normal number/seconds
   if (isRealNumber(number, true) && !(number < 0)) {
     func.call(Options, lastIndexNumber, number)
     log(INFO_LVL, `Set ${name} to ${number} at ${lastIndex} index`)
@@ -1149,10 +1150,35 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     log(INFO_LVL, `Set ${name} to ${seconds} at ${lastIndex} index`)
     return;
   }
+  // Miditicks format
+  let midiTicksPrefixLength;
+  if (arg[0] === "@")                    midiTicksPrefixLength = 1;
+  else if (arg.startsWith("mt="))        midiTicksPrefixLength = 3;
+  else if (arg.startsWith("miditicks=")) midiTicksPrefixLength = 10;
+
+  if (midiTicksPrefixLength) {
+    const miditicks = Number(
+      arg.substring(midiTicksPrefixLength) || undefined
+    );
+    if (Number.isNaN(miditicks)) {
+      console.error(formatStrings.failedCliParamWithArg,
+        formatStrings.failedCliParamWithArg,
+        `[${name}|${lastIndexString}]:`,
+        arg, "is not a valid miditick"
+      )
+      process.exit(1)
+    }
+
+    func.call(Options, lastIndexNumber,
+      "@" + arg.substring(midiTicksPrefixLength)
+    )
+    log(INFO_LVL, `Set ${name} to ${arg} at ${lastIndex} index`)
+    return;
+  }
   console.error(
     formatStrings.failedCliParamWithArg,
     `[${name}|${lastIndexString}]:`,
-    maybeTruncate(arg), invalidNumberOrISOString
+    maybeTruncate(arg), invalidTimeFormat
   )
   process.exit(1)
 }
@@ -1673,21 +1699,30 @@ const help = async ({ errorText = "" } = "") => {
       )}
 
     ${param(
-      ["--loop-start"+optional(":n")+" "+grayBoldText("seconds"),
-        "/loop-start"+optional(":n")+" "+grayBoldText("seconds")],
-      ["-ls"+optional(":n")+" "+grayBoldText("seconds"),
-       "/ls"+optional(":n")+" "+grayBoldText("seconds")]
-    )}:
-      ${multiLine(`The loop will start after ${grayBoldText("seconds")}`)}
-
-    ${param(
-      ["--loop-end"+optional(":n")+" "+grayBoldText("seconds"),
-       "/loop-end"+optional(":n")+" "+grayBoldText("seconds")],
-      ["-le"+optional(":n")+" "+grayBoldText("seconds"),
-       "/le"+optional(":n")+" "+grayBoldText("seconds")]
+      ["--loop-start"+optional(":n")+" "+grayBoldText("time"),
+        "/loop-start"+optional(":n")+" "+grayBoldText("time")],
+      ["-ls"+optional(":n")+" "+grayBoldText("time"),
+       "/ls"+optional(":n")+" "+grayBoldText("time")]
     )}:
       ${multiLine(
-      `The loop will restart at ${optional("-")+grayBoldText("seconds")+dimGray+italics} from the end`
+      `The loop will start after ${grayBoldText("time")}
+
+      It refers to one of these formats:
+        - seconds (example 10)
+        - ISO time format (example 00:01:20.245)
+        - miditicks (example @1500)`
+      )}
+
+    ${param(
+      ["--loop-end"+optional(":n")+" "+grayBoldText("time"),
+       "/loop-end"+optional(":n")+" "+grayBoldText("time")],
+      ["-le"+optional(":n")+" "+grayBoldText("time"),
+       "/le"+optional(":n")+" "+grayBoldText("time")]
+    )}:
+      ${multiLine(
+      `The loop will restart at ${grayBoldText("time")+dimGray+italics} from the end
+
+      It uses the same formats as loop-start`
       )}
 
     ${param(["--loop-fade", "/loop-fade"], ["-lF", "/lF"])}:

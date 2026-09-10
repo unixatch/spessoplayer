@@ -421,7 +421,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
         this.#checkValueAndExistence(
           value,
-          property === "channelVolume" ? "array" : "number",
+          property === "channelVolume"
+            ? "array"
+              // miditicks prefix for loop parameters
+            : value[0] === "@" && "string" || "number",
           (needsAnArray) ? property : undefined
         )
         if (setter) {
