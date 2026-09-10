@@ -1328,22 +1328,22 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
  * @param {Function} func Options' dedicated parameter function
  */
 const setVolumeParameter = (name, arg, lastIndex, func) => {
-  let channelVolumeArray, channelVolumeIndex;
+  let chanVolArray, chanVolIndex;
   const isChannelVolume = name === "channel-volume";
 
   if (isChannelVolume) {
-    channelVolumeArray = Options.getIndexedValue(
+    chanVolArray = Options.getIndexedValue(
       "channelVolume", Number(lastIndex)
     ) ?? [];
     const sepIndex = arg.indexOf(",");
-    channelVolumeIndex = Number(arg.substring(0, sepIndex) || undefined);
-    if (channelVolumeIndex < 0 || Number.isNaN(channelVolumeIndex)) {
+    chanVolIndex = Number(arg.substring(0, sepIndex) || undefined);
+    if (chanVolIndex < 0 || Number.isNaN(chanVolIndex)) {
       console.error(
         formatStrings.failedCliParamWithArg,
         `[${name}|${lastIndex ?? "0"}]:`, arg,
-        Number.isNaN(channelVolumeIndex)
+        Number.isNaN(chanVolIndex)
           ? `\b, channel index isn't valid (undefined/not an integer)`
-          : `\b, channel index ${channelVolumeIndex} must be above or equal to 0`
+          : `\b, channel index ${chanVolIndex} must be above or equal to 0`
       )
       process.exit(1)
     }
@@ -1358,13 +1358,13 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     let dBNumber = 10**(dB/(name === "volume" ? 10 : 20));
 
     if (isChannelVolume) dBNumber = (
-      channelVolumeArray[channelVolumeIndex] = dBNumber,
-      channelVolumeArray
+      chanVolArray[chanVolIndex] = dBNumber,
+      chanVolArray
     )
     func.call(Options, lastIndexNumber, dBNumber)
     log(INFO_LVL,
       isChannelVolume
-        ? `Set ${name} of channel ${channelVolumeIndex} to ${channelVolumeArray[channelVolumeIndex]} at ${lastIndex} index`
+        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray[chanVolIndex]} at ${lastIndex} index`
         : `Set ${name} to ${dBNumber} at ${lastIndex} index`
     )
     return;
@@ -1374,13 +1374,13 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     let toFloat = percentage / 100;
 
     if (isChannelVolume) toFloat = (
-      channelVolumeArray[channelVolumeIndex] = toFloat,
-      channelVolumeArray
+      chanVolArray[chanVolIndex] = toFloat,
+      chanVolArray
     )
     func.call(Options, lastIndexNumber, toFloat)
     log(INFO_LVL,
       isChannelVolume
-        ? `Set ${name} of channel ${channelVolumeIndex} to ${channelVolumeArray[channelVolumeIndex]} at ${lastIndex} index`
+        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray[chanVolIndex]} at ${lastIndex} index`
         : `Set ${name} to ${toFloat} at ${lastIndex} index`
     )
     return;
@@ -1399,8 +1399,8 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
       Options, lastIndexNumber,
       isChannelVolume
         ? (
-          channelVolumeArray[channelVolumeIndex] = number,
-          channelVolumeArray
+          chanVolArray[chanVolIndex] = number,
+          chanVolArray
         )
         : number
     )
