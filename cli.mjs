@@ -1355,7 +1355,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
 
   if (regexes.areDecibels.test(arg)) {
     const dB = Number(arg.match(regexes.decibelNumber)[1]);
-    let dBNumber = 10**(dB/(name === "volume" ? 10 : 20));
+    let dBNumber = 10**(dB/(name === "reverb-volume" ? 20 : 10));
 
     if (isChannelVolume) dBNumber = (
       chanVolArray[chanVolIndex] = dBNumber,
