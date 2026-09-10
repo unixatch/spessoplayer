@@ -110,9 +110,9 @@ Loop x amount of times (*default: 0*)
 The loop will start after **time**
 
 It refers to one of these formats:
-- seconds (*example 10*);
-- ISO time format (*example 00:01:20.245*);
-- miditicks (*example @1500*);
+- **seconds** (*example 10*);
+- **ISO time format** (*example 00:01:20.245*);
+- **miditicks** (*example @1500*);
 
 ### --loop-end[:n] **time**, /loop-end[:n] **time**,
 ####   -le[:n] **time**, /le[:n] **time**:
