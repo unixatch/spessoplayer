@@ -185,11 +185,11 @@
         },
         @{
             CompletionText = "--loop-start", "-ls"
-            ToolTip = "The loop will start after seconds"
+            ToolTip = "The loop will start after time (formats: seconds, ISO time format, miditicks)"
         },
         @{
             CompletionText = "--loop-end", "-le"
-            ToolTip = "The loop will restart at [-]seconds from the end"
+            ToolTip = "The loop will restart at time from the end (see loop-start for formats)"
         },
         @{
             CompletionText = "--loop-fade", "-lF"
