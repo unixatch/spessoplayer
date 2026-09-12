@@ -25,7 +25,9 @@ _spessoplayer() {
   case ${prev%:*} in
     --input | -i | --log-file | -lf) ;;
 
-    --volume | --reverb-volume | -vol | -rvb)
+    --volume | --reverb-volume | \
+    --channel-volume | --drums-volume | \
+    -vol | -rvb | -cvol | -dvol)
       COMPREPLY=({0..100})
     ;;
     --effects | -e)
@@ -90,6 +92,8 @@ _spessoplayer() {
     compgen -W '
       --input                 -i
       --volume              -vol
+      --channel-volume     -cvol
+      --drums-volume       -dvol
       --reverb-volume       -rvb
       --effects               -e
       --loop                  -l

@@ -27,8 +27,9 @@ __spessoplayer() {
       _files
       return 0
     ;;
-    --volume | --reverb-volume | \
-    -vol     | -rvb)
+    --volume         | --reverb-volume | \
+    --channel-volume | --drums-volume  | \
+    -vol | -rvb | -cvol | -dvol)
       local numbers=({0..100})
       _arguments "*: :(${numbers[*]})"
       return 0
@@ -109,6 +110,8 @@ __spessoplayer() {
     local all_arguments=(
       "--input[manual input method]"                      "-i[manual input method]"
       "--volume[audio volume]"                            "-vol[audio volume]"
+      "--channel-volume[channel volume]"                  "-cvol[channel volume]"
+      "--drums-volume[drums volume]"                      "-dvol[drums volume]"
       "--reverb-volume[reverb audio volume]"              "-rvb[reverb audio volume]"
       "--effects[SoX effects]"                            "-e[SoX effects]"
       "--loop[loop count]"                                "-l[loop count]"

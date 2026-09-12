@@ -129,7 +129,7 @@
             [string] $toolTipToPass = "Milliseconds"
             break
         }
-        '^(--volume[0-9]*|-vol[0-9]*|--reverb-volume[0-9]*|-rvb[0-9]*)$'
+        '^(--volume[0-9]*|-vol[0-9]*|--reverb-volume[0-9]*|-rvb[0-9]*|--channel-volume[0-9]*|-cvol[0-9]*|--drums-volume[0-9]*|-dvol[0-9]*)$'
         {
             [array] $listToPass = getCustomValue volume
             [string] $toolTipToPass = "Volume number"
@@ -162,6 +162,14 @@
         @{
             CompletionText = "--volume", "-vol"
             ToolTip = "Volume to set (default: 100%) (formats: dB, percentages, decimals)"
+        },
+        @{
+            CompletionText = "--channel-volume", "-cvol"
+            ToolTip = "Volume to set for a specific channel (indexed instrument) (see volume for formats)"
+        },
+        @{
+            CompletionText = "--drums-volume", "-dvol"
+            ToolTip = "Volume to set for the drum channel (default: 100%) (see volume for formats)"
         },
         @{
             CompletionText = "--reverb-volume", "-rvb"
