@@ -443,23 +443,22 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "showUsage":    case "noProgress":
       case "toStdout":     case "spessaSynthEffects":
       case "hardStop": {
-        if (!needsToBeSet && (
-          property === "daemon"
-          || property === "confirmation"
-          || property === "noTable"
-        )) {
-          return this.#options[property];
+        if (!needsToBeSet) switch (property) {
+          case "daemon":
+          case "confirmation": case "noTable":
+            return this.#options[property];
+
+          case "spessaSynthEffects":
+            if (this.#options[property] === undefined) return;
+            if (Number.isNaN(index)) index = this.#options[property].length-1;
+            return (
+              index !== undefined
+                ? this.#options[property][index]
+                : this.#options[property]
+            );
+
+          default: return;
         }
-        else if (!needsToBeSet && property === "spessaSynthEffects") {
-          if (this.#options[property] === undefined) return;
-          if (Number.isNaN(index)) index = this.#options[property].length-1;
-          return (
-            index !== undefined
-              ? this.#options[property][index]
-              : this.#options[property]
-          );
-        }
-        else if (!needsToBeSet) return;
 
         this.#checkValueAndExistence(
           value, "boolean", needsAnArray ? property : undefined

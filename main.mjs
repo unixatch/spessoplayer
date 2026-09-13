@@ -98,7 +98,7 @@ if (confirmation) {
   const infos = Options.getConfirmationTable();
   if (noTable) {
     for (const i of infos) console.log(i)
-  } else console.table(Options.getConfirmationTable())
+  } else console.table(infos)
 
   const rl = (
     (await import("node:readline/promises"))
