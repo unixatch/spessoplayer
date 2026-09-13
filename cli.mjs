@@ -1168,6 +1168,8 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
   else if (arg.startsWith("miditicks=")) midiTicksPrefixLength = 10;
 
   if (midiTicksPrefixLength) {
+    // parseInt can fail with like 74$ or 74%
+    // so Number is required to detect those cases
     const miditicks = Number(
       arg.substring(midiTicksPrefixLength) || undefined
     );
@@ -1181,7 +1183,7 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     }
 
     func.call(Options, lastIndexNumber,
-      "@" + arg.substring(midiTicksPrefixLength)
+      "@" + (miditicks >> 0) // Forces an integer
     )
     log(INFO_LVL, `Set ${name} to ${arg} at ${lastIndex} index`)
     return;
