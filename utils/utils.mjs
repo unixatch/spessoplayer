@@ -443,7 +443,11 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       case "showUsage":    case "noProgress":
       case "toStdout":     case "spessaSynthEffects":
       case "hardStop": {
-        if (!needsToBeSet && property === "daemon") {
+        if (!needsToBeSet && (
+          property === "daemon"
+          || property === "confirmation"
+          || property === "noTable"
+        )) {
           return this.#options[property];
         }
         else if (!needsToBeSet && property === "spessaSynthEffects") {

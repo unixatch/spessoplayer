@@ -746,6 +746,17 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   */
   await Promise.all(await Promise.all(setFilePromises))
   if (!Options.areGroupsValid()) {
+    let infos;
+    if (Options.getValue("confirmation")) {
+      infos = Options.getConfirmationTable();
+
+      if (Options.getValue("noTable")) {
+        for (const i of infos) console.error(i)
+      } else {
+        console.table(infos)
+      }
+    }
+
     console.error(
       formatStrings.errorText, "Some groups are invalid"
     )
