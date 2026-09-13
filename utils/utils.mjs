@@ -352,6 +352,19 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @private
    */
   static #listOfSoundfonts = Object.create(null);
+  /**
+   * Sets a property with value
+   * @param {String} property name of property
+   * @param {*}      value
+   */
+  static #setValue;
+  /**
+   * Sets a property to an index with a given value
+   * @param {String} property name of property
+   * @param {*}      value
+   * @param {Number} [index]
+   */
+  static #setOrPushValue;
 
   /**
    * @function #checkValueAndExistence
@@ -390,9 +403,12 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   ) {
     this.#checkValueAndExistence(property, "string")
     if (index) this.#checkValueAndExistence(index, "number")
-    const setValue = () => this.#options[property] = value;
-    const setIndex = () => this.#options[property][index] = value;
-    const pushValue = () => this.#options[property].push(value)
+    this.#setValue ??= (property, value) => this.#options[property] = value;
+    this.#setOrPushValue ??= (property, value, index) => (
+      Number.isInteger(index)
+        ? this.#options[property][index] = value
+        : this.#options[property].push(value)
+    );
     switch (property) {
       case "verboseLevel":
       case "logFilePath": {
@@ -401,7 +417,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         this.#checkValueAndExistence(
           value, (property === "verboseLevel") ? "number" : "string"
         )
-        setValue()
+        this.#setValue(property, value)
         break;
       }
       // Numbers
@@ -431,10 +447,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           if (property === "stdoutReverbVolume") {
             property = "reverbVolume";
           }
-          setValue()
+          this.#setValue(property, value)
           break;
         }
-        if (Number.isInteger(index)) setIndex(); else pushValue()
+        this.#setOrPushValue(property, value, index)
         break;
       }
       // Boolean
@@ -465,10 +481,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         )
         if (property === "spessaSynthEffects" && !isStdout
             || property === "hardStop") {
-          if (Number.isInteger(index)) setIndex(); else pushValue()
+          this.#setOrPushValue(property, value, index)
           return;
         }
-        setValue()
+        this.#setValue(property, value)
         break;
       }
       // Strings
@@ -493,10 +509,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
           break;
         }
         if (property === "loopFadeInterpolation") {
-          if (Number.isInteger(index)) setIndex(); else pushValue()
+          this.#setOrPushValue(property, value, index)
           return;
         }
-        if (Number.isInteger(index)) setIndex(); else setValue()
+        if (Number.isInteger(index)) {
+          this.#setOrPushValue(property, value, index)
+        } else {
+          this.#setValue(property, value)
+        }
         break;
       }
       // Array of objects
@@ -521,9 +541,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         }
         if (index === undefined && property === "stdoutEffects") {
           property = "effects";
-          return setValue();
+          return this.#setValue(property, value);
         }
-        if (Number.isInteger(index)) setIndex(); else pushValue()
+        this.#setOrPushValue(property, value, index)
         break;
       }
 
