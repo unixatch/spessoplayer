@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+mapfile commit_msg < ".git/COMMIT_EDITMSG"
+REGEX="^#.*:ADDED: (<.*>)+"
+
+if [[ "${commit_msg[*]}" =~ $REGEX ]] ;then
+    # Gets all names separately
+    readarray -d ' ' names < <(printf '%s' "${BASH_REMATCH[1]}")
+
+    # Gets rid of the syntax
+    for (( i = 0; i < ${#names[@]}; ++i )) ;{
+        names[i]="${names[i]/#<}"
+        names[i]="${names[i]/%>}"
+    }
+    ./tests/check_missing_parameter.bash "${names[@]}"
+else
+    : # Do nothing successfully
+fi
+
