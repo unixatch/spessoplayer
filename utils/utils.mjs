@@ -318,6 +318,30 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @type {Object}
    */
   static _options = {};
+  /** If fileOutputs has been created
+   * @type {Boolean}
+   */
+  static fileOutputsExists;
+  /**
+   * Essentially the black hole of computing
+   * @type {String}
+   */
+  static #dryRun;
+  /**
+   * Path that will be written for each log
+   * @type {String}
+   */
+  static #logFilePath;
+  /**
+   * Filenames used as output for different formats
+   * @type {String[]}
+   */
+  static #fileOutputs;
+  /**
+   * Filenames used for composing songs
+   * @type {Set[]}
+   */
+  static #files;
   /**
    * A list of indexes representing groups that have a soundfont
    * @type {(undefined|Object|null)}
@@ -371,13 +395,36 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     if (property) this.#options[property] ??= [];
   }
   /**
+   * Sets or gives back file related options
+   * @param {String}  name    option's name
+   * @param {String}  value
+   * @param {String}  [index] index used fileOutputs
+   * @param {Boolean} getter  if logFilePath should return its value
+   * @return {String} if it's a getter or fileOutputs' index has been set
    */
+  static manageAuxiliaryFileOptions(name, value, index, getter) {
+    switch (name) {
+      case "dryRun":
+        this.#dryRun ??= (
+          (process.platform === "win32")
+            ? "\\\\.\\nul"
+            : "/dev/null"
         );
         break;
 
+      case "logFilePath":
+        this.#checkValueAndExistence(value, "string")
+        return (
+          getter ? this.#logFilePath : (this.#logFilePath = value)
         );
 
+      case "fileOutputs":
+        if (index) this.#checkValueAndExistence(index, "number")
+        this.#checkValueAndExistence(value, "string")
 
+        this.#fileOutputs ??= [];
+        this.fileOutputsExists ??= true;
+        return this.#fileOutputs[index] = value;
     }
   }
   /**
@@ -399,7 +446,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     this.#checkValueAndExistence(string, "string", "files")
     this.#checkValueAndExistence(isSoundfont, "boolean")
     this.#checkValueAndExistence(replace, "boolean")
-    const groups = this.#options.files,
+    const groups = this.#files ??= [],
           startOfExt = string.lastIndexOf(".");
     const stringWithoutExt = (
       startOfExt === -1
@@ -475,7 +522,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {Number} the amount
    */
   static get amountOfGroups() {
-    return this.#options.files?.length ?? 0;
+    return this.#files?.length ?? 0;
   }
   /**
    * Gives the filename of the song
@@ -490,23 +537,21 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {(Number|undefined)} index of the group
    */
   static get lastKnownGroupIndex() {
-    if (!this.#options.files
-        || !this.#options.files.length) return;
+    if (!this.#files || !this.#files.length) return;
 
     return this.amountOfGroups-1;
   }
   /**
    * Gives a compatible list of
-   * this.#options.files for console.table
+   * this.#files for console.table
    * @return {(undefined|Object[])} - undefined if it's undefined or empty,
    *                                  an array of objects that contain a soundfont and its midis
    */
   static getConfirmationTable() {
-    if (!this.#options.files
-        || !this.#options.files.length) return;
+    if (!this.#files || !this.#files.length) return;
 
     const table = [],
-          listOfFiles = this.#options.files;
+          listOfFiles = this.#files;
     let indexOfSets = 0;
     for (const setOfFiles of listOfFiles) {
       if (!setOfFiles) { indexOfSets++; continue; }
@@ -546,7 +591,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {Boolean} true if it exists or otherwise false
    */
   static isLastRegularGroupOccupied() {
-    const files     = this.#options.files,
+    const files     = this.#files ??= [],
           lastIndex = this.lastRegularGroupIndex;
     if (!files || lastIndex === undefined) return false;
 
@@ -603,8 +648,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     if (typeof indexOfGroup !== "number") {
       throw new TypeError("index must be a number")
     }
-    if (!this.#options.files) return;
-    const group = this.#options.files[indexOfGroup];
+    if (!this.#files) return;
+    const group = this.#files[indexOfGroup];
 
     if (group.size > 2) return false;
     if (group.size < 2) {
@@ -641,14 +686,18 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   static getOptionsOfSong(index) {
     this.#checkValueAndExistence(index, "number")
     const allOptions = Object.keys(this._options);
-          allOptionsLength = allOptions.length,
+    if (this.#files)       allOptions.push("files")
+    if (this.#dryRun)      allOptions.push("dryRun")
+    if (this.#fileOutputs) allOptions.push("fileOutputs")
+
+    const allOptionsLength = allOptions.length,
           simplifiedOptionsObject = Object.create(null);
     const actualIndex = index && index * 3;
     const {
       [actualIndex]: indexOfGroup,
       [actualIndex+1]: songFile
     } = this.#listOfSongs;
-    const group = this.#options.files[indexOfGroup];
+    const group = this.#files[indexOfGroup];
 
     simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
     simplifiedOptionsObject["midiFile"]      = group.get(songFile);
@@ -678,9 +727,18 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
   /**
    * Gives all the data
-   * @return {Object} the deep cloned #options object
+   * @return {Object} all available options
    */
-  static get all() { return structuredClone(this._options); }
+  static get all() {
+    const returnObject = {
+      dryRun: this.#dryRun,
+      ...this._options, files: structuredClone(this.#files)
+    };
+    if (this.#fileOutputs) {
+      returnObject.fileOutputs = structuredClone(this.#fileOutputs);
+    }
+    return returnObject;
+  }
 }
 /**
  * A class that returns an error
