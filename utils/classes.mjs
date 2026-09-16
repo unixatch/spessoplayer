@@ -110,14 +110,12 @@ function _manageOption(
     case "maxThreads":
     case "progressDelay":
     case "loopFadeStart": case "loopFadeDuration": {
+      let type = "number";
+      if (property === "channelVolume") type = "array";
+      if (value[0] === "@") type = "string";
+
       checkValueAndExistence(
-        value,
-        property === "channelVolume"
-          ? "array"
-            // miditicks prefix for loop parameters
-          : (value[0] === "@" ? "string" : "number"),
-        (needsAnArray) ? property : undefined,
-        that
+        value, type, (needsAnArray) ? property : undefined, that
       )
       return (
         setter
