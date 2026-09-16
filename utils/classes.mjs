@@ -31,8 +31,146 @@ function addIndexedProperties(that, list) {
       [i]: value, [i-1]: index, [i-2]: property
     } = list;
 
-    that._manageOption({ property, index, value }, true, true)
+    _manageOption({ property, index, value }, true, true, that)
     i -= 2;
+  }
+}
+let setValue, setOrPushValue;
+/**
+ * @function #checkValueAndExistence
+ * @desc type checker
+ * @param {*} value - any kind of value to check
+ * @param {String} requiredType - type that must be correct
+ * @param {String} [property] - any kind of property to add to #options
+ * @memberof Options
+ * @private
+ * @throws {TypeError} - if it's not of valid type
+ * @return {Boolean} if it all goes well
+ */
+function checkValueAndExistence(value, requiredType, property, that) {
+  if (requiredType !== "array" || !Array.isArray(value)) {
+    if (typeof value !== requiredType) {
+      throw new TypeError(`${value} is not of type ${requiredType}`)
+    }
+  }
+  if (property) that._options[property] ??= [];
+}
+/**
+ * Manages the addition/getters/setters
+ * of options from other classes
+ * @param {Object}  manageOptionObjectParameters
+ * @param {String}  manageOptionObjectParameters.property
+ * @param {Number}  manageOptionObjectParameters.index
+ * @param {*}       manageOptionObjectParameters.value
+ * @param {Boolean} manageOptionObjectParameters.setter
+ * @param {Boolean} needsAnArray
+ * @private
+ * @return {(undefined|Number|String|Boolean)}
+ * @throws {(TypeError|Error)} if a value is not the right type or the property doesn't exist
+ */
+function _manageOption(
+  {property, index, value, setter = false, isStdout = false},
+  needsToBeSet = false, needsAnArray = false, that
+) {
+  checkValueAndExistence(property, "string")
+  if (index) checkValueAndExistence(index, "number")
+  setValue ??= (property, value) => that._options[property] = value;
+  setOrPushValue ??= (property, value, index) => (
+    Number.isInteger(index)
+      ? that._options[property][index] = value
+      : that._options[property].push(value)
+  );
+  switch (property) {
+    case "logFilePath": {
+      return that.manageAuxiliaryFileOptions(property, value, index, needsToBeSet);
+    }
+    case "verboseLevel": {
+      checkValueAndExistence(value, "number")
+      return setValue(property, value);
+    }
+    // Numbers
+    case "stdoutReverbVolume": { property = "reverbVolume"; } // falls through
+    case "volume": case "drumsVolume": case "channelVolume":
+    case "reverbVolume":
+    case "sampleRate":
+    case "loopAmount":
+    case "loopStart": case "loopEnd":
+    case "maxThreads":
+    case "progressDelay":
+    case "loopFadeStart": case "loopFadeDuration": {
+      checkValueAndExistence(
+        value,
+        property === "channelVolume"
+          ? "array"
+            // miditicks prefix for loop parameters
+          : (value[0] === "@" ? "string" : "number"),
+        (needsAnArray) ? property : undefined,
+        that
+      )
+      return (
+        setter
+          ? setValue(property, value)
+          : setOrPushValue(property, value, index)
+      )
+    }
+    // Boolean
+    case "loopFade":     case "daemon":
+    case "confirmation": case "noTable":
+    case "showUsage":    case "noProgress":
+    case "toStdout":     case "spessaSynthEffects":
+    case "hardStop": {
+      checkValueAndExistence(
+        value, "boolean", needsAnArray ? property : undefined, that
+      )
+      return (
+        (property === "spessaSynthEffects" && !isStdout)
+        || property === "hardStop"
+          ? setOrPushValue(property, value, index)
+          : setValue(property, value)
+      );
+    }
+    // Strings
+    case "dryRun": case "fileOutputs": {
+      that.manageAuxiliaryFileOptions(property, value, index);
+      return;
+    }
+    case "format": case "loopFadeInterpolation": {
+      checkValueAndExistence(
+        value, "string", (needsAnArray) ? property : undefined, that
+      )
+      return (
+        Number.isInteger(index) || property === "loopFadeInterpolation"
+          ? setOrPushValue(property, value, index)
+          : setValue(property, value)
+      );
+    }
+    // Array of objects
+    case "stdoutEffects": case "effects": {
+      checkValueAndExistence(
+        value, "array", (needsAnArray) ? property : undefined, that
+      )
+      for (const effectObj of value) {
+        if (typeof effectObj.effect !== "string") {
+          throw new TypeError("effect property is not a string")
+        }
+        // Array of strings or undefined
+        if (effectObj.values === undefined) continue;
+        for (const string of effectObj.values) {
+          if (typeof string !== "string") {
+            throw new TypeError("effect property is not a string")
+          }
+        }
+      }
+      if (index === undefined && property === "stdoutEffects") {
+        property = "effects";
+        return setValue(property, value);
+      }
+      setOrPushValue(property, value, index)
+      break;
+    }
+
+    default:
+      throw new Error(property+" doesn't exist")
   }
 }
 
@@ -51,11 +189,11 @@ class MainOptions {
   static addIndexedStringValue(name, index, value) {
     if (name === "hardStop") value = true;
 
-    this._manageOption({
+    _manageOption({
       property: name,
       index: !Number.isNaN(index) ? index : undefined,
       value
-    }, true, true);
+    }, true, true, this);
   }
   /** @alias addIndexedStringValue */
   static addIndexedNumberValue  = this.addIndexedStringValue;
@@ -74,7 +212,10 @@ class MainOptions {
     if (name === "daemon") value = true;
     if (name === "dryRun") value = "";
 
-    this._manageOption({ property: name, value })
+    _manageOption(
+      { property: name, value },
+      undefined, undefined, this
+    )
   }
   /** @alias addBooleanValue */
   static addStringValue = this.addBooleanValue;
@@ -92,9 +233,9 @@ class MainOptions {
       case "sampleRate":
         isSetter = true;
     }
-    this._manageOption({
+    _manageOption({
       property: name, value, setter: isSetter
-    })
+    }, undefined, undefined, this)
   }
   /**
    * Retrieves a property's value
@@ -156,11 +297,11 @@ class EffectsOptions {
    * @param {Array} arrayOfObjects - an array of object effects
    */
   static set stdoutEffects(arrayOfObjects) {
-    this._manageOption({
+    _manageOption({
       property: "stdoutEffects",
       value: arrayOfObjects, setter: true
     })
-    this._manageOption({
+    _manageOption({
       property: "spessaSynthEffects",
       value: false, isStdout: true
     })
