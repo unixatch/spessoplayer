@@ -381,18 +381,18 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @desc type checker
    * @param {*} value - any kind of value to check
    * @param {String} requiredType - type that must be correct
-   * @param {String} [property] - any kind of property to add to #options
    * @memberof Options
    * @private
    * @throws {TypeError} - if it's not of valid type
+   * @return {Boolean} if it all goes well
    */
-  static #checkValueAndExistence(value, requiredType, property) {
+  static #checkValueAndExistence(value, requiredType) {
     if (requiredType !== "array" || !Array.isArray(value)) {
       if (typeof value !== requiredType) {
         throw new TypeError(`${value} is not of type ${requiredType}`)
       }
     }
-    if (property) this.#options[property] ??= [];
+    return true;
   }
   /**
    * Sets or gives back file related options
@@ -443,7 +443,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static files(index, string, isSoundfont = false, replace = false) {
     this.#checkValueAndExistence(index, "number")
-    this.#checkValueAndExistence(string, "string", "files")
+    this.#checkValueAndExistence(string, "string")
     this.#checkValueAndExistence(isSoundfont, "boolean")
     this.#checkValueAndExistence(replace, "boolean")
     const groups = this.#files ??= [],
