@@ -35,7 +35,19 @@ function addIndexedProperties(that, list) {
     i -= 2;
   }
 }
-let setValue, setOrPushValue;
+/**
+ * Sets a property with value
+ * @param {String} property name of property
+ * @param {*}      value
+ */
+let setValue;
+/**
+ * Sets a property to an index with a given value
+ * @param {String} property name of property
+ * @param {*}      value
+ * @param {Number} [index]
+ */
+let setOrPushValue;
 /**
  * @function #checkValueAndExistence
  * @desc type checker
@@ -243,9 +255,7 @@ class MainOptions {
    * @return {*} value of the property
    * @throws {TypeError} if name is not a string
    */
-  static getValue(name) {
-    return this._manageOption({ property: name }, false);
-  }
+  static getValue(name) { return this._options[name]; }
   /**
    * Retrieves a property's value
    * @param {String} name  property's name
@@ -254,7 +264,10 @@ class MainOptions {
    * @throws {TypeError} if name is not a string
    */
   static getIndexedValue(name, index) {
-    return this._manageOption({ property: name, index }, false);
+    if (name === "spessaSynthEffects" && Number.isNaN(index)) {
+      index = this._options[name].length-1;
+    }
+    return this._options?.[name]?.[index];
   }
 }
 
@@ -272,10 +285,10 @@ class EffectsOptions {
    * @return {Boolean} if it's spessasynth or SoX
    */
   static externalEffectProcesser(index, isStdout) {
-    const isBuiltin = this._manageOption({
-      property: "spessaSynthEffects",
-      index: !isStdout ? index : undefined
-    }, false);
+    let isBuiltin;
+    if (this._options.spessaSynthEffects && !isStdout) {
+      isBuiltin = this._options.spessaSynthEffects[index];
+    }
 
     if (isBuiltin === undefined) return;
     return !isBuiltin;

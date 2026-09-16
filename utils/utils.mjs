@@ -314,11 +314,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @example Options.lastRegularGroupIndex = 2;
    */
   /**
-   * Main private object that contains the data
+   * Contains all normal options
    * @type {Object}
-   * @private
    */
-  static #options = {};
+  static _options = {};
   /**
    * A list of indexes representing groups that have a soundfont
    * @type {(undefined|Object|null)}
@@ -352,19 +351,6 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @private
    */
   static #listOfSoundfonts = Object.create(null);
-  /**
-   * Sets a property with value
-   * @param {String} property name of property
-   * @param {*}      value
-   */
-  static #setValue;
-  /**
-   * Sets a property to an index with a given value
-   * @param {String} property name of property
-   * @param {*}      value
-   * @param {Number} [index]
-   */
-  static #setOrPushValue;
 
   /**
    * @function #checkValueAndExistence
@@ -647,14 +633,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     return soundfont === midi;
   }
   /**
-   * Creates a new Object similar to this.#options but with only
+   * Creates a new Object similar to this._options but with only
    * the songs' options included
    * @param {Number} index - index of the song
    * @return {Object} an object containing the song's options
    */
   static getOptionsOfSong(index) {
     this.#checkValueAndExistence(index, "number")
-    const allOptions = Object.keys(this.#options),
+    const allOptions = Object.keys(this._options);
           allOptionsLength = allOptions.length,
           simplifiedOptionsObject = Object.create(null);
     const actualIndex = index && index * 3;
@@ -670,7 +656,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
     for (let i = 0; i < allOptionsLength; ++i) {
       const key = allOptions[i];
-      const property = this.#options[key];
+      const property = this._options[key];
       if (key === "files") continue;
       if (key === "fileOutputs") {
         simplifiedOptionsObject[key] = [...property];
@@ -694,7 +680,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * Gives all the data
    * @return {Object} the deep cloned #options object
    */
-  static get all() { return structuredClone(this.#options); }
+  static get all() { return structuredClone(this._options); }
 }
 /**
  * A class that returns an error
