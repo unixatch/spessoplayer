@@ -259,13 +259,14 @@ class EffectsOptions {
    * @return {Boolean} if it's spessasynth or SoX
    */
   static externalEffectProcesser(index, isStdout) {
-    let isBuiltin;
-    if (this._options.spessaSynthEffects && !isStdout) {
-      isBuiltin = this._options.spessaSynthEffects[index];
-    }
+    const spessaSynthEffects = this._options.spessaSynthEffects;
+    if (spessaSynthEffects === undefined) return;
+    if (Number.isNaN(index)) index = spessaSynthEffects.length-1;
 
-    if (isBuiltin === undefined) return;
-    return !isBuiltin;
+    return (
+      isStdout
+        ? !spessaSynthEffects : !spessaSynthEffects[index]
+    );
   }
   /**
    * Adds a list of effects to a specific file
