@@ -396,10 +396,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   }
   /**
    * Sets or gives back file related options
-   * @param {String}  name    option's name
+   * @param {String}  name     option's name
    * @param {String}  value
-   * @param {String}  [index] index used fileOutputs
-   * @param {Boolean} getter  if logFilePath should return its value
+   * @param {String}  [index]  index used fileOutputs
+   * @param {Boolean} [getter] if logFilePath should return its value
    * @return {String} if it's a getter or fileOutputs' index has been set
    */
   static manageAuxiliaryFileOptions(name, value, index, getter) {
@@ -413,10 +413,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
 
       case "logFilePath":
+        if (getter) return this.#logFilePath;
+
         this.#checkValueAndExistence(value, "string")
-        return (
-          getter ? this.#logFilePath : (this.#logFilePath = value)
-        );
+        return this.#logFilePath = value;
 
       case "fileOutputs":
         if (index) this.#checkValueAndExistence(index, "number")
@@ -425,6 +425,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         this.#fileOutputs ??= [];
         this.fileOutputsExists ??= true;
         return this.#fileOutputs[index] = value;
+
+      default:
+        throw new TypeError(name+" doesn't exist")
     }
   }
   /**
@@ -731,9 +734,12 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static get all() {
     const returnObject = {
-      dryRun: this.#dryRun,
       ...this._options, files: structuredClone(this.#files)
     };
+    if (this.#dryRun) returnObject.dryRun = this.#dryRun;
+    if (this.#logFilePath) {
+      returnObject.logFilePath = this.#logFilePath;
+    }
     if (this.#fileOutputs) {
       returnObject.fileOutputs = structuredClone(this.#fileOutputs);
     }
