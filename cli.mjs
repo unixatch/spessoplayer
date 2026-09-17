@@ -605,7 +605,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           )
           i++; break;
         }
-        setEffects(nextArg, lastIndex, newArgumentsSet)
+        setEffects(nextArg, lastIndex, isStdout)
         i++
         break;
       }
@@ -1296,10 +1296,10 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
- * @param {Set<string>} newArgumentsSet - process.argv without 2 starting indexes in Set form
+ * @param {Set<string>} isStdout - if it's stdout or not
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setEffects = (arg, lastIndex, newArgumentsSet) => {
+const setEffects = (arg, lastIndex, isStdout) => {
   const regexListOfEffects = (
     "allpass|band|bandpass|bandreject|bass|bend|biquad" +
     "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
@@ -1345,12 +1345,13 @@ const setEffects = (arg, lastIndex, newArgumentsSet) => {
       process.exit(1)
     }
 
-    if (testFunctions.stdout(newArgumentsSet)) {
-      Options.stdoutEffects = list;
-    } else {
-      Options.effects(Number(lastIndex), list)
-    }
-    log(INFO_LVL, "Set list of SoX effects as", JSON.stringify(list))
+    if (isStdout) Options.stdoutEffects = list;
+             else Options.effects(Number(lastIndex), list)
+
+    log(INFO_LVL,
+      "Set list of SoX effects as", JSON.stringify(list),
+      !isStdout ? `at index ${lastIndex}` : ""
+    )
     return;
   }
   console.error(
