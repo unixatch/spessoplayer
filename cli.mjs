@@ -580,6 +580,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           Number(lastIndex), isStdout
         );
         if (isExternal === true) {
+          // Can't choose both
+          // because they'd overlap each other
           log(WARNING_LVL,
             "Ignored reverb-volume flag at index " +
              lastIndex + " since effects flag has been used"
@@ -598,6 +600,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           Number(lastIndex), isStdout
         );
         if (isExternal === false) {
+          // Can't choose both
+          // because they'd overlap each other
           log(WARNING_LVL,
             "Ignored effects flag at index " + lastIndex
             + " since a builtin effect option has been used " +
@@ -615,6 +619,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
         const isExternal = Options.externalEffectProcesser(number, isStdout);
         if (isExternal === false) {
+          // This is because it'd sound weird
+          // if it cuts off the effect at the end
           log(WARNING_LVL,
             "Ignored no-smooth-end flag at index "
             + lastIndex +
