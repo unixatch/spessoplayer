@@ -207,8 +207,8 @@ class MainOptions {
         checkValueAndExistence(value, "number")
         return setValue.call(this, name, value);
       }
-      case "sampleRate":
       case "stdoutReverbVolume": { name = "reverbVolume"; } // falls through
+      case "sampleRate":
       case "maxThreads": case "progressDelay":
         checkValueAndExistence(value, "number", undefined, this)
         return setValue.call(this, name, value);
