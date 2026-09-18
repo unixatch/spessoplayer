@@ -1766,7 +1766,8 @@ async function prepareDestination({
         : singleFile && { title: midiName }
     );
   }
-  if (needsConvertion || effects && !specificRange) {
+  // server only callback
+  if (!isStdout && (needsConvertion || effects) && !specificRange) {
     // Necessary because otherwise the runtime
     // doesn't write the length in hex before the data
     transferEncodingHandler = data => {
@@ -1792,6 +1793,7 @@ async function prepareDestination({
       "  " + (converterProcess.spawnargs.splice(0, 1), converterProcess.spawnargs)
         .join(" ")
     )
+    // server only callback
     if (!isStdout && !specificRange) {
       converterProcess.stdout.on("data", transferEncodingHandler)
     }
@@ -1831,7 +1833,8 @@ async function prepareDestination({
         "error", () => mpv?.kill()
       )
     });
-    if (!converterProcess && !specificRange) {
+    // server only callback
+    if (!isStdout && !converterProcess && !specificRange) {
       effectsProcess.stdout.on("data", transferEncodingHandler)
     }
     log(INFO_LVL, "Done setting up SoX")
