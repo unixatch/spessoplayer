@@ -46,7 +46,7 @@
  * @property {String}   midiFile                   midi file
  * @property {String}   soundfontFile              soundfont file
  * @property {Number}   [sampleRate=48000]         sample rate
- * @property {Boolean}  [spessaSynthEffects]       if it's a builtin effect or not
+ * @property {Boolean}  [externalEffects]          if it's a builtin effect or not
  * @property {Number}   loopStart                  start of loop
  * @property {Number}   loopEnd                    end of loop
  * @property {Number}   [loopFade]                 if it should loop fade

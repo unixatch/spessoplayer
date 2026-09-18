@@ -458,7 +458,7 @@ async function initSpessaSynth({
   drumsVolume, channelVolume,
   midiFile, soundfontFile,
   sampleRate = 48000,
-  spessaSynthEffects = false, reverbVolume,
+  externalEffects, reverbVolume,
   loopStart, loopEnd,
   loopFade, loopFadeStart = 1, loopFadeDuration = 4,
   index, indexOfGroup,
@@ -591,7 +591,7 @@ async function initSpessaSynth({
   }
   const synth = new SpessaSynthProcessor(sampleRate, {
     eventsEnabled: false,
-    effectsEnabled: hardStop === true ? false : spessaSynthEffects
+    effectsEnabled: hardStop === true ? false : externalEffects === false
   });
   synth.setSystemParameter("gain", volume)
   // Drum channel volume change
@@ -616,7 +616,7 @@ async function initSpessaSynth({
         .setSystemParameter("gain", indexedVolume)
     }
   }
-  if (spessaSynthEffects) {
+  if (externalEffects === false) {
     synth.setSystemParameter("reverbGain", reverbVolume)
   }
   synth.synthCore.soundBankManager.addSoundBank(

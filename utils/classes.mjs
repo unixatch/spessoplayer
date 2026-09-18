@@ -105,7 +105,7 @@ class MainOptions {
         return setOrPushValue.call(this, name, value, index);
       }
       // Booleans
-      case "spessaSynthEffects": case "hardStop": {
+      case "externalEffects": case "hardStop": {
         if (name === "hardStop") value = true;
         checkValueAndExistence(value, "boolean", name, this)
 
@@ -166,7 +166,7 @@ class MainOptions {
       case "daemon":       case "loopFade":
       case "confirmation": case "noTable":
       case "showUsage":    case "noProgress":
-      case "toStdout":     case "spessaSynthEffects":
+      case "toStdout":     case "externalEffects":
         if (name === "daemon") value = true;
         checkValueAndExistence(value, "boolean", undefined, this)
 
@@ -238,7 +238,7 @@ class MainOptions {
    * @throws {TypeError} if name is not a string
    */
   static getIndexedValue(name, index) {
-    if (name === "spessaSynthEffects" && Number.isNaN(index)) {
+    if (name === "externalEffects" && Number.isNaN(index)) {
       index = this._options[name].length-1;
     }
     return this._options?.[name]?.[index];
@@ -256,16 +256,16 @@ class EffectsOptions {
    * @param {String}  parameter paramter that wants to check
    * @param {Number}  index     index of the song
    * @param {Boolean} isStdout  if it's stdout mode
-   * @return {Boolean} if it's spessasynth or SoX
+   * @return {Boolean} true == SoX/external, false == spessasynth/internal
    */
   static externalEffectProcesser(index, isStdout) {
-    const spessaSynthEffects = this._options.spessaSynthEffects;
-    if (spessaSynthEffects === undefined) return;
-    if (Number.isNaN(index)) index = spessaSynthEffects.length-1;
+    const externalEffects = this._options.externalEffects;
+    if (externalEffects === undefined) return;
+    if (Number.isNaN(index)) index = externalEffects.length-1;
 
     return (
       isStdout
-        ? !spessaSynthEffects : !spessaSynthEffects[index]
+        ? externalEffects : externalEffects[index]
     );
   }
   /**
@@ -277,7 +277,7 @@ class EffectsOptions {
     const _index = Number.isNaN(index) ? undefined : index;
     addIndexedProperties(this, [
       "effects", _index, arrayOfObjects,
-      "spessaSynthEffects", _index, false
+      "externalEffects", _index, true
     ])
   }
   /**
@@ -286,7 +286,7 @@ class EffectsOptions {
    */
   static set stdoutEffects(arrayOfObjects) {
     MainOptions.addArrayValue.call(this, "stdoutEffects", arrayOfObjects)
-    MainOptions.addBooleanValue.call(this, "spessaSynthEffects", false)
+    MainOptions.addBooleanValue.call(this, "externalEffects", true)
   }
   /**
    * Change reverb's volume of a specific file
@@ -297,7 +297,7 @@ class EffectsOptions {
     const _index = !Number.isNaN(index) ? index : undefined;
     addIndexedProperties(this, [
       "reverbVolume", _index, number,
-      "spessaSynthEffects", _index, true
+      "externalEffects", _index, false
     ])
   }
 }
