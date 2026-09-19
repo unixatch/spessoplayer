@@ -688,13 +688,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static getOptionsOfSong(index) {
     this.#checkValueAndExistence(index, "number")
-    const allOptions = Object.keys(this._options);
-    if (this.#files)       allOptions.push("files")
-    if (this.#dryRun)      allOptions.push("dryRun")
-    if (this.#fileOutputs) allOptions.push("fileOutputs")
-
-    const allOptionsLength = allOptions.length,
-          simplifiedOptionsObject = Object.create(null);
+    const allOptions = Object.keys(this._options),
+          allOptionsLength = allOptions.length,
+          songOptionsObject = Object.create(null);
     const actualIndex = index && index * 3;
     const {
       [actualIndex]: indexOfGroup,
@@ -702,30 +698,28 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     } = this.#listOfSongs;
     const group = this.#files[indexOfGroup];
 
-    simplifiedOptionsObject["soundfontFile"] = group.getIndex(0);
-    simplifiedOptionsObject["midiFile"]      = group.get(songFile);
-    simplifiedOptionsObject["indexOfGroup"]  = indexOfGroup;
+    songOptionsObject["soundfontFile"] = group.getIndex(0);
+    songOptionsObject["midiFile"]      = group.get(songFile);
+    songOptionsObject["indexOfGroup"]  = indexOfGroup;
 
     for (let i = 0; i < allOptionsLength; ++i) {
-      const key = allOptions[i];
-      const property = this._options[key];
-      if (key === "files") continue;
-      if (key === "fileOutputs") {
-        simplifiedOptionsObject[key] = [...property];
-        continue;
+      const key = allOptions[i],
+            property = this._options[key];
+
+      if (Array.isArray(property)) {
+        songOptionsObject[key] = (
+          //               0         or   ↓
+          property[property.length-1 && index]
+        );
+        continue
       }
-      const isArray = Array.isArray(property);
-      if (isArray && property.length === 1) {
-        simplifiedOptionsObject[key] = property[0];
-        continue;
-      }
-      if (isArray) {
-        simplifiedOptionsObject[key] = property[index];
-        continue;
-      }
-      simplifiedOptionsObject[key] = property;
+      songOptionsObject[key] = property;
     }
-    return simplifiedOptionsObject;
+    if (this.#dryRun) songOptionsObject["dryRun"] = this.#dryRun;
+    if (this.#fileOutputs) {
+      songOptionsObject["fileOutputs"] = [...this.#fileOutputs];
+    }
+    return songOptionsObject;
   }
 
   /**
@@ -736,13 +730,12 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     const returnObject = {
       ...this._options, files: structuredClone(this.#files)
     };
-    if (this.#dryRun) returnObject.dryRun = this.#dryRun;
-    if (this.#logFilePath) {
-      returnObject.logFilePath = this.#logFilePath;
-    }
     if (this.#fileOutputs) {
-      returnObject.fileOutputs = structuredClone(this.#fileOutputs);
+      returnObject.fileOutputs = [...this.#fileOutputs];
     }
+    if (this.#dryRun)      returnObject.dryRun = this.#dryRun;
+    if (this.#logFilePath) returnObject.logFilePath = this.#logFilePath;
+
     return returnObject;
   }
 }
