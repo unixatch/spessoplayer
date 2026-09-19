@@ -255,18 +255,14 @@ class EffectsOptions {
    * Returns if effects are handled by spessasynth
    * @param {String}  parameter paramter that wants to check
    * @param {Number}  index     index of the song
-   * @param {Boolean} isStdout  if it's stdout mode
    * @return {Boolean} true == SoX/external, false == spessasynth/internal
    */
-  static externalEffectProcesser(index, isStdout) {
+  static externalEffectProcesser(index) {
     const externalEffects = this._options.externalEffects;
     if (externalEffects === undefined) return;
     if (Number.isNaN(index)) index = externalEffects.length-1;
 
-    return (
-      isStdout
-        ? externalEffects : externalEffects[index]
-    );
+    return externalEffects[index];
   }
   /**
    * Adds a list of effects to a specific file
@@ -279,14 +275,6 @@ class EffectsOptions {
       "effects", _index, arrayOfObjects,
       "externalEffects", _index, true
     ])
-  }
-  /**
-   * Sets the stdout array of effects
-   * @param {Array} arrayOfObjects - an array of object effects
-   */
-  static set stdoutEffects(arrayOfObjects) {
-    MainOptions.addArrayValue.call(this, "stdoutEffects", arrayOfObjects)
-    MainOptions.addBooleanValue.call(this, "externalEffects", true)
   }
   /**
    * Change reverb's volume of a specific file

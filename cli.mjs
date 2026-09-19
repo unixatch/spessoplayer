@@ -576,9 +576,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "reverb-volume": case "rvb": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
-        const isExternal = Options.externalEffectProcesser(
-          Number(lastIndex), isStdout
-        );
+        const isExternal = Options.externalEffectProcesser(Number(lastIndex));
         if (isExternal === true) {
           // Can't choose both
           // because they'd overlap each other
@@ -596,9 +594,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       }
       case "effects": case "e": {
         isStdout ??= testFunctions.stdout(newArgumentsSet);
-        const isExternal = Options.externalEffectProcesser(
-          Number(lastIndex), isStdout
-        );
+        const isExternal = Options.externalEffectProcesser(Number(lastIndex));
         if (isExternal === false) {
           // Can't choose both
           // because they'd overlap each other
@@ -609,7 +605,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
           )
           i++; break;
         }
-        setEffects(nextArg, lastIndex, isStdout)
+        setEffects(nextArg, lastIndex)
         i++
         break;
       }
@@ -1302,10 +1298,9 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
- * @param {Set<string>} isStdout - if it's stdout or not
  * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setEffects = (arg, lastIndex, isStdout) => {
+const setEffects = (arg, lastIndex) => {
   const regexListOfEffects = (
     "allpass|band|bandpass|bandreject|bass|bend|biquad" +
     "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
@@ -1351,12 +1346,10 @@ const setEffects = (arg, lastIndex, isStdout) => {
       process.exit(1)
     }
 
-    if (isStdout) Options.stdoutEffects = list;
-             else Options.effects(Number(lastIndex), list)
-
+    Options.effects(Number(lastIndex), list)
     log(INFO_LVL,
       "Set list of SoX effects as", JSON.stringify(list),
-      !isStdout ? `at index ${lastIndex}` : ""
+      `at index ${lastIndex}`
     )
     return;
   }
