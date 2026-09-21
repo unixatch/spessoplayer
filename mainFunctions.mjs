@@ -181,7 +181,7 @@ async function formatManager({
         doneSettingUpMsg = `Done setting up ${(isToFile) ? "wav outFile" : ""} in dry run mode`;
       }
 
-      if (effects || reverbVolume !== undefined) {
+      if (effects) {
         if (isStdout) {
           addPipingFunction()
         } else {
@@ -191,8 +191,7 @@ async function formatManager({
             addErrorEventToDest,
             promisesOfPrograms,
             stdout: "ignore",
-            destination: outFile,
-            effects, reverbVolume
+            destination: outFile, effects
           })
         }
         if (isStdout) log(INFO_LVL, doneSettingUpMsg)
@@ -272,8 +271,7 @@ async function formatManager({
           stdoutHeader, readStream,
           addErrorEventToDest,
           promisesOfPrograms,
-          stdout: ffmpeg.stdin,
-          effects, reverbVolume
+          stdout: ffmpeg.stdin, effects
         })
         log(INFO_LVL, doneSettingUpMsg)
         break;
@@ -659,7 +657,7 @@ async function applyExternalEffects({
   promisesOfPrograms,
   stdout = process.stdout,
   destination = "-",
-  effects, reverbVolume = "20"
+  effects
 }) {
   /*
     ffmpeg
@@ -669,9 +667,6 @@ async function applyExternalEffects({
       -f wav
         pipe:1
   */
-  if (!effects?.length) {
-    effects = ["reverb", reverbVolume, "36", "100", "100", "10", "10"];
-  }
   const { spawn } = child_process ??= await import("node:child_process");
   // In case it's custom
   if (effects[0]?.effect) {

@@ -73,7 +73,6 @@
  * @param {Stream}              [stdout=process.stdout] the destination
  * @param {String}              [destination="-"]       the destination path
  * @param {(String[]|Object[])} [effects=String[]]      all effects to pass to SoX
- * @param {Number}              [reverbVolume="20"]     reverb's volume
  */
   //-| cli.mjs |-//
 /**
