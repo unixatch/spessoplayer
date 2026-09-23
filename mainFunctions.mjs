@@ -88,8 +88,7 @@ async function formatManager({
   format = true,
   readStream, rawReadStream,
   res, dryRun,
-  effects, reverbVolume,
-  createNewFileNameAnyway,
+  effects, createNewFileNameAnyway,
   fileOutputs, FO_CONSTANTS,
   stdoutHeader,
   promisesOfPrograms,
@@ -324,7 +323,7 @@ async function formatManager({
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
-      addPipingFunction((_, end, noPipe = false) => {
+      addPipingFunction((whereToConnect, end, noPipe = false) => {
         const rawStream = rawReadStream ?? readStream;
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
@@ -332,7 +331,7 @@ async function formatManager({
         addErrorEventToDest(
           rawStream
             .once("error", streamErrorHandling)
-            .pipe(output, { end })
+            .pipe(whereToConnect ?? output, { end })
         )
       })
       break;
@@ -656,8 +655,8 @@ async function applyExternalEffects({
   addErrorEventToDest,
   promisesOfPrograms,
   stdout = process.stdout,
-  destination = "-",
-  effects
+  destination = "-", effects,
+  sampleRate = 48000, rawMode, sendEOF = true
 }) {
   /*
     ffmpeg
@@ -682,14 +681,29 @@ async function applyExternalEffects({
         effects.push(effect)
       })
   }
-  const sox = spawn(program, [
-    "-t", "wav", "-",
-    "-t", "wav", destination,
-    ...effects
-  ], {
+  const soxArgs = [];
+  if (rawMode) {
+    // Raw support, here's an example:
+    //   sox -r 48000 -c 2 -e floating-point -t f32 -L - \
+    //       -t wav - reverb 60
+    soxArgs.push(
+      "--type", rawMode,
+      "--encoding", (rawMode === "f32") ? "floating-point" : "signed-integer",
+      "--rate", sampleRate, "--channels", "2",
+      "--endian", "little", "-",
+      "--type", rawMode, "-", ...effects
+    )
+  } else {
+    soxArgs.push(
+      "--type", "wav", "-",
+      "--type", "wav", destination,
+      ...effects
+    )
+  }
+  const sox = spawn(program, soxArgs, {
     detached: true, windowsHide: true
   });
-  //  For SIGINT event to work, sometimes... ↑
+  // ↑ For SIGINT event to work, sometimes...
   log(DEBUG_LVL,
     "Spawned SoX with", "-",
     "  " + (sox.spawnargs.splice(0, 1), sox.spawnargs)
@@ -753,9 +767,9 @@ async function applyExternalEffects({
   )
   log(DEBUG_LVL, "Added SoX promise")
 
-  sox.stdin.write(stdoutHeader)
-  addErrorEventToDest(readStream?.pipe(sox.stdin) ?? sox.stdin)
-  sox.stdout.pipe(stdout)
+  sox.stdout.pipe(stdout, { end: sendEOF })
+  if (stdoutHeader && !rawMode) sox.stdin.write(stdoutHeader)
+  addErrorEventToDest?.(readStream?.pipe(sox.stdin) ?? sox.stdin)
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
@@ -1798,7 +1812,7 @@ async function prepareDestination({
     promisesOfPrograms.push(
       new Promise(resolve => {
         converterProcess.once("exit", exitCode => {
-          if (!exitCode && !isStdout) {
+          if (!exitCode) {
             log(DEBUG_LVL, "Ffmpeg exited")
             return resolve();
           }
@@ -1814,7 +1828,7 @@ async function prepareDestination({
     process.stderr.write("\x1b[K")
   }
   // If it needs effects, excluding some formats
-  if (effects && (isStdout ? !isPCM : needsConvertion)) {
+  if (effects && (!isStdout && needsConvertion)) {
     [effectsProcess] = await applyExternalEffects({
       program: "sox",
       stdoutHeader,
@@ -1850,7 +1864,8 @@ async function prepareDestination({
     effectsProcess?.stdin      // Sox or
     ?? converterProcess?.stdin // Ffmpeg or
   );
-  if (isStdout) {
+  if (isStdout) stdoutBlock: {
+    if (effects) break stdoutBlock;
     destination ??= (
       // dryRun/stdout
       !isPCM && (dryRunStream ?? process.stdout).write(stdoutHeader),
@@ -1862,7 +1877,11 @@ async function prepareDestination({
       !isPCM && res.write(stdoutHeader), res
     ) : [res, stdoutHeader];
   }
-  return destination;
+  return (
+    isStdout
+      ? [dryRunStream, stdoutHeader, converterProcess, destination]
+      : destination
+  );
 }
 
 export {

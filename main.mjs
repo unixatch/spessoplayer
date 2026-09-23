@@ -28,8 +28,8 @@ import {
 } from "./utils/utils.mjs"
 import {
   initSpessaSynth,
-  addEvent, toStdout,
-  Progress, startPlayer,
+  addEvent, applyExternalEffects,
+  toStdout, Progress, startPlayer,
   prepareDestination
 } from "./mainFunctions.mjs"
 import {
@@ -165,7 +165,10 @@ if (isToStdout) {
     lengthOfFiles.push(sampleCount)
   }
 
-  const destination = await prepareDestination({
+  const [
+    dryRunStream,     stdoutHeader,
+    converterProcess, originalDestination = process.stdout
+  ] = await prepareDestination({
     isVerboseLevelSet, isPCM,
     loadingAnimation, loadingAnimationCleanupFunc,
     ...listOfOptions, lengthOfFiles,
@@ -177,6 +180,11 @@ if (isToStdout) {
         : undefined
     )
   }, true);
+  if (!isPCM && !converterProcess
+      && listOfOptions?.effects?.[0] === undefined) {
+    (dryRunStream ?? originalDestination).write(stdoutHeader)
+  }
+  let effectsProcess, destination;
 
   for (let i = 0; i < amountOfSongs; ++i) {
     const options = perSongOptions[i];
@@ -184,9 +192,44 @@ if (isToStdout) {
     const toStdoutValue = await toStdout({ index: i, options });
     if (toStdoutValue === null) continue;
     const [ func, promise ] = toStdoutValue;
+    const isLastSong = i === amountOfSongs-1;
 
-    func?.(destination, i === amountOfSongs-1)
+    // Per-song external effect/s
+    if (options.effects) {
+      let rawMode = false;
+      if (!converterProcess) {
+        rawMode = (format === "pcm" || format === "s16le") && "s16";
+        rawMode ||= (format !== "f32le") ? false : "f32";
+      }
+
+      [effectsProcess] = await applyExternalEffects({
+        program: "sox",
+        stdoutHeader: i ? undefined : stdoutHeader,
+        stdout: converterProcess?.stdin ?? dryRunStream,
+        promisesOfPrograms,
+        effects: options.effects, sendEOF: isLastSong,
+        // In case of wav (false), stream it or with header
+        // otherwise other pcm formats
+        rawMode: rawMode === false ? (i ? "s16" : rawMode) : rawMode
+      });
+      destination = effectsProcess.stdin;
+    }
+
+    func?.(
+      destination ?? (
+        originalDestination !== converterProcess?.stdin
+          ? (dryRunStream ?? originalDestination)
+          : originalDestination
+      ),
+      isLastSong
+    )
     await promise
+    if (destination === effectsProcess?.stdin) {
+      // Making sure that SoX understands
+      // that there's nothing more left
+      effectsProcess?.stdin?.destroy()
+    }
+    destination = null;
   }
   await Promise.all(promisesOfPrograms)
   if (dryRun) console.error("Done dry running")
