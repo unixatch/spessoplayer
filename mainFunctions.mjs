@@ -1250,16 +1250,14 @@ async function toFile({
       })
     )
   };
-  for (let foIndex = 0; foIndex < foLength; ++foIndex) {
-    const outFile = fileOutputs[foIndex];
-    if (!outFile) continue;
-
-    if (foIndex === WAV_INDEX || foIndex === RAW_INDEX) {
-      await addFunction(outFile)
-      continue;
-    }
-    await addFunction()
-    break;
+  if (fileOutputs[WAV_INDEX] !== undefined) {
+    await addFunction(fileOutputs[WAV_INDEX])
+  }
+  if (fileOutputs[RAW_INDEX] !== undefined) {
+    await addFunction(fileOutputs[RAW_INDEX])
+  }
+  for (let foIndex = 2; foIndex < foLength; ++foIndex) {
+    if (fileOutputs[foIndex]) await addFunction()
   }
 
   const finishedOptions = { cleanup: true };
