@@ -109,7 +109,7 @@ async function formatManager({
       if (global.SIGINT) process.exit(130)
       console.error(
         formatStrings.grayedOutText,
-        "Closed the program before finishing to render"
+        `Closed the program before finishing to render (${code} ${errno})`
       )
       process.exit(errno)
     }
@@ -1763,8 +1763,8 @@ async function prepareDestination({
       {
         length: (
           isStdout
-          ? lengthOfFiles.reduce(sumOfLengths, 0)
-          : length
+            ? lengthOfFiles.reduce(sumOfLengths, 0)
+            : length
         ),
         numChannels: 2
       }, sampleRate ?? 48000,
