@@ -15,7 +15,7 @@ if (process.argv.includes("-h")) {
     addOptionalArgumentsToFile
       .toString()
       .replace(/.*includes\((".*")\)\).*/g, "  $1"),
-    "\n-e, -rvb"
+    "\n-e, -rvb, -ps"
   )
   process.exit(1)
 }
