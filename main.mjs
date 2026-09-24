@@ -184,7 +184,22 @@ if (isToStdout) {
       && listOfOptions?.effects?.[0] === undefined) {
     (dryRunStream ?? originalDestination).write(stdoutHeader)
   }
-  let effectsProcess, destination;
+  let effectsProcess, destination,
+      rawMode = false, effectParameterObject;
+  if (listOfOptions.effects) {
+    if (!converterProcess) {
+      rawMode = (format === "pcm" || format === "s16le") && "s16";
+      rawMode ||= (format !== "f32le") ? false : "f32"; // false = wav
+    }
+    effectParameterObject = Object.create(null, {
+      program:            { value: "sox" },
+      promisesOfPrograms: { value: promisesOfPrograms },
+      sendEOF:            { value: amountOfSongs === 1, writable: true },
+      stdout:             { value: converterProcess?.stdin ?? dryRunStream },
+      stdoutHeader:       { value: stdoutHeader, configurable: true, writable: true },
+      rawMode:            { value: rawMode !== false && rawMode, writable: true, configurable: true }
+    });
+  }
 
   for (let i = 0; i < amountOfSongs; ++i) {
     const options = perSongOptions[i];
@@ -196,22 +211,14 @@ if (isToStdout) {
 
     // Per-song external effect/s
     if (options.effects) {
-      let rawMode = false;
-      if (!converterProcess) {
-        rawMode = (format === "pcm" || format === "s16le") && "s16";
-        rawMode ||= (format !== "f32le") ? false : "f32";
-      }
+      // In case of wav (false), stream it or with header
+      // otherwise other pcm formats
+      effectParameterObject.rawMode ||= i ? "s16" : rawMode;
+      effectParameterObject.sendEOF ||= isLastSong;
+      effectParameterObject.effects = options.effects;
+      effectParameterObject.stdoutHeader &&= i ? undefined : stdoutHeader;
 
-      [effectsProcess] = await applyExternalEffects({
-        program: "sox",
-        stdoutHeader: i ? undefined : stdoutHeader,
-        stdout: converterProcess?.stdin ?? dryRunStream,
-        promisesOfPrograms,
-        effects: options.effects, sendEOF: isLastSong,
-        // In case of wav (false), stream it or with header
-        // otherwise other pcm formats
-        rawMode: rawMode === false ? (i ? "s16" : rawMode) : rawMode
-      });
+      [effectsProcess] = await applyExternalEffects(effectParameterObject);
       destination = effectsProcess.stdin;
     }
 
