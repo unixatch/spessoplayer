@@ -688,9 +688,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    */
   static getOptionsOfSong(index) {
     this.#checkValueAndExistence(index, "number")
-    const allOptions = Object.keys(this._options),
-          allOptionsLength = allOptions.length,
-          songOptionsObject = Object.create(null);
+    const songOptionsObject = Object.create(null);
     const actualIndex = index && index * 3;
     const {
       [actualIndex]: indexOfGroup,
@@ -702,9 +700,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
     songOptionsObject["midiFile"]      = group.get(songFile);
     songOptionsObject["indexOfGroup"]  = indexOfGroup;
 
-    for (let i = 0; i < allOptionsLength; ++i) {
-      const key = allOptions[i],
-            property = this._options[key];
+    for (const key in this._options) {
+      const property = this._options[key];
 
       if (Array.isArray(property)) {
         songOptionsObject[key] = (
