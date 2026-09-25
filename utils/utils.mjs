@@ -317,7 +317,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * Contains all normal options
    * @type {Object}
    */
-  static _options = {};
+  static _options = Object.create(null);
   /** If fileOutputs has been created
    * @type {Boolean}
    */
