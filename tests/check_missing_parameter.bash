@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=2059
 
-[[ -z $1 ]] && {
+(( $# == 0 )) && {
     printf '\e[31m%s\e[0m\n' "parameter name required"
     exit 1
 }
-parameterName="$1"
 
 foundFormat="\e[32mFound reference inside %s\e[0m\n"
 notFoundFormat="\e[33mReference not found inside %s\e[0m\n"
@@ -28,10 +27,9 @@ paths=(
     "./bash_completion" "./zsh_completion"
 )
 
-# main loop
 for file in "${paths[@]}" ;{
     FOUND="false"
-    case $file in
+    case "$file" in
         *spessoplayer*) currentConstant="MAN"        ;;
         *powershell*)   currentConstant="POWERSHELL" ;;
         *COMMAND*)      currentConstant="MARKDOWN"   ;;
@@ -40,19 +38,25 @@ for file in "${paths[@]}" ;{
         *cli*)          currentConstant="HELP"       ;;
     esac
 
+    [[ "$currentConstant" != "HELP" ]] && reachedPart="true"
+
     # read the file
     while read -r line ;do
-        if [[ $currentConstant == "HELP" && -z $reachedPart &&
-              ! "$line" =~ ${CONSTANTS[HELP_REGEX]} ]]
+        # cli.mjs is a bigger file
+        # so skip to the help function
+        if [[ -z $reachedPart && ! "$line" =~ ${CONSTANTS[HELP_REGEX]} ]]
         then
-            # cli.mjs is a bigger file
-            # so skip to the help function
             continue
         else
-            reachedPart="true"
+            : "${reachedPart:='true'}"
         fi
-        [[ "$line" =~ $parameterName ]] && { FOUND="true"; break; }
 
+        for parameter in "$@" ;{
+            [[ "$line" =~ $parameter ]] && {
+                FOUND="true"
+                break 2 # closes the while read
+            }
+        }
     done < "$file"
 
     if $FOUND ;then

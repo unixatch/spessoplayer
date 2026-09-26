@@ -14,6 +14,6 @@ if [[ "${commit_msg[*]}" =~ $REGEX ]] ;then
     }
     ./tests/check_missing_parameter.bash "${names[@]}"
 else
-    : # Do nothing successfully
+    : # Do nothing successfully because the check returned 1
 fi
 
