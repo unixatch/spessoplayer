@@ -27,6 +27,7 @@ paths=(
     "./bash_completion" "./zsh_completion"
 )
 
+declare -i failedOnce
 for file in "${paths[@]}" ;{
     FOUND="false"
     case "$file" in
@@ -63,6 +64,8 @@ for file in "${paths[@]}" ;{
         printf "$foundFormat" "${CONSTANTS[$currentConstant]}"
     else
         printf "$notFoundFormat" "${CONSTANTS[$currentConstant]}"
+        : "${failedOnce:=1}"
     fi
 }
+exit $failedOnce
 
