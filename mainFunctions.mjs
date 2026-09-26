@@ -302,7 +302,7 @@ async function formatManager({
       log(INFO_LVL, doneSettingUpMsg)
       break;
     }
-    case "pcm":
+    case "pcm": case "s16le": case "f32le":
     case /^.*\.(?:s16le|f32le|pcm)$/.test(outFile): {
       if (isToFile) {
         const newName = newFileName(outFile, createNewFileNameAnyway);
@@ -313,7 +313,22 @@ async function formatManager({
 
       let output;
       if (isToFile) {
-        output = fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
+        if (effects) {
+          output = (
+            await applyExternalEffects({
+              program: "sox",
+              stdoutHeader, readStream,
+              addErrorEventToDest,
+              promisesOfPrograms,
+              rawMode: (
+                format === "s16le" || format === "pcm"
+                  ? "s16" : "f32"
+              ),
+              destination: outFile, effects
+            })
+          )[0].stdin;
+        }
+        output ??= fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
       } else {
         output = res ?? process.stdout;
         if (dryRun) output = fs.createWriteStream(dryRun, {fd: fs.openSync(dryRun, "r+")});
@@ -691,7 +706,7 @@ async function applyExternalEffects({
       "--encoding", (rawMode === "f32") ? "floating-point" : "signed-integer",
       "--rate", sampleRate, "--channels", "2",
       "--endian", "little", "-",
-      "--type", rawMode, "-", ...effects
+      "--type", rawMode, destination, ...effects
     )
   } else {
     soxArgs.push(
@@ -767,9 +782,9 @@ async function applyExternalEffects({
   )
   log(DEBUG_LVL, "Added SoX promise")
 
-  sox.stdout.pipe(stdout, { end: sendEOF })
+  if (stdout !== "pipe") sox.stdout.pipe(stdout, { end: sendEOF })
   if (stdoutHeader && !rawMode) sox.stdin.write(stdoutHeader)
-  addErrorEventToDest?.(readStream?.pipe(sox.stdin) ?? sox.stdin)
+  addErrorEventToDest?.(readStream?.pipe?.(sox.stdin) ?? sox.stdin)
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
@@ -1825,23 +1840,23 @@ async function prepareDestination({
     loadingAnimation?.kill()
     process.stderr.write("\x1b[K")
   }
-  // If it needs effects, excluding some formats
-  if (effects && (!isStdout && needsConvertion)) {
+  // If it needs effects
+  if (effects && !isStdout) {
     [effectsProcess] = await applyExternalEffects({
       program: "sox",
       stdoutHeader,
-      stdout: (
-        converterProcess?.stdin
-          ?? (!isStdout && "pipe" || dryRunStream)
-      ),
-      promisesOfPrograms,
-      reverbVolume, effects,
+      stdout: converterProcess?.stdin ?? dryRunStream ?? "pipe",
+      rawMode: (
+        isPCM
+          ? format !== "pcm" && format.substring(0, 3) || "s16"
+          : false
+      ), promisesOfPrograms, effects,
       addErrorEventToDest: dest => dest.on(
         "error", () => mpv?.kill()
       )
     });
     // server only callback
-    if (!isStdout && !converterProcess && !specificRange) {
+    if (!converterProcess && !specificRange) {
       effectsProcess.stdout.on("data", transferEncodingHandler)
     }
     log(INFO_LVL, "Done setting up SoX")
