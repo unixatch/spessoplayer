@@ -1000,7 +1000,7 @@ const isRealNumber = (number, checkForInfinity) => {
   const isNumber = typeof number === "number" && !Number.isNaN(number);
   return (
     checkForInfinity
-      ? isNumber && number !== Infinity
+      ? isNumber && Math.abs(number) !== Infinity
       : isNumber
   );
 };
@@ -1057,7 +1057,7 @@ const setLoopParameterValue = (name, arg, lastIndex, func) => {
     number = 0;
   }
 
-  if (number === Infinity) {
+  if (Math.abs(number) === Infinity) {
     console.error(
       formatStrings.failedCliParam,
       `[${name}|${lastIndexString}]: Can't use infinity, sorry`

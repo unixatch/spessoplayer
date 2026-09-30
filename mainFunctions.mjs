@@ -503,26 +503,25 @@ async function initSpessaSynth({
       error, midiFile
     );
   }
-  if (!onlySampleCount && !onlyDuration || isStartPlayer) {
-    if (midi.loop.start === Infinity) {
-      log(WARNING_LVL,
-        midiFile,
-        "has a loop start of Infinity which is wrong, skipping..."
-      )
-      return null;
-    }
-    if (!midi.duration) {
-      log(WARNING_LVL,
-        midiFile, "has a duration of 0 seconds, skipping..."
-      )
-      return null;
-    }
-    if (midi.duration <= .2) {
-      log(WARNING_LVL,
-        midiFile,
-        "has a duration <= 200 ms, looping will be disabled"
-      )
-    }
+  const infiniteLoopStart = Math.abs(midi.loop.start) === Infinity && "start";
+  if (infiniteLoopStart || Math.abs(midi.loop.end) === Infinity) {
+    log(WARNING_LVL,
+      midiFile,
+      `has a loop ${infiniteLoopStart || "end"} of Infinity which is wrong, skipping...`
+    )
+    return null;
+  }
+  if (!midi.duration) {
+    log(WARNING_LVL,
+      midiFile, "has a duration of 0 seconds, skipping..."
+    )
+    return null;
+  }
+  if (midi.duration <= .2) {
+    log(WARNING_LVL,
+      midiFile,
+      "has a duration <= 200 ms, looping will be disabled"
+    )
   }
 
   if (!onlySampleCount && !onlyDuration) {
@@ -541,6 +540,7 @@ async function initSpessaSynth({
       isToFile ? soundfontFile : fs.readFileSync(soundfontFile)
     );
   }
+  // Handles @<miditicks> syntax
   let areMidiTicks_Start, areMidiTicks_End;
   if (loopStart?.length) {
     areMidiTicks_Start = true;
