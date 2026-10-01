@@ -74,6 +74,8 @@ function writeSingleChunk(header, data) {
 }
 
 let encoder;
+const MAX_UNSIGNED_32INT = 4294967295;
+
 /**
  * WAV Header Generator
  * @param {module:typeDefinitions~getWavHeaderObjectParameters} audioData - An object that contains infos about the audio
@@ -85,6 +87,13 @@ let encoder;
 function getWavHeader({ length, numChannels },
   sampleRate = 48000, metadata = {}
 ) {
+  if (length > MAX_UNSIGNED_32INT) {
+    console.error(`${red}file size is too big (unsigned 32bit limit)${normal}`)
+    process.exit(1)
+  } else if (length < 0) {
+    console.error(`${red}Can't use a negative file size of "${length}"${normal}`)
+    process.exit(1)
+  }
   const bytesPerSample = 2;
   let infoChunk;
   const infoOn = Object.keys(metadata).length > 0;
