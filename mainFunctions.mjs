@@ -1729,7 +1729,7 @@ async function startPlayer(
     })
 }
 /**
- * Prepares the destination for stdout and file modes,
+ * Prepares the destination for stdout and player modes,
  * while also maybe managing needed child processes
  * @param {Object}         obj
  * @param {Boolean}        obj.isVerboseLevelSet           if logging is explicitly enabled

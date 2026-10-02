@@ -184,7 +184,7 @@ if (isToStdout) {
         : undefined
     )
   }, true);
-  if (!isPCM && !converterProcess
+  if (!isPCM && !converterProcess && listOfOptions.effects
       && listOfOptions?.effects?.[0] === undefined) {
     (dryRunStream ?? originalDestination).write(stdoutHeader)
   }
