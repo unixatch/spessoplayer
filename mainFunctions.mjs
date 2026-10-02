@@ -476,7 +476,7 @@ async function initSpessaSynth({
   index, indexOfGroup,
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
-  isStartPlayer = false, spessasynthLogging, hardStop = false
+  basicMIDIRequired = true, spessasynthLogging, hardStop = false
 }) {
   const {
     BasicMIDI,
@@ -568,7 +568,10 @@ async function initSpessaSynth({
     ),
     hardStop, loopFade, loopFadeDuration, loopFadeStart
   });
-  if (onlySampleCount) return sampleCount;
+  if (onlySampleCount) return (
+    basicMIDIRequired
+      ? [sampleCount, midi] : sampleCount
+  );
   if (onlyDuration) return durationInSeconds;
 
   if (loopStart > 0 && !loopDetectedInMidi) {
@@ -1176,7 +1179,7 @@ async function toFile({
   let stdoutHeader, getWavHeader, getData,
       seq, synth, seqFloat, synthFloat,
       sampleCount, sampleCountFloat,
-      startFading;
+      startFading, midi;
   const initSpessaSynthObjParam = {
     index, ...options,
     spessasynthLogging, isToFile: true
@@ -1185,7 +1188,7 @@ async function toFile({
     const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
     if (initSpessaSynthObj === null) return null;
     ({
-      seq, synth, sampleCount, startFading
+      seq, synth, sampleCount, startFading, midi
     } = initSpessaSynthObj);
     ({
       getWavHeader, getData
@@ -1210,7 +1213,12 @@ async function toFile({
   if (!onlyFloat) {
     stdoutHeader = getWavHeader({
       length: sampleCount, numChannels: 2
-    }, options.sampleRate, { title: getFilename(options.midiFile) });
+    }, options.sampleRate, {
+      title: getFilename(options.midiFile),
+      tracksAmount: midi.tracks.length,
+      timeDivision: midi.timeDivision,
+      tempoChanges: midi.tempoChanges
+    });
     log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
   }
 
@@ -1536,9 +1544,9 @@ async function startPlayer(
     promisesOfPrograms.length &&= 0;
     const realIndex = Number(index),
           options = Options.getOptionsOfSong(realIndex);
-    const length = await initSpessaSynth({
+    const [length, midi] = await initSpessaSynth({
       index: realIndex, ...options,
-      onlySampleCount: true, isStartPlayer: true,
+      onlySampleCount: true,
       spessasynthLogging
     });
     if (length === null) {
@@ -1561,7 +1569,7 @@ async function startPlayer(
     );
     let destination, header;
     destination = await prepareDestination({
-      ...options, isPCM, res, mpv, length,
+      ...options, isPCM, res, mpv, length, midi,
       getWavHeader, promisesOfPrograms, specificRange
     }, false);
     if (Array.isArray(destination)) {
@@ -1726,8 +1734,9 @@ async function startPlayer(
  * @param {Object}         obj
  * @param {Boolean}        obj.isVerboseLevelSet           if logging is explicitly enabled
  * @param {Boolean}        obj.isPCM                       if it's a lossless format without a header
- * @param {ServerResponse} [obj.res]                         server response object
- * @param {ChildProcess}   [obj.mpv]                         child process of mpv
+ * @param {ServerResponse} [obj.res]                       server response object
+ * @param {ChildProcess}   [obj.mpv]                       child process of mpv
+ * @param {BasicMIDI}      obj.midi                        midi file used in the header
  * @param {ChildProcess}   obj.loadingAnimation            script that prints the loading animation
  * @param {Function}       obj.loadingAnimationCleanupFunc cleanup function for the loading animation
  * @param {Number}         obj.length                      length of the song in samples
@@ -1741,13 +1750,13 @@ async function startPlayer(
  * @throws {UnwantedNonZeroError} if ffmpeg exits with a non-zero status code
  */
 async function prepareDestination({
-  isVerboseLevelSet, isPCM, res, mpv,
+  isVerboseLevelSet, isPCM, res, mpv, midi,
   loadingAnimation, loadingAnimationCleanupFunc,
   dryRun, length, lengthOfFiles,
-  getWavHeader, midiFile, singleFile,
+  getWavHeader, midiFile,
   sampleRate, format,
   promisesOfPrograms,
-  effects, reverbVolume, specificRange
+  effects, specificRange
 }, isStdout) {
   let effectsProcess, fatalErrors,
       converterProcess, dryRunStream;
@@ -1773,7 +1782,18 @@ async function prepareDestination({
         ? (index, previous) => index + previous
         : undefined
     );
-    const midiName = !isStdout ? getFilename(midiFile) : undefined;
+    const wavMetadata = Object.create(null,
+      // Just to create at least one ICMT INFO chunk
+      { _: {value: null, enumerable: true, configurable: true} }
+    );
+    if (midiFile) {
+      delete wavMetadata._;
+      wavMetadata.title = getFilename(midiFile);
+      wavMetadata.tracksAmount = midi.tracks.length;
+      wavMetadata.tempoChanges = midi.tempoChanges;
+      wavMetadata.timeDivision = midi.timeDivision;
+    }
+
     stdoutHeader = getWavHeader(
       {
         length: (
@@ -1782,10 +1802,7 @@ async function prepareDestination({
             : length
         ),
         numChannels: 2
-      }, sampleRate ?? 48000,
-      midiFile && !isStdout
-        ? { title: midiName }
-        : singleFile && { title: midiName }
+      }, sampleRate ?? 48000, wavMetadata
     );
   }
   // server only callback

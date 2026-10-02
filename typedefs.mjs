@@ -53,7 +53,7 @@
  * @property {Number}   [loopFadeDuration=4]       duration of the loop fade
  * @property {Number}   indexOfGroup               index of the Set/group the song is in
  * @property {Boolean}  [isToFile=false]           if it's the toFile function
- * @property {Boolean}  [isStartPlayer=false]      if it's the startPlayer function
+ * @property {Boolean}  [basicMIDIRequired=true]   if the BasicMIDI class is required to be returned
  * @property {Boolean}  [onlySampleCount=false]    if it should return just the sample count of the song and do nothing else
  * @property {Boolean}  [onlyDuration=false]       if it should return just the duration of the song and do nothing else
  * @property {Object}   spessasynthLogging

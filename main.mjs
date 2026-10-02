@@ -152,28 +152,32 @@ if (isToStdout) {
     !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
   );
   const amountOfSongs = Options.amountOfSongs;
+  let basicMidiClass;
   for (let i = 0; i < amountOfSongs; ++i) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
 
-    const sampleCount = await initSpessaSynth({
+    let initFunctionValue = await initSpessaSynth({
       index: i, ...options,
       onlySampleCount: true,
+      basicMIDIRequired: amountOfSongs === 1 ? true : false,
       spessasynthLogging
     });
-    if (!sampleCount) continue;
-    lengthOfFiles.push(sampleCount)
+    if (!initFunctionValue) continue;
+    if (Array.isArray(initFunctionValue)) {
+      [initFunctionValue, basicMidiClass] = initFunctionValue;
+    }
+    lengthOfFiles.push(initFunctionValue)
   }
 
   const [
     dryRunStream,     stdoutHeader,
     converterProcess, originalDestination = process.stdout
   ] = await prepareDestination({
-    isVerboseLevelSet, isPCM,
+    isVerboseLevelSet, isPCM, midi: basicMidiClass,
     loadingAnimation, loadingAnimationCleanupFunc,
     ...listOfOptions, lengthOfFiles,
     getWavHeader, promisesOfPrograms,
-    singleFile: amountOfSongs === 1,
     midiFile: (
       amountOfSongs === 1
         ? perSongOptions[0].midiFile

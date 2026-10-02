@@ -99,12 +99,31 @@ function getWavHeader({ length, numChannels },
   const infoOn = Object.keys(metadata).length > 0;
   if (infoOn) {
     encoder = new TextEncoder();
-    const infoChunks = [
-      writeSingleChunk(
-        "ICMT",
-        encoder.encode("Created with SpessaSynth and spessoplayer")
-      )
-    ];
+    const infoChunks = [];
+    let ICMTData = "Created with SpessaSynth and spessoplayer. ";
+
+    // musical information
+    if (metadata.tracksAmount) {
+      ICMTData += `# of Tracks: ${metadata.tracksAmount}. `;
+    }
+    if (metadata.tempoChanges) {
+      if (metadata.tempoChanges.length === 2) {
+        //                                Converts to an integer ↓
+        ICMTData += `BPM/tempo: ${metadata.tempoChanges[0].tempo >> 0}. `;
+      } else {
+        const tempoChangesLength = metadata.tempoChanges.length;
+        for (let i = 0; i < tempoChangesLength; ++i) {
+          const tempo = metadata.tempoChanges[i].tempo;
+          ICMTData += `BPM/tempo [${i}]: ${tempo >> 0}. `;
+        }
+      }
+    }
+    if (metadata.timeDivision) {
+      ICMTData += `Time division: ${metadata.timeDivision}. `;
+    }
+    infoChunks[0] = writeSingleChunk("ICMT", encoder.encode(ICMTData));
+
+    // General song information
     if (metadata.artist) infoChunks.push(
       writeSingleChunk("IART", encoder.encode(metadata.artist))
     )
