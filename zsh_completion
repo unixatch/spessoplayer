@@ -71,6 +71,7 @@ __spessoplayer() {
     --loop-fade | --loop-fade-start | --loop-fade-duration | \
     -lF         | -lFs    | -lFd)
       local numbers=({0..10})
+      [[ $cur =~ ^(@|mid:|miditicks:) ]] && numbers=("$cur"{0..10000})
       _arguments "*: :(${numbers[*]})"
       return 0
     ;;

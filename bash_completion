@@ -16,7 +16,7 @@
 
 _spessoplayer() {
   # Enables file/folder completion when COMPREPLY is empty
-  compopt -o default -o bashdefault
+  compopt +o nospace -o default -o bashdefault
   local prev
   # it shouldn't break words on : but whatever...
   _get_comp_words_by_ref -n : prev
@@ -64,6 +64,15 @@ _spessoplayer() {
     -l     | -ls          | -le        | \
     --loop-fade-start     | --loop-fade-duration | \
     -lFs                  | -lFd)
+      # all of this just because of ":" in the prefix...
+      local words lastOne curWord
+      _get_comp_words_by_ref -n : words
+      lastOne=$(( ${#words[@]} - 1 )) curWord="${words[lastOne]}"
+      [[ $curWord =~ ^@|mid:|miditicks: ]] && {
+        compopt -o nospace
+        COMPREPLY=({0..10000})
+        return 0
+      }
       COMPREPLY=({0..10})
     ;;
     --sample-rate | -r)

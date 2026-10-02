@@ -17,14 +17,23 @@
 [scriptblock] $ScriptBlock = {
     param( $wordToComplete, $commandAst )
 
-    function getCustomValue($type) {
+    function getCustomValue($type, $lastValue) {
         # The argument that comes right after the parameter
         # like -vol <tab>
 
         switch ($type) {
             "verbose"    { return 0..3      }
             "volume"     { return 0..100    }
-            "seconds"    { return 0..10     }
+            "seconds"    {
+                if ($lastValue -match "^@|mid:|miditicks:") {
+                    [array] $list = @(0..9999)
+                    foreach ($n in $list) {
+                        $list.SetValue("$lastValue$n", $n)
+                    }
+                    return $list
+                }
+                return 0..10
+            }
             "threads"    { return 1..16     }
             "sampleRate" { return 0..96000  }
             "textDelay"  { return 50..10000 }
@@ -110,7 +119,7 @@
         }
         '^(--loop[0-9]*|-l[0-9]*|--loop-start[0-9]*|-ls[0-9]*|--loop-end[0-9]*|-le[0-9]*|--loop-fade-start[0-9]*|-lFs[0-9]*|--loop-fade-duration[0-9]*|-lFd[0-9]*)$'
         {
-            [array] $listToPass = getCustomValue seconds
+            [array] $listToPass = getCustomValue seconds $lastValue
             [string] $toolTipToPass = "Seconds"
             break
         }
