@@ -2,6 +2,8 @@ import { globSync } from "node:fs"
 import { parse } from "node:path"
 import { fork } from "node:child_process"
 
+const isDaemon = parse(process.argv[1]).name === "daemonMode";
+
 // Setup file path arguments
 const {
   grayedOutText, globs,
@@ -23,7 +25,7 @@ if (process.argv.includes("-h")) {
 process.on("SIGINT", () => {
   process.exitCode = 130;
   realTest?.kill()
-  console.log(grayedOutText, " Closed tester with Ctrl+c")
+  if (!isDaemon) console.log(grayedOutText, " Closed tester with Ctrl+c")
 })
 // Other arguments and run it
 const args = [
@@ -32,10 +34,10 @@ const args = [
   "-i:2", manualSoundfont,
   ...globs.midis,         // Automatically adding files
   ...globs.soundfonts,
-  ...generalCliArguments("stdout"),
-  ...(process.argv.includes("-ps") ? perSongCliArguments : []),
-  "-"
+  ...(process.argv.includes("-ps") ? perSongCliArguments : [])
 ];
+if (!isDaemon) args.push(...generalCliArguments("stdout"), "-")
+          else args.push("--daemon")
 addOptionalArgumentsToStdout(args)
 
 // Start the test for real
@@ -45,7 +47,7 @@ const MAIN_PATH = (
     .find(i => i.includes("main.mjs"))
 );
 const realTest = fork(MAIN_PATH, args);
-await new Promise((resolve, reject) => {
+const realTestPromise = new Promise((resolve, reject) => {
   realTest.once("exit", resolve)
   realTest.once("error", reject)
 })
@@ -57,4 +59,5 @@ await new Promise((resolve, reject) => {
     console.error(error)
     process.exit(error.errno)
   })
+if (!isDaemon) await realTestPromise;
 
