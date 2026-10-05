@@ -1681,24 +1681,19 @@ async function startPlayer(
     format === "f32le"
     || format === "pcm" || format === "s16le"
   );
-  const isRawAudio = isPcm ? [
+  const mpvArgs = [
+    "-ytdl=no", // so that it doesn't retry twice
+    "--prefetch-playlist=yes",
+    ...listOfURLs
+  ];
+  // Hides Content-Length mismatch error
+  if (!isPcm && format !== "wave") mpvArgs.push("--msg-level=ffmpeg=fatal")
+  if (isPCM) mpvArgs.push(
     "--demuxer=rawaudio",
     "--demuxer-rawaudio-format="+(format === "f32le" ? "floatle" : "s16le"),
     "--demuxer-rawaudio-rate="+(sampleRate ?? 48000),
     "--demuxer-rawaudio-channels=2"
-  ] : "";
-  const msgLevel = (
-    !isPcm && format !== "wave"
-      ? ["--msg-level=ffmpeg=fatal"] // Hides Content-Length mismatch error
-      : ""
-  );
-  mpv = spawn("mpv", [
-    ...msgLevel,
-    "-ytdl=no", // so that it doesn't retry twice
-    "--prefetch-playlist=yes",
-    ...isRawAudio,
-    ...listOfURLs
-  ];
+  )
   if (songIndex) mpvArgs.push(`--playlist-start=${songIndex}`)
 
   mpv = spawn("mpv", mpvArgs, { stdio: "inherit" });
