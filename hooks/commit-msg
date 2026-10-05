@@ -3,17 +3,17 @@
 mapfile commit_msg < ".git/COMMIT_EDITMSG"
 REGEX="^#.*:ADDED: (<.*>)+"
 
-if [[ "${commit_msg[*]}" =~ $REGEX ]] ;then
+for (( i = 0; i < ${#commit_msg[@]}; ++i )) ;{
+    [[ "${commit_msg[i]}" =~ $REGEX ]] || continue
+
     # Gets all names separately
     readarray -d ' ' names < <(printf '%s' "${BASH_REMATCH[1]}")
 
     # Gets rid of the syntax
-    for (( i = 0; i < ${#names[@]}; ++i )) ;{
-        names[i]="${names[i]/#<}"
-        names[i]="${names[i]/%>}"
+    for (( i2 = 0; i2 < ${#names[@]}; ++i2 )) ;{
+        names[i2]="${names[i2]/#<}"
+        names[i2]="${names[i2]/%>}"
     }
-    ./tests/check_missing_parameter.bash "${names[@]}"
-else
-    : # Do nothing successfully because the check returned 1
-fi
+    ./tests/check_missing_parameter.bash "${names[@]}" || exit
+}
 
