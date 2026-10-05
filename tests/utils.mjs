@@ -34,6 +34,7 @@ if (!process.argv.includes("-h")) {
 }
 
 function addOptionalArgumentsToStdout(args) {
+  if (process.argv.includes("-idx")) args.push("-idx", "1")
   // Confirmation
   if (process.argv.includes("-a"))   args.push("-a")
   if (process.argv.includes("-nt"))  args.push("-nt")
@@ -58,6 +59,7 @@ function addOptionalArgumentsToFile(args) {
     "out.flac", "out.mp3", "out.opus",
     "out.pcm"
   )
+  if (process.argv.includes("-idx")) args.push("-idx", "1")
   // Confirmation
   if (process.argv.includes("-a"))   args.push("-a")
   if (process.argv.includes("-nt"))  args.push("-nt")
@@ -106,6 +108,7 @@ function generalCliArguments(mode) {
         "--dry-run",              // Only test
         "--no-progress",
         "--daemon",
+        "--song-index", "1",      // Skips to the index
         "--progress-delay", "75", // How fast it renders progress
         "--show-usage",           // RAM usage and CPU time
         "--no-table",             // Plain files object
