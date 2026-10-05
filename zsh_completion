@@ -75,6 +75,11 @@ __spessoplayer() {
       _arguments "*: :(${numbers[*]})"
       return 0
     ;;
+    --song-index | --skip-to | -idx)
+      local numbers=({0..1500})
+      _arguments "*: :(${numbers[*]})"
+      return 0
+    ;;
     --sample-rate | -r)
       local numbers=({0..96000})
       _arguments "*: :(${numbers[*]})"
@@ -121,6 +126,9 @@ __spessoplayer() {
       "--loop-fade[1 more loop but only for fading]"      "-lF[1 more loop but only for fading]"
       "--loop-fade-start[start of loop fade]"             "-lFs[start of loop fade]"
       "--loop-fade-duration[duration of loop fade]"       "-lFd[duration of loop fade]"
+      "--song-index[index to skip to]"
+      "--skip-to[index to skip to]"
+      "-idx[index to skip to]"
       "--sample-rate[audio samplerate]"                   "-r[audio samplerate]"
       "--format[stdout file format]"                      "-f[stdout file format]"
       "--max-threads[amount of threads]"                  "-mt[amount of threads]"
@@ -128,11 +136,11 @@ __spessoplayer() {
       "--show-usage[display usage in file mode]"          "-U[display usage in file mode]"
       "--text-delay[delay of file mode's progress bar]"   "-d[delay of file mode's progress bar]"
       "--no-progress[disable file mode's progress]"       "-np[disable file mode's progress]"
-      "--ask[confirmation of grouped files]"              "-a[confirmation of grouped files]"          
+      "--ask[confirmation of grouped files]"              "-a[confirmation of grouped files]"
       "--confirm[confirmation of grouped files]"          "-c[confirmation of grouped files]"
       "--no-table[no table when asking for confirmation]" "-nt[no table when asking for confirmation]"
-      "--dry-run[run without applying]"                   "-dr[run without applying]"                  
-      "--test[run without applying]"                      "-t[run without applying]"        
+      "--dry-run[run without applying]"                   "-dr[run without applying]"
+      "--test[run without applying]"                      "-t[run without applying]"
       "--null[run without applying]"                      "-0[run without applying]"
       "--verbose[log/verbosity level]"                    "-v[log/verbosity level]"
       "--daemon[server mode]"                             "-D[server mode]"

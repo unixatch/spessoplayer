@@ -44,6 +44,11 @@ because it'd break audio players, like for example sample-rate
 
 ### Available parameters:
 
+### --song-index **index**, /song-index **index**, --skip-to **index**, /skip-to **index**,
+####   -idx **index**, /idx **index**:
+
+Skips to the provided song index
+
 ### --input[:n] **file**, /input[:n] **file**,
 ####   -i[:n] **file**, /i[:n] **file**:
 

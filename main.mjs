@@ -89,7 +89,7 @@ const listOfOptions = Options.all;
 const {
   dryRun, format,
   confirmation, noTable,
-  toStdout: isToStdout,
+  songIndex = 0, toStdout: isToStdout,
   fileOutputs: isToFile
 } = listOfOptions;
 
@@ -152,15 +152,18 @@ if (isToStdout) {
     !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
   );
   const amountOfSongs = Options.amountOfSongs;
+  const singleSong = (
+    amountOfSongs === 1 || amountOfSongs - songIndex === 1
+  );
   let basicMidiClass;
-  for (let i = 0; i < amountOfSongs; ++i) {
+  for (let i = songIndex; i < amountOfSongs; ++i) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
 
     let initFunctionValue = await initSpessaSynth({
       index: i, ...options,
       onlySampleCount: true,
-      basicMIDIRequired: amountOfSongs === 1 ? true : false,
+      basicMIDIRequired: singleSong ? true : false,
       spessasynthLogging
     });
     if (!initFunctionValue) continue;
@@ -179,9 +182,7 @@ if (isToStdout) {
     ...listOfOptions, lengthOfFiles,
     getWavHeader, promisesOfPrograms,
     midiFile: (
-      amountOfSongs === 1
-        ? perSongOptions[0].midiFile
-        : undefined
+      singleSong ? perSongOptions[songIndex].midiFile : undefined
     )
   }, true);
   if (!isPCM && !converterProcess && listOfOptions.effects
@@ -205,7 +206,7 @@ if (isToStdout) {
     });
   }
 
-  for (let i = 0; i < amountOfSongs; ++i) {
+  for (let i = songIndex; i < amountOfSongs; ++i) {
     const options = perSongOptions[i];
     if (!options) continue;
     const toStdoutValue = await toStdout({ index: i, options });
@@ -381,7 +382,7 @@ const progressBuffers = {
   percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
 };
 const progress = new Progress(amountOfSongs, undefined, progressBuffers);
-for (let i = 0; i < amountOfSongs; ++i) {
+for (let i = songIndex; i < amountOfSongs; ++i) {
   const options = perSongOptions[i] = Options.getOptionsOfSong(i);
   if (!options) continue;
 
@@ -574,7 +575,7 @@ const workerPromiseFunction = function (resolve, reject) {
   })
 };
 
-let index = 0;
+let index = songIndex;
 /**
  * Main function that starts the file mode loop.
  * It maybe starts each thread and then waits for the active threads to finish

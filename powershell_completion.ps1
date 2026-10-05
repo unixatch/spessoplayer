@@ -35,6 +35,7 @@
                 return 0..10
             }
             "threads"    { return 1..16     }
+            "songIndex"  { return 0..1500   }
             "sampleRate" { return 0..96000  }
             "textDelay"  { return 50..10000 }
             "sampleRate" { return 0..96000  }
@@ -211,6 +212,10 @@
         @{
             CompletionText = "--loop-fade-duration", "-lFd"
             ToolTip = "How much the loop fade should last (default: 4)"
+        },
+        @{
+            CompletionText = "--song-index", "--skip-to", "-idx"
+            ToolTip = "Skips to the provided song index"
         },
         @{
             CompletionText = "--sample-rate", "-r"

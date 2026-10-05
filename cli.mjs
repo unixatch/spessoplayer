@@ -544,6 +544,19 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
         runSetFile(nextArg); i++
         break;
       }
+      case "song-index": case "skip-to": case "idx": {
+        const integer = parseInt(nextArg);
+        if (Number.isNaN(integer)) {
+          console.error(
+            formatStrings.failedCliParamWithArg,
+            `[${arg}]:`, maybeTruncate(nextArg), "isn't a valid integer"
+          )
+          process.exit(1)
+        }
+        Options.addNumberValue("songIndex", integer)
+        log(INFO_LVL, "Set song-index to " + nextArg)
+        break;
+      }
       case "volume": case "vol": {
         setVolumeParameter(
           "volume", nextArg, lastIndex,
@@ -1564,8 +1577,8 @@ const help = async ({ errorText = "" } = "") => {
     }
     return (multilineMode ||= 1, lines.join("\n"));
   };
-  const param = (text, secondText) => {
-    const length = secondText.length;
+  const param = (text, secondText, complete) => {
+    const length = complete ? text.length : secondText.length;
     for (let i = 0; i < length; ++i) {
       text[i] &&= green+text[i]+normal;
       secondText[i] &&= green+secondText[i]+normal;
@@ -1622,6 +1635,16 @@ const help = async ({ errorText = "" } = "") => {
     like for example sample-rate
 
   Available parameters:
+    ${param(
+      ["--song-index"+" "+grayBoldText("index"),
+       "/song-index"+" "+grayBoldText("index"),
+       "--skip-to"+" "+grayBoldText("index"),
+       "/skip-to"+" "+grayBoldText("index")],
+      ["-idx"+" "+grayBoldText("index"),
+       "/idx"+" "+grayBoldText("index")], true // does all 4
+    )}:
+      ${multiLine("Skips to the provided song index")}
+
     ${param(
       ["--input"+optional(":n")+" "+grayBoldText("file"),
        "/input"+optional(":n")+" "+grayBoldText("file")],

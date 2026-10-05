@@ -1478,7 +1478,7 @@ async function startPlayer(
 ) {
   const {
     sampleRate, format,
-    daemon: daemonMode
+    songIndex, daemon: daemonMode
   } = Options.all;
   const isPCM = (
     format === "pcm"   ||
@@ -1698,7 +1698,10 @@ async function startPlayer(
     "--prefetch-playlist=yes",
     ...isRawAudio,
     ...listOfURLs
-  ], { stdio: "inherit" });
+  ];
+  if (songIndex) mpvArgs.push(`--playlist-start=${songIndex}`)
+
+  mpv = spawn("mpv", mpvArgs, { stdio: "inherit" });
   mpv.once("spawn", () => loadingAnimation?.kill())
 
   await new Promise((resolve, reject) => {

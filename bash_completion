@@ -75,6 +75,9 @@ _spessoplayer() {
       }
       COMPREPLY=({0..10})
     ;;
+    --song-index | --skip-to | -idx)
+      COMPREPLY=({0..1500})
+    ;;
     --sample-rate | -r)
       COMPREPLY=({0..96000})
     ;;
@@ -111,6 +114,7 @@ _spessoplayer() {
       --loop-fade            -lF
       --loop-fade-start     -lFs
       --loop-fade-duration  -lFd
+      --song-index          -idx  --skip-to
       --sample-rate           -r
       --format                -f
       --max-threads          -mt

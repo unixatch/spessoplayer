@@ -208,7 +208,7 @@ class MainOptions {
         return setValue.call(this, name, value);
       }
       case "stdoutReverbVolume": { name = "reverbVolume"; } // falls through
-      case "sampleRate":
+      case "sampleRate": case "songIndex":
       case "maxThreads": case "progressDelay":
         checkValueAndExistence(value, "number", undefined, this)
         return setValue.call(this, name, value);
