@@ -1544,16 +1544,17 @@ async function startPlayer(
     promisesOfPrograms.length &&= 0;
     const realIndex = Number(index),
           options = Options.getOptionsOfSong(realIndex);
-    const [length, midi] = await initSpessaSynth({
+    const arrayValue = await initSpessaSynth({
       index: realIndex, ...options,
       onlySampleCount: true,
       spessasynthLogging
     });
-    if (length === null) {
+    if (arrayValue === null) {
       res.statusCode = 204;
       res.flushHeaders()
       return res.end();
     }
+    const [length, midi] = arrayValue;
 
     let [rangeStart, rangeEnd] = (
       // Skip "bytes=" and get the numbers
