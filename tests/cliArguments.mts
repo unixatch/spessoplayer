@@ -7,7 +7,7 @@ const {
   manualMidi, manualSoundfont,
   generalCliArguments, perSongCliArguments,
   addOptionalCliArguments
-} = await import("./utils.mjs");
+} = await import("./utils.mts");
 
 // Shows the test's options
 if (process.argv.includes("-h")) {
@@ -63,8 +63,8 @@ if (!process.argv.includes("--verbose")) {
 // Forked process
 const parsedScriptPath = parse(process.argv[1]);
 const CLI_PATH = (
-  globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
-    .find(i => i.includes("cli.mjs"))
+  globSync(`${parsedScriptPath.dir}/../**/*.mts`)
+    .find(i => i.includes("cli.mts"))
 );
 const {
   manageVerboseOptions,
@@ -78,8 +78,8 @@ const debugLevelSpessoMsg = `Using variable DEBUG_LEVEL_SPESSO=${DEBUG_LEVEL_SPE
       debugFileSpessoMsg  = `Using variable DEBUG_FILE_SPESSO=${DEBUG_FILE_SPESSO}`;
 if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
   const UTILS_PATH = (
-    globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
-      .find(i => i.includes("utils/utils.mjs"))
+    globSync(`${parsedScriptPath.dir}/../**/*.mts`)
+      .find(i => i.includes("utils/utils.mts"))
   );
   const { INFO_LVL, log } = await import(UTILS_PATH);
 

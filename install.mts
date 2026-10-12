@@ -27,7 +27,7 @@ import {
   runProgramSync,
   tryToInstall,
   manageAutocomplete
-} from "./utils/install_uninstall.mjs"
+} from "./utils/install_uninstall.mts"
 
 let readline;
 /**

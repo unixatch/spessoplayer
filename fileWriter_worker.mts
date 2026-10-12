@@ -22,7 +22,7 @@ import * as fs from "node:fs"
 
 const {verboseLevel, logFilePath} = workerData;
 global.logThis = {verboseLevel, logFilePath};
-const { toFile } = await import("./mainFunctions.mjs")
+const { toFile } = await import("./mainFunctions.mts")
 global.fs = fs;
 process.on("unhandledRejection", console.error)
 

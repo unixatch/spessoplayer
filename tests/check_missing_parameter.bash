@@ -20,7 +20,7 @@ declare -A CONSTANTS=(
 )
 paths=(
     # documentation with descriptions
-    "./cli.mjs" "./spessoplayer.1" "./COMMAND-LINE-OPTIONS.md"
+    "./cli.mts" "./spessoplayer.1" "./COMMAND-LINE-OPTIONS.md"
 
     # completions
     "./powershell_completion.ps1"
@@ -43,7 +43,7 @@ for file in "${paths[@]}" ;{
 
     # read the file
     while read -r line ;do
-        # cli.mjs is a bigger file
+        # cli.mts is a bigger file
         # so skip to the help function
         if [[ -z $reachedPart && ! "$line" =~ ${CONSTANTS[HELP_REGEX]} ]]
         then

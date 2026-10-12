@@ -30,7 +30,7 @@ const {
   newFileName,
   asyncSetTimeout,
   ffmpegExitHandler
-} = await import("./utils/utils.mjs");
+} = await import("./utils/utils.mts");
 
 let log = tmpLog;
 if (global.logThis) {
@@ -1098,7 +1098,7 @@ async function toStdout({
     addEvent({ eventType: "stdoutExit" })
     log(DEBUG_LVL, "Added event exit")
   }
-  const { getData } = audioBuffer ??= await import("./wavFunctions.mjs");
+  const { getData } = audioBuffer ??= await import("./wavFunctions.mts");
   const {
     promises: { finished },
     Readable
@@ -1192,7 +1192,7 @@ async function toFile({
     } = initSpessaSynthObj);
     ({
       getWavHeader, getData
-    } = audioBuffer ??= await import("./wavFunctions.mjs"))
+    } = audioBuffer ??= await import("./wavFunctions.mts"))
   }
   if (hasf32le) {
     const initSpessaSynthObj = await initSpessaSynth(initSpessaSynthObjParam);
@@ -1485,7 +1485,7 @@ async function startPlayer(
     format === "f32le" || format === "s16le"
   );
   const getWavHeader = (
-    !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
+    !isPCM && (await import("./wavFunctions.mts")).getWavHeader
   );
   const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");

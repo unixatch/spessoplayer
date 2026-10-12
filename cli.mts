@@ -25,7 +25,7 @@ import {
   formatStrings,
   fromInstant,
   log, Options, sep
-} from "./utils/utils.mjs"
+} from "./utils/utils.mts"
 
 function endsWithSupportedExtension(arg) {
   return (
@@ -195,7 +195,7 @@ export const FO_CONSTANTS = {
 };
 const newArgs = process.argv.slice(2);
 /**
- * Sets necessary variables in Options class for main.mjs
+ * Sets necessary variables in Options class for main.mts
  * @param {String[]} [args]              - The process.argv to analyse
  * @param {Boolean}  [isVerboseLevelSet] - if logging is enabled or not
  * @return {ChildProcess?} process that renders the loading animtion
@@ -1527,11 +1527,11 @@ const setLogFilePath = arg => {
   log(INFO_LVL, `Set log-file path to ${pathToUse}`)
 }
 /**
- * Runs uninstall.mjs and uninstall spessoplayer
+ * Runs uninstall.mts and uninstall spessoplayer
  */
 const uninstall = async () => {
   const { execSync } = await import("node:child_process");
-  const uninstallScriptPath = `${import.meta.dirname}${sep}uninstall.mjs`;
+  const uninstallScriptPath = `${import.meta.dirname}${sep}uninstall.mts`;
   const isGloballyInstalled = /spessoplayer/.test(execSync("npm ls -g").toString());
 
   try {

@@ -2,17 +2,19 @@ import { globSync } from "node:fs"
 import { parse } from "node:path"
 import { fork } from "node:child_process"
 
+const isDaemon = parse(process.argv[1]).name === "daemonMode";
+
 // Setup file path arguments
 const {
   grayedOutText, globs,
   manualMidi, manualSoundfont,
   generalCliArguments, perSongCliArguments,
-  addOptionalArgumentsToFile
-} = await import("./utils.mjs");
+  addOptionalArgumentsToStdout
+} = await import("./utils.mts");
 
 if (process.argv.includes("-h")) {
   console.log(
-    addOptionalArgumentsToFile
+    addOptionalArgumentsToStdout
       .toString()
       .replace(/.*includes\((".*")\)\).*/g, "  $1"),
     "\n-e, -rvb, -ps"
@@ -23,7 +25,7 @@ if (process.argv.includes("-h")) {
 process.on("SIGINT", () => {
   process.exitCode = 130;
   realTest?.kill()
-  console.log(grayedOutText, " Closed tester with Ctrl+c")
+  if (!isDaemon) console.log(grayedOutText, " Closed tester with Ctrl+c")
 })
 // Other arguments and run it
 const args = [
@@ -32,20 +34,20 @@ const args = [
   "-i:2", manualSoundfont,
   ...globs.midis,         // Automatically adding files
   ...globs.soundfonts,
-  ...generalCliArguments("toFile"),
-  ...(process.argv.includes("-ps") ? perSongCliArguments : []),
-  "out.wav"
+  ...(process.argv.includes("-ps") ? perSongCliArguments : [])
 ];
-addOptionalArgumentsToFile(args)
+if (!isDaemon) args.push(...generalCliArguments("stdout"), "-")
+          else args.push("--daemon")
+addOptionalArgumentsToStdout(args)
 
 // Start the test for real
 const parsedScriptPath = parse(process.argv[1]);
 const MAIN_PATH = (
-  globSync(`${parsedScriptPath.dir}/../**/*.mjs`)
-    .find(i => i.includes("main.mjs"))
+  globSync(`${parsedScriptPath.dir}/../**/*.mts`)
+    .find(i => i.includes("main.mts"))
 );
 const realTest = fork(MAIN_PATH, args);
-await new Promise((resolve, reject) => {
+const realTestPromise = new Promise((resolve, reject) => {
   realTest.once("exit", resolve)
   realTest.once("error", reject)
 })
@@ -57,4 +59,5 @@ await new Promise((resolve, reject) => {
     console.error(error)
     process.exit(error.errno)
   })
+if (!isDaemon) await realTestPromise;
 

@@ -25,18 +25,18 @@ import {
   formatStrings, log,
   clearLastLines,
   getSizes, getUsageEstimate
-} from "./utils/utils.mjs"
+} from "./utils/utils.mts"
 import {
   initSpessaSynth,
   addEvent, applyExternalEffects,
   toStdout, Progress, startPlayer,
   prepareDestination
-} from "./mainFunctions.mjs"
+} from "./mainFunctions.mts"
 import {
   manageVerboseOptions,
   actUpOnPassedArgs,
   Options, FO_CONSTANTS
-} from "./cli.mjs"
+} from "./cli.mts"
 
 let isVerboseLevelSet, argv;
 const {
@@ -149,7 +149,7 @@ if (isToStdout) {
   const perSongOptions = [], lengthOfFiles = [],
         promisesOfPrograms = [];
   const getWavHeader = (
-    !isPCM && (await import("./wavFunctions.mjs")).getWavHeader
+    !isPCM && (await import("./wavFunctions.mts")).getWavHeader
   );
   const amountOfSongs = Options.amountOfSongs;
   const singleSong = (
@@ -601,7 +601,7 @@ async function fileModeMain() {
     };
     const existentWorker = workers[currentThread] !== undefined;
     const currentWorker = workers[currentThread] ??= new Worker(
-      import.meta.dirname+"/fileWriter_worker.mjs",
+      import.meta.dirname+"/fileWriter_worker.mts",
       { workerData, resourceLimits }
     );
 

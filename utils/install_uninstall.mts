@@ -19,7 +19,7 @@
  * @module utils/install_uninstall
  */
 
-import "./colors.mjs"
+import "./colors.mts"
 
 /**
  * Clears lines from the last line up

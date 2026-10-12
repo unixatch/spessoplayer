@@ -19,9 +19,9 @@
  * @module utils/utils
  */
 
-import { classes } from "./classes.mjs"
-import Mixin from "./basic_additions.mjs"
-import "./colors.mjs"
+import { classes } from "./classes.mts"
+import Mixin from "./basic_additions.mts"
+import "./colors.mts"
 
 export const sep = process.platform === "win32" ? "\\" : "/";
 
@@ -302,7 +302,7 @@ const {
 } = setTimeout;
 
 /**
- * A class that represents options interpreted by cli.mjs
+ * A class that represents options interpreted by cli.mts
  * @mixes (module:classes~MainOptions|module:classes~EffectsOptions)
  */
 class Options extends Mixin(classes[0], classes.slice(1)) {

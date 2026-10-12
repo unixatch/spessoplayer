@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process"
-import "./utils/colors.mjs"
+import "./utils/colors.mts"
 
 const result = spawnSync("git", [
   "status", "--porcelain"
