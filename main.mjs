@@ -144,7 +144,7 @@ if (isToStdout) {
   })
   const isPCM = (
     format === "pcm"   ||
-    format === "f32le" || formatStrings === "s16le"
+    format === "f32le" || format === "s16le"
   );
   const perSongOptions = [], lengthOfFiles = [],
         promisesOfPrograms = [];
