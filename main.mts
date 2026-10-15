@@ -147,7 +147,7 @@ if (isToStdout) {
     format === "f32le" || format === "s16le"
   );
   const perSongOptions = [], lengthOfFiles = [],
-        promisesOfPrograms = [];
+        promisesOfPrograms: Array<Promise<void>> = [];
   const getWavHeader = (
     !isPCM && (await import("./wavFunctions.mts")).getWavHeader
   );
@@ -190,7 +190,8 @@ if (isToStdout) {
     (dryRunStream ?? originalDestination).write(stdoutHeader)
   }
   let effectsProcess, destination,
-      rawMode = false, effectParameterObject;
+      rawMode: string | boolean = false,
+      effectParameterObject;
   if (listOfOptions.effects) {
     if (!converterProcess) {
       rawMode = (format === "pcm" || format === "s16le") && "s16";
@@ -248,7 +249,7 @@ if (isToStdout) {
   process.exit()
 }
 
-if (!isToStdout && !isToFile?.length > 0) {
+if (!isToStdout && !(isToFile?.length > 0)) {
   if (dryRun) {
     console.error(
       formatStrings.warningText,

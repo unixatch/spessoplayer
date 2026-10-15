@@ -338,7 +338,7 @@ async function formatManager({
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
-      addPipingFunction((whereToConnect, end, noPipe = false) => {
+      addPipingFunction((whereToConnect, end: boolean, noPipe = false) => {
         const rawStream = rawReadStream ?? readStream;
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
@@ -766,7 +766,7 @@ async function applyExternalEffects({
   })
   promisesOfPrograms.push(
     new Promise((resolve, reject) => {
-      sox.once("exit", exitCode => {
+      sox.once("exit", (exitCode: number) => {
         if (!exitCode) {
           log(DEBUG_LVL, "SoX exited successfully")
           return resolve(exitCode);
@@ -961,7 +961,7 @@ function createReadable(Readable, isStdout = false, {
    * @param {interleavedFloat32Channels} channels
    * @return {Buffer} interleaved float32 buffer
    */
-  function getInterleavedFloat32Data([left, right]) {
+  function getInterleavedFloat32Data([left, right]: Float32Array[]) {
     const length = left.length,
           bufferLength = length * 2 * 4,
           buffer = Buffer.alloc(bufferLength);
@@ -977,9 +977,9 @@ function createReadable(Readable, isStdout = false, {
   let textRenderingIndex = 0,
       lastBytes = false,
       filledSamples = 0,
-      lastCompletelyRenderedSeconds,
+      lastCompletelyRenderedSeconds: number,
       lastLoopCount = seq.loopCount,
-      smoothEndingAmount;
+      smoothEndingAmount: number;
   const startSmoothEnding = sampleCount - (2.5 * synth.sampleRate),
         BUFFER_SIZE = 128,
         left = new Float32Array(BUFFER_SIZE),
@@ -1116,7 +1116,7 @@ async function toStdout({
     startFading
   });
 
-  let promisesOfPrograms = [];
+  let promisesOfPrograms: Array<Promise<void>> = [];
   let pipingFunction = await formatManager({
     format, readStream, res,
     ...options,
@@ -1176,7 +1176,7 @@ async function toFile({
     hasf32le &&
     !fileOutputs[WAV_INDEX] && foLength === 2
   );
-  let stdoutHeader, getWavHeader, getData,
+  let stdoutHeader: Uint8Array, getWavHeader, getData,
       seq, synth, seqFloat, synthFloat,
       sampleCount, sampleCountFloat,
       startFading, midi;
@@ -1251,7 +1251,7 @@ async function toFile({
       startFading
     })
   );
-  let promisesOfPrograms = [],
+  let promisesOfPrograms: Array<Promise<void>> = [],
       pipingFunctions = [];
   const addFunction = async outFile => {
     const isf32le = outFile?.endsWith(".f32le");
@@ -1323,8 +1323,7 @@ class Progress {
   #percentageDone;
   #date;
   #index;
-  #removeAmount;
-  #removeAmountTotal;
+  #removeAmount: number | undefined;
   #toSecondsN  = PlainTime ? 1    : 1000;
   #hourN       = PlainTime ? 3600 : 3600000;
   #hourLessYes = PlainTime ? 3 : 14;
@@ -1356,7 +1355,7 @@ class Progress {
    * @param {Float32Array} array list of numbers
    * @return {(undefined|Number)} - the sum
    */
-  #sum(array) {
+  #sum(array: Float32Array) {
     if (this.#index !== undefined) return;
     let sumOfAll = 0;
     for (let i = 0; i <= this.amountOfSongs; ++i) {
@@ -1427,7 +1426,7 @@ class Progress {
    * @param {String} typeOfArray type of array to update
    * @throws {TypeError} - if trying to update with a full shared array
    */
-  updateProgress(newNumber, typeOfArray = "renderedAmount") {
+  updateProgress(newNumber: number, typeOfArray = "renderedAmount") {
     if (this.#index === undefined) {
       throw new TypeError("Can't update with full shared array")
     }
@@ -1445,7 +1444,7 @@ class Progress {
    * Adds to amountToRender
    * @param {Number} newNumber new value to replace with
    */
-  addToAmountToRender(newNumber) {
+  addToAmountToRender(newNumber: number) {
     this.#amountToRender[0] += newNumber;
   }
   /**
@@ -1490,11 +1489,11 @@ async function startPlayer(
   const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
-  let relistenFunction, closing, mpv,
+  let relistenFunction, closing: boolean, mpv,
       port = 3000, failedAttempts = 0;
   const server = createServer(),
         listOfURLs = [],
-        promisesOfPrograms = [];
+        promisesOfPrograms: Array<Promise<void>> = [];
 
   process.on("SIGUSR1", () => {
     closing = true; mpv?.kill()
@@ -1556,7 +1555,7 @@ async function startPlayer(
     }
     const [length, midi] = arrayValue;
 
-    let [rangeStart, rangeEnd] = (
+    let [rangeStart, rangeEnd]: string[] | "" = (
       // Skip "bytes=" and get the numbers
       // if it's possible to do so
       req.headers.range
@@ -1613,9 +1612,9 @@ async function startPlayer(
       if (bytesWritten >= amountOfBytesToWrite) return res.end();
     }
 
-    let beyondRangeStart, startBytes;
+    let beyondRangeStart: boolean, startBytes: number;
     // If it goes beyond the header
-    stream.on("data", data => {
+    stream.on("data", (data: Uint8Array) => {
       // Skip until rangeStart is reached or it's equal
       if (!beyondRangeStart &&
           (bytesDone += data.length) < rangeStart) return;
@@ -1757,7 +1756,7 @@ async function prepareDestination({
   promisesOfPrograms,
   effects, specificRange
 }, isStdout) {
-  let effectsProcess, fatalErrors,
+  let effectsProcess, fatalErrors: string[],
       converterProcess, dryRunStream;
   if (isStdout) {
     dryRunStream = (
@@ -1778,7 +1777,7 @@ async function prepareDestination({
   if (!isPCM) {
     const sumOfLengths = (
       isStdout
-        ? (index, previous) => index + previous
+        ? (index: number, previous: number) => index + previous
         : undefined
     );
     const wavMetadata = Object.create(null,
@@ -1840,7 +1839,7 @@ async function prepareDestination({
     })
     promisesOfPrograms.push(
       new Promise(resolve => {
-        converterProcess.once("exit", exitCode => {
+        converterProcess.once("exit", (exitCode: number) => {
           if (!exitCode) {
             log(DEBUG_LVL, "Ffmpeg exited")
             return resolve();

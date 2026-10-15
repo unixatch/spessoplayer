@@ -27,7 +27,7 @@ import {
   log, Options, sep
 } from "./utils/utils.mts"
 
-function endsWithSupportedExtension(arg) {
+function endsWithSupportedExtension(arg: string) {
   return (
        arg.endsWith(".opus")  || arg.endsWith(".mp3" )
     || arg.endsWith(".wav" )  || arg.endsWith(".wave")
@@ -45,8 +45,8 @@ const regexes = {
   percentageNumber: /^([\d.]+)%$/
 };
 const testFunctions = {
-  stdout: set => set.has("-"),
-  help(set) {
+  stdout: (set: Set<string>) => set.has("-"),
+  help(set: Set<string>) {
     return (
       set.has("--help")
       || set.has("/help")
@@ -54,20 +54,20 @@ const testFunctions = {
       || set.has("/?")
     );
   },
-  loop(set) {
+  loop(set: Set<string>) {
     return (
       set.has("--loop")
       || set.has("/loop")
       || set.has("-l") || set.has("/l")
     );
   },
-  version(set) {
+  version(set: Set<string>) {
     return (
       set.has("--version") || set.has("/version")
       || set.has("-V") || set.has("/V")
     );
   },
-  uninstall(set) {
+  uninstall(set: Set<string>) {
     return (
       set.has("--uninstall") || set.has("/uninstall")
       || set.has("-u") || set.has("/u")
@@ -80,7 +80,7 @@ const testFunctions = {
  * @param {String} path path of file
  * @return {Promise<String>} - first 20 bytes of file
  */
-async function get20BytesFromFile(path) {
+async function get20BytesFromFile(path: string) {
   const {
     promise: readPromise,
     resolve, reject
@@ -188,7 +188,7 @@ async function manageVerboseOptions({
     newArguments
   ];
 }
-const setFilePromises = [];
+const setFilePromises: Promise<Promise<Function>>[] = [];
 export const FO_CONSTANTS = {
   WAV_INDEX:  0, RAW_INDEX: 1,
   FLAC_INDEX: 2, MP3_INDEX: 3, OPUS_INDEX: 4
@@ -202,10 +202,10 @@ const newArgs = process.argv.slice(2);
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
 const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
-  let lastParam,
-      lastIndex;
+  let lastParam: string | undefined,
+      lastIndex: string | undefined;
   const newArguments = args?.slice(2) ?? newArgs,
-        newArgumentsSet = new Set(newArguments);
+        newArgumentsSet: Set<string> = new Set(newArguments);
 
   if (newArguments.length === 0) {
     await help()
@@ -268,7 +268,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * @return {(String|false)} parameter's name without initials and index
    *                          or false if it's not a valid parameter
    */
-  const manageParam = arg => {
+  const manageParam = (arg: string) => {
     const noInitials = (
       arg[0] === "-" && arg.slice(arg[1] === "-" ? 2 : 1)
     ) || (
@@ -298,7 +298,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     )
     process.exit(1)
   };
-  const setFileOutputs = (type, index, arg) => {
+  const setFileOutputs = (type: string, index: number, arg: string) => {
     isStdout ??= testFunctions.stdout(newArgumentsSet);
     if (isStdout) stdoutFileModeConflictError()
     if (Options.getValue("daemon")) {
@@ -320,8 +320,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * @param {Function} [optionsFunc]  Options' method
    */
   const setLoopParameter = (
-    name, nextArg, func,
-    nameRequired, optionsFunc
+    name: string, nextArg: string, func,
+    nameRequired: boolean, optionsFunc
   ) => {
     loopExists ??= testFunctions.loop(newArgumentsSet);
     if (!loopExists) {
@@ -341,7 +341,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * Runs the logic that comes before setFile is run
    * @param {String} arg file to check and maybe run
    */
-  const runSetFile = arg => {
+  const runSetFile = (arg: string) => {
     if (doneFileList[arg] === doneSymbol
         && lastParam !== "input") return;
     doneFileList[arg] = doneSymbol;
@@ -384,8 +384,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
   const newArgumentsLength = newArguments.length;
   let isStdout, loopExists, fileExists,
       indexOfSetFile = 0,
-      lastAutomaticFile,
-      groupSeparator;
+      lastAutomaticFile: string,
+      groupSeparator: boolean | undefined;
 
   global.fs ??= await import("node:fs");
   const { existsSync } = fs;

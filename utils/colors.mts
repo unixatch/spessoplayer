@@ -19,9 +19,13 @@
  * @module utils/colors
  */
 
+interface modifyObject {
+  escape: string, colorsToUse: string[][]
+}
+
 const esc = "\x1b[";
 const colors = {
-  modify({escape, colorsToUse}) {
+  modify({escape, colorsToUse}: modifyObject): void {
     for (const [property, sequenceCode] of colorsToUse.values()) {
       this[property] = (
         escape +
@@ -83,7 +87,7 @@ if (COLORTERM === "truecolor"
     || TERM?.includes("truecolor")) colorDepth ??= 24;
 if (TERM?.startsWith("xterm-256")) colorDepth ??= 8;
 // If the above fails, let node check
-colorDepth ??= (await import("node:tty")).WriteStream(1).getColorDepth();
+colorDepth ??= new (await import("node:tty")).WriteStream(1).getColorDepth();
 
 if (colorDepth === 1) {
   colors.modify({
