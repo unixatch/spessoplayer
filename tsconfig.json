@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+      "module": "nodenext",
+      "skipLibCheck": true,
+      "incremental": true,
+      "outDir": "dist",
+      "esModuleInterop": true,
+      "allowImportingTsExtensions": true,
+      "useDefineForClassFields": true,
+      "noImplicitAny": true,
+      "strictNullChecks": true,
+      "strictFunctionTypes": true,
+      "noImplicitReturns": false,
+      "noImplicitThis": true,
+      "stripInternal": true,
+      "strictBindCallApply": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "erasableSyntaxOnly": true,
+      "noUncheckedSideEffectImports": true,
+      "verbatimModuleSyntax": true,
+      "noEmit": true,
+      "types": ["node", "spessasynth_core"]
+    },
+    "includes": [
+      "*.mts", "utils/*.mts",
+      "types/*.mts"
+    ],
+    "exclude": [
+      "**/node_modules/**/*", ".*/*",
+      "hooks/*", "tests/*"
+    ]
+}
