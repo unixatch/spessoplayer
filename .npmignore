@@ -1,5 +1,6 @@
 tests/
 node_modules/
+*.tsbuildinfo
 *.sf2
 *.mid
 *.wav
