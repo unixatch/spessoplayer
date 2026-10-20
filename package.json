@@ -24,18 +24,16 @@
   "main": "main.mts",
   "min-release-age": "4",
   "preferGlobal": true,
-  "engines": {
-    "node": ">=20.11.0"
-  },
-  "bin": {
-    "spessoplayer": "main.mts"
-  },
+  "engines": { "node": ">=20.11.0" },
+  "bin": { "spessoplayer": "main.mts" },
   "scripts": {
     "prepublishOnly": "node prepublish.mts",
     "postinstall": "node install.mts"
   },
-  "dependencies": {
-    "spessasynth_core": "^4.0.25"
+  "dependencies": { "spessasynth_core": "^4.0.25" },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "6.0.2"
   }
 }
 
