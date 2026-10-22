@@ -19,13 +19,12 @@
       "erasableSyntaxOnly": true,
       "noUncheckedSideEffectImports": true,
       "verbatimModuleSyntax": true,
+      "allowUnreachableCode": false,
+      "noPropertyAccessFromIndexSignature": true,
       "noEmit": true,
       "types": ["node", "spessasynth_core"]
     },
-    "includes": [
-      "*.mts", "utils/*.mts",
-      "types/*.mts"
-    ],
+    "includes": ["*.mts", "utils/*.mts"],
     "exclude": [
       "**/node_modules/**/*", ".*/*",
       "hooks/*", "tests/*"
