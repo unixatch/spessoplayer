@@ -58,6 +58,8 @@ function getFilename(path, extensionIncluded) {
     //    no ext  ↓       ↓ not a hidden file ↓
     extStart !== -1 && extStart !== afterLastSlashIndex
     && !extensionIncluded
+    // Relative paths should not be included
+    && !(path.startsWith("."+sep) || path.startsWith(".."+sep))
       ? extStart : undefined
   );
 }
