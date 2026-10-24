@@ -18,6 +18,7 @@
 /**
  * @module wavFunctions
  */
+import type { TempoChange } from "spessasynth_core"
 
 /**
  * Combines multiple RIFF/WAV chunks
@@ -25,7 +26,7 @@
  * @param {Uint8Array[]} chunks list of chunks to add
  * @return {Uint8Array} completed LIST/INFO chunk
  */
-function writeMultipleChunks(header, chunks) {
+function writeMultipleChunks(header: string, chunks: Uint8Array[]): Uint8Array {
   let dataOffset = 12;
   let dataLength = 0;
   for (const {length} of chunks) dataLength += length;
@@ -54,7 +55,7 @@ function writeMultipleChunks(header, chunks) {
  * @param {Uint8Array} data   description of the chunk
  * @return {Uint8Array} completed chunk
  */
-function writeSingleChunk(header, data) {
+function writeSingleChunk(header: string, data: Uint8Array): Uint8Array {
   const dataStartOffset = 8;
   //                  padding of 0 ↓
   const dataLength = data.length + 1;
@@ -73,20 +74,24 @@ function writeSingleChunk(header, data) {
   return uint8;
 }
 
-let encoder;
+let encoder: TextEncoder;
 const MAX_UNSIGNED_32INT = 4294967295;
 
-/**
- * WAV Header Generator
- * @param {module:typeDefinitions~getWavHeaderObjectParameters} audioData - An object that contains infos about the audio
- * @param {Number} [sampleRate=48000]    - Sample rate of the audio
- * @param {Object} [options]             - adds metadata and more
- * @param {Object} [options.metadata={}] - metadata to add to the header
- * @returns {Uint8Array} the wav header
- */
-function getWavHeader({ length, numChannels },
-  sampleRate = 48000, metadata = {}
-) {
+/** Describes audio data */
+interface getWavHeaderObjectParameters {
+  length: number, numChannels: number
+}
+interface wavMetadata<T> {
+  tracksAmount?: T, timeDivision?: T,
+  tempoChanges?: TempoChange[],
+  artist?: T, title?: T, album?: T, genre?: T
+}
+
+/** WAV Header Generator */
+function getWavHeader(
+  { length, numChannels }: getWavHeaderObjectParameters,
+  sampleRate = 48000, metadata: wavMetadata<string> = {}
+): Uint8Array {
   if (length > MAX_UNSIGNED_32INT) {
     console.error(`${red}file size is too big (unsigned 32bit limit)${normal}`)
     process.exit(1)
@@ -95,7 +100,7 @@ function getWavHeader({ length, numChannels },
     process.exit(1)
   }
   const bytesPerSample = 2;
-  let infoChunk;
+  let infoChunk: Uint8Array;
   const infoOn = Object.keys(metadata).length > 0;
   if (infoOn) {
     encoder = new TextEncoder();
@@ -226,13 +231,11 @@ function getWavHeader({ length, numChannels },
 
 const MAX_SIGNED_16INT = 32767,
       MIN_SIGNED_16INT = -(MAX_SIGNED_16INT) - 1;
-/**
- * Translates to audible PCM data
- * @param {Array} audioData - An array that contains the audio buffers
- * //param {Object} options - Optional, adds loop timestamps and more
- * @returns {Uint8Array} the translated data
- */
-function getData(audioData/*, options = DEFAULT_WAV_WRITE_OPTIONS*/) {
+
+/** Translates to audible PCM data */
+function getData(
+  audioData: Float32Array[]/*, options = DEFAULT_WAV_WRITE_OPTIONS*/
+): Uint8Array {
   const {
     length: numChannels,
     0: { length }
