@@ -1,1 +1,1 @@
-./stdoutMode.mjs
+./stdoutMode.mts
