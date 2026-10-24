@@ -20,6 +20,13 @@
  */
 
 import "./colors.mts"
+import type { spawnSync as spawnS, StdioOptions } from "node:child_process"
+
+interface runProgramSyncIntfc {
+  spawnSync: typeof spawnS,
+  program: string, args?: string[],
+  stdioArray?: StdioOptions
+}
 
 /**
  * Clears lines from the last line up
@@ -29,7 +36,7 @@ import "./colors.mts"
  * // Clears only the last line
  * clearLastLines(-1)
  */
-const clearLastLines = lineY => {
+const clearLastLines = (lineY: number): void => {
   if (typeof lineY !== "number" || Number.isNaN(lineY)) {
     throw new TypeError("Didn't give a valid number")
   }
@@ -41,18 +48,16 @@ const clearLastLines = lineY => {
 }
 /**
  * Checks program existence synchronously
- * @param {Object} obj - the obj passed
- * @param {Function} obj.spawnSync - child_process.spawnSync
- * @param {String} obj.program - program to find
- * @param {string[]} obj.args - optional arguments
- * @param {(string|string[])} obj.stdioArray - stdio to set for the process
  * @throws {ReferenceError} - if it can't find the program requested
  */
-function runProgramSync({ spawnSync, program, args = [], stdioArray = "pipe" }) {
-  const code = spawnSync(
-    program, args,
-    { stdio: stdioArray }
-  )?.error?.code
+function runProgramSync({
+  spawnSync, program, args = [],
+  stdioArray = "pipe"
+}: runProgramSyncIntfc): true | void {
+  const code: string | undefined = (
+    spawnSync(program, args, { stdio: stdioArray })
+      ?.error as NodeJS.ErrnoException
+  )?.code
 
   if (code === "ENOENT") {
     throw new ReferenceError("Program doesn't exist")
@@ -64,15 +69,14 @@ export const formatStrings = {
   warningText: yellow+"%s"+normal,
   grayedOutText: gray+"%s"+normal
 };
-/**
- * Tries to check and install the program via a package manager
- * @param {String} packageToUse - package to search and install
- * @param {Function} spawnSync - child_process.spawnSync
- * @param {Object} stdioObj - object passed for stdout and stderr
- * @param {Writable} obj.stdout - process' stdout
- * @param {Writable} obj.stderr - process' stderr
- */
-function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
+/** Tries to check and install the program via a package manager */
+function tryToInstall(
+  packageToUse: string, spawnSync: typeof spawnS,
+  { stdout, stderr }: {
+    stdout: NodeJS.Process["stdout"],
+    stderr: NodeJS.Process["stderr"]
+  }
+): true | void {
   const packageManagers = [
     "apt",
     "dnf",
@@ -141,15 +145,14 @@ function tryToInstall(packageToUse, spawnSync, { stdout, stderr }) {
     "install it either manually or with a package manager you use"
   )
 }
-/**
- * Tries to check and uninstall the program via a package manager
- * @param {String} packageToUse - package to search and install
- * @param {Function} spawnSync - child_process.spawnSync
- * @param {Object} stdioObj - object passed for stdout and stderr
- * @param {Writable} obj.stdout - process' stdout
- * @param {Writable} obj.stderr - process' stderr
- */
-function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
+/** Tries to check and uninstall the program via a package manager */
+function tryToUninstall(
+  packageToUse: string, spawnSync: typeof spawnS,
+  { stdout, stderr }: {
+    stdout: NodeJS.Process["stdout"],
+    stderr: NodeJS.Process["stderr"]
+  }
+): true | void {
   const packageManagers = [
     "apt",
     "dnf",
@@ -228,11 +231,12 @@ function tryToUninstall(packageToUse, spawnSync, { stdout, stderr }) {
 }
 /**
  * Tries to install auto completion scripts on Unix
- * @param {String}  shell  shell to manage
- * @param {Boolean} isUnix if it's a unix os
  * @param {Boolean} [uninstall=false] if it should remove the symlink instead of adding it
  */
-async function manageAutocomplete(shell, isUnix, uninstall = false) {
+async function manageAutocomplete(
+  shell: string, isUnix: boolean,
+  uninstall = false
+): Promise<true | void> {
   if (!isUnix) return;
 
   const {

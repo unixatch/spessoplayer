@@ -29,14 +29,14 @@ import {
   manageAutocomplete
 } from "./utils/install_uninstall.mts"
 
-let readline;
+let readline: Awaited<typeof import("node:readline/promises")>;
 /**
  * Checks if a program exists, if it doesn't exist,
  * it asks the user for confirmation to install via package managers
- * @param {String} program - the program to check
- * @param {String} [noUninstallMsg=""] - the message to show when the user refuses to install it
  */
-async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
+async function runCheck(
+  program: string, noUninstallMsg = "", questionOnly = false
+): Promise<true | void> {
   // Question block
   let answer;
   try {
@@ -53,14 +53,14 @@ async function runCheck(program, noUninstallMsg = "", questionOnly = false) {
     );
     rl.close()
   } catch (e) {
-    if (e.name === "AbortError") { // Ctrl+c
+    if ((e as Error).name === "AbortError") { // Ctrl+c
       console.error(
         formatStrings.grayedOutText,
         "\nUninstallation of dependencies interrupted with Ctrl+c"
       )
       process.exit(2)
     }
-    if (e.message === "Program doesn't exist") {
+    if ((e as ReferenceError).message === "Program doesn't exist") {
       const unrecognisedProgramFormat = `${normalYellow+underline}%s${endUnderline} %s${normal}`;
       console.warn(
         unrecognisedProgramFormat,
@@ -131,7 +131,7 @@ if (isUnix) {
   const { stat, unlink } = await import("node:fs");
   const path = (
     platform === "android"
-      ? process.env.TERMUX__ROOTFS_DIR + "/usr/share/man/man1/spessoplayer.1.gz"
+      ? process.env["TERMUX__ROOTFS_DIR"] + "/usr/share/man/man1/spessoplayer.1.gz"
       : "/usr/share/man/man1/spessoplayer.1.gz"
   );
   stat(path, (error, _infos) => {
@@ -145,12 +145,12 @@ if (isUnix) {
           spawnSync, program: "makewhatis",
           args: [
             platform === "android"
-              ? process.env.TERMUX__ROOTFS_DIR + "/usr/share/man"
+              ? process.env["TERMUX__ROOTFS_DIR"] + "/usr/share/man"
               : "/usr/share/man"
           ]
         })
       } catch(error) {
-        if (error.message !== "Program doesn't exist") {
+        if ((error as ReferenceError).message !== "Program doesn't exist") {
           console.error(error)
           console.error(
             formatStrings.errorText,

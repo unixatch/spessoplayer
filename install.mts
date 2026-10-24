@@ -29,20 +29,20 @@ import {
   manageAutocomplete
 } from "./utils/install_uninstall.mts"
 
-let readline;
+let readline: Awaited<typeof import("node:readline/promises")>;
 /**
  * Checks if a program exists, if it doesn't exist,
  * it asks the user for confirmation to install via package managers
  * @param {String} program     - the program to check
  * @param {String} installDesc - the description of what's about to be installed
  */
-async function runCheck(program, installDesc) {
+async function runCheck(program: string, installDesc: string) {
   let exists = true;
   try {
     runProgramSync({ spawnSync, program })
   } catch (e) {
     // Other errors
-    if (e.message !== "Program doesn't exist") {
+    if ((e as ReferenceError).message !== "Program doesn't exist") {
       console.error(e)
       console.error(
         formatStrings.errorText,
@@ -74,7 +74,7 @@ async function runCheck(program, installDesc) {
       );
       rl.close()
     } catch (e2) {
-      if (e2.name === "AbortError") {
+      if ((e2 as Error).name === "AbortError") {
         console.error(
           formatStrings.grayedOutText,
           "\nInstallation of dependencies interrupted with Ctrl+c"
@@ -83,7 +83,7 @@ async function runCheck(program, installDesc) {
       }
     }
     // Response to the answer
-    switch (answer.trim().toLowerCase()) {
+    switch (answer?.trim().toLowerCase()) {
       // In case it's empty
       case "":
       case "y": case "yes":
@@ -91,6 +91,7 @@ async function runCheck(program, installDesc) {
           stdout: process.stdout, stderr: process.stderr
         });
       case "n": case "no":
+      case undefined:
         return null;
     }
     clearLastLines(-1)
@@ -126,13 +127,11 @@ const autoCompleteErrorMessageFormat = `${gray}%s ${underline}%s${endUnderline} 
       installedMessageFormat = `${green}[autocomplete]: Successfully installed ${underline}%s${endUnderline} auto-completion${normal}`,
       existingInstallationMessageFormat = `${normalYellow}[autocomplete]: ${underline}%s${endUnderline} auto-completion already installed${normal}`;
 
-/**
- * Manages errors that occur in the try block
- * @param {String} shell   shell being checked
- * @param {Error}  error   Error object
- * @param {String} message message to print
- */
-function manageAutocompleteErrors(shell, error, message) {
+/** Manages errors that occur in the try block */
+function manageAutocompleteErrors(
+  shell: string, error: ReferenceError,
+  message: string
+): void {
   if (error.message !== "Program doesn't exist") {
     console.error(formatStrings.errorText, error)
     process.exit(1)
@@ -156,7 +155,7 @@ try {
     console.log(existingInstallationMessageFormat, "zsh")
   }
 } catch (error) {
-  manageAutocompleteErrors("zsh", error,
+  manageAutocompleteErrors("zsh", (error as ReferenceError),
     "was not found, moving on to bash..."
   )
 }
@@ -170,7 +169,7 @@ try {
     console.log(existingInstallationMessageFormat, "bash")
   }
 } catch (error) {
-  manageAutocompleteErrors("bash", error,
+  manageAutocompleteErrors("bash", (error as ReferenceError),
     `was not found${
       zshFailed
         ? ", no autocomplete will be installed"
@@ -190,7 +189,7 @@ if (isUnix) {
   } = await import("node:fs");
   const path = (
     platform === "android"
-      ? process.env.TERMUX__ROOTFS_DIR + "/usr/share/man/man1/spessoplayer.1.gz"
+      ? process.env["TERMUX__ROOTFS_DIR"] + "/usr/share/man/man1/spessoplayer.1.gz"
       : "/usr/share/man/man1/spessoplayer.1.gz"
   );
 
@@ -212,12 +211,12 @@ if (isUnix) {
       spawnSync, program: "makewhatis",
       args: [
         platform === "android"
-          ? process.env.TERMUX__ROOTFS_DIR + "/usr/share/man"
+          ? process.env["TERMUX__ROOTFS_DIR"] + "/usr/share/man"
           : "/usr/share/man"
       ]
     })
   } catch(error) {
-    if (error.message !== "Program doesn't exist") {
+    if ((error as ReferenceError).message !== "Program doesn't exist") {
       console.error(error)
       console.error(
         formatStrings.errorText,
