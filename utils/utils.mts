@@ -22,8 +22,14 @@
 import { classes } from "./classes.mts"
 import Mixin from "./basic_additions.mts"
 import "./colors.mts"
+import type { extLessFiles } from "../types/cli.mts"
+import type {
+  perSongOptions, allOptions,
+  UnwantedNonZeroErrorExtras, groupsChecked
+} from "../types/utils.mts"
 
 export const sep = process.platform === "win32" ? "\\" : "/";
+declare const fs: typeof import("node:fs");
 
 /**
  * Clears lines from the last line up
@@ -33,7 +39,7 @@ export const sep = process.platform === "win32" ? "\\" : "/";
  * // Clears only the last line
  * clearLastLines(-1)
  */
-function clearLastLines(lineY) {
+function clearLastLines(lineY: number): void {
   if (typeof lineY !== "number" || Number.isNaN(lineY)) {
     throw new TypeError("Didn't give a valid number")
   }
@@ -49,7 +55,7 @@ function clearLastLines(lineY) {
  * @param {Boolean} extensionIncluded if it should keep the extension
  * @return {String} basename
  */
-function getFilename(path, extensionIncluded) {
+function getFilename(path: string, extensionIncluded?: boolean): string | undefined {
   const afterLastSlashIndex = path.lastIndexOf(sep) + 1,
         extStart            = path.lastIndexOf(".");
 
@@ -65,11 +71,10 @@ function getFilename(path, extensionIncluded) {
 }
 /**
  * Gets the dirname of a path
- * @param {String} path path to parse
  * @return {String} dirname
  */
-function getDirname(path) {
-  let dirname;
+function getDirname(path: string): string {
+  let dirname: string | undefined;
   const lastSlashIndex = path.lastIndexOf(sep);
 
   // Root only
@@ -88,9 +93,9 @@ const LVL_TEXTS = {
   [ERROR_LVL]: "ERROR", [WARNING_LVL]: "WARNING",
   [INFO_LVL]: "INFO",   [DEBUG_LVL]: "DEBUG"
 };
-const debugLevelSpesso = Number(process.env.DEBUG_LEVEL_SPESSO),
-      debugFileSpesso  = process.env.DEBUG_FILE_SPESSO;
-const logMessageColors = {
+const debugLevelSpesso = Number(process.env["DEBUG_LEVEL_SPESSO"]),
+      debugFileSpesso  = process.env["DEBUG_FILE_SPESSO"];
+const logMessageColors: { [key: string | number]: string } = {
   0: normalRed, 1: normalYellow,
   2: dimGray,   3: dimGray
 };
@@ -105,8 +110,6 @@ PlainTime &&= new PlainTime();
 export { nowInstant, fromInstant, fromDuration, PlainTime }
 /**
  * Logger
- * @param {Number} level - level of the log
- * @param {Array<(String|Uint8Array<ArrayBufferLike>)>} messages - messages to print
  * @example
  *   // 2026-01-01T00:01:01.000Z [100 ms] {INFO_LVL} normal log
  *   log(INFO_LVL, "normal log")
@@ -119,7 +122,10 @@ export { nowInstant, fromInstant, fromDuration, PlainTime }
  *   // 2026-01-01T00:01:01.000Z [100 ms] {INFO_LVL} multiple lines
  *   log(WARNING_LVL, "log with", "-", "multiple lines")
  */
-function log(level, ...messages) {
+function log(
+  this: { verboseLevel: number, logFilePath: string } | void,
+  level: number, ...messages: Array<string | Uint8Array>
+): void {
   const time = performance.now().toFixed(2);
   let date = nowInstant?.().toString();
   date ??= new Date().toISOString();
@@ -200,7 +206,7 @@ export const formatStrings = {
  *    newFileName("out1.wav")
  * @returns {String} The path, modified or not
  */
-function newFileName(path, createAnyway = false) {
+function newFileName(path: string, createAnyway = false): string {
   if (!fs.existsSync(path ?? "") && !createAnyway) return path;
 
   const LIMIT = 900;
@@ -255,10 +261,9 @@ function newFileName(path, createAnyway = false) {
 }
 /**
  * Gets sizes asynchronously for all soundfonts in the list
- * @param {Set[]} filesList list of groups of files
  * @return {Promise<Number[]>} all sizes in MB
  */
-async function getSizes(filesList) {
+async function getSizes(filesList: Set<string>[]): Promise<number[]> {
   const statPromises = [];
   const { promises: { stat: asyncStat } } = fs;
 
@@ -275,12 +280,15 @@ async function getSizes(filesList) {
 }
 /**
  * Gives an estimate of RAM usage for all threads combined
- * @param {Set[]} filesList     list of groups of files
- * @param {Number[]} fileSizes  list of file sizes
- * @param {Number} threadsCount threads count
+ * @param {Set[]}    filesList    list of groups of files
+ * @param {Number[]} fileSizes    list of file sizes
+ * @param {Number}   threadsCount threads count
  * @return {Number} estimate
  */
-function getUsageEstimate(filesList, fileSizes, threadsCount) {
+function getUsageEstimate(
+  filesList: Set<string>[], fileSizes: number[],
+  threadsCount: number
+): number {
   const AVG_MODULE_CACHE_MB = 12;
   let index = 0,
       finalSize = 0;
@@ -323,33 +331,33 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
   /** If fileOutputs has been created
    * @type {Boolean}
    */
-  static fileOutputsExists;
+  static fileOutputsExists?: boolean;
   /**
    * Essentially the black hole of computing
    * @type {String}
    */
-  static #dryRun;
+  static #dryRun?: string;
   /**
    * Path that will be written for each log
    * @type {String}
    */
-  static #logFilePath;
+  static #logFilePath: string;
   /**
    * Filenames used as output for different formats
    * @type {String[]}
    */
-  static #fileOutputs;
+  static #fileOutputs: string[];
   /**
    * Filenames used for composing songs
    * @type {Set[]}
    */
-  static #files;
+  static #files: Set<string>[];
   /**
    * A list of indexes representing groups that have a soundfont
    * @type {(undefined|Object|null)}
    * @private
    */
-  static #groupsChecked;
+  static #groupsChecked?: groupsChecked;
   /**
    * How many groups have been created
    * (doesn't include empty slots)
@@ -370,7 +378,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @type {list_Of_Songs}
    * @private
    */
-  static #listOfSongs = [];
+  static #listOfSongs: Array<number | string> = [];
   /**
    * List of all soundfonts
    * @type {Object<String, Number>}
@@ -388,7 +396,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @throws {TypeError} - if it's not of valid type
    * @return {Boolean} if it all goes well
    */
-  static #checkValueAndExistence(value, requiredType) {
+  static #checkValueAndExistence(value: any, requiredType: string): true {
     if (requiredType !== "array" || !Array.isArray(value)) {
       if (typeof value !== requiredType) {
         throw new TypeError(`${value} is not of type ${requiredType}`)
@@ -404,7 +412,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {Boolean} [getter] if logFilePath should return its value
    * @return {String} if it's a getter or fileOutputs' index has been set
    */
-  static manageAuxiliaryFileOptions(name, value, index, getter) {
+  static manageAuxiliaryFileOptions<T>(
+    name: T, value: T, index?: T, getter?: boolean
+  ): T | void {
     switch (name) {
       case "dryRun":
         this.#dryRun ??= (
@@ -415,10 +425,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         break;
 
       case "logFilePath":
-        if (getter) return this.#logFilePath;
+        if (getter) return (this.#logFilePath as T);
 
         this.#checkValueAndExistence(value, "string")
-        return this.#logFilePath = value;
+        return (this.#logFilePath as T) = value;
 
       case "fileOutputs":
         if (index) this.#checkValueAndExistence(index, "number")
@@ -426,17 +436,15 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
 
         this.#fileOutputs ??= [];
         this.fileOutputsExists ??= true;
+        // @ts-ignore
         return this.#fileOutputs[index] = value;
 
       default:
         throw new TypeError(name+" doesn't exist")
     }
   }
-  /**
-   * If all groups are valid to be used
-   * @return {Boolean}
-   */
-  static areGroupsValid() {
+  /** If all groups are valid to be used */
+  static areGroupsValid(): boolean {
     return this.#addedGroupCount === this.#groupsChecked?.length;
   }
   /**
@@ -446,7 +454,10 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {Boolean} [isSoundfont=false] - if it's a soundfont, then add as a first element
    * @param {Boolean} [replace=false] - if it should delete the first element before adding the soundfont
    */
-  static files(index, string, isSoundfont = false, replace = false) {
+  static files(
+    index: number, string: string,
+    isSoundfont = false, replace = false
+  ): void {
     this.#checkValueAndExistence(index, "number")
     this.#checkValueAndExistence(string, "string")
     this.#checkValueAndExistence(isSoundfont, "boolean")
@@ -465,9 +476,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       this.#groupsChecked ??= Object.create(null, {
         length: { value: 0, writable: true }
       });
-      switch (this.#groupsChecked[index]) {
+      switch (this.#groupsChecked![index]) {
         case undefined: default: { // init
-          this.#groupsChecked[index] ||= isSoundfont ? false : null;
+          this.#groupsChecked![index] ||= isSoundfont ? false : null;
           break validGroupCheckBlock;
         }
         case null: { // a song file
@@ -482,8 +493,8 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
       }
       // Switch breaks then
       // it greenlights the group down here
-      this.#groupsChecked[index] = true;
-      this.#groupsChecked.length += 1;
+      this.#groupsChecked![index] = true;
+      this.#groupsChecked!.length += 1;
     }
 
     if (isSoundfont) {
@@ -515,7 +526,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * Gives the amount of songs to do
    * @return {Number} the amount
    */
-  static get amountOfSongs() {
+  static get amountOfSongs(): number {
     // Cleanup of a now unused variable
     if (this.lastRegularGroupIndex !== undefined) {
       delete this.lastRegularGroupIndex
@@ -526,7 +537,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * Gives the amount of groups
    * @return {Number} the amount
    */
-  static get amountOfGroups() {
+  static get amountOfGroups(): number {
     return this.#files?.length ?? 0;
   }
   /**
@@ -534,14 +545,14 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {Number} index index of the song
    * @return {String} the filename without extension
    */
-  static getSongName(index) {
+  static getSongName(index: number): string {
     return this.#listOfSongs[index * 3 + 2];
   }
   /**
    * Gives the last known group's index that has been added
    * @return {(Number|undefined)} index of the group
    */
-  static get lastKnownGroupIndex() {
+  static get lastKnownGroupIndex(): void | number {
     if (!this.#files || !this.#files.length) return;
 
     return this.amountOfGroups-1;
@@ -552,7 +563,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {(undefined|Object[])} - undefined if it's undefined or empty,
    *                                  an array of objects that contain a soundfont and its midis
    */
-  static getConfirmationTable() {
+  static getConfirmationTable(): void | object[] {
     if (!this.#files || !this.#files.length) return;
 
     const table = [],
@@ -595,7 +606,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * has already a soundfont
    * @return {Boolean} true if it exists or otherwise false
    */
-  static isLastRegularGroupOccupied() {
+  static isLastRegularGroupOccupied(): boolean {
     const files     = this.#files ??= [],
           lastIndex = this.lastRegularGroupIndex;
     if (!files || lastIndex === undefined) return false;
@@ -617,7 +628,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {(Boolean|undefined)} [isAMidiSearching] - if arg inside setFiles is a midi or it needs to search everywhere
    * @return {(Number|false)} the index of the group or false if it didn't find any match
    */
-  static searchAddedFile(name, isAMidiSearching) {
+  static searchAddedFile(name: string, isAMidiSearching?: boolean): number | false {
     const soundfontSearch = () => {
       const indexOfGroup = this.#listOfSoundfonts[name];
       return (indexOfGroup !== undefined) ? indexOfGroup : false;
@@ -644,7 +655,9 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {(true|false)}
    * @throws {TypeError} - if index is not a number
    */
-  static isAutomaticBasenameGroup(extLessFiles, indexOfGroup) {
+  static isAutomaticBasenameGroup(
+    extLessFiles: extLessFiles, indexOfGroup: number
+  ): boolean | void {
     if (extLessFiles && extLessFiles?.prototype) {
       throw new TypeError(
         "extLessFiles must be null prototyped object"
@@ -688,7 +701,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @param {Number} index - index of the song
    * @return {Object} an object containing the song's options
    */
-  static getOptionsOfSong(index) {
+  static getOptionsOfSong(index: number): perSongOptions {
     this.#checkValueAndExistence(index, "number")
     const songOptionsObject = Object.create(null);
     const actualIndex = index && index * 3;
@@ -725,7 +738,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * Gives all the data
    * @return {Object} all available options
    */
-  static get all() {
+  static get all(): allOptions {
     const returnObject = {
       ...this._options, files: structuredClone(this.#files)
     };
@@ -749,7 +762,15 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
  * @param {Array}   stdBuffers.stderr   stderr array
  */
 class UnwantedNonZeroError extends Error {
-  constructor(message, options, { exitCode, stdout, stderr }) {
+  public exitCode: number;
+  public stdout?: Buffer;
+  public stderr?: Buffer;
+
+  constructor(
+    message: string,
+    options: ErrorOptions | undefined,
+    { exitCode, stdout, stderr }: UnwantedNonZeroErrorExtras
+  ) {
     super(message, options)
     this.exitCode = exitCode;
     this.stdout = stdout;
@@ -763,7 +784,11 @@ class UnwantedNonZeroError extends Error {
  * @return {Number?} maybe the result of the resolver
  * @throws {UnwantedNonZeroError} if the exitCode is non-zero
  */
-function ffmpegExitHandler(exitCode, resolver) {
+function ffmpegExitHandler(
+  this: { stdout: Buffer, stderr: Buffer },
+  exitCode: number,
+  resolver: (arg0: number) => void
+): number | void {
   if (exitCode === 0) return resolver?.(exitCode);
 
   throw new UnwantedNonZeroError(

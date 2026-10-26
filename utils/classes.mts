@@ -18,46 +18,56 @@
 /**
  * @module classes
  */
+import type { Options } from "./utils.mts"
 
+type listUsedInReverse = Array<
+  | string   | number    | boolean
+  | object[] | undefined
+>;
 /**
  * Adds/updates properties with an index to Options class
  * @param {(MainOptions|EffectsOptions)} that
  * @param {Array<String|Number|*>} list things to add
  */
-function addIndexedProperties(that, list) {
+function addIndexedProperties(
+  that: MainOptions | EffectsOptions,
+  list: listUsedInReverse
+): void {
   for (let i = list.length; --i;) {
     if (i < 0) break;
     const {
       [i]: value, [i-1]: index, [i-2]: property
     } = list;
 
-
-    MainOptions.addIndexedValue.call(that, property, index, value)
+    MainOptions.addIndexedValue.call(
+      that,
+      (property as string),
+      (index as undefined | number),
+      (value as object[] | number | boolean)
+    )
     i -= 2;
   }
 }
-/**
- * Sets a property with value
- * @param {String} property name of property
- * @param {*}      value
- */
-const setValue = function (property, value) { this._options[property] = value; }
-/**
- * Sets a property to an index with a given value
- * @param {String} property name of property
- * @param {*}      value
- * @param {Number} [index]
- */
-const setOrPushValue = function (property, value, index) {
+/** Sets a property with value */
+const setValue = function (
+  this: Options, property: string, value: any
+): any {
+  this._options[property] = value;
+}
+/** Sets a property to an index with a given value */
+const setOrPushValue = function (
+  this: Options,
+  property: string, value: any, index?: number
+): any | number {
   return (
     Number.isInteger(index)
-      ? this._options[property][index] = value
+      ? this._options[property][index!] = value
       : this._options[property].push(value)
   );
 };
 /**
  * @function #checkValueAndExistence
- * @desc type checker
+ * @description type checker
  * @param {*} value - any kind of value to check
  * @param {String} requiredType - type that must be correct
  * @param {String} [property] - any kind of property to add to #options
@@ -66,15 +76,19 @@ const setOrPushValue = function (property, value, index) {
  * @throws {TypeError} - if it's not of valid type
  * @return {Boolean} if it all goes well
  */
-function checkValueAndExistence(value, requiredType, property, that) {
+function checkValueAndExistence(
+  value: any, requiredType: string,
+  property?: string | undefined, that?: Options
+): void {
   if (requiredType !== "array" || !Array.isArray(value)) {
     if (typeof value !== requiredType) {
       throw new TypeError(`${value} is not of type ${requiredType}`)
     }
   }
-  if (property) that._options[property] ??= [];
+  if (property) that!._options[property] ??= [];
 }
 
+type indexedStringValue = string | number | number[] | boolean | object[]
 /**
  * Main options class that contains general options
  * @mixin MainOptions
@@ -82,12 +96,13 @@ function checkValueAndExistence(value, requiredType, property, that) {
 class MainOptions {
   /**
    * Adds a parameter string value by index
-   * @param {String}                           name property's name
-   * @param {(Number|NaN)}                     index song's index
-   * @param {(String|Number|Boolean|Number[])} value string to add
    * @throws {TypeError} if index is not a number or name is not a string
    */
-  static addIndexedStringValue(name, index, value) {
+  static addIndexedStringValue(
+    this: Options,
+    name: string, index: number | typeof NaN | undefined,
+    value: indexedStringValue
+  ): indexedStringValue | void {
     if (Number.isNaN(index)) index = undefined;
 
     switch (name) {
@@ -99,7 +114,7 @@ class MainOptions {
       case "loopFadeStart": case "loopFadeDuration": {
         let type = "number";
         if (name === "channelVolume") type = "array";
-        if (value[0] === "@") type = "string";
+        if (typeof value === "string" && value[0] === "@") type = "string";
 
         checkValueAndExistence(value, type, name, this)
         return setOrPushValue.call(this, name, value, index);
@@ -156,11 +171,12 @@ class MainOptions {
 
   /**
    * Adds a parameter boolean value
-   * @param {String}           name  property's name
-   * @param {(Boolean|String)} value boolean to add
    * @throws {TypeError} if name is not a string
    */
-  static addBooleanValue(name, value) {
+  static addBooleanValue(
+    this: Options,
+    name: string, value: boolean | string
+  ): boolean | string | void {
     switch (name) {
       // Boolean
       case "daemon":       case "loopFade":
@@ -197,11 +213,9 @@ class MainOptions {
 
   /**
    * Adds a parameter number value
-   * @param {String} name  property's name
-   * @param {Number} value boolean to add
    * @throws {TypeError} if name is not a string
    */
-  static addNumberValue(name, value) {
+  static addNumberValue(name: string, value: number): number {
     switch (name) {
       case "verboseLevel": {
         checkValueAndExistence(value, "number")
@@ -219,11 +233,9 @@ class MainOptions {
   }
   /**
    * Retrieves a property's value
-   * @param {String} name  property's name
-   * @return {*} value of the property
    * @throws {TypeError} if name is not a string
    */
-  static getValue(name) {
+  static getValue(this: Options, name: string): any {
     return (
       name === "logFilePath"
         ? this.manageAuxiliaryFileOptions(name, undefined, undefined, true)
@@ -237,7 +249,9 @@ class MainOptions {
    * @return {*} value of the property
    * @throws {TypeError} if name is not a string
    */
-  static getIndexedValue(name, index) {
+  static getIndexedValue(
+    this: Options, name: string, index: number
+  ): any | undefined {
     if (name === "externalEffects" && Number.isNaN(index)) {
       index = this._options[name].length-1;
     }
@@ -253,11 +267,10 @@ class MainOptions {
 class EffectsOptions {
   /**
    * Returns if effects are handled by spessasynth
-   * @param {String}  parameter paramter that wants to check
    * @param {Number}  index     index of the song
    * @return {Boolean} true == SoX/external, false == spessasynth/internal
    */
-  static externalEffectProcesser(index) {
+  static externalEffectProcesser(index: number): boolean | undefined {
     const externalEffects = this._options.externalEffects;
     if (externalEffects === undefined) return;
     if (Number.isNaN(index)) index = externalEffects.length-1;
@@ -269,7 +282,7 @@ class EffectsOptions {
    * @param {Number} index - index of the file
    * @param {Array} arrayOfObjects - an array of object effects
    */
-  static effects(index, arrayOfObjects) {
+  static effects(index: number, arrayOfObjects: object[]): void {
     const _index = Number.isNaN(index) ? undefined : index;
     addIndexedProperties(this, [
       "effects", _index, arrayOfObjects,
@@ -281,7 +294,7 @@ class EffectsOptions {
    * @param {Number} index - index of the file's option
    * @param {Number} number - the volume value as a float or integer
    */
-  static reverbVolume(index, number) {
+  static reverbVolume(index: number, number: number): void {
     const _index = !Number.isNaN(index) ? index : undefined;
     addIndexedProperties(this, [
       "reverbVolume", _index, number,
