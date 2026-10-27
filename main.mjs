@@ -38,7 +38,7 @@ import {
   Options, FO_CONSTANTS
 } from "./cli.mjs"
 
-let isVerboseLevelSet, argv;
+let isVerboseLevelSet, argv = process.argv;
 const {
   env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
 } = process;
