@@ -38,7 +38,7 @@ import {
   Options, FO_CONSTANTS
 } from "./cli.mts"
 
-let isVerboseLevelSet, argv;
+let isVerboseLevelSet, argv = process.argv;
 const {
   env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
 } = process;

@@ -156,7 +156,10 @@ async function manageVerboseOptions({
   } else log(INFO_LVL, debugLevelSpessoMsg)
 
   // +++ logFile section +++
-  if (DEBUG_FILE_SPESSO) return log(INFO_LVL, debugFileSpessoMsg);
+  if (DEBUG_FILE_SPESSO) return (
+    log(INFO_LVL, debugFileSpessoMsg),
+    [Boolean(isVerboseLevelSet), newArguments]
+  );
   newArgumentsLength = newArguments.length;
   let indexOfEqualSign;
   for (let index = 0; index < newArgumentsLength; ++index) {

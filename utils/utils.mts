@@ -546,7 +546,13 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {String} the filename without extension
    */
   static getSongName(index: number): string {
-    return this.#listOfSongs[index * 3 + 2];
+    const indexOfSongName = index * 3 + 2,
+          indexAfterSongName = indexOfSongName + 1;
+    if (typeof (this.#listOfSongs[indexAfterSongName]) !== "number"
+        && indexAfterSongName < this.#listOfSongs.length) {
+      throw new TypeError(`trying to reach the wrong index (${indexOfSongName})`)
+    }
+    return this.#listOfSongs[indexOfSongName];
   }
   /**
    * Gives the last known group's index that has been added
