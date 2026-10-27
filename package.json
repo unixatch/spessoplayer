@@ -33,7 +33,7 @@
   "dependencies": { "spessasynth_core": "^4.0.25" },
   "devDependencies": {
     "@types/node": "^26.6.4",
-    "typescript": "6.0.2"
+    "typescript": "^7.0.2"
   }
 }
 
