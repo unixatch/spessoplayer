@@ -2,28 +2,37 @@
  * @module typeDefinitions
  */
 
-import type { Readable } from "node:stream"
 import type { ServerResponse } from "node:http"
-import type { ChildProcess } from "node:child_process"
 import type { FO_CONSTANTS } from "./cli.mts"
+import type { getData } from "../wavFunctions.mts"
 import type {
-  BasicMIDI,
-  SpessaSynthSequencer, SpessaSynthProcessor
+  BasicMIDI, SpessaSynthSequencer, SpessaSynthProcessor
 } from "spessasynth_core"
 
 /*
   ——— PARAMETERS OBJECTS ———
 */
-export interface formatObjectParameters {
+/** General */
+export interface formatObject {
   format?: boolean | string,
-  readStream?: Readable, rawReadStream?: Readable,
-  res?: ServerResponse,
+  readStream?: NodeJS.ReadableStream, rawReadStream?: NodeJS.ReadableStream,
   dryRun?: string, effects?: object,
-  index: number, createNewFileNameAnyway?: boolean,
-  fileOutputs?: string[], FO_CONSTANTS: FO_CONSTANTS,
-  stdoutHeader?: Uint8Array,
-  promisesOfPrograms: Promise<void>[], outFile?: string
+  index?: number, stdoutHeader?: Uint8Array,
+  promisesOfPrograms: Promise<void>[]
 }
+/** player mode */
+interface formatObjectPlayer extends formatObject {
+  res: ServerResponse
+}
+/** file mode */
+export interface formatObjectFileMode extends formatObject {
+  createNewFileNameAnyway: boolean,
+  fileOutputs: string[], FO_CONSTANTS: FO_CONSTANTS,
+  outFile: string
+}
+export type formatObjectParameters = (
+  formatObject | formatObjectPlayer | formatObjectFileMode
+);
 
 export interface sampleCountObjectParameters {
   midi: BasicMIDI, sampleRate: number,
@@ -65,12 +74,12 @@ export interface effectsObjectParams {
   /** the process to spawn, sox usually */
   program: string,
   /** file header */
-  stdoutHeader: Uint8Array, readStream?: Readable,
+  stdoutHeader: Uint8Array, readStream?: NodeJS.ReadableStream,
   /** adds the error event handler to sox's stdin */
   addErrorEventToDest: Function,
-  promisesOfPrograms: Promise<void>[],
+  promisesOfPrograms: Promise<unknown>[],
   stdout?: NodeJS.WriteStream | string, destination?: string,
-  effects?: object[],
+  effects?: Array<{effect: string, values?: string[]}>,
   sampleRate?: number,
   /** type of raw (pcm) to use */
   rawMode?: string,
@@ -84,11 +93,16 @@ export interface effectsObjectParams {
 export interface basetoStdoutOptionsObject {
    loopAmount?: number,
    loopStart?: number, loopEnd?: number,
-   sampleRate?: number,
+   sampleRate?: number, hardStop?: boolean,
+   loopFade?: boolean, loopFadeDuration?: number,
+   loopFadeInterpolation?: string | number,
    volume?: number,
    format?: string, // file format
    midiFile: string, soundfontFile: string,
    effects?: object[],
+}
+interface toFileOptionsObject extends basetoStdoutOptionsObject {
+   fileOutputs: string[]
 }
 export interface toStdoutOptionsObject {
   index: number, res: ServerResponse,
@@ -102,8 +116,8 @@ export interface progressBuffersIntfc {
   renderedAmount: SharedArrayBuffer,
   percentageDone: SharedArrayBuffer
 }
-export interface toFileOptionsObject extends basetoStdoutOptionsObject {
-   fileOutputs: string[],
+export interface toFileObject extends basetoStdoutOptionsObject {
+   options: toFileOptionsObject,
    spessasynthLogging: spessasynthLoggingIntfc,
    createNewFileNameAnyway: boolean,
    index: number,
@@ -114,7 +128,7 @@ export interface createReadableObjectParameters {
    sampleCount: number,
    index?: number,
    seq: SpessaSynthSequencer, synth: SpessaSynthProcessor,
-   getData,
+   getData: typeof getData,
    isf32le: boolean,
    /** if it should skip updating the progress */
    doNotRepeat: boolean,
@@ -126,14 +140,14 @@ export interface createReadableObjectParameters {
    startFading?: number,
    progressBuffers: progressBuffersIntfc
 }
-export declare function createReadable(
-  Readable: Readable, isStdout: boolean,
-  {}: createReadableObjectParameters
-): Readable;
 
 /*
   ——— RETURN VALUES ———
 */
+export type pipingFunction = (
+  whereToConnect: NodeJS.WritableStream, end: boolean, noPipe: boolean
+) => NodeJS.ReadableStream | void;
+
 export interface ffmpegArgsObj<T> {
   flac: T, mp3: T, opus: T
 }
@@ -154,6 +168,6 @@ export type toStdoutArray = [
 export type toFileArray = [
   fileOutputs: string[],
   pipingFunction: Function[],
-  Promise<Array<Promise<Array<undefined | Readable>> | undefined | number>>
+  Promise<Array<Promise<Array<undefined | NodeJS.ReadableStream>> | undefined | number>>
 ];
 

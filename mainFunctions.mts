@@ -20,6 +20,32 @@
  * @module mainFunctions
  */
 
+import type {
+  BasicMIDI, BasicSoundBank,
+  SpessaSynthProcessor, SpessaSynthSequencer
+} from "spessasynth_core"
+import type { Stream, Readable } from "node:stream"
+import type { ChildProcess } from "node:child_process"
+
+import type {
+  effectsObjectParams, createReadableObjectParameters,
+  ffmpegArgsObj, spessasynthLoggingIntfc,
+  formatObject, formatObjectFileMode,
+  formatObjectParameters,
+  progressBuffersIntfc,
+  sampleCountObjectParameters, initObjectParameters,
+  toFileObject, toFileArray,
+  toStdoutOptionsObject, toStdoutArray,
+  pipingFunction
+} from "./types/mainFunctions.mts"
+import type { Options } from "./utils/utils.mts"
+
+declare namespace global {
+  let logThis: { verboseLevel?: number, logFilePath?: string } | undefined
+  let SIGINT: boolean
+}
+declare const fs: Awaited<typeof import("node:fs")>
+
 const {
   getFilename,
   ERROR_LVL, WARNING_LVL,
@@ -37,23 +63,21 @@ if (global.logThis) {
   log = tmpLog.bind(global.logThis);
   delete global.logThis;
 }
-let stream,
-    audioBuffer,
-    SpessaSynth,
-    child_process,
+let stream: Awaited<typeof import("node:stream")>,
+    audioBuffer: Awaited<typeof import("./wavFunctions.mts")>,
+    SpessaSynth: Awaited<typeof import("spessasynth_core")>,
+    child_process: Awaited<typeof import("node:child_process")>,
     lastIndexOfGroup = 0,
     doneStreaming = false,
-    fatalErrors;
-const midiList = [],
-      soundFontList = [];
+    fatalErrors: string[];
+const midiList: BasicMIDI[] = [],
+      soundFontList: string[] | Buffer[] | BasicSoundBank[] = [];
 
 /**
- * Simply returns an object containing ffmpeg's arguments in all supported formats
- * @param {String}  [outFile="pipe:1"]    file path to write to
- * @param {Boolean} [withoutBasics=false] if it shouldn't include the basic arguments
- * @return {module:typeDefinitions~ffmpegArgsObj} available formats in Object format
+ * Simply returns an object containing
+ * ffmpeg's arguments in all supported formats
  */
-function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
+function ffmpegArgs(outFile = "pipe:1", withoutBasics = false): ffmpegArgsObj<string[]> {
   const BASIC_FFMPEG_ARGS = !withoutBasics ? [
     "-loglevel", "error",
     "-nostdin", // Necessary because of spawn and no shell
@@ -79,11 +103,7 @@ function ffmpegArgs(outFile = "pipe:1", withoutBasics = false) {
     ])
   };
 }
-/**
- * Manager for all type of formats
- * @param {module:typeDefinitions~formatObjectParameters} formatObjectParameters
- * @return {Promise<Function>} Either a piping function or a promise for piping
- */
+/** Manager for all type of formats */
 async function formatManager({
   format = true,
   readStream, rawReadStream,
@@ -93,12 +113,12 @@ async function formatManager({
   stdoutHeader,
   promisesOfPrograms,
   outFile
-}) {
+}: formatObjectParameters): Promise<Function | undefined> {
   /**
    * Error handler for readStream mainly but also for other streams
    * @param {Error} error error object from "error" event
    */
-  async function streamErrorHandling(error) {
+  async function streamErrorHandling(error: NodeJS.ErrnoException) {
     const { code, errno } = error;
 
     if ((process.argv.includes("-") || fileOutputs)
@@ -125,7 +145,7 @@ async function formatManager({
    * @param {Function} [func] custom function to set
    * @return {Function} the function that it has been set
    */
-  function addPipingFunction(func) {
+  function addPipingFunction(func?: pipingFunction) {
     return (!func)
       ? pipingFunction = (whereToConnect, end, noPipe = false) => {
         if (noPipe) return addErrorEventToDest(
@@ -146,7 +166,7 @@ async function formatManager({
    * @param {Stream} [altThis] alternative value to return after setting up the event handler
    * @return {Stream} destination that has been set
    */
-  function addErrorEventToDest(dest, altThis) {
+  function addErrorEventToDest(dest: Stream, altThis?: Stream): Stream {
     const finalDest = altThis ?? dest,
           boundFunction = streamErrorHandling.bind(finalDest),
           reversedListOfEvents = dest.listeners("error").reverse();
@@ -156,7 +176,7 @@ async function formatManager({
         : (dest.once("error", boundFunction), finalDest)
     );
   }
-  let spawn;
+  let spawn: Awaited<typeof import("node:child_process").spawn> | undefined;
   if (format !== "wave" && format !== ""
       && Array.isArray(outFile)) {
     ({ spawn } = child_process ??= await import("node:child_process"));
@@ -164,7 +184,7 @@ async function formatManager({
 
   const isStdout = format !== true,
         isToFile = format === true;
-  let pipingFunction;
+  let pipingFunction: pipingFunction | undefined;
   switch (format) {
     case "wave":
     case /^.*(?:\.wav|\.wave)$/.test(outFile): {
@@ -197,8 +217,10 @@ async function formatManager({
         break;
       }
       if (isToFile) {
-        const output = fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
-        addPipingFunction((whereToConnect, end) => {
+        const output = fs.createWriteStream(
+          outFile, {fd: dryRun && fs.openSync(outFile, "r+")}
+        );
+        addPipingFunction((whereToConnect, end: boolean) => {
           output.write(stdoutHeader ?? "")
           addErrorEventToDest(
             readStream
@@ -219,7 +241,7 @@ async function formatManager({
     }
     case Array.isArray(outFile): {
       const formatsUsed = [],
-            combinedFfmpegArgs = [];
+            combinedFfmpegArgs: string[] = [];
       const formats = {
         [FO_CONSTANTS.OPUS_INDEX]: "opus",
         [FO_CONSTANTS.MP3_INDEX ]: "mp3",
@@ -281,7 +303,7 @@ async function formatManager({
       promisesOfPrograms.push(
         new Promise((resolve, reject) => {
           ffmpeg
-            .once("exit", exitCode => {
+            .once("exit", (exitCode: number) => {
               log(DEBUG_LVL, "Ffmpeg exited")
               ffmpegExitHandler.call({ stderr: fatalErrors }, exitCode, resolve)
             })
@@ -385,7 +407,7 @@ function getSampleCount({
   loopStart = midi.midiTicksToSeconds(midi.loop.start),
   loopEnd, hardStop,
   loopFade, loopFadeStart = 1, loopFadeDuration = 4,
-}) {
+}: sampleCountObjectParameters) {
   // Spessasynth loop detection
   const loopDetectedInMidi = midi.loop.start > 0;
   if (loopDetectedInMidi) {
@@ -395,7 +417,7 @@ function getSampleCount({
 
   let sampleCount,
       durationInSeconds = midi.duration;
-  if (loopAmount > 0) {
+  if (loopAmount && loopAmount > 0) {
     const end = (
       !loopDetectedInMidi
         ? durationInSeconds - (loopEnd ?? 0)
@@ -434,14 +456,11 @@ function getSampleCount({
     )
   };
 }
-/**
- * Pretty print SpessaSynth errors
- * @param {Error}  errorObj
- * @param {String} errorObj.name    type of error
- * @param {String} errorObj.message error message
- * @param {String} filename
- */
-function prettyLogSpessaSynthErrors({name: eName, message: eMessage}, filename) {
+/** Pretty print SpessaSynth errors */
+function prettyLogSpessaSynthErrors(
+  {name: eName, message: eMessage}: {name: string, message: string},
+  filename: string
+): null {
   let message;
   switch (eName) {
     case "SyntaxError":
@@ -477,7 +496,7 @@ async function initSpessaSynth({
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
   basicMIDIRequired = true, spessasynthLogging, hardStop = false
-}) {
+}: initObjectParameters) {
   const {
     BasicMIDI,
     SoundBankLoader,
@@ -491,16 +510,16 @@ async function initSpessaSynth({
     SpessaLog.warnEnabled = warning;
   }
 
-  let midi;
+  let midi: BasicMIDI;
   try {
     midi = (
-      (onlyDuration || isToFile)
-        ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
+      (onlyDuration || isToFile)    // @ts-ignore
+        ? BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile)) // @ts-ignore
         : midiList[index] ??= BasicMIDI.fromArrayBuffer(fs.readFileSync(midiFile))
     );
   } catch (error) {
     return prettyLogSpessaSynthErrors(
-      error, midiFile
+      (error as SyntaxError | RangeError), midiFile
     );
   }
   const infiniteLoopStart = Math.abs(midi.loop.start) === Infinity && "start";
@@ -596,11 +615,11 @@ async function initSpessaSynth({
   // it's a reference and not a copy next time
   if (Buffer.isBuffer(soundFontList[indexOfGroup])
       || soundFontList[indexOfGroup] instanceof SharedArrayBuffer) {
-    try {
+    try {                                                           // @ts-ignore
       soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
     } catch (error) {
       return prettyLogSpessaSynthErrors(
-        error, soundfontFile
+        (error as Error), soundfontFile
       );
     }
   }
@@ -647,7 +666,7 @@ async function initSpessaSynth({
     seq.play();
   } catch (error) {
     return prettyLogSpessaSynthErrors(
-      error, midiFile
+      (error as Error), midiFile
     );
   }
 
@@ -675,7 +694,7 @@ async function applyExternalEffects({
   stdout = process.stdout,
   destination = "-", effects,
   sampleRate = 48000, rawMode, sendEOF = true
-}) {
+}: effectsObjectParams) {
   /*
     ffmpeg
       -i -
@@ -728,7 +747,7 @@ async function applyExternalEffects({
       .join(" ")
   )
 
-  sox.stderr.on("data", (data) => {
+  sox.stderr.on("data", (data: Buffer) => {
     const stringOfError = data.toString();
     const connectionResetRegex = /sox FAIL sox: `-' error writing output file: Connection reset by peer\n/g,
           noSeekWarning = /\n*sox WARN \w*:.*can't seek.*\n*/g;
@@ -765,7 +784,7 @@ async function applyExternalEffects({
     )
   })
   promisesOfPrograms.push(
-    new Promise((resolve, reject) => {
+    new Promise((resolve, reject): void => {
       sox.once("exit", (exitCode: number) => {
         if (!exitCode) {
           log(DEBUG_LVL, "SoX exited successfully")
@@ -863,7 +882,7 @@ function addEvent({ eventType, func }) {
  * @param {module:typeDefinitions~createReadableObjectParameters} createReadableObjectParameters
  * @return {Readable} a Readable
  */
-function createReadable(Readable, isStdout = false, {
+function createReadable(Readable: Readable, isStdout = false, {
   sampleCount, index,
   seq, synth,
   getData, isf32le,
@@ -872,7 +891,7 @@ function createReadable(Readable, isStdout = false, {
   loopFadeDuration = 4, loopFadeInterpolation,
   startFading,
   progressBuffers
-}) {
+}: createReadableObjectParameters) {
   if (typeof startFading !== "number" && startFading !== undefined) {
     throw new TypeError(
       "startFading must be a number, " +
@@ -950,18 +969,8 @@ function createReadable(Readable, isStdout = false, {
         return gain - CHANGE_IN_VOLUME * percentage;
     }
   }
-  /**
-   * @typedef interleavedFloat32Channels
-   * @type {Array}
-   * @property {Float32Array} left  left channel
-   * @property {Float32Array} right right channel
-   */
-  /**
-   * Combines raw Float32Arrays into 1
-   * @param {interleavedFloat32Channels} channels
-   * @return {Buffer} interleaved float32 buffer
-   */
-  function getInterleavedFloat32Data([left, right]: Float32Array[]) {
+  /** Combines raw Float32Arrays into 1 */
+  function getInterleavedFloat32Data([left, right]: Float32Array[]): Buffer {
     const length = left.length,
           bufferLength = length * 2 * 4,
           buffer = Buffer.alloc(bufferLength);
@@ -991,7 +1000,7 @@ function createReadable(Readable, isStdout = false, {
             : undefined
         );
 
-  const readStream = new Readable({
+  const readStream: NodeJS.ReadableStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
       if (loopFade) loopFadeBlock: {
@@ -1082,7 +1091,7 @@ function createReadable(Readable, isStdout = false, {
 async function toStdout({
   index, res,
   options, options: { format = "" }
-}) {
+}: toStdoutOptionsObject): Promise<toStdoutArray | null> {
   if (!options.midiFile || !options.soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
@@ -1116,12 +1125,12 @@ async function toStdout({
     startFading
   });
 
-  let promisesOfPrograms: Array<Promise<void>> = [];
+  let promisesOfPrograms: Promise<void>[] = [];
   let pipingFunction = await formatManager({
     format, readStream, res,
     ...options,
     promisesOfPrograms
-  });
+  } as formatObject);
   log(DEBUG_LVL, "Finished creating the stdout promise")
   return [
     pipingFunction,
@@ -1165,7 +1174,7 @@ async function toFile({
     fileOutputs: { length: foLength }
   },
   FO_CONSTANTS
-}) {
+}: toFileObject): Promise<toFileArray | null> {
   if (!options.midiFile || !options.soundfontFile || !foLength) {
     throw new ReferenceError("Missing some required files")
   }
@@ -1176,8 +1185,10 @@ async function toFile({
     hasf32le &&
     !fileOutputs[WAV_INDEX] && foLength === 2
   );
-  let stdoutHeader: Uint8Array, getWavHeader, getData,
-      seq, synth, seqFloat, synthFloat,
+  let stdoutHeader: Uint8Array,
+      getWavHeader: typeof import("./wavFunctions.mts").getWavHeader,
+      getData, seq: SpessaSynthSequencer, synth: SpessaSynthProcessor,
+      seqFloat: SpessaSynthSequencer, synthFloat: SpessaSynthProcessor,
       sampleCount, sampleCountFloat,
       startFading, midi;
   const initSpessaSynthObjParam = {
@@ -1211,7 +1222,7 @@ async function toFile({
   } = stream ??= await import("node:stream");
 
   if (!onlyFloat) {
-    stdoutHeader = getWavHeader({
+    stdoutHeader = getWavHeader!({
       length: sampleCount, numChannels: 2
     }, options.sampleRate, {
       title: getFilename(options.midiFile),
@@ -1251,9 +1262,9 @@ async function toFile({
       startFading
     })
   );
-  let promisesOfPrograms: Array<Promise<void>> = [],
+  let promisesOfPrograms: Promise<void>[] = [],
       pipingFunctions = [];
-  const addFunction = async outFile => {
+  const addFunction = async (outFile?: string): Promise<void> => {
     const isf32le = outFile?.endsWith(".f32le");
     pipingFunctions.push(
       await formatManager({
@@ -1270,7 +1281,7 @@ async function toFile({
           delete outFile.RAW_INDEX,
           Object.values(outFile)
         )
-      })
+      } as formatObjectFileMode)
     )
   };
   if (fileOutputs[WAV_INDEX] !== undefined) {
@@ -1318,6 +1329,7 @@ async function toFile({
  * A class that rappresents the toFile progress
  */
 class Progress {
+  public amountOfSongs;
   #renderedAmount;
   #amountToRender;
   #percentageDone;
@@ -1329,18 +1341,10 @@ class Progress {
   #hourLessYes = PlainTime ? 3 : 14;
   #hourLessNo  = PlainTime ? 0 : 11;
 
-  /**
-   * Creates a partial or complete Progress class
-   * @param {Number}            amountOfSongs
-   * @param {Number}            [index]
-   * @param {Object}            sharedBuffers
-   * @param {SharedArrayBuffer} sharedBuffers.amountToRender
-   * @param {SharedArrayBuffer} sharedBuffers.renderedAmount
-   * @param {SharedArrayBuffer} sharedBuffers.percentageDone
-   */
+  /** Creates a partial or complete Progress class */
   constructor(
-    amountOfSongs, index,
-    {amountToRender, renderedAmount, percentageDone}
+    amountOfSongs: number | undefined, index: number | undefined,
+    {amountToRender, renderedAmount, percentageDone}: progressBuffersIntfc
   ) {
     this.amountOfSongs = amountOfSongs;
     if (typeof index === "number") this.#index = index;
@@ -1350,12 +1354,8 @@ class Progress {
     this.#percentageDone = new Float32Array(percentageDone);
     if (!PlainTime) this.#date = new Date(0);
   }
-  /**
-   * Do the sum of all numbers in the array
-   * @param {Float32Array} array list of numbers
-   * @return {(undefined|Number)} - the sum
-   */
-  #sum(array: Float32Array) {
+  /** Do the sum of all numbers in the array */
+  #sum(array: Float32Array): undefined | number {
     if (this.#index !== undefined) return;
     let sumOfAll = 0;
     for (let i = 0; i <= this.amountOfSongs; ++i) {
@@ -1367,9 +1367,8 @@ class Progress {
   /**
    * Gives the percentage done only
    * if it has the necessary informations
-   * @type {(undefined|String)}
    */
-  get percentageText() {
+  get percentageText(): undefined | string {
     if (this.#index !== undefined) return;
     return yellow + (
       this.#sum(this.#percentageDone).toFixed(2)
@@ -1378,9 +1377,8 @@ class Progress {
   /**
    * Gives the amount of minutes rendered
    * alongside the total to do only if it has the necessary informations
-   * @type {(undefined|String)}
    */
-  get minutesRenderedText() {
+  get minutesRenderedText(): undefined | string {
     if (this.#index !== undefined) return;
 
     this.#removeAmount ??= (
@@ -1390,7 +1388,7 @@ class Progress {
     );
     const renderedAmountNumber = (
       Math.floor(
-        this.#sum(this.#renderedAmount) * 100
+        this.#sum(this.#renderedAmount)! * 100
       ) / 100 * this.#toSecondsN
     );
     if (PlainTime) return (
@@ -1426,7 +1424,7 @@ class Progress {
    * @param {String} typeOfArray type of array to update
    * @throws {TypeError} - if trying to update with a full shared array
    */
-  updateProgress(newNumber: number, typeOfArray = "renderedAmount") {
+  updateProgress(newNumber: number, typeOfArray = "renderedAmount"): void {
     if (this.#index === undefined) {
       throw new TypeError("Can't update with full shared array")
     }
@@ -1440,25 +1438,16 @@ class Progress {
         break;
     }
   }
-  /**
-   * Adds to amountToRender
-   * @param {Number} newNumber new value to replace with
-   */
-  addToAmountToRender(newNumber: number) {
+  /** Adds to amountToRender */
+  addToAmountToRender(newNumber: number): void {
     this.#amountToRender[0] += newNumber;
   }
-  /**
-   * Gives the amount of minutes to render
-   * @type {Number}
-   */
-  get amountToRender() {
+  /** Gives the amount of minutes to render */
+  get amountToRender(): number | undefined {
     return this.#amountToRender[0];
   }
-  /**
-   * Gives the amount of minutes rendered
-   * @type {Number}
-   */
-  get renderedAmount() {
+  /** Gives the amount of minutes rendered */
+  get renderedAmount(): number | undefined {
     if (this.#index === undefined) return;
     return this.#renderedAmount[this.#index];
   }
@@ -1466,15 +1455,12 @@ class Progress {
 /**
  * Reads the generated samples from spessasynth_core
  * and plays them using mpv
- * @param {Options} Options Options class
- * @param {Object<Boolean>} spessasynthLogging if spessasynth's logging system should be enabled
- * @param {ChildProcess?}   loadingAnimation   animation that plays while doing work
- * @param {Boolean}         isVerboseLevelSet  if logging is enabled
  */
 async function startPlayer(
-  Options, spessasynthLogging,
-  loadingAnimation, isVerboseLevelSet
-) {
+  Options: Options, spessasynthLogging?: spessasynthLoggingIntfc,
+  loadingAnimation?: ChildProcess,
+  isVerboseLevelSet?: boolean
+): Promise<void> {
   const {
     sampleRate, format,
     songIndex, daemon: daemonMode
@@ -1489,11 +1475,11 @@ async function startPlayer(
   const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
-  let relistenFunction, closing: boolean, mpv,
+  let relistenFunction, closing: boolean, mpv: ChildProcess | undefined,
       port = 3000, failedAttempts = 0;
   const server = createServer(),
         listOfURLs = [],
-        promisesOfPrograms: Array<Promise<void>> = [];
+        promisesOfPrograms: Promise<void>[] = [];
 
   process.on("SIGUSR1", () => {
     closing = true; mpv?.kill()
@@ -1507,9 +1493,10 @@ async function startPlayer(
           .on("spawn", process.exit)
           .unref();
       }
-      process.execve(
+      process.execve?.(
         process.argv[0], process.argv
       )
+      throw new Error("execve doesn't exists")
     })
   })
   server.on("error", ({code, errno, message}) => {
@@ -1533,7 +1520,7 @@ async function startPlayer(
       }, 200
     )
   })
-  server.on("request", async (req, res) => {
+  server.on("request", async (req, res): Promise<void> => {
     const fullUrl = new URL(req.url, `http://localhost:${port}`);
     const index = fullUrl.searchParams.get("index");
 
@@ -1555,7 +1542,7 @@ async function startPlayer(
     }
     const [length, midi] = arrayValue;
 
-    let [rangeStart, rangeEnd]: string[] | "" = (
+    let [rangeStart, rangeEnd]: string[] | number[] | "" = (
       // Skip "bytes=" and get the numbers
       // if it's possible to do so
       req.headers.range
@@ -1707,18 +1694,18 @@ async function startPlayer(
         case 0:
         case 4:
         case code === null && signal === "SIGINT" && code:
-          resolve(code, signal)
+          resolve(code)
           break;
 
         case 2:
         default:
-          reject(code, signal)
+          reject([code, signal])
       }
     })
   })
     // Required because otherwise it can't exit
-    .then(exitCode => !closing && process.exit(exitCode))
-    .catch(async (code, signal) => {
+    .then(exitCode => !closing && process.exit(exitCode as number | null))
+    .catch(async ([code, signal]) => {
       const errno = (code === null)
         ? (await import("node:util")).convertProcessSignalToExitCode(signal)
         : code;
@@ -1760,7 +1747,7 @@ async function prepareDestination({
   effects, specificRange
 }, isStdout) {
   let effectsProcess, fatalErrors: string[],
-      converterProcess, dryRunStream;
+      converterProcess: ChildProcess | undefined, dryRunStream;
   if (isStdout) {
     dryRunStream = (
       dryRun &&
@@ -1810,7 +1797,7 @@ async function prepareDestination({
   if (!isStdout && (needsConvertion || effects) && !specificRange) {
     // Necessary because otherwise the runtime
     // doesn't write the length in hex before the data
-    transferEncodingHandler = data => {
+    transferEncodingHandler = (data: Buffer) => {
       if (res.writableEnded) return;
       res.write(data)
     }
@@ -1841,7 +1828,7 @@ async function prepareDestination({
       (fatalErrors ??= []).push(data.toString())
     })
     promisesOfPrograms.push(
-      new Promise(resolve => {
+      new Promise<void>((resolve) => {
         converterProcess.once("exit", (exitCode: number) => {
           if (!exitCode) {
             log(DEBUG_LVL, "Ffmpeg exited")
