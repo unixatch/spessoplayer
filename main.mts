@@ -37,8 +37,16 @@ import {
   actUpOnPassedArgs,
   Options, FO_CONSTANTS
 } from "./cli.mts"
+import type {
+  Worker as WorkerType, ResourceLimits
+} from "node:worker_threads"
+import type { perSongOptions } from "./types/utils.mts"
+import type {
+  finalFileOutputsIntfc,
+  promiseResolve, promiseReject
+} from "./types/main.mts"
 
-let isVerboseLevelSet, argv = process.argv;
+let isVerboseLevelSet: boolean, argv = process.argv;
 const {
   env: { DEBUG_LEVEL_SPESSO, DEBUG_FILE_SPESSO }
 } = process;
@@ -96,7 +104,7 @@ const {
 if (confirmation) {
   loadingAnimation?.kill()
   const infos = Options.getConfirmationTable();
-  if (noTable) {
+  if (noTable && infos) {
     for (const i of infos) console.log(i)
   } else console.table(infos)
 
@@ -130,7 +138,7 @@ if (confirmation) {
 
 // +++ toStdout section +++
 if (isToStdout) {
-  process.stdout.on("error", error => {
+  process.stdout.on("error", (error: NodeJS.ErrnoException) => {
     if (global.SIGINT) process.exit(130)
 
     if (error.code === "EPIPE") {
@@ -146,7 +154,7 @@ if (isToStdout) {
     format === "pcm"   ||
     format === "f32le" || format === "s16le"
   );
-  const perSongOptions = [], lengthOfFiles = [],
+  const perSongOptions: perSongOptions[] = [], lengthOfFiles = [],
         promisesOfPrograms: Array<Promise<void>> = [];
   const getWavHeader = (
     !isPCM && (await import("./wavFunctions.mts")).getWavHeader
@@ -269,7 +277,7 @@ const showCursor = "\x1b[?25h",
       clearCurrentLine = "\x1b[2K",
       startOfLine = "\r";
 let isCursorHidden = true;
-const showFileList = (isDryRun, partial = false) => {
+const showFileList = (isDryRun: string | undefined, partial = false) => {
   const len = finalFileOutputs.length;
   for (let i = 0; i < len; ++i) {
     const obj = finalFileOutputs[i];
@@ -290,11 +298,8 @@ const showFileList = (isDryRun, partial = false) => {
       : "\b"
   )
 };
-/**
- * A small handler function only for specific signals
- * @param {String} signal signal name
- */
-const signalHandler = signal => {
+/** A small handler function only for specific signals */
+const signalHandler = (signal: NodeJS.Signals) => {
   switch (signal) {
     case "SIGTSTP":
       isCursorHidden &&= false;
@@ -309,7 +314,7 @@ const signalHandler = signal => {
         clearInterval(renderTextsInterval)
         for (const worker of workers) worker.terminate()
       } catch (error) {
-        if (error.name !== "ReferenceError") {
+        if ((error as Error).name !== "ReferenceError") {
           console.error(error)
           return process.exit(isTermination ? 143 : 131);
         }
@@ -321,7 +326,6 @@ const signalHandler = signal => {
         + showCursor
       )
       process.exit(isTermination ? 143 : 131)
-      break;
     }
   }
 };
@@ -335,7 +339,7 @@ addEvent({ eventType: "toFileSIGINT",
     try {
       clearInterval(renderTextsInterval)
     } catch (error) {
-      if (error.name === "ReferenceError") return process.exitCode = 130;
+      if ((error as ReferenceError).name === "ReferenceError") return process.exitCode = 130;
       console.error(error)
       return process.exitCode = 130;
     }
@@ -348,7 +352,7 @@ addEvent({ eventType: "toFileSIGINT",
       showFileList(dryRun, true)
       return process.exitCode = 130;
     }
-    const notENOENT = error => (
+    const notENOENT = (error: NodeJS.ErrnoException) => (
       error.code !== "ENOENT" && console.error(error)
     );
     for (const {files, finished} of finalFileOutputs) {
@@ -376,7 +380,7 @@ const {
 } = listOfOptions;
 // Calculates amountToRender (length of all songs combined)
 // before anything else so that the percentages are correct
-const perSongOptions = [];
+const perSongOptions: perSongOptions[] = [];
 const progressBuffers = {
   amountToRender: new SharedArrayBuffer(4),
   renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
@@ -400,7 +404,7 @@ for (let i = songIndex; i < amountOfSongs; ++i) {
 // Loads soundfonts before doing the work
 // for memory usage reasons
 const sharedFilesMap = new Map();
-let promisesOfSharedFiles = [];
+let promisesOfSharedFiles: Promise<void>[] | null = [];
 const {
   promises: {
     readFile: asyncReadFile,
@@ -424,7 +428,7 @@ for (let i = 0; i < filesListLength; ++i) {
 await Promise.all(promisesOfSharedFiles)
 promisesOfSharedFiles = null;
 
-let calculateMaxThreads;
+let calculateMaxThreads: (cores?: number, fromUser?: boolean) => number;
 {
   /*
     This is managed this way so that
@@ -436,8 +440,8 @@ let calculateMaxThreads;
   const OFFSET_MB = 100;
   /**
    * Calculates the amount of threads
-   * @param {Number}  cores    amount of cores available
-   * @param {Boolean} fromUser if the core count is from the user or it's automatic
+   * @param {Number}  [cores]    amount of cores available
+   * @param {Boolean} [fromUser] if the core count is from the user or it's automatic
    * @return {Number} threads count
    */
   calculateMaxThreads = (cores, fromUser) => {
@@ -479,12 +483,12 @@ const RENDER_TEXTS_DELAY = 500,
 const { Worker } = await import("node:worker_threads"),
       { availableParallelism } = await import("node:os");
 const fileSizes = await getSizes(filesList);
-const resourceLimits = new function () {
+const resourceLimits: ResourceLimits = new (function () {
   const DEFAULT_MAX_OLD_GEN = 20;
-  const getSize = (index, previous) => (
+  const getSize = <T,>(index: T, previous: T): T => (
     (previous > index) ? previous : index
   );
-  let biggestFileSize = fileSizes.reduce(getSize) * 2 + 5;
+  let biggestFileSize = fileSizes.reduce(getSize<number>) * 2 + 5;
   if (biggestFileSize < DEFAULT_MAX_OLD_GEN) {
     biggestFileSize = DEFAULT_MAX_OLD_GEN;
   }
@@ -492,19 +496,17 @@ const resourceLimits = new function () {
     maxOldGenerationSizeMb: biggestFileSize,
     maxYoungGenerationSizeMb: biggestFileSize / 2
   };
-};
+} as any);
 const maxThreads = calculateMaxThreads(
   OMaxThreads ?? availableParallelism(), OMaxThreads !== undefined
 );
-const workers = [];
-let renderTextsInterval,
+const workers: WorkerType[] = [];
+let renderTextsInterval: NodeJS.Timeout | undefined,
     cpuUsageData = process.cpuUsage(),
-    finalFileOutputs = [];
-/**
- * Main function that renders progress text
- * @param {Progress} progressClass class used to get information
- */
-const renderTextsFunction = progressClass => {
+    finalFileOutputs: finalFileOutputsIntfc[] = [];
+
+/** Main function that renders progress text */
+const renderTextsFunction = (progressClass: Progress) => {
   const moreInfos = showUsage ? (
     ` || ${cyan}${
       (process.memoryUsage.rss() / 1024**2).toFixed(2)
@@ -531,37 +533,36 @@ const renderTextsFunction = progressClass => {
 /**
  * Adds an event to target only once
  * and does nothing if listenerCount > 0
- * @param {*}        target    where to attach the event
- * @param {String}   eventName event name
- * @param {Function} func      function to use when the event fires
- * @return {(*|false)} the target or false if it exists
  */
-const addEventOnce = (target, eventName, func) => (
+const addEventOnce = (
+  target: WorkerType, eventName: string,
+  func: promiseResolve | promiseReject
+): WorkerType | false => (
   !target.listenerCount(eventName)
     && target.on(eventName, func)
 );
-/**
- * A function that coordinates the worker
- * @param {Function} resolve
- * @param {Function} reject
- * @this Array<Number, Worker>
- */
-const workerPromiseFunction = function (resolve, reject) {
+/** A function that coordinates the worker */
+const workerPromiseFunction = function (
+  this: [index: number, currentWorker: WorkerType],
+  resolve: promiseResolve, reject: promiseReject
+): void {
   const [index, currentWorker] = this;
   addEventOnce(currentWorker, "error", reject)
   addEventOnce(currentWorker, "exit", resolve)
 
-  currentWorker.on("message", message => {
+  currentWorker.on("message", (message: string) => {
     renderTextsInterval ??= (
       !isVerboseLevelSet && (
         loadingAnimation?.kill(),
         process.stderr.write("\x1b[K")
       ),
-      noProgress ?? setInterval(
-        renderTextsFunction,
-        progressDelay ?? RENDER_TEXTS_DELAY,
-        progress
-      )
+      !noProgress
+        ? setInterval(
+          renderTextsFunction,
+          progressDelay ?? RENDER_TEXTS_DELAY,
+          progress
+        )
+        : undefined
     );
     if (message === "DONE_RENDERING"
         || message === "FAILED_INITIALIZATION") {
