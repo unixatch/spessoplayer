@@ -29,7 +29,6 @@ import type {
 } from "../types/utils.mts"
 
 export const sep = process.platform === "win32" ? "\\" : "/";
-declare const fs: typeof import("node:fs");
 
 /**
  * Clears lines from the last line up

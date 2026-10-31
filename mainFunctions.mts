@@ -40,12 +40,6 @@ import type {
 } from "./types/mainFunctions.mts"
 import type { Options } from "./utils/utils.mts"
 
-declare namespace global {
-  let logThis: { verboseLevel?: number, logFilePath?: string } | undefined
-  let SIGINT: boolean
-}
-declare const fs: Awaited<typeof import("node:fs")>
-
 const {
   getFilename,
   ERROR_LVL, WARNING_LVL,
