@@ -634,7 +634,7 @@ async function initSpessaSynth({
   if (externalEffects === false) {
     synth.setSystemParameter("reverbGain", reverbVolume)
   }
-  synth.synthCore.soundBankManager.addSoundBank(
+  synth.soundBankManager.addSoundBank(
     soundFontList[indexOfGroup],
     "main"
   )
@@ -1129,9 +1129,9 @@ async function toStdout({
       finished(readStream, { cleanup: true })
         .then(() => {
           doneStreaming = true;
-          synth.synthCore
+          synth
             .soundBankManager.soundBankList.splice(0)
-          synth.destroySynthProcessor()
+          synth.destroy()
           return [
             promisesOfPrograms, pipingFunction,
             sampleCount, readStream,
@@ -1293,12 +1293,12 @@ async function toFile({
         readStream    && finished(readStream,    finishedOptions)
       ])
         .then(() => {
-          synth?.synthCore
+          synth
             ?.soundBankManager?.soundBankList.splice(0)
-          synthFloat?.synthCore
+          synthFloat
             ?.soundBankManager?.soundBankList.splice(0)
-          synth?.destroySynthProcessor()
-          synthFloat?.destroySynthProcessor()
+          synth?.destroy()
+          synthFloat?.destroy()
           if (seq) seq.songs.length = 0;
           if (seqFloat) seqFloat.songs.length = 0;
           return [
