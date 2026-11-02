@@ -26,6 +26,14 @@ import {
   fromInstant,
   log, Options, sep
 } from "./utils/utils.mts"
+import type {
+  loadingAnimationProcType, extLessFiles, doneFileList,
+  loadingAnimationCleanupFuncType, timeStampMatch,
+  setFileObjectParameters, setFileReturnType,
+  getArgInfosValue, manageVerboseOptionsIntfc,
+  FO_CONSTANTS as FO_CONSTANTS_e
+} from "./types/cli.mts"
+import type { ChildProcess, SpawnSyncReturns } from "node:child_process"
 
 function endsWithSupportedExtension(arg: string) {
   return (
@@ -75,12 +83,8 @@ const testFunctions = {
   }
 };
 
-/**
- * Retrieves the first 20 bytes of a file
- * @param {String} path path of file
- * @return {Promise<String>} - first 20 bytes of file
- */
-async function get20BytesFromFile(path: string) {
+/** Retrieves the first 20 bytes of a file */
+async function get20BytesFromFile(path: string): Promise<string | never> {
   const {
     promise: readPromise,
     resolve, reject
@@ -88,7 +92,7 @@ async function get20BytesFromFile(path: string) {
 
   fs.createReadStream(path, { start: 0, end: 20 })
     .on("data", resolve)
-    .once("error", ({code, message, errno}) => {
+    .once("error", ({code, message, errno}: NodeJS.ErrnoException) => {
       let messageToPrint;
       switch (code) {
         case "EACCES":
@@ -110,23 +114,18 @@ async function get20BytesFromFile(path: string) {
       console.error(formatStrings.errorText, messageToPrint)
       reject(process.exit(errno))
     })
-  return (await readPromise)?.toString();
+  return (await (readPromise as Promise<Buffer>))?.toString();
 }
 /**
  * Manages/handles verbose options
- * @param {Object} variableObj
- * @param {String} variableObj.DEBUG_LEVEL_SPESSO  terminal value for verbosity
- * @param {String} variableObj.DEBUG_FILE_SPESSO   terminal value for file path
- * @param {String} variableObj.debugLevelSpessoMsg
- * @param {String} variableObj.debugFileSpessoMsg
- * @return {Promise<Boolean|undefined>} true if verboseLevel is set, false otherwise or undefined if it has found an env variable
+ * @return {Promise<Boolean|undefined>} true if verboseLevel is set, false otherwise or void if it has found an env variable
  */
 async function manageVerboseOptions({
   DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
   debugLevelSpessoMsg, debugFileSpessoMsg
-}) {
+}: manageVerboseOptionsIntfc<string>): Promise<[boolean, string[]]> {
   const newArguments = newArgs;
-  let isVerboseLevelSet,
+  let isVerboseLevelSet: string | undefined,
       newArgumentsLength = newArguments.length;
 
   // +++ verboseLevel section +++
@@ -165,7 +164,7 @@ async function manageVerboseOptions({
   for (let index = 0; index < newArgumentsLength; ++index) {
     const {
       [index]: argvString,
-      [index]: { 0: firstChar } = 0
+      [index]: { 0: firstChar } = ""
     } = newArguments;
     if (!argvString) continue;
 
@@ -191,20 +190,21 @@ async function manageVerboseOptions({
     newArguments
   ];
 }
-const setFilePromises: Promise<Promise<Function>>[] = [];
-export const FO_CONSTANTS = {
+const setFilePromises: ReturnType<typeof setFile>[] = [];
+export const FO_CONSTANTS: FO_CONSTANTS_e = {
   WAV_INDEX:  0, RAW_INDEX: 1,
   FLAC_INDEX: 2, MP3_INDEX: 3, OPUS_INDEX: 4
 };
 const newArgs = process.argv.slice(2);
 /**
  * Sets necessary variables in Options class for main.mts
- * @param {String[]} [args]              - The process.argv to analyse
  * @param {Boolean}  [isVerboseLevelSet] - if logging is enabled or not
- * @return {ChildProcess?} process that renders the loading animtion
+ * @return {Promise<Array<ChildProcess | undefined, () => void | undefined>>} process that renders the loading animation
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
-const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
+const actUpOnPassedArgs = async (
+  args: typeof process.argv, isVerboseLevelSet?: boolean
+): Promise<[loadingAnimationProcType, loadingAnimationCleanupFuncType]> => {
   let lastParam: string | undefined,
       lastIndex: string | undefined;
   const newArguments = args?.slice(2) ?? newArgs,
@@ -226,7 +226,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     await uninstall()
     process.exit()
   }
-  let loadingAnimation, loadingAnimationCleanupFunc;
+  let loadingAnimation: ChildProcess | Deno.ChildProcess | undefined,
+      loadingAnimationCleanupFunc: loadingAnimationCleanupFuncType;
   if (!isVerboseLevelSet) loadingAnimationBlock: {
     const isWindows  = process.platform === "win32",
           executable = !isWindows ? "sh" : "cmd.exe";
@@ -241,7 +242,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
       try {
         loadingAnimation?.kill()
       } catch (error) {
-        if (error.message !== "Child process has already terminated") {
+        if (!(error instanceof TypeError)
+            && (error as Error).message !== "Child process has already terminated") {
           console.error(error)
         }
       }
@@ -271,7 +273,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * @return {(String|false)} parameter's name without initials and index
    *                          or false if it's not a valid parameter
    */
-  const manageParam = (arg: string) => {
+  const manageParam = (arg: string): string | false => {
     const noInitials = (
       arg[0] === "-" && arg.slice(arg[1] === "-" ? 2 : 1)
     ) || (
@@ -301,7 +303,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     )
     process.exit(1)
   };
-  const setFileOutputs = (type: string, index: number, arg: string) => {
+  const setFileOutputs = (type: string, index: number, arg: string): void => {
     isStdout ??= testFunctions.stdout(newArgumentsSet);
     if (isStdout) stdoutFileModeConflictError()
     if (Options.getValue("daemon")) {
@@ -323,8 +325,8 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * @param {Function} [optionsFunc]  Options' method
    */
   const setLoopParameter = (
-    name: string, nextArg: string, func,
-    nameRequired: boolean, optionsFunc
+    name: string, nextArg: string, func: Function,
+    nameRequired?: boolean, optionsFunc?: Function
   ) => {
     loopExists ??= testFunctions.loop(newArgumentsSet);
     if (!loopExists) {
@@ -344,7 +346,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
    * Runs the logic that comes before setFile is run
    * @param {String} arg file to check and maybe run
    */
-  const runSetFile = (arg: string) => {
+  const runSetFile = (arg: string): void => {
     if (doneFileList[arg] === doneSymbol
         && lastParam !== "input") return;
     doneFileList[arg] = doneSymbol;
@@ -361,12 +363,10 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
   };
-  /** @type {Object<String, Symbol>} */
-  const doneFileList = Object.create(null),
+  const doneFileList: doneFileList = Object.create(null),
         doneSymbol = Symbol("ALREADY_DONE");
 
-  /** @type {Object<String, Number>} */
-  const extLessFiles = Object.create(null);
+  const extLessFiles: extLessFiles = Object.create(null);
   {
     // Loads extLessFiles with only basenames of the files.
     // Also code block just because of length variable
@@ -768,7 +768,7 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
     if (Options.getValue("confirmation")) {
       infos = Options.getConfirmationTable();
 
-      if (Options.getValue("noTable")) {
+      if (Options.getValue("noTable") && infos) {
         for (const i of infos) console.error(i)
       } else {
         console.table(infos)
@@ -792,7 +792,9 @@ const actUpOnPassedArgs = async (args, isVerboseLevelSet) => {
  * @memberof module:cli
  * @return {Boolean} - whether or not it has found a similar file inside process.argv
  */
-const checkForIdenticalName = (path, extLessFiles) => {
+const checkForIdenticalName = (
+  path: string, extLessFiles: extLessFiles
+): boolean => {
   const startOfExt = path.lastIndexOf(".");
   return extLessFiles[
     startOfExt === -1 ? path : path.substring(0, startOfExt)
@@ -807,7 +809,9 @@ const checkForIdenticalName = (path, extLessFiles) => {
  * @memberof module:cli
  * @return {(Promise|undefined)} - a new Promise that'll fulfill when the given function returns
  */
-const createSetFilePromise = (indexOfSetFile, func) => {
+const createSetFilePromise = (
+  indexOfSetFile: number, func: () => void
+): setFileReturnType => {
   const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
   return lastSetFilePromise?.then(func) ?? func();
 }
@@ -821,27 +825,25 @@ const createSetFilePromise = (indexOfSetFile, func) => {
  * @memberof module:cli
  * @return {String} generic log message
  */
-const getSetFileMessage = (type, msgArg, index) => {
+const getSetFileMessage = (
+  type: boolean, msgArg: string, index?: number
+): string => {
   const typeOfFile = type ? "midi" : "soundfont";
   return `Set ${typeOfFile} file to "${msgArg}" at index ${index}`;
 }
-/**
- * Sets a supported file inside a group in Options class
- * @param {module:typeDefinitions~setFileObjectParameters} setFileObjectParameters
- * @return {Promise<Promise|undefined>}
- */
+/** Sets a supported file inside a group in Options class */
 const setFile = async ({
   indexOfSetFile, extLessFiles,
   lastParam, lastIndex,
   groupSeparator,
   lastAutomaticFile, arg
-}) => {
+}: setFileObjectParameters): Promise<setFileReturnType> => {
   // Prevents any parameter getting here and
   // doing any undefined behaviour
   if (lastParam && lastParam !== "input") return;
 
   const fileMagicNumber = await get20BytesFromFile(arg);
-  let typeOfFile;
+  let typeOfFile: boolean;
   switch (true) {
     case fileMagicNumber.includes("MThd"):
       typeOfFile = true;
@@ -860,11 +862,12 @@ const setFile = async ({
   // Manual addition
   if (lastIndex || lastParam) {
     return createSetFilePromise(indexOfSetFile, async () => {
-      let needsToBeReplaced, setOfFiles;
+      let setOfFiles:        Set<string> | undefined,
+          needsToBeReplaced: boolean     | undefined;
       const files = Options.all.files;
 
       // Replaces the last soundfont it can reach if it needs to
-      if (!typeOfFile && files) {
+      if (!typeOfFile && files?.[inputIndex]) {
         setOfFiles = files[inputIndex];
         const fileMagicNumber = (
           setOfFiles instanceof Set
@@ -880,7 +883,7 @@ const setFile = async ({
       log(INFO_LVL,
         needsToBeReplaced
           ? `Replaced soundfont file from "${
-              setOfFiles.getIndex(0)
+              setOfFiles!.getIndex(0)
             }" to "${arg}" at index ${inputIndex}`
           : getSetFileMessage(typeOfFile, arg, inputIndex)
       )
@@ -1006,13 +1009,8 @@ const setFile = async ({
   });
   // --- END of automatic addition of files section ---
 }
-/**
- * Checks if the given number is an actual number
- * @param {*} number the value to check
- * @param {Boolean} [checkForInfinity] if it's also not Infinity
- * @return {Boolean} if it's an actual number or not
- */
-const isRealNumber = (number, checkForInfinity) => {
+/** Checks if the given number is an actual number */
+const isRealNumber = (number: unknown, checkForInfinity?: boolean): boolean => {
   const isNumber = typeof number === "number" && !Number.isNaN(number);
   return (
     checkForInfinity
@@ -1020,19 +1018,14 @@ const isRealNumber = (number, checkForInfinity) => {
       : isNumber
   );
 };
-/**
- * Translates the given strings into useful values
- * @param {String} arg argument of the parameter
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
- * @return {Object} infos about the argument
- */
-const getArgInfos = (arg, lastIndex) => ({
+/** Translates the given strings into useful values */
+const getArgInfos = (arg: string, lastIndex?: string): getArgInfosValue => ({
   number: Number(arg),
   lastIndexNumber: Number(lastIndex),
   lastIndexString: lastIndex ?? "0"
 });
-const maybeTruncate = string => (
-  string?.length > 20
+const maybeTruncate = (string?: string) => (
+  string && string?.length > 20
     ? string.substring(0, 20) + "..."
     : string ?? "no argument"
 );
@@ -1048,11 +1041,12 @@ const invalidNumberString       = "isn't a valid number",
  * - loop-fade-start;
  * - loop-fade-duration;
  * @param {String}   name name of the parameter
- * @param {String}   arg  value of the parameter
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  * @param {Function} func Options' dedicated parameter function
  */
-const setLoopParameterValue = (name, arg, lastIndex, func) => {
+const setLoopParameterValue = (
+  name: string, arg: string,
+  lastIndex: string | undefined, func: Function
+): void => {
   const argInfos = getArgInfos(arg, lastIndex);
   const { lastIndexNumber, lastIndexString } = argInfos;
   let number = argInfos.number;
@@ -1095,9 +1089,8 @@ const setLoopParameterValue = (name, arg, lastIndex, func) => {
 /**
  * Sets the Options.loopFadeInterpolation variable
  * @param {String} arg - the loop fade duration amount in seconds
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setLoopFadeInterpolation = (arg, lastIndex) => {
+const setLoopFadeInterpolation = (arg: string, lastIndex?: string): void => {
   const argInfos = getArgInfos(arg, lastIndex);
   const { number, lastIndexNumber, lastIndexString } = argInfos;
 
@@ -1139,11 +1132,12 @@ const setLoopFadeInterpolation = (arg, lastIndex) => {
 /**
  * Sets a loop parameter that uses seconds or a time format
  * @param {String}   name name of the parameter
- * @param {String}   arg  value of the parameter
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  * @param {Function} func Options' dedicated parameter function
  */
-const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
+const setLoopParameterTimeValue = (
+  name: string, arg: string,
+  lastIndex: string | undefined, func: Function
+): void => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1159,8 +1153,8 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
     // ISO Time format checks
     const {
       groups: {optional: optionalTime}
-    } = timeStampMatch;
-    if (optionalTime?.length > 3) {
+    } = timeStampMatch as timeStampMatch;
+    if (optionalTime?.length! > 3) {
       console.error(
         formatStrings.failedCliParamWithArg,
         `[${name}|${lastIndexString}]:`,
@@ -1215,11 +1209,12 @@ const setLoopParameterTimeValue = (name, arg, lastIndex, func) => {
 }
 /**
  * Sets the Options.sampleRate variable
- * @param {String} arg - the sample rate to set
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
+ * @param {String}  arg      - the sample rate to set
  * @param {Boolean} isStdout - if it's stdout mode
  */
-const setSampleRate = (arg, lastIndex, isStdout) => {
+const setSampleRate = (
+  arg: string, lastIndex: string | undefined, isStdout: boolean
+): void => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1252,9 +1247,9 @@ const setSampleRate = (arg, lastIndex, isStdout) => {
 }
 /**
  * Simply changes how the program should log
- * @param {String} arg - the level of how much it should log
+ * @param {(String | Number)} arg - the level of how much it should log
  */
-const setVerboseLevel = async (arg) => {
+const setVerboseLevel = async (arg?: string | number): Promise<void> => {
   const isFromUser = arg !== undefined;
   // Default
   arg ??= INFO_LVL;
@@ -1275,7 +1270,7 @@ const setVerboseLevel = async (arg) => {
   }
   console.error(
     formatStrings.failedCliParamWithArg,
-    "[verbose]:", maybeTruncate(arg), invalidNumberString
+    "[verbose]:", maybeTruncate(String(arg)), invalidNumberString
   )
   process.exit(1)
 }
@@ -1283,7 +1278,7 @@ const setVerboseLevel = async (arg) => {
  * Sets the Options.format variable for use in stdout mode
  * @param {String} arg - the format to use (similar to ffmpeg's -f)
  */
-const setFormat = arg => {
+const setFormat = (arg: string): void => {
   switch (arg) {
     case "wav": case "wave": {
       Options.addStringValue("format", "wave")
@@ -1314,9 +1309,8 @@ const setFormat = arg => {
 /**
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  */
-const setEffects = (arg, lastIndex) => {
+const setEffects = (arg: string, lastIndex?: string): void => {
   const regexListOfEffects = (
     "allpass|band|bandpass|bandreject|bass|bend|biquad" +
     "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
@@ -1378,11 +1372,12 @@ const setEffects = (arg, lastIndex) => {
 /**
  * Sets a volume parameter
  * @param {String}   name name of the parameter
- * @param {String}   arg  value of the parameter
- * @param {module:typeDefinitions~lastIndexGroupObject} lastIndex
  * @param {Function} func Options' dedicated parameter function
  */
-const setVolumeParameter = (name, arg, lastIndex, func) => {
+const setVolumeParameter = (
+  name: string, arg: string,
+  lastIndex: string | undefined, func: Function
+): void => {
   let chanVolArray, chanVolIndex;
   const isChannelVolume = name === "channel-volume";
 
@@ -1409,7 +1404,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
   } = getArgInfos(arg, lastIndex);
 
   if (regexes.areDecibels.test(arg)) {
-    const dB = Number(arg.match(regexes.decibelNumber)[1]);
+    const dB = Number(arg.match(regexes.decibelNumber)![1]);
     let dBNumber = 10**(dB/(name === "reverb-volume" ? 20 : 10));
 
     if (isChannelVolume) dBNumber = (
@@ -1425,7 +1420,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
     return;
   }
   if (regexes.isPercentage.test(arg)) {
-    const percentage = Number(arg.match(regexes.percentageNumber)[1]);
+    const percentage = Number(arg.match(regexes.percentageNumber)![1]);
     let toFloat = percentage / 100;
 
     if (isChannelVolume) toFloat = (
@@ -1477,7 +1472,7 @@ const setVolumeParameter = (name, arg, lastIndex, func) => {
  * Sets the Options.maxThreads variable
  * @param {String} arg - number of threads to set
  */
-const setMaxThreads = async (arg) => {
+const setMaxThreads = async (arg: string): Promise<void> => {
   const number = Number(arg);
   if (
     isRealNumber(number)
@@ -1499,7 +1494,7 @@ const setMaxThreads = async (arg) => {
  * Sets the Options.progressDelay variable
  * @param {String} arg - delay to set
  */
-const setProgressDelay = (arg) => {
+const setProgressDelay = (arg: string): void => {
   const number = Number(arg);
 
   // Default
@@ -1522,16 +1517,14 @@ const setProgressDelay = (arg) => {
 }
 /**
  * Sets the file path to the log file
- * @param {String} arg - Path to the log file
+ * @param {String} [arg] - Path to the log file
  */
-const setLogFilePath = arg => {
+const setLogFilePath = (arg?: string): void => {
   const pathToUse = arg || "./spesso.log";
   Options.addStringValue("logFilePath", pathToUse)
   log(INFO_LVL, `Set log-file path to ${pathToUse}`)
 }
-/**
- * Runs uninstall.mts and uninstall spessoplayer
- */
+/** Runs uninstall.mts and uninstall spessoplayer */
 const uninstall = async () => {
   const { execSync } = await import("node:child_process");
   const uninstallScriptPath = `${import.meta.dirname}${sep}uninstall.mts`;
@@ -1540,10 +1533,10 @@ const uninstall = async () => {
   try {
     log(INFO_LVL, `Launched ${uninstallScriptPath}`)
     execSync(`node ${uninstallScriptPath}`, {stdio: "inherit"})
-  } catch ({status}) {
-    switch (status) {
+  } catch ({status}: any) {
+    switch (status as SpawnSyncReturns<Buffer>["status"]) {
       case 0: break;
-      case 2: process.exit(status); break;
+      case 2: process.exit(status);
 
       default:
         console.error(
@@ -1561,14 +1554,15 @@ const uninstall = async () => {
 }
 /**
  * Shows the help text
- * @param {Object} [errorObject=""] - an object containing additional info that should be printed alongside help
  * @param {String} [errorObject.errorText=""] - error text that should be printed before helpText
  */
-const help = async ({ errorText = "" } = "") => {
-  const optional = text => normal+"["+dimGray+text+normal+"]",
-        grayBoldText = text => dimGrayBold+text+normal;
+const help = async (
+  { errorText = "" }: { errorText: string } = Object.create(null)
+): Promise<void> => {
+  const optional     = (text: string) => normal+"["+dimGray+text+normal+"]",
+        grayBoldText = (text: string) => dimGrayBold+text+normal;
   let multilineMode = 0;
-  const multiLine = text => {
+  const multiLine = (text: string) => {
     const lines = text.split("\n"),
           lengthOfLines = lines.length;
     for (let i = 0; i < lengthOfLines; ++i) {
@@ -1580,7 +1574,10 @@ const help = async ({ errorText = "" } = "") => {
     }
     return (multilineMode ||= 1, lines.join("\n"));
   };
-  const param = (text, secondText, complete) => {
+  const param = (
+    text: string[], secondText: string[],
+    complete?: boolean
+  ): string => {
     const length = complete ? text.length : secondText.length;
     for (let i = 0; i < length; ++i) {
       text[i] &&= green+text[i]+normal;
@@ -1961,9 +1958,7 @@ const help = async ({ errorText = "" } = "") => {
     }
   )
 }
-/**
- * Shows the version number taken from package.json
- */
+/** Shows the version number taken from package.json */
 const version = async () => {
   const fs = await import("node:fs");
   const packageJSONPath = `${import.meta.dirname}${sep}package.json`;
