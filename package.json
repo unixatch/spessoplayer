@@ -32,6 +32,7 @@
   },
   "dependencies": { "spessasynth_core": "^4.0.25" },
   "devDependencies": {
+    "@types/deno": "^2.7.0",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2"
   }
