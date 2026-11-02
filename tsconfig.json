@@ -22,7 +22,7 @@
       "allowUnreachableCode": false,
       "noPropertyAccessFromIndexSignature": true,
       "noEmit": true,
-      "types": ["node", "spessasynth_core"]
+      "types": ["deno", "node", "spessasynth_core"]
     },
     "includes": ["*.mts", "utils/*.mts"],
     "exclude": [
