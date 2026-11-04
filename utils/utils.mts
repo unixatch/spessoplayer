@@ -24,7 +24,7 @@ import Mixin from "./basic_additions.mts"
 import "./colors.mts"
 import type { extLessFiles } from "../types/cli.mts"
 import type {
-  perSongOptions, allOptions,
+  _optionsObject, perSongOptions, allOptions,
   UnwantedNonZeroErrorExtras, groupsChecked
 } from "../types/utils.mts"
 
@@ -317,16 +317,14 @@ const {
 class Options extends Mixin(classes[0], classes.slice(1)) {
   /**
    * Last added regular group (no twin/same basenames)
-   * @name lastRegularGroupIndex
-   * @type {Number}
-   * @public
    * @example Options.lastRegularGroupIndex = 2;
    */
+  declare public static lastRegularGroupIndex: number;
   /**
    * Contains all normal options
    * @type {Object}
    */
-  static _options = Object.create(null);
+  static _options: _optionsObject = Object.create(null);
   /** If fileOutputs has been created
    * @type {Boolean}
    */
@@ -744,7 +742,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
    * @return {Object} all available options
    */
   static get all(): allOptions {
-    const returnObject = {
+    const returnObject: allOptions = {
       ...this._options, files: structuredClone(this.#files)
     };
     if (this.#fileOutputs) {

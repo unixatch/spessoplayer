@@ -94,6 +94,8 @@ type indexedStringValue = string | number | number[] | boolean | object[]
  * @mixin MainOptions
  */
 class MainOptions {
+
+  declare static _options: typeof Options._options;
   /**
    * Adds a parameter string value by index
    * @throws {TypeError} if index is not a number or name is not a string
@@ -265,6 +267,8 @@ class MainOptions {
  * @mixin EffectsOptions
  */
 class EffectsOptions {
+
+  declare static _options: typeof Options._options;
   /**
    * Returns if effects are handled by spessasynth
    * @param {Number}  index     index of the song
