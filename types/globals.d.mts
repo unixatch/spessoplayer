@@ -26,5 +26,11 @@ export declare global {
   const gray: string
   const dimGray: string
   const dimGrayBold: string
+
+  interface Set<T> {
+    addLeft<T = any>(valueToAdd: T[]): Set<T>
+    getIndex(index: number): any
+    get<T>(valueToFind: T): T | undefined
+  }
 }
 

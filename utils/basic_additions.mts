@@ -21,7 +21,6 @@
 
 /**
  * Adds unshift functionality to Set
- * @param {Array} valueToAdd - value to add
  * @return {Set} - an updated set with the values added on the left
  */
 Set.prototype.addLeft = function (valueToAdd) {
@@ -32,7 +31,6 @@ Set.prototype.addLeft = function (valueToAdd) {
 }
 /**
  * Adds value retrieval from given index functionality to Set
- * @param {Number} index - index to get
  * @throws {TypeError} - if it's not a number
  * @return {*} - the value at the specified index in the Set
  */
