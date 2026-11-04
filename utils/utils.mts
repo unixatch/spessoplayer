@@ -549,7 +549,7 @@ class Options extends Mixin(classes[0], classes.slice(1)) {
         && indexAfterSongName < this.#listOfSongs.length) {
       throw new TypeError(`trying to reach the wrong index (${indexOfSongName})`)
     }
-    return this.#listOfSongs[indexOfSongName];
+    return this.#listOfSongs[indexOfSongName] as string;
   }
   /**
    * Gives the last known group's index that has been added
