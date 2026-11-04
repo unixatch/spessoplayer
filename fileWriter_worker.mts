@@ -20,42 +20,49 @@ import {
 } from "node:worker_threads"
 import * as fs from "node:fs"
 
+import type { FO_CONSTANTS } from "./cli.mts"
+import type {
+  progressBuffersIntfc, toFileOptionsObject,
+  spessasynthLoggingIntfc
+} from "./types/mainFunctions.mts"
+
+if (!parentPort) throw new Error("Can't use this file directly")
+
 const {verboseLevel, logFilePath} = workerData;
 global.logThis = {verboseLevel, logFilePath};
 const { toFile } = await import("./mainFunctions.mts")
 global.fs = fs;
 process.on("unhandledRejection", console.error)
 
+interface runTask {
+  progressBuffers: progressBuffersIntfc, options: toFileOptionsObject,
+  FO_CONSTANTS: typeof FO_CONSTANTS,
+  index: number, filesListLength: number,
+  spessasynthLogging: spessasynthLoggingIntfc
+}
 /**
  * Runs toFile with the provided data and also
  * sends the fileOutputs array back
- * @param {Object} workerDataObj
- * @param {Object} workerDataObj.progressBuffers
- * @param {Object} workerDataObj.options
- * @param {Object} workerDataObj.FO_CONSTANTS
- * @param {Number} workerDataObj.index
- * @param {Number} workerDataObj.filesListLength
- * @param {Boolean} workerDataObj.spessasynthLogging
  */
 async function runTask({
   progressBuffers, options,
   FO_CONSTANTS, index, filesListLength,
   spessasynthLogging
-}) {
+}: runTask): Promise<void> {
   const toFileValue = await toFile({
     spessasynthLogging,
     createNewFileNameAnyway: (index > 0 || filesListLength > 1),
     progressBuffers,
     index, options, FO_CONSTANTS
   });
-  if (toFileValue === null) return parentPort.postMessage("FAILED_INITIALIZATION")
+  if (toFileValue === null) return parentPort!.postMessage("FAILED_INITIALIZATION")
 
   const [fileOutputs, pipingFunctions, promiseToWait] = toFileValue;
-  parentPort.postMessage({index, files: fileOutputs})
+  parentPort!.postMessage({index, files: fileOutputs})
   for (const func of pipingFunctions) func?.();
 
   await promiseToWait
-  parentPort.postMessage("DONE_RENDERING")
+  parentPort!.postMessage("DONE_RENDERING")
 }
 parentPort.on("message", async message => await runTask(message))
 await runTask(workerData)
