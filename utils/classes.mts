@@ -89,11 +89,14 @@ function checkValueAndExistence(
 }
 
 type indexedStringValue = string | number | number[] | boolean | object[]
+export interface MainOptions {
+  new (...args: any[]): InstanceType<any>
+}
 /**
  * Main options class that contains general options
  * @mixin MainOptions
  */
-class MainOptions {
+export class MainOptions {
 
   declare static _options: typeof Options._options;
   /**
@@ -261,12 +264,15 @@ class MainOptions {
   }
 }
 
+export interface EffectsOptions {
+  new (...args: any[]): InstanceType<any>
+}
 /**
  * An options class that
  * manages options regarding effects and more
  * @mixin EffectsOptions
  */
-class EffectsOptions {
+export class EffectsOptions {
 
   declare static _options: typeof Options._options;
   /**
@@ -306,8 +312,4 @@ class EffectsOptions {
     ])
   }
 }
-
-export const classes = [
-  MainOptions, EffectsOptions
-];
 

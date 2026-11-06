@@ -19,7 +19,7 @@
  * @module utils/utils
  */
 
-import { classes } from "./classes.mts"
+import { MainOptions, EffectsOptions } from "./classes.mts"
 import Mixin from "./basic_additions.mts"
 import "./colors.mts"
 import type { extLessFiles } from "../types/cli.mts"
@@ -314,7 +314,7 @@ const {
  * A class that represents options interpreted by cli.mts
  * @mixes (module:classes~MainOptions|module:classes~EffectsOptions)
  */
-class Options extends Mixin(classes[0], classes.slice(1)) {
+class Options extends Mixin(MainOptions, EffectsOptions) {
   /**
    * Last added regular group (no twin/same basenames)
    * @example Options.lastRegularGroupIndex = 2;

@@ -86,27 +86,30 @@ Set.prototype.get = function (valueToFind) {
   - let → const aggregate;
   - let → const copyProps;
   - propsToIgnore variable;
+  - source → sourceToInclude;
   - new lines inside copyProps;
+  - Added typescript types;
 */
+type CopiedClass<T = {}> = { [P in keyof T]: T[P] }
+interface Constructor<T = {}> {
+  new (...args: any[]): CopiedClass<T>
+}
 /**
  * Mixes a base class with other classes
  * so that it can be used to extend from all of them
- * @param {class}   base
- * @param {class[]} mixins
- * @return {class}
  */
-export default function Mixin(base, mixins) {
+export default function Mixin<
+  T extends Constructor, Y extends Constructor
+>(base: T, source: Y): T & Y {
   /*  create aggregation class  */
   const aggregate = class __Aggregate extends base {
-    constructor (...args) {
+    constructor (...args: any[]) {
       /*  call base class constructor  */
       super(...args)
 
       /*  call mixin's initializer  */
-      mixins.forEach((mixin) => {
-        if (typeof mixin.prototype.initializer === "function")
-          mixin.prototype.initializer.apply(this, args)
-      })
+      if (typeof source.prototype.initializer === "function")
+        source.prototype.initializer.apply(this, args)
     }
   };
 
@@ -116,26 +119,26 @@ export default function Mixin(base, mixins) {
                         "toString|"+
                         "length";
   /*  copy properties  */
-  const copyProps = (target, source) => {
-    Object.getOwnPropertyNames(source)
-      .concat(Object.getOwnPropertySymbols(source))
+  const copyProps = <T extends Constructor>(
+    target: CopiedClass<T>, sourceToInclude: CopiedClass<T>
+  ): void => {
+    Object.getOwnPropertyNames(sourceToInclude)
+      .concat(Object.getOwnPropertySymbols(sourceToInclude))
       .forEach((prop) => {
         if (prop.match(new RegExp(`^(?:${propsToIgnore})$`)))
             return;
         Object.defineProperty(
           target,
           prop,
-          Object.getOwnPropertyDescriptor(source, prop)
+          Object.getOwnPropertyDescriptor(sourceToInclude, prop)
         )
       })
   }
 
   /*  copy all properties of all mixins into aggregation class  */
-  mixins.forEach((mixin) => {
-    copyProps(aggregate.prototype, mixin.prototype)
-    copyProps(aggregate, mixin)
-  })
+  copyProps(aggregate.prototype, source.prototype)
+  copyProps(aggregate, source)
 
-  return aggregate;
+  return aggregate as typeof aggregate & Y;
 }
 
