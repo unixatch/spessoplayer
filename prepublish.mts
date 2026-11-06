@@ -2,10 +2,13 @@ import { spawnSync } from "node:child_process"
 import "./utils/colors.mts"
 
 const result = spawnSync("git", [
-  "status", "--porcelain"
+  "diff", "--quiet", // "--exit-code" implied
+  "HEAD"
 ]);
 
-if (result.stdout.length) {
+// (false) 0 is clean,
+// (true)  1 means there are changes
+if (result.status) {
   console.error(
     normalYellow+"%s"+normal,
     "Stash or commit/push your local changes first"
