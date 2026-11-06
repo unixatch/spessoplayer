@@ -91,9 +91,7 @@ Set.prototype.get = function (valueToFind) {
   - Added typescript types;
 */
 type CopiedClass<T = {}> = { [P in keyof T]: T[P] }
-interface Constructor<T = {}> {
-  new (...args: any[]): CopiedClass<T>
-}
+type Constructor<T = {}> = abstract new (...args: any[]) => CopiedClass<T>
 /**
  * Mixes a base class with other classes
  * so that it can be used to extend from all of them
@@ -102,7 +100,7 @@ export default function Mixin<
   T extends Constructor, Y extends Constructor
 >(base: T, source: Y): T & Y {
   /*  create aggregation class  */
-  const aggregate = class __Aggregate extends base {
+  abstract class __Aggregate extends base {
     constructor (...args: any[]) {
       /*  call base class constructor  */
       super(...args)
@@ -112,6 +110,7 @@ export default function Mixin<
         source.prototype.initializer.apply(this, args)
     }
   };
+  const aggregate = __Aggregate;
 
   const propsToIgnore = "initializer|constructor|prototype|"+
                         "arguments|caller|name|"+

@@ -19,19 +19,23 @@
  * @module classes
  */
 import type { Options } from "./utils.mts"
+import type { _optionsObject } from "../types/utils.mts"
 
 type listUsedInReverse = Array<
   | string   | number    | boolean
   | object[] | undefined
 >;
+type addIndexedPropertiesThat = typeof EffectsOptions & typeof Options
+type anyKnownClasses =
+  | typeof MainOptions | typeof EffectsOptions
+  | typeof Options
 /**
  * Adds/updates properties with an index to Options class
  * @param {(MainOptions|EffectsOptions)} that
  * @param {Array<String|Number|*>} list things to add
  */
 function addIndexedProperties(
-  that: MainOptions | EffectsOptions,
-  list: listUsedInReverse
+  that: addIndexedPropertiesThat, list: listUsedInReverse
 ): void {
   for (let i = list.length; --i;) {
     if (i < 0) break;
@@ -50,13 +54,13 @@ function addIndexedProperties(
 }
 /** Sets a property with value */
 const setValue = function (
-  this: Options, property: string, value: any
+  this: anyKnownClasses, property: string, value: any
 ): any {
   this._options[property] = value;
 }
 /** Sets a property to an index with a given value */
 const setOrPushValue = function (
-  this: Options,
+  this: anyKnownClasses,
   property: string, value: any, index?: number
 ): any | number {
   return (
@@ -78,7 +82,7 @@ const setOrPushValue = function (
  */
 function checkValueAndExistence(
   value: any, requiredType: string,
-  property?: string | undefined, that?: Options
+  property?: string | undefined, that?: anyKnownClasses
 ): void {
   if (requiredType !== "array" || !Array.isArray(value)) {
     if (typeof value !== requiredType) {
@@ -96,15 +100,14 @@ export interface MainOptions {
  * Main options class that contains general options
  * @mixin MainOptions
  */
-export class MainOptions {
+export abstract class MainOptions {
 
-  declare static _options: typeof Options._options;
+  declare static _options: _optionsObject;
   /**
    * Adds a parameter string value by index
    * @throws {TypeError} if index is not a number or name is not a string
    */
   static addIndexedStringValue(
-    this: Options,
     name: string, index: number | typeof NaN | undefined,
     value: indexedStringValue
   ): indexedStringValue | void {
@@ -137,8 +140,8 @@ export class MainOptions {
         return setOrPushValue.call(this, name, value, index);
       }
       case "fileOutputs": {
-        checkValueAndExistence(value, "string", name, this)
-        this.manageAuxiliaryFileOptions(name, value, index);
+        checkValueAndExistence(value, "string", name, this);
+        (this as typeof Options).manageAuxiliaryFileOptions(name, value, index);
         return;
       }
       // Array of objects
@@ -179,7 +182,7 @@ export class MainOptions {
    * @throws {TypeError} if name is not a string
    */
   static addBooleanValue(
-    this: Options,
+    this: typeof Options,
     name: string, value: boolean | string
   ): boolean | string | void {
     switch (name) {
@@ -220,7 +223,9 @@ export class MainOptions {
    * Adds a parameter number value
    * @throws {TypeError} if name is not a string
    */
-  static addNumberValue(name: string, value: number): number {
+  static addNumberValue(
+    this: typeof Options, name: string, value: number
+  ): number {
     switch (name) {
       case "verboseLevel": {
         checkValueAndExistence(value, "number")
@@ -240,7 +245,7 @@ export class MainOptions {
    * Retrieves a property's value
    * @throws {TypeError} if name is not a string
    */
-  static getValue(this: Options, name: string): any {
+  static getValue(this: typeof Options, name: string): any {
     return (
       name === "logFilePath"
         ? this.manageAuxiliaryFileOptions(name, undefined, undefined, true)
@@ -255,7 +260,7 @@ export class MainOptions {
    * @throws {TypeError} if name is not a string
    */
   static getIndexedValue(
-    this: Options, name: string, index: number
+    this: typeof Options, name: string, index: number
   ): any | undefined {
     if (name === "externalEffects" && Number.isNaN(index)) {
       index = this._options[name].length-1;
@@ -272,9 +277,9 @@ export interface EffectsOptions {
  * manages options regarding effects and more
  * @mixin EffectsOptions
  */
-export class EffectsOptions {
+export abstract class EffectsOptions {
 
-  declare static _options: typeof Options._options;
+  declare static _options: _optionsObject;
   /**
    * Returns if effects are handled by spessasynth
    * @param {Number}  index     index of the song
@@ -294,7 +299,7 @@ export class EffectsOptions {
    */
   static effects(index: number, arrayOfObjects: object[]): void {
     const _index = Number.isNaN(index) ? undefined : index;
-    addIndexedProperties(this, [
+    addIndexedProperties((this as addIndexedPropertiesThat), [
       "effects", _index, arrayOfObjects,
       "externalEffects", _index, true
     ])
@@ -306,7 +311,7 @@ export class EffectsOptions {
    */
   static reverbVolume(index: number, number: number): void {
     const _index = !Number.isNaN(index) ? index : undefined;
-    addIndexedProperties(this, [
+    addIndexedProperties((this as addIndexedPropertiesThat), [
       "reverbVolume", _index, number,
       "externalEffects", _index, false
     ])
