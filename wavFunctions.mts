@@ -100,7 +100,7 @@ function getWavHeader(
     process.exit(1)
   }
   const bytesPerSample = 2;
-  let infoChunk: Uint8Array;
+  let infoChunk: Uint8Array | undefined;
   const infoOn = Object.keys(metadata).length > 0;
   if (infoOn) {
     encoder = new TextEncoder();
@@ -204,9 +204,9 @@ function getWavHeader(
   uint8[35] = 0;
 
   if (infoOn) {
-    uint8.set(infoChunk, 36)
+    uint8.set(infoChunk as Uint8Array, 36)
 
-    const infoLength = infoChunk.length;
+    const infoLength = (infoChunk as Uint8Array).length;
     let afterInfoOffset = infoLength + 36;
     uint8[afterInfoOffset++] = d
     uint8[afterInfoOffset++] =  a
