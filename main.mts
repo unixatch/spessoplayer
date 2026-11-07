@@ -257,7 +257,7 @@ if (isToStdout) {
   process.exit()
 }
 
-if (!isToStdout && !(isToFile?.length > 0)) {
+if (!isToStdout && !(isToFile!?.length > 0)) {
   if (dryRun) {
     console.error(
       formatStrings.warningText,
@@ -395,7 +395,7 @@ for (let i = songIndex; i < amountOfSongs; ++i) {
     index: i, ...options,
     onlyDuration: true,
     spessasynthLogging
-  });
+  }) as number | null;
   if (duration === null) continue;
   const durationRounded = Math.floor(duration * 100) / 100;
   progress.addToAmountToRender(durationRounded)
@@ -403,7 +403,7 @@ for (let i = songIndex; i < amountOfSongs; ++i) {
 
 // Loads soundfonts before doing the work
 // for memory usage reasons
-const sharedFilesMap = new Map();
+const sharedFilesMap: Map<string, SharedArrayBuffer> = new Map();
 let promisesOfSharedFiles: Promise<void>[] | null = [];
 const {
   promises: {

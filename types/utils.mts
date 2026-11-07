@@ -1,9 +1,11 @@
-export interface _optionsObject {
-  format?: string,
-  fileOutputs: string[], noProgress?: boolean,
-  progressDelay?: number, effects: object[],
-  maxThreads?: number, externalEffects?: boolean[]
-}
+export type _optionsObject = Partial<{
+  confirmation:    boolean,
+  noTable:         boolean,   toStdout:      boolean,
+  format:          string,    fileOutputs:   string[],
+  noProgress:      boolean,   progressDelay: number,
+  effects:         object[],  maxThreads:    number,
+  externalEffects: boolean[], showUsage:     boolean
+}>;
 
 interface privateProperties {
   logFilePath?: string, dryRun?: string,
