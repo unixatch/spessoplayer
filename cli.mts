@@ -204,7 +204,7 @@ const newArgs = process.argv.slice(2);
  */
 const actUpOnPassedArgs = async (
   args: typeof process.argv, isVerboseLevelSet?: boolean
-): Promise<[loadingAnimationProcType, loadingAnimationCleanupFuncType]> => {
+): Promise<[loadingAnimationProcType, loadingAnimationCleanupFuncType]> | never => {
   let lastParam: string | undefined,
       lastIndex: string | undefined;
   const newArguments = args?.slice(2) ?? newArgs,
@@ -296,14 +296,14 @@ const actUpOnPassedArgs = async (
     lastParam = undefined;
     lastIndex = undefined;
   };
-  const stdoutFileModeConflictError = () => {
+  const stdoutFileModeConflictError = (): never => {
     console.error(
       formatStrings.errorText,
       "Can't use both stdout and file mode at the same time"
     )
     process.exit(1)
   };
-  const setFileOutputs = (type: string, index: number, arg: string): void => {
+  const setFileOutputs = (type: string, index: number, arg: string): void | never => {
     isStdout ??= testFunctions.stdout(newArgumentsSet);
     if (isStdout) stdoutFileModeConflictError()
     if (Options.getValue("daemon")) {
@@ -1046,7 +1046,7 @@ const invalidNumberString       = "isn't a valid number",
 const setLoopParameterValue = (
   name: string, arg: string,
   lastIndex: string | undefined, func: Function
-): void => {
+): void | never => {
   const argInfos = getArgInfos(arg, lastIndex);
   const { lastIndexNumber, lastIndexString } = argInfos;
   let number = argInfos.number;
@@ -1090,7 +1090,7 @@ const setLoopParameterValue = (
  * Sets the Options.loopFadeInterpolation variable
  * @param {String} arg - the loop fade duration amount in seconds
  */
-const setLoopFadeInterpolation = (arg: string, lastIndex?: string): void => {
+const setLoopFadeInterpolation = (arg: string, lastIndex?: string): void | never => {
   const argInfos = getArgInfos(arg, lastIndex);
   const { number, lastIndexNumber, lastIndexString } = argInfos;
 
@@ -1137,7 +1137,7 @@ const setLoopFadeInterpolation = (arg: string, lastIndex?: string): void => {
 const setLoopParameterTimeValue = (
   name: string, arg: string,
   lastIndex: string | undefined, func: Function
-): void => {
+): void | never => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1214,7 +1214,7 @@ const setLoopParameterTimeValue = (
  */
 const setSampleRate = (
   arg: string, lastIndex: string | undefined, isStdout: boolean
-): void => {
+): void | never => {
   const {
     number, lastIndexNumber, lastIndexString
   } = getArgInfos(arg, lastIndex);
@@ -1278,7 +1278,7 @@ const setVerboseLevel = async (arg?: string | number): Promise<void> => {
  * Sets the Options.format variable for use in stdout mode
  * @param {String} arg - the format to use (similar to ffmpeg's -f)
  */
-const setFormat = (arg: string): void => {
+const setFormat = (arg: string): void | never => {
   switch (arg) {
     case "wav": case "wave": {
       Options.addStringValue("format", "wave")
@@ -1310,7 +1310,7 @@ const setFormat = (arg: string): void => {
  * Applies effects from the user's string passed through --effects
  * @param {String} arg - the comma-separeted string to parse
  */
-const setEffects = (arg: string, lastIndex?: string): void => {
+const setEffects = (arg: string, lastIndex?: string): void | never => {
   const regexListOfEffects = (
     "allpass|band|bandpass|bandreject|bass|bend|biquad" +
     "|chorus|channels|compand|contrast|dcshift|deemph|delay" +
@@ -1377,7 +1377,7 @@ const setEffects = (arg: string, lastIndex?: string): void => {
 const setVolumeParameter = (
   name: string, arg: string,
   lastIndex: string | undefined, func: Function
-): void => {
+): void | never => {
   let chanVolArray, chanVolIndex;
   const isChannelVolume = name === "channel-volume";
 
@@ -1494,7 +1494,7 @@ const setMaxThreads = async (arg: string): Promise<void> => {
  * Sets the Options.progressDelay variable
  * @param {String} arg - delay to set
  */
-const setProgressDelay = (arg: string): void => {
+const setProgressDelay = (arg: string): void | never => {
   const number = Number(arg);
 
   // Default

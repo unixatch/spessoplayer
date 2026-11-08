@@ -38,7 +38,7 @@ export const sep = process.platform === "win32" ? "\\" : "/";
  * // Clears only the last line
  * clearLastLines(-1)
  */
-function clearLastLines(lineY: number): void {
+function clearLastLines(lineY: number): void | never {
   if (typeof lineY !== "number" || Number.isNaN(lineY)) {
     throw new TypeError("Didn't give a valid number")
   }
@@ -393,7 +393,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    * @throws {TypeError} - if it's not of valid type
    * @return {Boolean} if it all goes well
    */
-  static #checkValueAndExistence(value: any, requiredType: string): true {
+  static #checkValueAndExistence(value: any, requiredType: string): true | never {
     if (requiredType !== "array" || !Array.isArray(value)) {
       if (typeof value !== requiredType) {
         throw new TypeError(`${value} is not of type ${requiredType}`)
@@ -411,7 +411,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    */
   static manageAuxiliaryFileOptions<T>(
     name: T, value: T, index?: T, getter?: boolean
-  ): T | void {
+  ): T | void | never {
     switch (name) {
       case "dryRun":
         this.#dryRun ??= (
@@ -542,7 +542,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    * @param {Number} index index of the song
    * @return {String} the filename without extension
    */
-  static getSongName(index: number): string {
+  static getSongName(index: number): string | never {
     const indexOfSongName = index * 3 + 2,
           indexAfterSongName = indexOfSongName + 1;
     if (typeof (this.#listOfSongs[indexAfterSongName]) !== "number"
@@ -660,7 +660,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    */
   static isAutomaticBasenameGroup(
     extLessFiles: extLessFiles, indexOfGroup: number
-  ): boolean | void {
+  ): boolean | void | never {
     if (extLessFiles && extLessFiles?.prototype) {
       throw new TypeError(
         "extLessFiles must be null prototyped object"
@@ -791,7 +791,7 @@ function ffmpegExitHandler(
   this: { stdout: Buffer, stderr: Buffer },
   exitCode: number,
   resolver: (arg0: number) => void
-): number | void {
+): number | void | never {
   if (exitCode === 0) return resolver?.(exitCode);
 
   throw new UnwantedNonZeroError(

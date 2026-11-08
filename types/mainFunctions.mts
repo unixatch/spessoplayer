@@ -170,4 +170,14 @@ export type toFileArray = [
   pipingFunction: Function[],
   Promise<Array<Promise<Array<undefined | NodeJS.ReadableStream>> | undefined | number>>
 ];
+export type preparedDestination<T = "normal"> =
+  | typeof process.stdout | ServerResponse
+  | ChildProcess["stdin"] | ChildProcess
+  | [ServerResponse, Uint8Array | undefined]
+  | undefined
+
+export type prepareDestinationReturnValue = [
+  WriteStream | undefined,  Uint8Array | undefined,
+  ChildProcess | undefined, preparedDestination
+] | preparedDestination;
 

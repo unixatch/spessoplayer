@@ -83,7 +83,7 @@ const setOrPushValue = function (
 function checkValueAndExistence(
   value: any, requiredType: string,
   property?: string | undefined, that?: anyKnownClasses
-): void {
+): void | never {
   if (requiredType !== "array" || !Array.isArray(value)) {
     if (typeof value !== requiredType) {
       throw new TypeError(`${value} is not of type ${requiredType}`)
@@ -110,7 +110,7 @@ export abstract class MainOptions {
   static addIndexedStringValue(
     name: string, index: number | typeof NaN | undefined,
     value: indexedStringValue
-  ): indexedStringValue | void {
+  ): indexedStringValue | void | never {
     if (Number.isNaN(index)) index = undefined;
 
     switch (name) {
@@ -184,7 +184,7 @@ export abstract class MainOptions {
   static addBooleanValue(
     this: typeof Options,
     name: string, value: boolean | string
-  ): boolean | string | void {
+  ): boolean | string | void | never {
     switch (name) {
       // Boolean
       case "daemon":       case "loopFade":
@@ -225,7 +225,7 @@ export abstract class MainOptions {
    */
   static addNumberValue(
     this: typeof Options, name: string, value: number
-  ): number {
+  ): number | never {
     switch (name) {
       case "verboseLevel": {
         checkValueAndExistence(value, "number")
@@ -245,7 +245,7 @@ export abstract class MainOptions {
    * Retrieves a property's value
    * @throws {TypeError} if name is not a string
    */
-  static getValue(this: typeof Options, name: string): any {
+  static getValue(this: typeof Options, name: string): any | never {
     return (
       name === "logFilePath"
         ? this.manageAuxiliaryFileOptions(name, undefined, undefined, true)

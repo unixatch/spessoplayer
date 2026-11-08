@@ -36,7 +36,7 @@ import type {
   sampleCountObjectParameters, initObjectParameters,
   toFileObject, toFileArray,
   toStdoutOptionsObject, toStdoutArray,
-  pipingFunction
+  pipingFunction, prepareDestinationReturnValue
 } from "./types/mainFunctions.mts"
 import type { Options } from "./utils/utils.mts"
 
@@ -885,7 +885,7 @@ function createReadable(Readable: Readable, isStdout = false, {
   loopFadeDuration = 4, loopFadeInterpolation,
   startFading,
   progressBuffers
-}: createReadableObjectParameters) {
+}: createReadableObjectParameters): NodeJS.ReadableStream | never {
   if (typeof startFading !== "number" && startFading !== undefined) {
     throw new TypeError(
       "startFading must be a number, " +
@@ -1085,7 +1085,7 @@ function createReadable(Readable: Readable, isStdout = false, {
 async function toStdout({
   index, res,
   options, options: { format = "" }
-}: toStdoutOptionsObject): Promise<toStdoutArray | null> {
+}: toStdoutOptionsObject): Promise<toStdoutArray | null> | never {
   if (!options.midiFile || !options.soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
@@ -1168,7 +1168,7 @@ async function toFile({
     fileOutputs: { length: foLength }
   },
   FO_CONSTANTS
-}: toFileObject): Promise<toFileArray | null> {
+}: toFileObject): Promise<toFileArray | null> | never {
   if (!options.midiFile || !options.soundfontFile || !foLength) {
     throw new ReferenceError("Missing some required files")
   }
@@ -1418,7 +1418,7 @@ class Progress {
    * @param {String} typeOfArray type of array to update
    * @throws {TypeError} - if trying to update with a full shared array
    */
-  updateProgress(newNumber: number, typeOfArray = "renderedAmount"): void {
+  updateProgress(newNumber: number, typeOfArray = "renderedAmount"): void | never {
     if (this.#index === undefined) {
       throw new TypeError("Can't update with full shared array")
     }
@@ -1478,7 +1478,7 @@ async function startPlayer(
   process.on("SIGUSR1", () => {
     closing = true; mpv?.kill()
 
-    server.close(() => {
+    server.close((): void | never => {
       if (process.platform === "win32") {
         return spawn(
           process.argv0, process.argv.slice(1),
@@ -1739,7 +1739,7 @@ async function prepareDestination({
   sampleRate, format,
   promisesOfPrograms,
   effects, specificRange
-}, isStdout) {
+}, isStdout): Promise<prepareDestinationReturnValue> | never {
   let effectsProcess, fatalErrors: string[],
       converterProcess: ChildProcess | undefined, dryRunStream;
   if (isStdout) {
