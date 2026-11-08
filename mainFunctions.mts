@@ -181,11 +181,11 @@ async function formatManager<T extends string>({
   let pipingFunction: pipingFunction | undefined;
   switch (format) {
     case "wave":
-    case /^.*(?:\.wav|\.wave)$/.test(outFile): {
+    case /^.*(?:\.wav|\.wave)$/.test(outFile as any): {
       let doneSettingUpMsg = "Done setting up";
       if (isToFile) {
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        const newName = newFileName(outFile as string, createNewFileNameAnyway);
+        fileOutputs![fileOutputs!.indexOf(outFile as string)] = newName;
         outFile = newName;
         doneSettingUpMsg = "Done setting up wav outFile";
       }
@@ -212,7 +212,8 @@ async function formatManager<T extends string>({
       }
       if (isToFile) {
         const output = fs.createWriteStream(
-          outFile, {fd: dryRun && fs.openSync(outFile, "r+")}
+          outFile as string,
+          {fd: dryRun && fs.openSync(outFile as string, "r+")}
         );
         addPipingFunction((whereToConnect, end: boolean) => {
           output.write(stdoutHeader ?? "")
@@ -234,6 +235,9 @@ async function formatManager<T extends string>({
       break;
     }
     case Array.isArray(outFile): {
+      if (!FO_CONSTANTS) {
+        throw new TypeError("FO_CONSTANTS is required in this case")
+      }
       const formatsUsed = [],
             combinedFfmpegArgs: string[] = [];
       const formats = {
@@ -241,12 +245,12 @@ async function formatManager<T extends string>({
         [FO_CONSTANTS.MP3_INDEX ]: "mp3",
         [FO_CONSTANTS.FLAC_INDEX]: "flac"
       };
-      for (const index of outFile) {
-        const actualOutFile = fileOutputs[index];
+      for (const index of outFile as number[]) {
+        const actualOutFile = fileOutputs![index];
         if (!actualOutFile) continue;
 
         const newName = newFileName(actualOutFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(actualOutFile)] = newName;
+        fileOutputs![fileOutputs!.indexOf(actualOutFile)] = newName;
 
         /*
            For dry-run mode it prints to stdout and
@@ -319,10 +323,10 @@ async function formatManager<T extends string>({
       break;
     }
     case "pcm": case "s16le": case "f32le":
-    case /^.*\.(?:s16le|f32le|pcm)$/.test(outFile): {
+    case /^.*\.(?:s16le|f32le|pcm)$/.test(outFile as any): {
       if (isToFile) {
-        const newName = newFileName(outFile, createNewFileNameAnyway);
-        fileOutputs[fileOutputs.indexOf(outFile)] = newName;
+        const newName = newFileName(outFile as string, createNewFileNameAnyway);
+        fileOutputs![fileOutputs!.indexOf(outFile as string)] = newName;
         outFile = newName;
       }
       if (dryRun) outFile = dryRun;
@@ -344,7 +348,7 @@ async function formatManager<T extends string>({
             })
           )[0].stdin;
         }
-        output ??= fs.createWriteStream(outFile, {fd: dryRun && fs.openSync(outFile, "r+")});
+        output ??= fs.createWriteStream(outFile as string, {fd: dryRun && fs.openSync(outFile, "r+")});
       } else {
         output = res ?? process.stdout;
         if (dryRun) output = fs.createWriteStream(dryRun, {fd: fs.openSync(dryRun, "r+")});
