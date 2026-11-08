@@ -12,27 +12,28 @@ import type {
 /*
   ——— PARAMETERS OBJECTS ———
 */
-/** General */
-export interface formatObject {
+type readStreamType<T> = (
+  T extends "fileMode"
+    ? NodeJS.ReadableStream | boolean
+    : NodeJS.ReadableStream
+);
+
+/** General & player mode & file mode */
+export interface formatObjectParameters<T = unknown> {
   format?: boolean | string,
-  readStream?: NodeJS.ReadableStream, rawReadStream?: NodeJS.ReadableStream,
+  readStream?: readStreamType<T>, rawReadStream?: readStreamType<T>,
   dryRun?: string, effects?: object,
   index?: number, stdoutHeader?: Uint8Array,
   promisesOfPrograms: Promise<void>[]
 }
-/** player mode */
-interface formatObjectPlayer extends formatObject {
-  res: ServerResponse
+export interface formatObjectParameters {
+  res?: ServerResponse
 }
-/** file mode */
-export interface formatObjectFileMode extends formatObject {
-  createNewFileNameAnyway: boolean,
-  fileOutputs: string[], FO_CONSTANTS: FO_CONSTANTS,
-  outFile: string
+export interface formatObjectParameters {
+  createNewFileNameAnyway?: boolean,
+  fileOutputs?: string[], FO_CONSTANTS?: FO_CONSTANTS,
+  outFile?: string | number[]
 }
-export type formatObjectParameters = (
-  formatObject | formatObjectPlayer | formatObjectFileMode
-);
 
 export interface sampleCountObjectParameters {
   midi: BasicMIDI, sampleRate: number,
