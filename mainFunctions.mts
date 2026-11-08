@@ -98,7 +98,7 @@ function ffmpegArgs(outFile = "pipe:1", withoutBasics = false): ffmpegArgsObj<st
   };
 }
 /** Manager for all type of formats */
-async function formatManager({
+async function formatManager<T extends string>({
   format = true,
   readStream, rawReadStream,
   res, dryRun,
@@ -107,7 +107,7 @@ async function formatManager({
   stdoutHeader,
   promisesOfPrograms,
   outFile
-}: formatObjectParameters): Promise<Function | undefined> {
+}: formatObjectParameters<T>): Promise<Function | undefined> {
   /**
    * Error handler for readStream mainly but also for other streams
    * @param {Error} error error object from "error" event
@@ -1261,7 +1261,7 @@ async function toFile({
   const addFunction = async (outFile?: string): Promise<void> => {
     const isf32le = outFile?.endsWith(".f32le");
     pipingFunctions.push(
-      await formatManager({
+      await formatManager<"fileMode">({
         readStream:    isf32le || readStream,
         rawReadStream: isf32le ? rawReadStream : undefined,
         ...options,
@@ -1275,7 +1275,7 @@ async function toFile({
           delete outFile.RAW_INDEX,
           Object.values(outFile)
         )
-      } as formatObjectFileMode)
+      })
     )
   };
   if (fileOutputs[WAV_INDEX] !== undefined) {
