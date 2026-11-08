@@ -1378,7 +1378,8 @@ const setVolumeParameter = (
   name: string, arg: string,
   lastIndex: string | undefined, func: Function
 ): void | never => {
-  let chanVolArray, chanVolIndex;
+  let chanVolArray: number[] | [] | undefined,
+      chanVolIndex: number   | undefined;
   const isChannelVolume = name === "channel-volume";
 
   if (isChannelVolume) {
@@ -1405,32 +1406,34 @@ const setVolumeParameter = (
 
   if (regexes.areDecibels.test(arg)) {
     const dB = Number(arg.match(regexes.decibelNumber)![1]);
-    let dBNumber = 10**(dB/(name === "reverb-volume" ? 20 : 10));
+    let dBNumber: number | number[] = (
+      10**(dB/(name === "reverb-volume" ? 20 : 10))
+    );
 
     if (isChannelVolume) dBNumber = (
-      chanVolArray[chanVolIndex] = dBNumber,
-      chanVolArray
+      chanVolArray![chanVolIndex!] = dBNumber,
+      chanVolArray as number[]
     )
     func.call(Options, lastIndexNumber, dBNumber)
     log(INFO_LVL,
       isChannelVolume
-        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray[chanVolIndex]} at ${lastIndex} index`
+        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray![chanVolIndex!]} at ${lastIndex} index`
         : `Set ${name} to ${dBNumber} at ${lastIndex} index`
     )
     return;
   }
   if (regexes.isPercentage.test(arg)) {
     const percentage = Number(arg.match(regexes.percentageNumber)![1]);
-    let toFloat = percentage / 100;
+    let toFloat: number | number[] = percentage / 100;
 
     if (isChannelVolume) toFloat = (
-      chanVolArray[chanVolIndex] = toFloat,
-      chanVolArray
+      chanVolArray![chanVolIndex!] = toFloat,
+      chanVolArray as number[]
     )
     func.call(Options, lastIndexNumber, toFloat)
     log(INFO_LVL,
       isChannelVolume
-        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray[chanVolIndex]} at ${lastIndex} index`
+        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray![chanVolIndex!]} at ${lastIndex} index`
         : `Set ${name} to ${toFloat} at ${lastIndex} index`
     )
     return;
@@ -1449,14 +1452,14 @@ const setVolumeParameter = (
       Options, lastIndexNumber,
       isChannelVolume
         ? (
-          chanVolArray[chanVolIndex] = number,
-          chanVolArray
+          chanVolArray![chanVolIndex!] = number,
+          chanVolArray as number[]
         )
         : number
     )
     log(INFO_LVL,
       isChannelVolume
-        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray[chanVolIndex]} at ${lastIndex} index`
+        ? `Set ${name} of channel ${chanVolIndex} to ${chanVolArray![chanVolIndex!]} at ${lastIndex} index`
         : `Set ${name} to ${number} at ${lastIndex} index`
     )
     return;
