@@ -99,13 +99,16 @@ const logMessageColors: { [key: string | number]: string } = {
   2: dimGray,   3: dimGray
 };
 // Temporal API methods if it exists
-let nowInstant, fromInstant, fromDuration, PlainTime;
+let nowInstant:   typeof Temporal.Now.instant | undefined,
+    fromInstant:  Temporal.InstantConstructor["from"]  | undefined,
+    fromDuration: Temporal.DurationConstructor["from"] | undefined,
+    PlainTime:    Temporal.PlainTimeConstructor | Temporal.PlainTime | undefined;
 if (typeof Temporal !== "undefined") ({
   Now:      { instant: nowInstant },
   Instant:  { from: fromInstant   },
   Duration: { from: fromDuration  }, PlainTime
 } = Temporal);
-PlainTime &&= new PlainTime();
+PlainTime &&= new (PlainTime as Temporal.PlainTimeConstructor)();
 export { nowInstant, fromInstant, fromDuration, PlainTime }
 /**
  * Logger

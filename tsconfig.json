@@ -22,7 +22,8 @@
       "allowUnreachableCode": false,
       "noPropertyAccessFromIndexSignature": true,
       "noEmit": true,
-      "types": ["deno", "node", "spessasynth_core"]
+      "types": ["deno", "node", "spessasynth_core"],
+      "lib": ["esnext"]
     },
     "includes": ["*.mts", "utils/*.mts"],
     "exclude": [
