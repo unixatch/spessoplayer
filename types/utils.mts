@@ -25,4 +25,8 @@ export interface UnwantedNonZeroErrorExtras {
   exitCode: number,
   stdout?: Buffer, stderr?: Buffer
 }
+export type boundFunctionLessFirstArg<T extends (...args: any) => any> = (
+  T extends (ignored: infer _, ...args: infer P) => any
+    ? (...args: P) => ReturnType<T> : never
+);
 

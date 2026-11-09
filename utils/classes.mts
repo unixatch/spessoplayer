@@ -109,7 +109,7 @@ export abstract class MainOptions {
    */
   static addIndexedStringValue(
     name: string, index: number | typeof NaN | undefined,
-    value: indexedStringValue
+    value?: indexedStringValue
   ): indexedStringValue | void | never {
     if (Number.isNaN(index)) index = undefined;
 
@@ -183,7 +183,7 @@ export abstract class MainOptions {
    */
   static addBooleanValue(
     this: typeof Options,
-    name: string, value: boolean | string
+    name: string, value?: boolean | string
   ): boolean | string | void | never {
     switch (name) {
       // Boolean

@@ -26,6 +26,8 @@ import {
   fromInstant,
   log, Options, sep
 } from "./utils/utils.mts"
+import type { boundFunctionLessFirstArg } from "./types/utils.mts"
+import type { MainOptions } from "./utils/classes.mts"
 import type {
   loadingAnimationProcType, extLessFiles, doneFileList,
   loadingAnimationCleanupFuncType, timeStampMatch,
@@ -34,6 +36,8 @@ import type {
   FO_CONSTANTS as FO_CONSTANTS_e
 } from "./types/cli.mts"
 import type { ChildProcess, SpawnSyncReturns } from "node:child_process"
+
+type optionsFuncType = typeof MainOptions.addIndexedNumberValue
 
 function endsWithSupportedExtension(arg: string) {
   return (
@@ -203,7 +207,7 @@ const newArgs = process.argv.slice(2);
  * @throws {ReferenceError} - if the next argument doesn't exist
  */
 const actUpOnPassedArgs = async (
-  args: typeof process.argv, isVerboseLevelSet?: boolean
+  args?: typeof process.argv, isVerboseLevelSet?: boolean
 ): Promise<[loadingAnimationProcType, loadingAnimationCleanupFuncType]> | never => {
   let lastParam: string | undefined,
       lastIndex: string | undefined;
@@ -315,6 +319,12 @@ const actUpOnPassedArgs = async (
     Options.addIndexedStringValue("fileOutputs", index, arg)
     log(INFO_LVL, "Set file output to " + type)
   };
+  type setLoopParameterFunc =
+    | typeof setLoopParameterValue
+    | typeof setLoopParameterTimeValue
+    | typeof setLoopFadeInterpolation
+  type setLoopParameterOptionsFunc =
+    | typeof setLoopParameterValue | typeof setLoopParameterTimeValue
   /**
    * Handles loop parameters
    * that use time values or just numbers
@@ -325,9 +335,10 @@ const actUpOnPassedArgs = async (
    * @param {Function} [optionsFunc]  Options' method
    */
   const setLoopParameter = (
-    name: string, nextArg: string, func: Function,
-    nameRequired?: boolean, optionsFunc?: Function
-  ) => {
+    name: string, nextArg: string, func: setLoopParameterFunc,
+    nameRequired?: boolean,
+    optionsFunc?: boundFunctionLessFirstArg<optionsFuncType>
+  ): ReturnType<typeof func> | void => {
     loopExists ??= testFunctions.loop(newArgumentsSet);
     if (!loopExists) {
       log(WARNING_LVL, `Skipping ${name} because loop isn't set`)
@@ -335,11 +346,11 @@ const actUpOnPassedArgs = async (
     }
     return (
       nameRequired
-        ? func.call(undefined,
+        ? (func as setLoopParameterOptionsFunc).call(undefined,
           name, nextArg, lastIndex,
-          optionsFunc
+          optionsFunc as boundFunctionLessFirstArg<optionsFuncType>
         )
-        : func(nextArg, lastIndex)
+        : (func as typeof setLoopFadeInterpolation)(nextArg, lastIndex)
     );
   };
   /**
@@ -629,7 +640,7 @@ const actUpOnPassedArgs = async (
       case "nose":          case "hs": {
         const number = Number(lastIndex);
         isStdout ??= testFunctions.stdout(newArgumentsSet);
-        const isExternal = Options.externalEffectProcesser(number, isStdout);
+        const isExternal = Options.externalEffectProcesser(number);
         if (isExternal === false) {
           // This is because it'd sound weird
           // if it cuts off the effect at the end
@@ -1045,7 +1056,8 @@ const invalidNumberString       = "isn't a valid number",
  */
 const setLoopParameterValue = (
   name: string, arg: string,
-  lastIndex: string | undefined, func: Function
+  lastIndex: string | undefined,
+  func: boundFunctionLessFirstArg<optionsFuncType>
 ): void | never => {
   const argInfos = getArgInfos(arg, lastIndex);
   const { lastIndexNumber, lastIndexString } = argInfos;
@@ -1136,7 +1148,8 @@ const setLoopFadeInterpolation = (arg: string, lastIndex?: string): void | never
  */
 const setLoopParameterTimeValue = (
   name: string, arg: string,
-  lastIndex: string | undefined, func: Function
+  lastIndex: string | undefined,
+  func: boundFunctionLessFirstArg<optionsFuncType>
 ): void | never => {
   const {
     number, lastIndexNumber, lastIndexString
