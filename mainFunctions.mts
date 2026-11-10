@@ -34,7 +34,7 @@ import type {
   formatObjectParameters,
   progressBuffersIntfc,
   sampleCountObjectParameters, initObjectParameters,
-  toFileObject, toFileArray,
+  toFileObject, toFileArray, addEventFunc,
   toStdoutOptionsObject, toStdoutArray,
   pipingFunction, prepareDestinationReturnValue
 } from "./types/mainFunctions.mts"
@@ -817,7 +817,9 @@ async function applyExternalEffects({
  * @example
  * addEvent({ eventType: "SIGINT" })
  */
-function addEvent({ eventType, func }) {
+function addEvent(
+  { eventType, func }: { eventType: string, func?: addEventFunc }
+): boolean | void {
   /**
    * Adds an event,
    * then it checks if it actually has been added
@@ -828,7 +830,9 @@ function addEvent({ eventType, func }) {
    * @param {Function} funcToAdd        function to add and check
    * @return {Boolean} true if it has been added or false otherwise
    */
-  function addAndCheckEvent(eventTypeTocheck, funcToAdd) {
+  function addAndCheckEvent<T extends "exit" | NodeJS.Signals>(
+    eventTypeTocheck: T, funcToAdd: addEventFunc<T>
+  ): boolean {
     return (
       process
         .on(eventTypeTocheck, funcToAdd)
@@ -837,17 +841,22 @@ function addEvent({ eventType, func }) {
     );
   }
   switch (eventType) {
+    case "toFileSIGTSTP": case "toFileSIGTERM":
+    case "toFileSIGQUIT": case "toFileSIGINT":
+      if (!(func instanceof Function)) {
+        throw new TypeError(`${eventType} needs a function`)
+      }
     case "toFileSIGTSTP": {
-      return addAndCheckEvent("SIGTSTP", func);
+      return addAndCheckEvent("SIGTSTP", func as addEventFunc<"SIGTSTP">);
     }
     case "toFileSIGTERM": {
-      return addAndCheckEvent("SIGTERM", func);
+      return addAndCheckEvent("SIGTERM", func as addEventFunc<"SIGTERM">);
     }
     case "toFileSIGQUIT": {
-      return addAndCheckEvent("SIGQUIT", func);
+      return addAndCheckEvent("SIGQUIT", func as addEventFunc<"SIGQUIT">);
     }
     case "toFileSIGINT": {
-      return addAndCheckEvent("SIGINT", func);
+      return addAndCheckEvent("SIGINT", func as addEventFunc<"SIGINT">);
     }
     case "SIGINT": {
       return addAndCheckEvent("SIGINT", () => {

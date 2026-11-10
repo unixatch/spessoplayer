@@ -43,6 +43,10 @@ export interface sampleCountObjectParameters {
   loopFade?: number, loopFadeStart?: number, loopFadeDuration?: number
 }
 
+export type addEventFunc<T extends NodeJS.Signals | "exit" = NodeJS.Signals> =
+  | ((...args: process.ProcessEventMap[T]) => void | never)
+  | (() => void | never)
+
 export interface initObjectParameters {
   loopAmount?: number,
   volume?: number, drumsVolume?: number,
