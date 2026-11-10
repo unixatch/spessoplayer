@@ -52,12 +52,12 @@ export interface initObjectParameters {
   volume?: number, drumsVolume?: number,
   /** A list volumes per channel */
   channelVolume?: number[],
-  midiFile: string, soundfontFile: string,
+  midiFile: string, soundfontFile: string | SharedArrayBuffer,
   sampleRate?: number,
   /** if it uses an external program or a builtin */
-  externalEffects?: boolean, reverbVolume: number,
-  loopStart: number | string,
-  loopEnd: number | string,
+  externalEffects?: boolean, reverbVolume?: number,
+  loopStart?: number | string,
+  loopEnd?: number | string,
   loopFade?: boolean,
   loopFadeStart?: number, loopFadeDuration?: number,
   index: number,
@@ -103,7 +103,7 @@ export interface basetoStdoutOptionsObject {
    loopFadeInterpolation?: string | number,
    volume?: number,
    format?: string, // file format
-   midiFile: string, soundfontFile: string,
+   midiFile: string, soundfontFile: string | SharedArrayBuffer,
    effects?: object[],
 }
 interface toFileOptionsObject extends basetoStdoutOptionsObject {

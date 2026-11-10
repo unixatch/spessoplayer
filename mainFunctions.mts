@@ -1459,15 +1459,15 @@ class Progress {
     return this.#renderedAmount[this.#index];
   }
 }
+type OptionsClassValue = typeof Options
 /**
  * Reads the generated samples from spessasynth_core
  * and plays them using mpv
  */
 async function startPlayer(
-  Options: Options, spessasynthLogging?: spessasynthLoggingIntfc,
-  loadingAnimation?: ChildProcess,
-  isVerboseLevelSet?: boolean
-): Promise<void> {
+  Options: OptionsClassValue, spessasynthLogging: spessasynthLoggingIntfc,
+  loadingAnimation?: ChildProcess, isVerboseLevelSet?: boolean
+): Promise<never> {
   const {
     sampleRate, format,
     songIndex, daemon: daemonMode
@@ -1482,7 +1482,8 @@ async function startPlayer(
   const { spawn }        = child_process ??= await import("node:child_process"),
         { createServer } = await import("node:http");
 
-  let relistenFunction, closing: boolean, mpv: ChildProcess | undefined,
+  let relistenFunction: () => void,
+      closing: boolean, mpv: ChildProcess,
       port = 3000, failedAttempts = 0;
   const server = createServer(),
         listOfURLs = [],
@@ -1506,7 +1507,7 @@ async function startPlayer(
       throw new Error("execve doesn't exists")
     })
   })
-  server.on("error", ({code, errno, message}) => {
+  server.on("error", ({code, errno, message}: NodeJS.ErrnoException) => {
     if (code !== "EADDRINUSE") {
       console.error(formatStrings.errorText, message)
       process.exit(errno)
@@ -1527,12 +1528,13 @@ async function startPlayer(
       }, 200
     )
   })
-  server.on("request", async (req, res): Promise<void> => {
-    const fullUrl = new URL(req.url, `http://localhost:${port}`);
+  server.on("request", async (req, res): Promise<void | never> => {
+    const fullUrl = new URL(req.url as string, `http://localhost:${port}`);
     const index = fullUrl.searchParams.get("index");
 
     if (fullUrl.pathname !== "/song" && index === null) {
-      return res.end();
+      res.end()
+      return
     }
     promisesOfPrograms.length &&= 0;
     const realIndex = Number(index),
@@ -1545,7 +1547,8 @@ async function startPlayer(
     if (arrayValue === null) {
       res.statusCode = 204;
       res.flushHeaders()
-      return res.end();
+      res.end()
+      return
     }
     const [length, midi] = arrayValue;
 
@@ -1561,7 +1564,7 @@ async function startPlayer(
     const specificRange = (
       !Number.isNaN(rangeEnd) || rangeStart > 0
     );
-    let destination, header;
+    let destination, header: Uint8Array | undefined;
     destination = await prepareDestination({
       ...options, isPCM, res, mpv, length, midi,
       getWavHeader, promisesOfPrograms, specificRange
@@ -1586,7 +1589,8 @@ async function startPlayer(
       await readStreamPromise
       await Promise.all(promisesOfPrograms)
 
-      return res.end();
+      res.end()
+      return
     }
 
     // Managing Range request
@@ -1603,7 +1607,7 @@ async function startPlayer(
       const actualHeader = header.subarray(rangeStart, rangeEnd);
       bytesWritten += actualHeader.length;
       res.write(actualHeader)
-      if (bytesWritten >= amountOfBytesToWrite) return res.end();
+      if (bytesWritten >= amountOfBytesToWrite) { res.end(); return }
     }
 
     let beyondRangeStart: boolean, startBytes: number;
@@ -1722,6 +1726,8 @@ async function startPlayer(
       )
       process.exit(errno)
     })
+  console.error(formatStrings.errorText, "How did you get here?")
+  process.exit(1)
 }
 /**
  * Prepares the destination for stdout and player modes,
