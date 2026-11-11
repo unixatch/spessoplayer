@@ -20,8 +20,8 @@ extends _optionsObject<"allOptions">, privateProperties {
 export
 interface perSongOptions
 extends _optionsObject<"perSongOptions">, privateProperties {
-  midiFile: string, soundfontFile: string | SharedArrayBuffer,
-  indexOfGroup: number, externalEffects?: boolean
+  midiFile:     string, soundfontFile: string | SharedArrayBuffer,
+  indexOfGroup: number
 }
 
 export interface groupsChecked {
