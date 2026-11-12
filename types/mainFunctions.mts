@@ -5,6 +5,7 @@
 import type { ServerResponse } from "node:http"
 import type { FO_CONSTANTS } from "./cli.mts"
 import type { getData } from "../wavFunctions.mts"
+import type { perSongOptions, nonSpecificProperties } from "./utils.mts"
 import type {
   BasicMIDI, SpessaSynthSequencer, SpessaSynthProcessor
 } from "spessasynth_core"
@@ -47,22 +48,13 @@ export type addEventFunc<T extends NodeJS.Signals | "exit" = NodeJS.Signals> =
   | ((...args: process.ProcessEventMap[T]) => void | never)
   | (() => void | never)
 
-export interface initObjectParameters {
-  loopAmount?: number,
-  volume?: number, drumsVolume?: number,
-  /** A list volumes per channel */
-  channelVolume?: number[],
-  midiFile: string, soundfontFile: string | SharedArrayBuffer,
-  sampleRate?: number,
-  /** if it uses an external program or a builtin */
-  externalEffects?: boolean, reverbVolume?: number,
-  loopStart?: number | string,
-  loopEnd?: number | string,
-  loopFade?: boolean,
-  loopFadeStart?: number, loopFadeDuration?: number,
+export interface initObjectParameters
+extends Pick<
+  perSongOptions,
+  "midiFile" | "soundfontFile" | "indexOfGroup"
+  | Exclude<nonSpecificProperties, "loopFadeInterpolation">
+> {
   index: number,
-  /** index of the Set/group the song is in */
-  indexOfGroup: number,
   isToFile?: boolean,
   /** if the BasicMIDI class is required to be returned */
   basicMIDIRequired?: boolean,
@@ -70,9 +62,7 @@ export interface initObjectParameters {
   onlySampleCount?: boolean,
   /** return the duration and do nothing */
   onlyDuration?: boolean,
-  spessasynthLogging: { info: boolean, warning: boolean }
-  /** if it should not smooth out the end */
-  hardStop?: boolean
+  spessasynthLogging: spessasynthLoggingIntfc
 }
 
 export interface effectsObjectParams {
