@@ -54,7 +54,7 @@ function clearLastLines(lineY: number): void | never {
  * @param {Boolean} extensionIncluded if it should keep the extension
  * @return {String} basename
  */
-function getFilename(path: string, extensionIncluded?: boolean): string | undefined {
+function getFilename(path: string, extensionIncluded?: boolean): string {
   const afterLastSlashIndex = path.lastIndexOf(sep) + 1,
         extStart            = path.lastIndexOf(".");
 
@@ -82,8 +82,8 @@ function getDirname(path: string): string {
   if (lastSlashIndex === -1) dirname = "";
   return dirname ?? path.substring(0, lastSlashIndex);
 }
-const debugLevels = Array(4).keys();
-export const debugMaxLevel = debugLevels.length-1;
+export const debugMaxLevel = 4;
+const debugLevels = Array(debugMaxLevel).keys();
 export const {
   0: ERROR_LVL, 1: WARNING_LVL,
   2: INFO_LVL,  3: DEBUG_LVL
@@ -125,7 +125,7 @@ export { nowInstant, fromInstant, fromDuration, PlainTime }
  *   log(WARNING_LVL, "log with", "-", "multiple lines")
  */
 function log(
-  this: { verboseLevel: number, logFilePath: string } | void,
+  this: { verboseLevel?: number, logFilePath?: string } | void,
   level: number, ...messages: Array<string | Uint8Array>
 ): void {
   const time = performance.now().toFixed(2);
