@@ -154,7 +154,8 @@ export interface getSampleCountObj {
 export interface initSpessaSynthObj {
   seq: SpessaSynthSequencer, synth: SpessaSynthProcessor,
   midi: BasicMIDI,
-  sampleCount: number, durationInSeconds: number
+  sampleCount: number, durationInSeconds: number,
+  startFading?: number | false
 }
 export type toStdoutArray = [
   pipingFunction: Function | undefined,

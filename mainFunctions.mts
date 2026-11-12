@@ -30,10 +30,9 @@ import type { ChildProcess } from "node:child_process"
 import type {
   effectsObjectParams, createReadableObjectParameters,
   ffmpegArgsObj, spessasynthLoggingIntfc,
-  formatObject, formatObjectFileMode,
-  formatObjectParameters,
-  progressBuffersIntfc,
-  sampleCountObjectParameters, initObjectParameters,
+  formatObjectParameters, progressBuffersIntfc,
+  sampleCountObjectParameters,
+  initObjectParameters, initSpessaSynthObj,
   toFileObject, toFileArray, addEventFunc,
   toStdoutOptionsObject, toStdoutArray,
   pipingFunction, prepareDestinationReturnValue
@@ -64,8 +63,13 @@ let stream: Awaited<typeof import("node:stream")>,
     lastIndexOfGroup = 0,
     doneStreaming = false,
     fatalErrors: string[];
+
+type soundFontListType = Array<
+  string | Buffer<ArrayBuffer> | SharedArrayBuffer
+  | BasicSoundBank
+>
 const midiList: BasicMIDI[] = [],
-      soundFontList: string[] | Buffer[] | BasicSoundBank[] = [];
+      soundFontList: soundFontListType = [];
 
 /**
  * Simply returns an object containing
@@ -478,8 +482,7 @@ function prettyLogSpessaSynthErrors(
 }
 /**
  * Initializes all the required variables for spessasynth_core usage
- * @param {module:typeDefinitions~initObjectParameters} initObjectParameters
- * @return {Promise<module:typeDefinitions~initSpessaSynthObj|Number|null>} initSpessaSynthObj
+ * @return {Promise<object|Array<number | BasicMIDI>|Number|null>} initSpessaSynthObj or an array or the sampleCount or null if it fails
  */
 async function initSpessaSynth({
   loopAmount = 0,
@@ -494,7 +497,10 @@ async function initSpessaSynth({
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
   basicMIDIRequired = true, spessasynthLogging, hardStop = false
-}: initObjectParameters) {
+}: initObjectParameters): Promise<
+  initSpessaSynthObj | [number, BasicMIDI]
+  | number | null
+> {
   const {
     BasicMIDI,
     SoundBankLoader,
@@ -504,8 +510,8 @@ async function initSpessaSynth({
   } = SpessaSynth ??= await import("spessasynth_core");
   if (onlySampleCount || onlyDuration || isToFile) {
     const { info, warning } = spessasynthLogging;
-    SpessaLog.infoEnabled = info;
-    SpessaLog.warnEnabled = warning;
+    if (info    !== undefined) SpessaLog.infoEnabled = info;
+    if (warning !== undefined) SpessaLog.warnEnabled = warning;
   }
 
   let midi: BasicMIDI;
@@ -554,16 +560,16 @@ async function initSpessaSynth({
       lastIndexOfGroup = indexOfGroup;
     }
     soundFontList[indexOfGroup] ??= (
-      isToFile ? soundfontFile : fs.readFileSync(soundfontFile)
+      isToFile ? soundfontFile : fs.readFileSync(soundfontFile as string)
     );
   }
   // Handles @<miditicks> syntax
   let areMidiTicks_Start, areMidiTicks_End;
-  if (loopStart?.length) {
+  if (typeof loopStart === "string") {
     areMidiTicks_Start = true;
     loopStart = Number(loopStart.substring(1));
   }
-  if (loopEnd?.length) {
+  if (typeof loopEnd === "string") {
     areMidiTicks_End = true;
     loopEnd = Number(loopEnd.substring(1));
   }
@@ -577,11 +583,11 @@ async function initSpessaSynth({
     loopAmount,
     loopStart: (
       areMidiTicks_Start
-        ? midi.midiTicksToSeconds(loopStart) : loopStart
+        ? midi.midiTicksToSeconds(loopStart as number) : loopStart
     ),
     loopEnd: (
       areMidiTicks_End
-        ? midi.midiTicksToSeconds(loopEnd) : loopEnd
+        ? midi.midiTicksToSeconds(loopEnd as number) : loopEnd
     ),
     hardStop, loopFade, loopFadeDuration, loopFadeStart
   });
@@ -591,13 +597,13 @@ async function initSpessaSynth({
   );
   if (onlyDuration) return durationInSeconds;
 
-  if (loopStart > 0 && !loopDetectedInMidi) {
+  if (loopStart! > 0 && !loopDetectedInMidi) {
     // ((midi.timeDivision * midi.tempoChanges[0].tempo)/60) * loopStart;
     midi.loop.start = (
       areMidiTicks_Start
           // Miditicks format
-        ? loopStart
-        : midi.secondsToMIDITicks(loopStart)
+        ? loopStart as number
+        : midi.secondsToMIDITicks(loopStart as number)
     );
   }
   if (loopEnd && loopEnd !== midi.duration && !loopDetectedInMidi) {
@@ -617,7 +623,9 @@ async function initSpessaSynth({
       soundFontList[indexOfGroup] = SoundBankLoader.fromArrayBuffer(soundFontList[indexOfGroup]);
     } catch (error) {
       return prettyLogSpessaSynthErrors(
-        (error as Error), soundfontFile
+        (error as Error),
+        typeof soundfontFile !== "string"
+          ? `${midiFile}'s soundbank` : soundfontFile
       );
     }
   }
@@ -649,10 +657,10 @@ async function initSpessaSynth({
     }
   }
   if (externalEffects === false) {
-    synth.setSystemParameter("reverbGain", reverbVolume)
+    synth.setSystemParameter("reverbGain", reverbVolume as number)
   }
   synth.soundBankManager.addSoundBank(
-    soundFontList[indexOfGroup],
+    soundFontList[indexOfGroup] as BasicSoundBank,
     "main"
   )
   await synth.processorInitialized
