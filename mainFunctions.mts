@@ -145,7 +145,7 @@ async function formatManager<T extends string>({
    */
   function addPipingFunction(func?: pipingFunction) {
     return (!func)
-      ? pipingFunction = (whereToConnect, end, noPipe = false) => {
+      ? pipingFunction = (whereToConnect, end: boolean, noPipe = false) => {
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
         );
@@ -381,7 +381,7 @@ async function formatManager<T extends string>({
       if (isToFile) break;
 
       const doneSettingUpMsg = "Done setting up" + ((dryRun) ? " dry run" : "");
-      addPipingFunction((whereToConnect, end, noPipe = false) => {
+      addPipingFunction((whereToConnect, end: boolean, noPipe = false) => {
         const destination = res ?? whereToConnect;
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
@@ -1145,7 +1145,7 @@ async function toStdout({
     format, readStream, res,
     ...options,
     promisesOfPrograms
-  } as formatObject);
+  });
   log(DEBUG_LVL, "Finished creating the stdout promise")
   return [
     pipingFunction,
@@ -1278,7 +1278,7 @@ async function toFile({
     })
   );
   let promisesOfPrograms: Promise<void>[] = [],
-      pipingFunctions = [];
+      pipingFunctions: (pipingFunction | undefined)[] = [];
   const addFunction = async (outFile?: string): Promise<void> => {
     const isf32le = outFile?.endsWith(".f32le");
     pipingFunctions.push(
@@ -1831,7 +1831,7 @@ async function prepareDestination({
   if (!isStdout && (needsConvertion || effects) && !specificRange) {
     // Necessary because otherwise the runtime
     // doesn't write the length in hex before the data
-    transferEncodingHandler = (data: Buffer) => {
+    transferEncodingHandler = (data: Buffer): void => {
       if (res.writableEnded) return;
       res.write(data)
     }

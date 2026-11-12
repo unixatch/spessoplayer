@@ -163,7 +163,7 @@ export type toStdoutArray = [
 ];
 export type toFileArray = [
   fileOutputs: string[],
-  pipingFunction: Function[],
+  pipingFunction: (pipingFunction | undefined)[],
   Promise<Array<Promise<Array<undefined | NodeJS.ReadableStream>> | undefined | number>>
 ];
 export type preparedDestination<T = "normal"> =
