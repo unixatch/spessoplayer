@@ -102,13 +102,13 @@ const logMessageColors: { [key: string | number]: string } = {
 let nowInstant:   typeof Temporal.Now.instant | undefined,
     fromInstant:  Temporal.InstantConstructor["from"]  | undefined,
     fromDuration: Temporal.DurationConstructor["from"] | undefined,
-    PlainTime:    Temporal.PlainTimeConstructor | Temporal.PlainTime | undefined;
+    PlainTimeConstructor: Temporal.PlainTimeConstructor | undefined;
 if (typeof Temporal !== "undefined") ({
   Now:      { instant: nowInstant },
   Instant:  { from: fromInstant   },
-  Duration: { from: fromDuration  }, PlainTime
+  Duration: { from: fromDuration  }, PlainTime: PlainTimeConstructor
 } = Temporal);
-PlainTime &&= new (PlainTime as Temporal.PlainTimeConstructor)();
+const PlainTime = PlainTimeConstructor && new PlainTimeConstructor();
 export { nowInstant, fromInstant, fromDuration, PlainTime }
 /**
  * Logger

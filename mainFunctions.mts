@@ -1361,8 +1361,19 @@ class Progress {
     amountOfSongs: number | undefined, index: number | undefined,
     {amountToRender, renderedAmount, percentageDone}: progressBuffersIntfc
   ) {
+    if (amountOfSongs !== undefined && index !== undefined) {
+      throw new Error("amountOfSongs and index shouldn't be defined together")
+    } else if (amountOfSongs === undefined && index === undefined) {
+      throw new ReferenceError("Neither amountOfSongs or index were defined")
+    }
+    if (!Number.isInteger(index) && index !== undefined) {
+      throw new TypeError("index must be an integer or undefined")
+    }
+    if (!Number.isInteger(amountOfSongs) && amountOfSongs !== undefined) {
+      throw new TypeError("amountToRender must be an integer or undefined")
+    }
+    this.#index = index;
     this.amountOfSongs = amountOfSongs;
-    if (typeof index === "number") this.#index = index;
 
     this.#amountToRender = new Float32Array(amountToRender);
     this.#renderedAmount = new Float32Array(renderedAmount);
@@ -1373,7 +1384,7 @@ class Progress {
   #sum(array: Float32Array): undefined | number {
     if (this.#index !== undefined) return;
     let sumOfAll = 0;
-    for (let i = 0; i <= this.amountOfSongs; ++i) {
+    for (let i = 0; i <= this.amountOfSongs!; ++i) {
       const number = array[i];
       if (number) sumOfAll += number;
     }
@@ -1386,7 +1397,7 @@ class Progress {
   get percentageText(): undefined | string {
     if (this.#index !== undefined) return;
     return yellow + (
-      this.#sum(this.#percentageDone).toFixed(2)
+      this.#sum(this.#percentageDone)!.toFixed(2)
     ) + normal + "%";
   }
   /**
@@ -1409,12 +1420,12 @@ class Progress {
     if (PlainTime) return (
       magenta
         // Gets the ISO time format
-        + PlainTime.add(fromDuration(`PT${renderedAmountNumber}S`))
+        + PlainTime.add(fromDuration!(`PT${renderedAmountNumber}S`))
             .toString().substring(this.#removeAmount)
       + `${normal} / ${brightMagenta}`
 
         + PlainTime.add(
-            fromDuration(`PT${this.#amountToRender[0].toFixed(3)}S`)
+            fromDuration!(`PT${this.#amountToRender[0].toFixed(3)}S`)
           )
             .toString().substring(this.#removeAmount)
       + `${normal} | `
@@ -1423,10 +1434,12 @@ class Progress {
     return (
       magenta
         // Gets the full ISO format and keeps the time part
+        // @ts-ignore If PlainTime is defined, it'll never reach here
         + (this.#date.setTime(renderedAmountNumber), this.#date)
             .toISOString().substring(this.#removeAmount, 23)
       + `${normal} / ${brightMagenta}`
 
+        // @ts-ignore Same here
         + (this.#date.setTime(this.#amountToRender[0] * 1000), this.#date)
             .toISOString().substring(this.#removeAmount, 23)
       + `${normal} | `
