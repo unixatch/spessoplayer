@@ -37,13 +37,23 @@ import {
   actUpOnPassedArgs,
   Options, FO_CONSTANTS
 } from "./cli.mts"
+
 import type {
   Worker as WorkerType, ResourceLimits
 } from "node:worker_threads"
+import type {
+  ChildProcess, ChildProcessWithoutNullStreams
+} from "node:child_process"
+import type { BasicMIDI } from "spessasynth_core"
+import type {
+  progressBuffersIntfc,
+  spessasynthLoggingIntfc, basicMIDIRequiredTuple,
+  preparedDestination, prepareDestinationReturnValue
+} from "./types/mainFunctions.mts"
 import type { perSongOptions } from "./types/utils.mts"
 import type {
-  finalFileOutputsIntfc,
-  promiseResolve, promiseReject
+  finalFileOutputsIntfc, listOfOptionsType,
+  promiseResolve, promiseReject, effectParameterObjectIntfc
 } from "./types/main.mts"
 
 let isVerboseLevelSet: boolean, argv = process.argv;
@@ -62,7 +72,9 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
     debugLevelSpessoMsg, debugFileSpessoMsg
   });
 }
-const spessasynthLogging = { info: false, warning: false };
+const spessasynthLogging: spessasynthLoggingIntfc = {
+  info: false, warning: false
+};
 let spessaOptionIndex = argv.indexOf("--enable-spessasynth-logging");
 if (spessaOptionIndex !== -1) {
   spessasynthLogging.info = true;
@@ -93,7 +105,7 @@ const [
 ] = await actUpOnPassedArgs(undefined, isVerboseLevelSet);
 log(INFO_LVL, "Checked passed args")
 
-const listOfOptions = Options.all;
+const listOfOptions: listOfOptionsType = Options.all;
 const {
   dryRun, format,
   confirmation, noTable,
@@ -115,7 +127,7 @@ if (confirmation) {
         history: ["Y", "n"]
       })
   );
-  const question = async () => {
+  const question = async (): Promise<void | never> => {
     const answer = (
       await rl.question("Is this setup correct [Y|n]? ")
     ).toLowerCase().trim();
@@ -154,8 +166,9 @@ if (isToStdout) {
     format === "pcm"   ||
     format === "f32le" || format === "s16le"
   );
-  const perSongOptions: perSongOptions[] = [], lengthOfFiles = [],
-        promisesOfPrograms: Array<Promise<void>> = [];
+  const promisesOfPrograms: Promise<void>[]  = [],
+        perSongOptions:     perSongOptions[] = [],
+        lengthOfFiles:      number[]         = [];
   const getWavHeader = (
     !isPCM && (await import("./wavFunctions.mts")).getWavHeader
   );
@@ -163,7 +176,7 @@ if (isToStdout) {
   const singleSong = (
     amountOfSongs === 1 || amountOfSongs - songIndex === 1
   );
-  let basicMidiClass;
+  let basicMidiClass: BasicMIDI | undefined;
   for (let i = songIndex; i < amountOfSongs; ++i) {
     const options = perSongOptions[i] = Options.getOptionsOfSong(i);
     if (!options) continue;
@@ -173,7 +186,7 @@ if (isToStdout) {
       onlySampleCount: true,
       basicMIDIRequired: singleSong ? true : false,
       spessasynthLogging
-    });
+    }) as number | basicMIDIRequiredTuple | null;
     if (!initFunctionValue) continue;
     if (Array.isArray(initFunctionValue)) {
       [initFunctionValue, basicMidiClass] = initFunctionValue;
@@ -192,14 +205,18 @@ if (isToStdout) {
     midiFile: (
       singleSong ? perSongOptions[songIndex].midiFile : undefined
     )
-  }, true);
+  }, true) as Exclude<prepareDestinationReturnValue, preparedDestination>;
   if (!isPCM && !converterProcess && listOfOptions.effects
       && listOfOptions?.effects?.[0] === undefined) {
-    (dryRunStream ?? originalDestination).write(stdoutHeader)
+    (
+      dryRunStream! ?? originalDestination as
+        ChildProcess["stdin"] | typeof process.stdout
+    ).write(stdoutHeader)
   }
-  let effectsProcess, destination,
+  let effectsProcess: ChildProcessWithoutNullStreams | undefined,
+      destination:    ChildProcessWithoutNullStreams["stdin"] | null | undefined,
       rawMode: string | boolean = false,
-      effectParameterObject;
+      effectParameterObject: effectParameterObjectIntfc | undefined;
   if (listOfOptions.effects) {
     if (!converterProcess) {
       rawMode = (format === "pcm" || format === "s16le") && "s16";
@@ -227,17 +244,17 @@ if (isToStdout) {
     if (options.effects) {
       // In case of wav (false), stream it or with header
       // otherwise other pcm formats
-      effectParameterObject.rawMode ||= i ? "s16" : rawMode;
-      effectParameterObject.sendEOF ||= isLastSong;
-      effectParameterObject.effects = options.effects;
-      effectParameterObject.stdoutHeader &&= i ? undefined : stdoutHeader;
+      effectParameterObject!.rawMode ||= i ? "s16" : rawMode;
+      effectParameterObject!.sendEOF ||= isLastSong;
+      effectParameterObject!.effects = options.effects;
+      effectParameterObject!.stdoutHeader &&= i ? undefined : stdoutHeader;
 
-      [effectsProcess] = await applyExternalEffects(effectParameterObject);
+      [effectsProcess] = await applyExternalEffects(effectParameterObject!);
       destination = effectsProcess.stdin;
     }
 
     func?.(
-      destination ?? (
+      destination! ?? (
         originalDestination !== converterProcess?.stdin
           ? (dryRunStream ?? originalDestination)
           : originalDestination
@@ -299,7 +316,7 @@ const showFileList = (isDryRun: string | undefined, partial = false) => {
   )
 };
 /** A small handler function only for specific signals */
-const signalHandler = (signal: NodeJS.Signals) => {
+const signalHandler = (signal: NodeJS.Signals): void | never => {
   switch (signal) {
     case "SIGTSTP":
       isCursorHidden &&= false;
@@ -327,13 +344,15 @@ const signalHandler = (signal: NodeJS.Signals) => {
       )
       process.exit(isTermination ? 143 : 131)
     }
+    default:
+      throw new Error(`Unsupported signal ${signal}`)
   }
 };
 addEvent({ eventType: "toFileSIGTSTP", func: signalHandler })
 addEvent({ eventType: "toFileSIGTERM", func: signalHandler })
 addEvent({ eventType: "toFileSIGQUIT", func: signalHandler })
 addEvent({ eventType: "toFileSIGINT",
-  func: () => {
+  func: (): number => {
     // In case it hasn't even reached the starting point
     // of the main file mode loop
     try {
@@ -381,7 +400,7 @@ const {
 // Calculates amountToRender (length of all songs combined)
 // before anything else so that the percentages are correct
 const perSongOptions: perSongOptions[] = [];
-const progressBuffers = {
+const progressBuffers: progressBuffersIntfc = {
   amountToRender: new SharedArrayBuffer(4),
   renderedAmount: new SharedArrayBuffer(4 * amountOfSongs),
   percentageDone: new SharedArrayBuffer(4 * amountOfSongs)
@@ -436,7 +455,8 @@ let calculateMaxThreads: (cores?: number, fromUser?: boolean) => number;
     every time the function starts and
     can't be changed accidentally
   */
-  let _maxThreads, beforeAmount;
+  let _maxThreads:  number | null | undefined,
+      beforeAmount: number | undefined;
   const OFFSET_MB = 100;
   /**
    * Calculates the amount of threads
@@ -445,7 +465,7 @@ let calculateMaxThreads: (cores?: number, fromUser?: boolean) => number;
    * @return {Number} threads count
    */
   calculateMaxThreads = (cores, fromUser) => {
-    if ((_maxThreads ??= cores) <= 0) {
+    if ((_maxThreads ??= cores as number) <= 0) {
       console.error(formatStrings.errorText,
         "Thread creation isn't possible with currently available RAM"
       )
@@ -479,7 +499,7 @@ let calculateMaxThreads: (cores?: number, fromUser?: boolean) => number;
 }
 // Starting the actual work
 const RENDER_TEXTS_DELAY = 500,
-      listOfPromises = new Map();
+      listOfPromises: Map<number, Promise<unknown>> = new Map();
 const { Worker } = await import("node:worker_threads"),
       { availableParallelism } = await import("node:os");
 const fileSizes = await getSizes(filesList);
@@ -550,7 +570,7 @@ const workerPromiseFunction = function (
   addEventOnce(currentWorker, "error", reject)
   addEventOnce(currentWorker, "exit", resolve)
 
-  currentWorker.on("message", (message: string) => {
+  currentWorker.on("message", (message: string): void => {
     renderTextsInterval ??= (
       !isVerboseLevelSet && (
         loadingAnimation?.kill(),
