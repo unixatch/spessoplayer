@@ -126,7 +126,7 @@ export { nowInstant, fromInstant, fromDuration, PlainTime }
  */
 function log(
   this: { verboseLevel?: number, logFilePath?: string } | void,
-  level: number, ...messages: Array<string | Uint8Array>
+  level: number, ...messages: Array<string | Uint8Array | number>
 ): void {
   const time = performance.now().toFixed(2);
   let date = nowInstant?.().toString();
