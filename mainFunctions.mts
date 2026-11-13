@@ -718,7 +718,7 @@ async function applyExternalEffects(
   */
   const { spawn } = child_process ??= await import("node:child_process");
   // In case it's custom
-  if (effects[0]?.effect) {
+  if (effects?.[0]?.effect) {
     // cloning the effects array so that it can be unpacked
     const oldEffectsArray = [...effects];
     effects.length = 0;
@@ -731,7 +731,7 @@ async function applyExternalEffects(
         effects.push(effect)
       })
   }
-  const soxArgs = [];
+  const soxArgs: string[] = [];
   if (rawMode) {
     // Raw support, here's an example:
     //   sox -r 48000 -c 2 -e floating-point -t f32 -L - \
@@ -739,7 +739,7 @@ async function applyExternalEffects(
     soxArgs.push(
       "--type", rawMode,
       "--encoding", (rawMode === "f32") ? "floating-point" : "signed-integer",
-      "--rate", sampleRate, "--channels", "2",
+      "--rate", `${sampleRate}`, "--channels", "2",
       "--endian", "little", "-",
       "--type", rawMode, destination, ...effects
     )
@@ -760,7 +760,7 @@ async function applyExternalEffects(
       .join(" ")
   )
 
-  sox.stderr.on("data", (data: Buffer) => {
+  sox.stderr.on("data", (data: Buffer): void => {
     const stringOfError = data.toString();
     const connectionResetRegex = /sox FAIL sox: `-' error writing output file: Connection reset by peer\n/g,
           noSeekWarning = /\n*sox WARN \w*:.*can't seek.*\n*/g;
@@ -817,7 +817,9 @@ async function applyExternalEffects(
   )
   log(DEBUG_LVL, "Added SoX promise")
 
-  if (stdout !== "pipe") sox.stdout.pipe(stdout, { end: sendEOF })
+  if (stdout !== "pipe") sox.stdout.pipe(
+    stdout as NodeJS.WriteStream, { end: sendEOF }
+  )
   if (stdoutHeader && !rawMode) sox.stdin.write(stdoutHeader)
   addErrorEventToDest?.(readStream?.pipe?.(sox.stdin) ?? sox.stdin)
   log(INFO_LVL, "Finished setting up SoX")
