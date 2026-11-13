@@ -230,7 +230,7 @@ const actUpOnPassedArgs = async (
     await uninstall()
     process.exit()
   }
-  let loadingAnimation: ChildProcess | Deno.ChildProcess | undefined,
+  let loadingAnimation: loadingAnimationProcType,
       loadingAnimationCleanupFunc: loadingAnimationCleanupFuncType;
   if (!isVerboseLevelSet) loadingAnimationBlock: {
     const isWindows  = process.platform === "win32",

@@ -24,9 +24,13 @@ import type {
   BasicMIDI, BasicSoundBank,
   SpessaSynthProcessor, SpessaSynthSequencer
 } from "spessasynth_core"
-import type { Stream, Readable } from "node:stream"
-import type { ChildProcess } from "node:child_process"
+import type { Readable } from "node:stream"
+import type { WriteStream } from "node:fs"
+import type {
+  ChildProcess, ChildProcessWithoutNullStreams
+} from "node:child_process"
 
+import type { loadingAnimationProcType } from "./types/cli.mts"
 import type {
   effectsObjectParams, createReadableObjectParameters,
   ffmpegArgsObj, spessasynthLoggingIntfc,
@@ -35,7 +39,8 @@ import type {
   initObjectParameters, initSpessaSynthObj,
   toFileObject, toFileArray, addEventFunc,
   toStdoutOptionsObject, toStdoutArray,
-  pipingFunction, prepareDestinationReturnValue
+  pipingFunction, preparedDestination, basicMIDIRequiredTuple,
+  prepareDestinationObjParam, prepareDestinationReturnValue
 } from "./types/mainFunctions.mts"
 import type { Options } from "./utils/utils.mts"
 
@@ -498,7 +503,7 @@ async function initSpessaSynth({
   onlySampleCount = false, onlyDuration = false,
   basicMIDIRequired = true, spessasynthLogging, hardStop = false
 }: initObjectParameters): Promise<
-  initSpessaSynthObj | [number, BasicMIDI]
+  initSpessaSynthObj | basicMIDIRequiredTuple
   | number | null
 > {
   const {
@@ -692,15 +697,17 @@ async function initSpessaSynth({
  * @example
  * applyExternalEffects({ program: "sox", stdoutHeader, readStream })
  */
-async function applyExternalEffects({
-  program,
-  stdoutHeader, readStream,
-  addErrorEventToDest,
-  promisesOfPrograms,
-  stdout = process.stdout,
-  destination = "-", effects,
-  sampleRate = 48000, rawMode, sendEOF = true
-}: effectsObjectParams) {
+async function applyExternalEffects(
+  {
+    program,
+    stdoutHeader, readStream,
+    addErrorEventToDest,
+    promisesOfPrograms,
+    stdout = process.stdout,
+    destination = "-", effects,
+    sampleRate = 48000, rawMode, sendEOF = true
+  }: effectsObjectParams
+): Promise<[ChildProcessWithoutNullStreams, Promise<unknown>[]]> {
   /*
     ffmpeg
       -i -
@@ -1487,7 +1494,7 @@ type OptionsClassValue = typeof Options
  */
 async function startPlayer(
   Options: OptionsClassValue, spessasynthLogging: spessasynthLoggingIntfc,
-  loadingAnimation?: ChildProcess, isVerboseLevelSet?: boolean
+  loadingAnimation?: loadingAnimationProcType, isVerboseLevelSet?: boolean
 ): Promise<never> {
   const {
     sampleRate, format,
