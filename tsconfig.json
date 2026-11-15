@@ -25,9 +25,5 @@
       "types": ["deno", "node", "spessasynth_core"],
       "lib": ["esnext"]
     },
-    "includes": ["*.mts", "utils/*.mts"],
-    "exclude": [
-      "**/node_modules/**/*", ".*/*",
-      "hooks/*", "tests/*"
-    ]
+    "exclude": ["node_modules/", "dist/", ".*/*", "**/*.d.*"]
 }
