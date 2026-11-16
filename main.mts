@@ -51,10 +51,7 @@ import type {
   preparedDestination, prepareDestinationReturnValue
 } from "./types/mainFunctions.mts"
 import type { perSongOptions } from "./types/utils.mts"
-import type {
-  finalFileOutputsIntfc, listOfOptionsType,
-  promiseResolve, promiseReject, effectParameterObjectIntfc
-} from "./types/main.mts"
+import type * as $_ from "./types/main.mts"
 
 let isVerboseLevelSet: boolean, argv = process.argv;
 const {
@@ -105,7 +102,7 @@ const [
 ] = await actUpOnPassedArgs(undefined, isVerboseLevelSet);
 log(INFO_LVL, "Checked passed args")
 
-const listOfOptions: listOfOptionsType = Options.all;
+const listOfOptions: $_.listOfOptionsType = Options.all;
 const {
   dryRun, format,
   confirmation, noTable,
@@ -216,7 +213,7 @@ if (isToStdout) {
   let effectsProcess: ChildProcessWithoutNullStreams | undefined,
       destination:    ChildProcessWithoutNullStreams["stdin"] | null | undefined,
       rawMode: string | boolean = false,
-      effectParameterObject: effectParameterObjectIntfc | undefined;
+      effectParameterObject: $_.effectParameterObjectIntfc | undefined;
   if (listOfOptions.effects) {
     if (!converterProcess) {
       rawMode = (format === "pcm" || format === "s16le") && "s16";
@@ -523,7 +520,7 @@ const maxThreads = calculateMaxThreads(
 const workers: WorkerType[] = [];
 let renderTextsInterval: NodeJS.Timeout | undefined,
     cpuUsageData = process.cpuUsage(),
-    finalFileOutputs: finalFileOutputsIntfc[] = [];
+    finalFileOutputs: $_.finalFileOutputsIntfc[] = [];
 
 /** Main function that renders progress text */
 const renderTextsFunction = (progressClass: Progress) => {
@@ -556,7 +553,7 @@ const renderTextsFunction = (progressClass: Progress) => {
  */
 const addEventOnce = (
   target: WorkerType, eventName: string,
-  func: promiseResolve | promiseReject
+  func: $_.promiseResolve | $_.promiseReject
 ): WorkerType | false => (
   !target.listenerCount(eventName)
     && target.on(eventName, func)
@@ -564,7 +561,7 @@ const addEventOnce = (
 /** A function that coordinates the worker */
 const workerPromiseFunction = function (
   this: [index: number, currentWorker: WorkerType],
-  resolve: promiseResolve, reject: promiseReject
+  resolve: $_.promiseResolve, reject: $_.promiseReject
 ): void {
   const [index, currentWorker] = this;
   addEventOnce(currentWorker, "error", reject)
