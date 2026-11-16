@@ -28,13 +28,7 @@ import {
 } from "./utils/utils.mts"
 import type { boundFunctionLessFirstArg } from "./types/utils.mts"
 import type { MainOptions } from "./utils/classes.mts"
-import type {
-  loadingAnimationProcType, extLessFiles, doneFileList,
-  loadingAnimationCleanupFuncType, timeStampMatch,
-  setFileObjectParameters, setFileReturnType,
-  getArgInfosValue, manageVerboseOptionsIntfc,
-  FO_CONSTANTS as FO_CONSTANTS_e
-} from "./types/cli.mts"
+import type * as $_ from "./types/cli.mts"
 import type { ChildProcess, SpawnSyncReturns } from "node:child_process"
 
 type optionsFuncType = typeof MainOptions.addIndexedNumberValue
@@ -127,7 +121,7 @@ async function get20BytesFromFile(path: string): Promise<string | never> {
 async function manageVerboseOptions({
   DEBUG_LEVEL_SPESSO,  DEBUG_FILE_SPESSO,
   debugLevelSpessoMsg, debugFileSpessoMsg
-}: manageVerboseOptionsIntfc<string>): Promise<[boolean, string[]]> {
+}: $_.manageVerboseOptionsIntfc<string>): Promise<[boolean, string[]]> {
   const newArguments = newArgs;
   let isVerboseLevelSet: string | undefined,
       newArgumentsLength = newArguments.length;
@@ -195,7 +189,7 @@ async function manageVerboseOptions({
   ];
 }
 const setFilePromises: ReturnType<typeof setFile>[] = [];
-export const FO_CONSTANTS: FO_CONSTANTS_e = {
+export const FO_CONSTANTS: $_.FO_CONSTANTS = {
   WAV_INDEX:  0, RAW_INDEX: 1,
   FLAC_INDEX: 2, MP3_INDEX: 3, OPUS_INDEX: 4
 };
@@ -208,7 +202,7 @@ const newArgs = process.argv.slice(2);
  */
 const actUpOnPassedArgs = async (
   args?: typeof process.argv, isVerboseLevelSet?: boolean
-): Promise<[loadingAnimationProcType, loadingAnimationCleanupFuncType]> | never => {
+): Promise<[$_.loadingAnimationProcType, $_.loadingAnimationCleanupFuncType]> | never => {
   let lastParam: string | undefined,
       lastIndex: string | undefined;
   const newArguments = args?.slice(2) ?? newArgs,
@@ -230,8 +224,8 @@ const actUpOnPassedArgs = async (
     await uninstall()
     process.exit()
   }
-  let loadingAnimation: loadingAnimationProcType,
-      loadingAnimationCleanupFunc: loadingAnimationCleanupFuncType;
+  let loadingAnimation: $_.loadingAnimationProcType,
+      loadingAnimationCleanupFunc: $_.loadingAnimationCleanupFuncType;
   if (!isVerboseLevelSet) loadingAnimationBlock: {
     const isWindows  = process.platform === "win32",
           executable = !isWindows ? "sh" : "cmd.exe";
@@ -374,10 +368,10 @@ const actUpOnPassedArgs = async (
     if (!lastParam) lastAutomaticFile = arg;
     groupSeparator &&= undefined;
   };
-  const doneFileList: doneFileList = Object.create(null),
+  const doneFileList: $_.doneFileList = Object.create(null),
         doneSymbol = Symbol("ALREADY_DONE");
 
-  const extLessFiles: extLessFiles = Object.create(null);
+  const extLessFiles: $_.extLessFiles = Object.create(null);
   {
     // Loads extLessFiles with only basenames of the files.
     // Also code block just because of length variable
@@ -804,7 +798,7 @@ const actUpOnPassedArgs = async (
  * @return {Boolean} - whether or not it has found a similar file inside process.argv
  */
 const checkForIdenticalName = (
-  path: string, extLessFiles: extLessFiles
+  path: string, extLessFiles: $_.extLessFiles
 ): boolean => {
   const startOfExt = path.lastIndexOf(".");
   return extLessFiles[
@@ -822,7 +816,7 @@ const checkForIdenticalName = (
  */
 const createSetFilePromise = (
   indexOfSetFile: number, func: () => void
-): setFileReturnType => {
+): $_.setFileReturnType => {
   const lastSetFilePromise = setFilePromises[indexOfSetFile-1];
   return lastSetFilePromise?.then(func) ?? func();
 }
@@ -848,7 +842,7 @@ const setFile = async ({
   lastParam, lastIndex,
   groupSeparator,
   lastAutomaticFile, arg
-}: setFileObjectParameters): Promise<setFileReturnType> => {
+}: $_.setFileObjectParameters): Promise<$_.setFileReturnType> => {
   // Prevents any parameter getting here and
   // doing any undefined behaviour
   if (lastParam && lastParam !== "input") return;
@@ -1030,7 +1024,7 @@ const isRealNumber = (number: unknown, checkForInfinity?: boolean): boolean => {
   );
 };
 /** Translates the given strings into useful values */
-const getArgInfos = (arg: string, lastIndex?: string): getArgInfosValue => ({
+const getArgInfos = (arg: string, lastIndex?: string): $_.getArgInfosValue => ({
   number: Number(arg),
   lastIndexNumber: Number(lastIndex),
   lastIndexString: lastIndex ?? "0"
@@ -1166,7 +1160,7 @@ const setLoopParameterTimeValue = (
     // ISO Time format checks
     const {
       groups: {optional: optionalTime}
-    } = timeStampMatch as timeStampMatch;
+    } = timeStampMatch as $_.timeStampMatch;
     if (optionalTime?.length! > 3) {
       console.error(
         formatStrings.failedCliParamWithArg,
