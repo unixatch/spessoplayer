@@ -31,17 +31,7 @@ import type {
 } from "node:child_process"
 
 import type { loadingAnimationProcType } from "./types/cli.mts"
-import type {
-  effectsObjectParams, createReadableObjectParameters,
-  ffmpegArgsObj, spessasynthLoggingIntfc,
-  formatObjectParameters, progressBuffersIntfc,
-  sampleCountObjectParameters,
-  initObjectParameters, initSpessaSynthObj,
-  toFileObject, toFileArray, addEventFunc,
-  toStdoutOptionsObject, toStdoutArray,
-  pipingFunction, preparedDestination, basicMIDIRequiredTuple,
-  prepareDestinationObjParam, prepareDestinationReturnValue
-} from "./types/mainFunctions.mts"
+import type * as $_ from "./types/mainFunctions.mts"
 import type { Options } from "./utils/utils.mts"
 
 const {
@@ -80,7 +70,7 @@ const midiList: BasicMIDI[] = [],
  * Simply returns an object containing
  * ffmpeg's arguments in all supported formats
  */
-function ffmpegArgs(outFile = "pipe:1", withoutBasics = false): ffmpegArgsObj<string[]> {
+function ffmpegArgs(outFile = "pipe:1", withoutBasics = false): $_.ffmpegArgsObj<string[]> {
   const BASIC_FFMPEG_ARGS = !withoutBasics ? [
     "-loglevel", "error",
     "-nostdin", // Necessary because of spawn and no shell
@@ -116,7 +106,7 @@ async function formatManager<T extends string>({
   stdoutHeader,
   promisesOfPrograms,
   outFile
-}: formatObjectParameters<T>): Promise<Function | undefined> {
+}: $_.formatObjectParameters<T>): Promise<Function | undefined> {
   /**
    * Error handler for readStream mainly but also for other streams
    * @param {Error} error error object from "error" event
@@ -148,7 +138,7 @@ async function formatManager<T extends string>({
    * @param {Function} [func] custom function to set
    * @return {Function} the function that it has been set
    */
-  function addPipingFunction(func?: pipingFunction) {
+  function addPipingFunction(func?: $_.pipingFunction) {
     return (!func)
       ? pipingFunction = (whereToConnect, end: boolean, noPipe = false) => {
         if (noPipe) return addErrorEventToDest(
@@ -187,7 +177,7 @@ async function formatManager<T extends string>({
 
   const isStdout = format !== true,
         isToFile = format === true;
-  let pipingFunction: pipingFunction | undefined;
+  let pipingFunction: $_.pipingFunction | undefined;
   switch (format) {
     case "wave":
     case /^.*(?:\.wav|\.wave)$/.test(outFile as any): {
@@ -414,7 +404,7 @@ function getSampleCount({
   loopStart = midi.midiTicksToSeconds(midi.loop.start),
   loopEnd, hardStop,
   loopFade, loopFadeStart = 1, loopFadeDuration = 4,
-}: sampleCountObjectParameters) {
+}: $_.sampleCountObjectParameters) {
   // Spessasynth loop detection
   const loopDetectedInMidi = midi.loop.start > 0;
   if (loopDetectedInMidi) {
@@ -502,8 +492,8 @@ async function initSpessaSynth({
   isToFile = false,
   onlySampleCount = false, onlyDuration = false,
   basicMIDIRequired = true, spessasynthLogging, hardStop = false
-}: initObjectParameters): Promise<
-  initSpessaSynthObj | basicMIDIRequiredTuple
+}: $_.initObjectParameters): Promise<
+  $_.initSpessaSynthObj | $_.basicMIDIRequiredTuple
   | number | null
 > {
   const {
@@ -706,7 +696,7 @@ async function applyExternalEffects(
     stdout = process.stdout,
     destination = "-", effects,
     sampleRate = 48000, rawMode, sendEOF = true
-  }: effectsObjectParams
+  }: $_.effectsObjectParams
 ): Promise<[ChildProcessWithoutNullStreams, Promise<unknown>[]]> {
   /*
     ffmpeg
@@ -835,7 +825,7 @@ async function applyExternalEffects(
  * addEvent({ eventType: "SIGINT" })
  */
 function addEvent(
-  { eventType, func }: { eventType: string, func?: addEventFunc }
+  { eventType, func }: { eventType: string, func?: $_.addEventFunc }
 ): boolean | void {
   /**
    * Adds an event,
@@ -848,7 +838,7 @@ function addEvent(
    * @return {Boolean} true if it has been added or false otherwise
    */
   function addAndCheckEvent<T extends "exit" | NodeJS.Signals>(
-    eventTypeTocheck: T, funcToAdd: addEventFunc<T>
+    eventTypeTocheck: T, funcToAdd: $_.addEventFunc<T>
   ): boolean {
     return (
       process
@@ -864,16 +854,16 @@ function addEvent(
         throw new TypeError(`${eventType} needs a function`)
       }
     case "toFileSIGTSTP": {
-      return addAndCheckEvent("SIGTSTP", func as addEventFunc<"SIGTSTP">);
+      return addAndCheckEvent("SIGTSTP", func as $_.addEventFunc<"SIGTSTP">);
     }
     case "toFileSIGTERM": {
-      return addAndCheckEvent("SIGTERM", func as addEventFunc<"SIGTERM">);
+      return addAndCheckEvent("SIGTERM", func as $_.addEventFunc<"SIGTERM">);
     }
     case "toFileSIGQUIT": {
-      return addAndCheckEvent("SIGQUIT", func as addEventFunc<"SIGQUIT">);
+      return addAndCheckEvent("SIGQUIT", func as $_.addEventFunc<"SIGQUIT">);
     }
     case "toFileSIGINT": {
-      return addAndCheckEvent("SIGINT", func as addEventFunc<"SIGINT">);
+      return addAndCheckEvent("SIGINT", func as $_.addEventFunc<"SIGINT">);
     }
     case "SIGINT": {
       return addAndCheckEvent("SIGINT", () => {
@@ -915,7 +905,7 @@ function createReadable(Readable: Readable, isStdout = false, {
   loopFadeDuration = 4, loopFadeInterpolation,
   startFading,
   progressBuffers
-}: createReadableObjectParameters): NodeJS.ReadableStream | never {
+}: $_.createReadableObjectParameters): NodeJS.ReadableStream | never {
   if (typeof startFading !== "number" && startFading !== undefined) {
     throw new TypeError(
       "startFading must be a number, " +
@@ -1115,7 +1105,7 @@ function createReadable(Readable: Readable, isStdout = false, {
 async function toStdout({
   index, res,
   options, options: { format = "" }
-}: toStdoutOptionsObject): Promise<toStdoutArray | null> | never {
+}: $_.toStdoutOptionsObject): Promise<$_.toStdoutArray | null> | never {
   if (!options.midiFile || !options.soundfontFile) {
     throw new ReferenceError("Missing some required files")
   }
@@ -1198,7 +1188,7 @@ async function toFile({
     fileOutputs: { length: foLength }
   },
   FO_CONSTANTS
-}: toFileObject): Promise<toFileArray | null> | never {
+}: $_.toFileObject): Promise<$_.toFileArray | null> | never {
   if (!options.midiFile || !options.soundfontFile || !foLength) {
     throw new ReferenceError("Missing some required files")
   }
@@ -1287,7 +1277,7 @@ async function toFile({
     })
   );
   let promisesOfPrograms: Promise<void>[] = [],
-      pipingFunctions: (pipingFunction | undefined)[] = [];
+      pipingFunctions: ($_.pipingFunction | undefined)[] = [];
   const addFunction = async (outFile?: string): Promise<void> => {
     const isf32le = outFile?.endsWith(".f32le");
     pipingFunctions.push(
@@ -1368,7 +1358,7 @@ class Progress {
   /** Creates a partial or complete Progress class */
   constructor(
     amountOfSongs: number | undefined, index: number | undefined,
-    {amountToRender, renderedAmount, percentageDone}: progressBuffersIntfc
+    {amountToRender, renderedAmount, percentageDone}: $_.progressBuffersIntfc
   ) {
     if (amountOfSongs !== undefined && index !== undefined) {
       throw new Error("amountOfSongs and index shouldn't be defined together")
@@ -1495,7 +1485,7 @@ type OptionsClassValue = typeof Options
  * and plays them using mpv
  */
 async function startPlayer(
-  Options: OptionsClassValue, spessasynthLogging: spessasynthLoggingIntfc,
+  Options: OptionsClassValue, spessasynthLogging: $_.spessasynthLoggingIntfc,
   loadingAnimation?: loadingAnimationProcType, isVerboseLevelSet?: boolean
 ): Promise<never> {
   const {
