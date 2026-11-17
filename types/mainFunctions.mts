@@ -23,7 +23,7 @@ type readStreamType<T> = (
 export interface formatObjectParameters<T = unknown> {
   format?: boolean | string,
   readStream?: readStreamType<T>, rawReadStream?: readStreamType<T>,
-  dryRun?: string, effects?: object,
+  dryRun?: string, effects?: effectsListType,
   index?: number, stdoutHeader?: Uint8Array,
   promisesOfPrograms: Promise<void>[]
 }
@@ -41,7 +41,7 @@ export interface sampleCountObjectParameters {
   loopAmount?: number, loopStart?: number, loopEnd?: number,
   /** if it should not smooth out the end */
   hardStop?: boolean,
-  loopFade?: number, loopFadeStart?: number, loopFadeDuration?: number
+  loopFade?: boolean, loopFadeStart?: number, loopFadeDuration?: number
 }
 
 export type addEventFunc<T extends NodeJS.Signals | "exit" = NodeJS.Signals> =
@@ -65,19 +65,20 @@ extends Pick<
   spessasynthLogging: spessasynthLoggingIntfc
 }
 
+export type effectsListType = Array<{effect: string, values?: string[]}>
 export interface effectsObjectParams {
   /** the process to spawn, sox usually */
   program: string,
   /** file header */
-  stdoutHeader: Uint8Array, readStream?: NodeJS.ReadableStream,
+  stdoutHeader?: Uint8Array, readStream?: NodeJS.ReadableStream,
   /** adds the error event handler to sox's stdin */
-  addErrorEventToDest: Function,
+  addErrorEventToDest?: Function,
   promisesOfPrograms: Promise<unknown>[],
   stdout?: NodeJS.WriteStream | string, destination?: string,
-  effects?: Array<{effect: string, values?: string[]}>,
+  effects?: effectsListType,
   sampleRate?: number,
   /** type of raw (pcm) to use */
-  rawMode?: string,
+  rawMode?: string | false,
   /** if it should send EOF after pipe finishes */
   sendEOF?: boolean
 }
@@ -94,7 +95,7 @@ export interface basetoStdoutOptionsObject {
    volume?: number,
    format?: string, // file format
    midiFile: string, soundfontFile: string | SharedArrayBuffer,
-   effects?: object[],
+   effects?: effectsListType
 }
 interface toFileOptionsObject extends basetoStdoutOptionsObject {
    fileOutputs: string[]
@@ -104,7 +105,7 @@ export interface toStdoutOptionsObject {
   options: basetoStdoutOptionsObject
 }
 export interface spessasynthLoggingIntfc {
-  info: boolean, warn: boolean
+  info?: boolean, warning?: boolean
 }
 export interface progressBuffersIntfc {
   amountToRender: SharedArrayBuffer,
@@ -140,12 +141,13 @@ export interface createReadableObjectParameters {
   ——— RETURN VALUES ———
 */
 export type pipingFunction = (
-  whereToConnect: NodeJS.WritableStream, end: boolean, noPipe: boolean
+  whereToConnect: NodeJS.WritableStream, end: boolean, noPipe?: boolean
 ) => NodeJS.ReadableStream | void;
 
 export interface ffmpegArgsObj<T> {
   flac: T, mp3: T, opus: T
 }
+export type basicMIDIRequiredTuple = [sampleCount: number, midi: BasicMIDI]
 export interface getSampleCountObj {
   loopDetectedInMidi: boolean,
   durationInSeconds: number,
@@ -158,7 +160,7 @@ export interface initSpessaSynthObj {
   startFading?: number | false
 }
 export type toStdoutArray = [
-  pipingFunction: Function | undefined,
+  pipingFunction: pipingFunction | undefined,
   Promise<Array<undefined | number>>
 ];
 export type toFileArray = [
@@ -166,7 +168,7 @@ export type toFileArray = [
   pipingFunction: (pipingFunction | undefined)[],
   Promise<Array<Promise<Array<undefined | NodeJS.ReadableStream>> | undefined | number>>
 ];
-export type preparedDestination<T = "normal"> =
+export type preparedDestination =
   | typeof process.stdout | ServerResponse
   | ChildProcess["stdin"] | ChildProcess
   | [ServerResponse, Uint8Array | undefined]
