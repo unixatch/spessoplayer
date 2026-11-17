@@ -27,10 +27,10 @@ import type {
 import type { Readable } from "node:stream"
 import type { WriteStream } from "node:fs"
 import type {
-  ChildProcess, ChildProcessWithoutNullStreams
+  spawn as spawnFT, ChildProcess, ChildProcessWithoutNullStreams
 } from "node:child_process"
 
-import type { loadingAnimationProcType } from "./types/cli.mts"
+import type { FO_CONSTANTS, loadingAnimationProcType } from "./types/cli.mts"
 import type * as $_ from "./types/mainFunctions.mts"
 import type { Options } from "./utils/utils.mts"
 
@@ -106,7 +106,7 @@ async function formatManager<T extends string>({
   stdoutHeader,
   promisesOfPrograms,
   outFile
-}: $_.formatObjectParameters<T>): Promise<Function | undefined> {
+}: $_.formatObjectParameters<T>): Promise<$_.pipingFunction | undefined> | never {
   /**
    * Error handler for readStream mainly but also for other streams
    * @param {Error} error error object from "error" event
@@ -169,7 +169,7 @@ async function formatManager<T extends string>({
         : (dest.once("error", boundFunction), finalDest)
     );
   }
-  let spawn: Awaited<typeof import("node:child_process").spawn> | undefined;
+  let spawn: Awaited<typeof spawnFT> | undefined;
   if (format !== "wave" && format !== ""
       && Array.isArray(outFile)) {
     ({ spawn } = child_process ??= await import("node:child_process"));
@@ -298,7 +298,7 @@ async function formatManager<T extends string>({
         (fatalErrors ??= []).push(data.toString())
       })
       promisesOfPrograms.push(
-        new Promise((resolve, reject) => {
+        new Promise<number>((resolve, reject) => {
           ffmpeg
             .once("exit", (exitCode: number) => {
               log(DEBUG_LVL, "Ffmpeg exited")
@@ -358,7 +358,7 @@ async function formatManager<T extends string>({
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
       addPipingFunction((whereToConnect, end: boolean, noPipe = false) => {
-        const rawStream = rawReadStream ?? readStream;
+        const rawStream: NodeJS.ReadableStream = rawReadStream ?? readStream;
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
         );
@@ -787,7 +787,7 @@ async function applyExternalEffects(
     )
   })
   promisesOfPrograms.push(
-    new Promise((resolve, reject): void => {
+    new Promise<number>((resolve, reject): void => {
       sox.once("exit", (exitCode: number) => {
         if (!exitCode) {
           log(DEBUG_LVL, "SoX exited successfully")
@@ -1278,8 +1278,8 @@ async function toFile({
   );
   let promisesOfPrograms: $_.promisesOfProgramsType = [],
       pipingFunctions: ($_.pipingFunction | undefined)[] = [];
-  const addFunction = async (outFile?: string): Promise<void> => {
-    const isf32le = outFile?.endsWith(".f32le");
+  const addFunction = async (outFile?: string | FO_CONSTANTS): Promise<void> => {
+    const isf32le = (outFile as string | undefined)?.endsWith(".f32le");
     pipingFunctions.push(
       await formatManager<"fileMode">({
         readStream:    isf32le || readStream,
@@ -1861,7 +1861,7 @@ async function prepareDestination(
     })
     promisesOfPrograms.push(
       new Promise<void>((resolve) => {
-        converterProcess.once("exit", (exitCode: number) => {
+        converterProcess.once("exit", (exitCode: number): void | never => {
           if (!exitCode) {
             log(DEBUG_LVL, "Ffmpeg exited")
             return resolve();
