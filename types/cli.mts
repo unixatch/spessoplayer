@@ -36,6 +36,7 @@ export interface manageVerboseOptionsIntfc<T> {
   debugLevelSpessoMsg: T, debugFileSpessoMsg: T
 }
 
+/** fileOutputs enum */
 export type FO_CONSTANTS = {
   WAV_INDEX:  0, RAW_INDEX: 1,
   FLAC_INDEX: 2, MP3_INDEX: 3, OPUS_INDEX: 4,

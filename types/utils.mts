@@ -1,3 +1,5 @@
+import type { effectsListType } from "./mainFunctions.mts"
+
 /** If T is perSongOptions, make V a list or not */
 type pSO<T = string, V = unknown> = (
   T extends "perSongOptions"
@@ -13,16 +15,16 @@ export type nonSpecificProperties =
 
 
 export type _optionsObject<T = unknown> = Partial<{
-  confirmation:  boolean,          showUsage:     boolean,
-  noTable:       boolean,          toStdout:      boolean,
-  format:        string,           fileOutputs:   string[],
-  noProgress:    boolean,          progressDelay: number,
-  effects:       pSO<T, object>,   maxThreads:    number,
-  loopAmount:    pSO<T, number>,   loopStart:     pSO<T, number | string>,
+  confirmation:  boolean,                 showUsage:     boolean,
+  noTable:       boolean,                 toStdout:      boolean,
+  format:        string,                  fileOutputs:   string[],
+  noProgress:    boolean,                 progressDelay: number,
+  effects:       pSO<T, effectsListType>, maxThreads:    number,
+  loopAmount:    pSO<T, number>,          loopStart:     pSO<T, number | string>,
   loopEnd:       pSO<T, number | string>,
-  drumsVolume:   pSO<T, number>,   volume:        pSO<T, number>,
+  drumsVolume:   pSO<T, number>,          volume:        pSO<T, number>,
   /** A list of volumes per channel */
-  channelVolume: pSO<T, number[]>, reverbVolume:  pSO<T, number>,
+  channelVolume: pSO<T, number[]>,        reverbVolume:  pSO<T, number>,
   sampleRate:    pSO<T, number>,
   /** if it should not smooth out the end */
   hardStop:      pSO<T, boolean>,
