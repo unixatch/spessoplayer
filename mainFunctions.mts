@@ -1754,33 +1754,32 @@ async function startPlayer(
  * while also maybe managing needed child processes
  * @param {Object}         obj
  * @param {Boolean}        obj.isVerboseLevelSet           if logging is explicitly enabled
- * @param {Boolean}        obj.isPCM                       if it's a lossless format without a header
- * @param {ServerResponse} [obj.res]                       server response object
  * @param {ChildProcess}   [obj.mpv]                       child process of mpv
  * @param {BasicMIDI}      obj.midi                        midi file used in the header
  * @param {ChildProcess}   obj.loadingAnimation            script that prints the loading animation
- * @param {Function}       obj.loadingAnimationCleanupFunc cleanup function for the loading animation
  * @param {Number}         obj.length                      length of the song in samples
  * @param {Number[]}       obj.lengthOfFiles               same as before but multiples ones
- * @param {Function}       obj.getWavHeader                function that creates the wav header
  * @param {Promise[]}      obj.promisesOfPrograms          list of promises for programs when they exit
  * @param {Boolean}        obj.specificRange               if it's a range http header to handle
- * @param {module:typeDefinitions~toStdoutOptionsObject} obj.toStdoutOptionsObject
  * @param {Boolean}        isStdout                        if it's stdout mode or player/daemon mode
  * @return {Readable} the destination, where all the data must go
  * @throws {UnwantedNonZeroError} if ffmpeg exits with a non-zero status code
  */
-async function prepareDestination({
-  isVerboseLevelSet, isPCM, res, mpv, midi,
-  loadingAnimation, loadingAnimationCleanupFunc,
-  dryRun, length, lengthOfFiles,
-  getWavHeader, midiFile,
-  sampleRate, format,
-  promisesOfPrograms,
-  effects, specificRange
-}, isStdout): Promise<prepareDestinationReturnValue> | never {
-  let effectsProcess, fatalErrors: string[],
-      converterProcess: ChildProcess | undefined, dryRunStream;
+async function prepareDestination(
+  {
+    isVerboseLevelSet, isPCM, res, mpv, midi,
+    loadingAnimation, loadingAnimationCleanupFunc,
+    dryRun, length, lengthOfFiles,
+    getWavHeader, midiFile,
+    sampleRate, format,
+    promisesOfPrograms,
+    effects, specificRange
+  }: $_.prepareDestinationObjParam, isStdout: boolean
+): Promise<$_.prepareDestinationReturnValue> | never {
+  let effectsProcess:   ChildProcess | undefined,
+      fatalErrors:      string[],
+      converterProcess: ChildProcess | undefined,
+      dryRunStream:     WriteStream  | undefined;
   if (isStdout) {
     dryRunStream = (
       dryRun &&
@@ -1889,7 +1888,7 @@ async function prepareDestination({
           ? format !== "pcm" && format.substring(0, 3) || "s16"
           : false
       ), promisesOfPrograms, effects,
-      addErrorEventToDest: dest => dest.on(
+      addErrorEventToDest: (dest: NodeJS.WritableStream) => dest.on(
         "error", () => mpv?.kill()
       )
     });
@@ -1906,7 +1905,7 @@ async function prepareDestination({
     "Created header file", "-", " ", stdoutHeader
   )
 
-  let destination;
+  let destination: $_.preparedDestination;
   if (specificRange) destination = (
     // Sox or Ffmpeg
     converterProcess ?? effectsProcess

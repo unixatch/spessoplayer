@@ -3,8 +3,10 @@
  */
 
 import type { ServerResponse } from "node:http"
-import type { FO_CONSTANTS } from "./cli.mts"
-import type { getData } from "../wavFunctions.mts"
+import type { getWavHeader, getData } from "../wavFunctions.mts"
+import type {
+  FO_CONSTANTS, loadingAnimationCleanupFuncType
+} from "./cli.mts"
 import type { perSongOptions, nonSpecificProperties } from "./utils.mts"
 import type {
   BasicMIDI, SpessaSynthSequencer, SpessaSynthProcessor
@@ -135,6 +137,20 @@ export interface createReadableObjectParameters {
    loopFadeInterpolation?: string,
    startFading?: number,
    progressBuffers: progressBuffersIntfc
+}
+
+export interface prepareDestinationObjParam {
+  isVerboseLevelSet?: boolean, isPCM: boolean,
+  res?: ServerResponse, mpv?: ChildProcess, midi?: BasicMIDI,
+  loadingAnimation?: Deno.ChildProcess | ChildProcess,
+  loadingAnimationCleanupFunc?: loadingAnimationCleanupFuncType,
+  dryRun?: string, length?: number, lengthOfFiles?: number[],
+  getWavHeader: typeof getWavHeader | false, midiFile?: string,
+  sampleRate?: number, format?: string,
+  promisesOfPrograms: Promise<void>[],
+  effects?: effectsListType,
+  /** if startPlayer's range header has been used */
+  specificRange?: boolean
 }
 
 /*
