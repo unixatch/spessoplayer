@@ -3,6 +3,7 @@
  */
 
 import type { ServerResponse } from "node:http"
+import type { ChildProcess, ChildProcessWithoutNullStreams } from "node:child_process"
 import type { getWavHeader, getData } from "../wavFunctions.mts"
 import type {
   FO_CONSTANTS, loadingAnimationCleanupFuncType
@@ -76,7 +77,12 @@ export interface effectsObjectParams {
   /** adds the error event handler to sox's stdin */
   addErrorEventToDest?: Function,
   promisesOfPrograms: Promise<unknown>[],
-  stdout?: NodeJS.WriteStream | string, destination?: string,
+  stdout?: (
+    | NodeJS.WriteStream
+    | ChildProcessWithoutNullStreams["stdin"]
+    | string
+  ),
+  destination?: string,
   effects?: effectsListType,
   sampleRate?: number,
   /** type of raw (pcm) to use */
@@ -99,7 +105,7 @@ export interface basetoStdoutOptionsObject {
    midiFile: string, soundfontFile: string | SharedArrayBuffer,
    effects?: effectsListType
 }
-interface toFileOptionsObject extends basetoStdoutOptionsObject {
+export interface toFileOptionsObject extends basetoStdoutOptionsObject {
    fileOutputs: string[]
 }
 export interface toStdoutOptionsObject {
