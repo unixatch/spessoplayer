@@ -16,6 +16,12 @@ import type {
 /*
   ——— PARAMETERS OBJECTS ———
 */
+export type promisesOfProgramsType = Promise<void | number>[]
+/**
+  In file mode it can be a boolean because it can be PCM audio
+  so it should use rawReadStream instead
+  (isf32le || readStream)
+*/
 type readStreamType<T> = (
   T extends "fileMode"
     ? NodeJS.ReadableStream | boolean
@@ -76,7 +82,7 @@ export interface effectsObjectParams {
   stdoutHeader?: Uint8Array, readStream?: NodeJS.ReadableStream,
   /** adds the error event handler to sox's stdin */
   addErrorEventToDest?: Function,
-  promisesOfPrograms: Promise<unknown>[],
+  promisesOfPrograms: promisesOfProgramsType,
   stdout?: (
     | NodeJS.WriteStream
     | ChildProcessWithoutNullStreams["stdin"]
@@ -153,7 +159,7 @@ export interface prepareDestinationObjParam {
   dryRun?: string, length?: number, lengthOfFiles?: number[],
   getWavHeader: typeof getWavHeader | false, midiFile?: string,
   sampleRate?: number, format?: string,
-  promisesOfPrograms: Promise<void>[],
+  promisesOfPrograms: promisesOfProgramsType,
   effects?: effectsListType,
   /** if startPlayer's range header has been used */
   specificRange?: boolean

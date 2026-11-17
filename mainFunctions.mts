@@ -1139,7 +1139,7 @@ async function toStdout({
     startFading
   });
 
-  let promisesOfPrograms: Promise<void>[] = [];
+  let promisesOfPrograms: $_.promisesOfProgramsType = [];
   let pipingFunction = await formatManager({
     format, readStream, res,
     ...options,
@@ -1276,7 +1276,7 @@ async function toFile({
       startFading
     })
   );
-  let promisesOfPrograms: Promise<void>[] = [],
+  let promisesOfPrograms: $_.promisesOfProgramsType = [],
       pipingFunctions: ($_.pipingFunction | undefined)[] = [];
   const addFunction = async (outFile?: string): Promise<void> => {
     const isf32le = outFile?.endsWith(".f32le");
@@ -1507,7 +1507,7 @@ async function startPlayer(
       port = 3000, failedAttempts = 0;
   const server = createServer(),
         listOfURLs = [],
-        promisesOfPrograms: Promise<void>[] = [];
+        promisesOfPrograms: $_.promisesOfProgramsType = [];
 
   process.on("SIGUSR1", () => {
     closing = true; mpv?.kill()
