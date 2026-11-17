@@ -76,11 +76,11 @@ extends Pick<
 }
 
 export type effectsListType = Array<{effect: string, values?: string[]}>
-export interface effectsObjectParams {
+export interface effectsObjectParams<T = unknown> {
   /** the process to spawn, sox usually */
   program: string,
   /** file header */
-  stdoutHeader?: Uint8Array, readStream?: NodeJS.ReadableStream,
+  stdoutHeader?: Uint8Array, readStream?: readStreamType<T>,
   /** adds the error event handler to sox's stdin */
   addErrorEventToDest?: Function,
   promisesOfPrograms: promisesOfProgramsType,

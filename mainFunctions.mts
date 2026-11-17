@@ -687,7 +687,7 @@ async function initSpessaSynth({
  * @example
  * applyExternalEffects({ program: "sox", stdoutHeader, readStream })
  */
-async function applyExternalEffects(
+async function applyExternalEffects<T extends string>(
   {
     program,
     stdoutHeader, readStream,
@@ -696,7 +696,7 @@ async function applyExternalEffects(
     stdout = process.stdout,
     destination = "-", effects,
     sampleRate = 48000, rawMode, sendEOF = true
-  }: $_.effectsObjectParams
+  }: $_.effectsObjectParams<T>
 ): Promise<[ChildProcessWithoutNullStreams, Promise<unknown>[]]> {
   /*
     ffmpeg
@@ -811,7 +811,11 @@ async function applyExternalEffects(
     stdout as NodeJS.WriteStream, { end: sendEOF }
   )
   if (stdoutHeader && !rawMode) sox.stdin.write(stdoutHeader)
-  addErrorEventToDest?.(readStream?.pipe?.(sox.stdin) ?? sox.stdin)
+  addErrorEventToDest?.(
+    // @ts-expect-error since it's all optional
+    readStream?.pipe?.(sox.stdin)
+      ?? sox.stdin
+  )
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
