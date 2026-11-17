@@ -12,6 +12,7 @@ import type { perSongOptions, nonSpecificProperties } from "./utils.mts"
 import type {
   BasicMIDI, SpessaSynthSequencer, SpessaSynthProcessor
 } from "spessasynth_core"
+import type fs from "node:fs"
 
 /*
   ——— PARAMETERS OBJECTS ———
@@ -199,11 +200,16 @@ export type toFileArray = [
 export type preparedDestination =
   | typeof process.stdout | ServerResponse
   | ChildProcess["stdin"] | ChildProcess
-  | [ServerResponse, Uint8Array | undefined]
+  | [res: ServerResponse, stdoutHeader: Uint8Array | undefined]
   | undefined
 
+type maybePrepDestTupleValues = Partial<[
+  dryRunStream:   ReturnType<typeof fs.createWriteStream>,
+  stdoutHeader:   Uint8Array,
+  convertProcess: ChildProcessWithoutNullStreams
+]>
 export type prepareDestinationReturnValue = [
-  WriteStream | undefined,  Uint8Array | undefined,
-  ChildProcess | undefined, preparedDestination
+  ...maybePrepDestTupleValues,
+  destination: preparedDestination
 ] | preparedDestination;
 
