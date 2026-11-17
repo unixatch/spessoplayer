@@ -59,7 +59,7 @@ export interface groupsChecked {
 }
 export interface UnwantedNonZeroErrorExtras {
   exitCode: number,
-  stdout?: Buffer, stderr?: Buffer
+  stdout?: string[], stderr?: string[]
 }
 export type boundFunctionLessFirstArg<T extends (...args: any) => any> = (
   T extends (ignored: infer _, ...args: infer P) => any

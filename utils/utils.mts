@@ -769,8 +769,8 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
  */
 class UnwantedNonZeroError extends Error {
   public exitCode: number;
-  public stdout?: Buffer;
-  public stderr?: Buffer;
+  public stdout?: string[];
+  public stderr?: string[];
 
   constructor(
     message: string,
@@ -791,9 +791,9 @@ class UnwantedNonZeroError extends Error {
  * @throws {UnwantedNonZeroError} if the exitCode is non-zero
  */
 function ffmpegExitHandler(
-  this: { stdout: Buffer, stderr: Buffer },
+  this: { stdout?: string[], stderr?: string[] },
   exitCode: number,
-  resolver: (arg0: number) => void
+  resolver?: (arg0: number) => void
 ): number | void | never {
   if (exitCode === 0) return resolver?.(exitCode);
 
