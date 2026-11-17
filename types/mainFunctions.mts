@@ -28,23 +28,30 @@ type readStreamType<T> = (
     ? NodeJS.ReadableStream | boolean
     : NodeJS.ReadableStream
 );
+/** General properties for formatManager */
+type formatObjectBase<T = unknown> = {
+  /** core stream that interacts with spessasynth */
+  readStream?: readStreamType<T>, format?: string | true,
+  dryRun?: string,                effects?: effectsListType,
+  stdoutHeader?: Uint8Array,      promisesOfPrograms: promisesOfProgramsType,
+  [key: string]: any
+}
+/** Server only properties for formatManager */
+interface formatObjectServer extends formatObjectBase {
+  res: ServerResponse
+}
+/** File mode only properties for formatManager */
+interface formatObjectFileMode extends formatObjectBase {
+  createNewFileNameAnyway: boolean,
+  /** Same as readStream but for PCM-style audio output */
+  rawReadStream?: NodeJS.ReadableStream,
+  fileOutputs: string[], FO_CONSTANTS?: FO_CONSTANTS,
+  outFile: string | number[]
+}
+/** General & player mode | file mode */
+export type formatObjectParameters<T = unknown> =
+  | formatObjectBase<T> | formatObjectServer | formatObjectFileMode
 
-/** General & player mode & file mode */
-export interface formatObjectParameters<T = unknown> {
-  format?: boolean | string,
-  readStream?: readStreamType<T>, rawReadStream?: readStreamType<T>,
-  dryRun?: string, effects?: effectsListType,
-  index?: number, stdoutHeader?: Uint8Array,
-  promisesOfPrograms: Promise<void>[]
-}
-export interface formatObjectParameters {
-  res?: ServerResponse
-}
-export interface formatObjectParameters {
-  createNewFileNameAnyway?: boolean,
-  fileOutputs?: string[], FO_CONSTANTS?: FO_CONSTANTS,
-  outFile?: string | number[]
-}
 
 export interface sampleCountObjectParameters {
   midi: BasicMIDI, sampleRate: number,
