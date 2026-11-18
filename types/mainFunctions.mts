@@ -8,7 +8,10 @@ import type { getWavHeader, getData } from "../wavFunctions.mts"
 import type {
   FO_CONSTANTS, loadingAnimationCleanupFuncType
 } from "./cli.mts"
-import type { perSongOptions, nonSpecificProperties } from "./utils.mts"
+import type {
+  perSongOptions,
+  nonSpecificProperties, fileModeOptionsKeys, serverModeOptionsKeys
+} from "./utils.mts"
 import type {
   BasicMIDI, SpessaSynthSequencer, SpessaSynthProcessor
 } from "spessasynth_core"
@@ -17,6 +20,7 @@ import type fs from "node:fs"
 /*
   ——— PARAMETERS OBJECTS ———
 */
+/** list of promises used by sox/ffmpeg's child processes */
 export type promisesOfProgramsType = Promise<void | number>[]
 /**
   In file mode it can be a boolean because it can be PCM audio
@@ -41,11 +45,12 @@ interface formatObjectServer extends formatObjectBase {
   res: ServerResponse
 }
 /** File mode only properties for formatManager */
-interface formatObjectFileMode extends formatObjectBase {
+interface formatObjectFileMode
+extends formatObjectBase, Required<Pick<perSongOptions, "fileOutputs">> {
   createNewFileNameAnyway: boolean,
   /** Same as readStream but for PCM-style audio output */
   rawReadStream?: NodeJS.ReadableStream,
-  fileOutputs: string[], FO_CONSTANTS?: FO_CONSTANTS,
+  FO_CONSTANTS?: FO_CONSTANTS,
   outFile: string | number[]
 }
 /** General & player mode | file mode */
@@ -53,20 +58,21 @@ export type formatObjectParameters<T = unknown> =
   | formatObjectBase<T> | formatObjectServer | formatObjectFileMode
 
 
-export interface sampleCountObjectParameters {
-  midi: BasicMIDI, sampleRate: number,
-  loopAmount?: number, loopStart?: number, loopEnd?: number,
-  /** if it should not smooth out the end */
-  hardStop?: boolean,
-  loopFade?: boolean, loopFadeStart?: number, loopFadeDuration?: number
+/** getSampleCount's object parameter */
+export type sampleCountObjectParameters = Pick<
+  perSongOptions,
+  | "sampleRate" | "hardStop"
+  | "loopAmount" | "loopStart"     | "loopEnd"
+  | "loopFade"   | "loopFadeStart" | "loopFadeDuration"
+> & {
+  midi: BasicMIDI
 }
 
 export type addEventFunc<T extends NodeJS.Signals | "exit" = NodeJS.Signals> =
   | ((...args: process.ProcessEventMap[T]) => void | never)
   | (() => void | never)
 
-export interface initObjectParameters
-extends Pick<
+export interface initObjectParameters extends Pick<
   perSongOptions,
   "midiFile" | "soundfontFile" | "indexOfGroup"
   | Exclude<nonSpecificProperties, "loopFadeInterpolation">
@@ -108,20 +114,11 @@ export interface effectsObjectParams<T = unknown> {
 /*
   ——— OPTIONS OBJECTS ———
 */
-export interface basetoStdoutOptionsObject {
-   loopAmount?: number,
-   loopStart?: number, loopEnd?: number,
-   sampleRate?: number, hardStop?: boolean,
-   loopFade?: boolean, loopFadeDuration?: number,
-   loopFadeInterpolation?: string | number,
-   volume?: number,
-   format?: string, // file format
-   midiFile: string, soundfontFile: string | SharedArrayBuffer,
-   effects?: effectsListType
-}
-export interface toFileOptionsObject extends basetoStdoutOptionsObject {
-   fileOutputs: string[]
-}
+/** options' properties for toStdoutOptionsObject */
+export type basetoStdoutOptionsObject = Omit<
+  perSongOptions, fileModeOptionsKeys | serverModeOptionsKeys
+>
+/** toStdout's object argument */
 export interface toStdoutOptionsObject {
   index: number, res: ServerResponse,
   options: basetoStdoutOptionsObject
@@ -134,7 +131,17 @@ export interface progressBuffersIntfc {
   renderedAmount: SharedArrayBuffer,
   percentageDone: SharedArrayBuffer
 }
-export interface toFileObject extends basetoStdoutOptionsObject {
+/** options property for toFileObject */
+export type toFileOptionsObject = (
+  & basetoStdoutOptionsObject
+  & Required<Pick<perSongOptions, "fileOutputs">> & {
+     [
+       key in Exclude<fileModeOptionsKeys, "fileOutputs">
+     ]: perSongOptions[key]
+  }
+)
+/** toFile's object argument */
+export interface toFileObject {
    options: toFileOptionsObject,
    spessasynthLogging: spessasynthLoggingIntfc,
    createNewFileNameAnyway: boolean,
@@ -142,7 +149,11 @@ export interface toFileObject extends basetoStdoutOptionsObject {
    progressBuffers: progressBuffersIntfc,
    FO_CONSTANTS: FO_CONSTANTS
 }
-export interface createReadableObjectParameters {
+/** createReadable's object argument */
+export interface createReadableObjectParameters extends Pick<
+  perSongOptions,
+  "hardStop" | "loopFade" | "loopFadeDuration" | "loopFadeInterpolation"
+> {
    sampleCount: number,
    index?: number,
    seq: SpessaSynthSequencer, synth: SpessaSynthProcessor,
@@ -150,25 +161,21 @@ export interface createReadableObjectParameters {
    isf32le: boolean,
    /** if it should skip updating the progress */
    doNotRepeat: boolean,
-   hardStop?: boolean,
-   /** if it should do 1 last loop and after some time, fade away slowly */
-   loopFade?: boolean,
-   loopFadeDuration?: number,
-   loopFadeInterpolation?: string,
    startFading?: number,
    progressBuffers: progressBuffersIntfc
 }
 
-export interface prepareDestinationObjParam {
+export interface prepareDestinationObjParam extends Pick<
+  perSongOptions,
+  "midiFile" | "dryRun" | "sampleRate" | "effects" | "format"
+> {
   isVerboseLevelSet?: boolean, isPCM: boolean,
   res?: ServerResponse, mpv?: ChildProcess, midi?: BasicMIDI,
   loadingAnimation?: Deno.ChildProcess | ChildProcess,
   loadingAnimationCleanupFunc?: loadingAnimationCleanupFuncType,
-  dryRun?: string, length?: number, lengthOfFiles?: number[],
-  getWavHeader: typeof getWavHeader | false, midiFile?: string,
-  sampleRate?: number, format?: string,
+  length?: number, lengthOfFiles?: number[],
+  getWavHeader: typeof getWavHeader | false,
   promisesOfPrograms: promisesOfProgramsType,
-  effects?: effectsListType,
   /** if startPlayer's range header has been used */
   specificRange?: boolean
 }

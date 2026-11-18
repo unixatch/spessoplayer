@@ -6,14 +6,21 @@ type pSO<T = string, V = unknown> = (
     ? V : V[]
 )
 
+/** General properties available for all modes inside perSongOptions */
 export type nonSpecificProperties =
   | "loopAmount" | "loopStart"       | "loopEnd"
   | "volume"     | "channelVolume"   | "drumsVolume" | "reverbVolume"
   | "effects"    | "externalEffects" | "sampleRate"  | "loopFade"
   | "loopFadeStart" | "loopFadeDuration" | "loopFadeInterpolation"
   | "hardStop"
+/** perSongOptions exclusive properties for file mode */
+export type fileModeOptionsKeys =
+  | "fileOutputs" | "noProgress" | "progressDelay" | "showUsage"
+/** perSongOptions exclusive properties for server mode */
+export type serverModeOptionsKeys = "daemon"
 
 
+/** _options public property inside the class Options */
 export type _optionsObject<T = unknown> = Partial<{
   confirmation:  boolean,                 showUsage:     boolean,
   noTable:       boolean,                 toStdout:      boolean,
@@ -43,6 +50,7 @@ interface privateProperties {
   logFilePath?: string, dryRun?: string,
   files: Set<string>[]
 }
+/** Options.all return type */
 export
 interface allOptions
 extends _optionsObject<"allOptions">, privateProperties {
@@ -56,6 +64,7 @@ extends _optionsObject<"perSongOptions">, privateProperties {
   indexOfGroup: number
 }
 
+/** groups checker's object inside method Options.files */
 export interface groupsChecked {
   length: number, [key: number]: boolean | null
 }
