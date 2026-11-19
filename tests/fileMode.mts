@@ -28,10 +28,10 @@ process.on("SIGINT", () => {
 // Other arguments and run it
 const args = [
   "--enable-spessasynth-warn-logging",
-  "-i:2", manualMidi,      // Manually adding files
-  "-i:2", manualSoundfont,
-  ...globs.midis,         // Automatically adding files
-  ...globs.soundfonts,
+  "-i:2", manualMidi!,      // Manually adding files
+  "-i:2", manualSoundfont!,
+  ...globs!.midis,          // Automatically adding files
+  ...globs!.soundfonts,
   ...generalCliArguments("toFile"),
   ...(process.argv.includes("-ps") ? perSongCliArguments : []),
   "out.wav"
@@ -44,6 +44,8 @@ const MAIN_PATH = (
   globSync(`${parsedScriptPath.dir}/../**/*.mts`)
     .find(i => i.includes("main.mts"))
 );
+if (!MAIN_PATH) throw new ReferenceError("MAIN_PATH cannot be undefined")
+
 const realTest = fork(MAIN_PATH, args);
 await new Promise((resolve, reject) => {
   realTest.once("exit", resolve)
@@ -51,7 +53,7 @@ await new Promise((resolve, reject) => {
 })
   .then(exitCode => {
     if (process.exitCode === 130) return process.exit();
-    process.exit(exitCode)
+    process.exit(exitCode as number)
   })
   .catch(error => {
     console.error(error)

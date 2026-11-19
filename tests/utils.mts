@@ -4,36 +4,62 @@ import "../utils/colors.mts"
 
 export const grayedOutText = gray+"%s"+normal;
 
-let globs, globsWithExts, manualMidi, manualSoundfont;
+interface globs<T extends string[] = string[]> {
+  midis: T, soundfonts: T
+}
+interface globsWithExts {
+  midis: [...globs["midis"]],
+  soundfonts: [...globs["soundfonts"]]
+}
+
+let globs:           globs         | undefined,
+    globsWithExts:   globsWithExts | undefined,
+    manualMidi:      string        | undefined,
+    manualSoundfont: string        | undefined;
 if (!process.argv.includes("-h")) {
   globs = {
     midis: globSync("*.mid"),
     soundfonts: globSync("*.sf2")
   };
+  // In case it finds nothing, it just quits
+  if (!globs.midis.length || !globs.soundfonts.length) {
+    const midisOrSoundfontsEmpty = (
+      !globs.midis.length ? "globs.midis" : "globs.soundfonts"
+    );
+    throw new ReferenceError(
+      `empty glob list detected (${midisOrSoundfontsEmpty})`
+    )
+  }
   globsWithExts = {
     midis: [...globs.midis],
     soundfonts: [...globs.soundfonts]
   };
+  // Removes extensions for each filename found
   globsWithExts.midis
     .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
   globsWithExts.soundfonts
     .forEach((e, i, a) => a[i] = join(parse(e).dir, parse(e).name))
 
   manualMidi = globs.midis.filter(i => (
-    globsWithExts.soundfonts.find(i2 => (
+    globsWithExts!.soundfonts.find(i2 => (
       join(parse(i).dir, parse(i).name) === i2
     ))
   ))[0];
+  if (!manualMidi) throw new TypeError("manualMidi is empty")
+
   manualSoundfont = globs.soundfonts.filter(i => (
-    globsWithExts.midis.find(i2 => (
+    globsWithExts!.midis.find(i2 => (
       join(parse(i).dir, parse(i).name) === i2
     ))
   ))[0];
+  if (!manualSoundfont) throw new TypeError("manualSoundfont is empty")
+
+  // Exclude manualMidi and manualSoundfont
   globs.midis = globs.midis.filter(i => i !== manualMidi);
   globs.soundfonts = globs.soundfonts.filter(i => i !== manualSoundfont);
 }
 
-function addOptionalArgumentsToStdout(args) {
+function addOptionalArgumentsToStdout<T extends string[]>(args: T): T {
   if (process.argv.includes("-idx")) args.push("-idx", "1")
   // Confirmation
   if (process.argv.includes("-a"))   args.push("-a")
@@ -54,7 +80,7 @@ function addOptionalArgumentsToStdout(args) {
   if (process.argv.includes("-lFi")) args.push("-lFi", "2")
   return args;
 }
-function addOptionalArgumentsToFile(args) {
+function addOptionalArgumentsToFile<T extends string[]>(args: T): T {
   if (process.argv.includes("-fo")) args.push(
     "out.flac", "out.mp3", "out.opus",
     "out.pcm"
@@ -83,7 +109,7 @@ function addOptionalArgumentsToFile(args) {
   if (process.argv.includes("-T"))   args.push("-T", "4")
   return args;
 }
-function addOptionalCliArguments(args) {
+function addOptionalCliArguments<T extends string[]>(args: T): T {
   // toStdout
   if (process.argv.includes("-"))   args.unshift("-")
   // fileOutputs
@@ -96,7 +122,7 @@ function addOptionalCliArguments(args) {
   if (process.argv.includes("-lf")) args.push("-lf")
   return args;
 }
-function generalCliArguments(mode) {
+function generalCliArguments<T extends string>(mode?: T) {
   switch (mode) {
     case "stdout":
     case "toFile":
@@ -137,7 +163,8 @@ const indexOfE =   process.argv.indexOf("-e"),   // effects
       indexOfRvb = process.argv.indexOf("-rvb"); // reverbVolume
 // Adds them in order like it was provided
 if (indexOfE !== -1 && indexOfRvb !== -1) {
-  let direction;
+  let direction: 0 | 1;
+
   if (indexOfE < indexOfRvb) {
     direction = 0;
     perSongCliArguments.push("-e", "reverb")

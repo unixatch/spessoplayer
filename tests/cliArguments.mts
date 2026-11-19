@@ -25,10 +25,10 @@ if (process.argv.includes("-h")) {
 const indexOfParameter = "2";
 if (!process.argv.includes("--verbose")) {
   const args = [
-    "-i:2", manualMidi,        // Manually adding files
-    "-i:2", manualSoundfont,
-    ...globs.midis,           // Automatically adding files
-    ...globs.soundfonts,
+    "-i:2", manualMidi!,      // Manually adding files
+    "-i:2", manualSoundfont!,
+    ...globs!.midis,          // Automatically adding files
+    ...globs!.soundfonts,
     ...generalCliArguments(),
     ...perSongCliArguments,
     "--enable-spessasynth-warn-logging"
@@ -53,6 +53,7 @@ if (!process.argv.includes("--verbose")) {
     realTest.once("exit", resolve)
     realTest.once("error", reject)
   })
+    // @ts-ignore since it's basically guaranteed to use it
     .then(process.exit)
     .catch(error => {
       console.error(error)
@@ -66,6 +67,8 @@ const CLI_PATH = (
   globSync(`${parsedScriptPath.dir}/../**/*.mts`)
     .find(i => i.includes("cli.mts"))
 );
+if (!CLI_PATH) throw new ReferenceError("CLI_PATH cannot be undefined")
+
 const {
   manageVerboseOptions,
   actUpOnPassedArgs, Options
@@ -81,6 +84,8 @@ if (DEBUG_LEVEL_SPESSO && DEBUG_FILE_SPESSO) {
     globSync(`${parsedScriptPath.dir}/../**/*.mts`)
       .find(i => i.includes("utils/utils.mts"))
   );
+  if (!UTILS_PATH) throw new ReferenceError("UTILS_PATH cannot be undefined")
+
   const { INFO_LVL, log } = await import(UTILS_PATH);
 
   log(INFO_LVL, debugLevelSpessoMsg)
