@@ -184,7 +184,7 @@ export interface prepareDestinationObjParam extends Pick<
   ——— RETURN VALUES ———
 */
 export type pipingFunction = (
-  whereToConnect: NodeJS.WritableStream, end: boolean, noPipe?: boolean
+  whereToConnect?: NodeJS.WritableStream, end?: boolean, noPipe?: boolean
 ) => NodeJS.ReadableStream | void;
 
 export interface ffmpegArgsObj<T> {
