@@ -22,10 +22,15 @@
 interface modifyObject {
   escape: string, colorsToUse: string[][]
 }
+/** satisfier of xolors object */
+type colorsObjType = Record<string, string | Function> & {
+  modify(obj: modifyObject): void
+}
 
 const esc = "\x1b[";
 const colors = {
-  modify({escape, colorsToUse}: modifyObject): void {
+  /** Replaces the existing color scheme with the better one */
+  modify({escape, colorsToUse}) {
     for (const [property, sequenceCode] of colorsToUse.values()) {
       this[property] = (
         escape +
@@ -56,9 +61,9 @@ const colors = {
   gray:          `${esc}90;1m`,
   dimGray:       `${esc}37;2m`,
   dimGrayBold:   `${esc}37;2;1m`
-};
+} satisfies colorsObjType;
 
-let colorDepth;
+let colorDepth: 1 | 4 | 8 | 24;
 const {
   env: { FORCE_COLOR, COLORTERM, TERM }
 } = process;
@@ -87,7 +92,10 @@ if (COLORTERM === "truecolor"
     || TERM?.includes("truecolor")) colorDepth ??= 24;
 if (TERM?.startsWith("xterm-256")) colorDepth ??= 8;
 // If the above fails, let node check
-colorDepth ??= new (await import("node:tty")).WriteStream(1).getColorDepth();
+colorDepth ??= (
+  new (await import("node:tty"))
+    .WriteStream(1).getColorDepth() as typeof colorDepth
+);
 
 if (colorDepth === 1) {
   colors.modify({
@@ -155,6 +163,7 @@ if (colorDepth === 24) {
     ],
   })
 }
+// @ts-ignore it's fine and intended
 delete colors.modify;
 Object.assign(global, colors)
 
