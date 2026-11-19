@@ -89,6 +89,11 @@ Set.prototype.get = function (valueToFind) {
   - source → sourceToInclude;
   - new lines inside copyProps;
   - Added typescript types;
+  - Now the aggregate variable just references
+    the class __Aggregate after creation
+    mostly for typescript compatibility;
+  - Fixed check inside forEach not accounting
+    for symbol not having match;
 */
 type CopiedClass<T = {}> = { [P in keyof T]: T[P] }
 type Constructor<T = {}> = abstract new (...args: any[]) => CopiedClass<T>
@@ -121,15 +126,16 @@ export default function Mixin<
   const copyProps = <T extends Constructor>(
     target: CopiedClass<T>, sourceToInclude: CopiedClass<T>
   ): void => {
-    Object.getOwnPropertyNames(sourceToInclude)
+    (Object.getOwnPropertyNames(sourceToInclude) as Array<string | symbol>)
       .concat(Object.getOwnPropertySymbols(sourceToInclude))
       .forEach((prop) => {
-        if (prop.match(new RegExp(`^(?:${propsToIgnore})$`)))
+        if (typeof prop !== "symbol"
+            && prop.match(new RegExp(`^(?:${propsToIgnore})$`)))
             return;
         Object.defineProperty(
           target,
           prop,
-          Object.getOwnPropertyDescriptor(sourceToInclude, prop)
+          Object.getOwnPropertyDescriptor(sourceToInclude, prop)!
         )
       })
   }
