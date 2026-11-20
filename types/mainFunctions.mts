@@ -167,8 +167,9 @@ export interface createReadableObjectParameters extends Pick<
 
 export interface prepareDestinationObjParam extends Pick<
   perSongOptions,
-  "midiFile" | "dryRun" | "sampleRate" | "effects" | "format"
+  "dryRun" | "sampleRate" | "effects" | "format"
 > {
+  midiFile?: perSongOptions["midiFile"],
   isVerboseLevelSet?: boolean, isPCM: boolean,
   res?: ServerResponse, mpv?: ChildProcess, midi?: BasicMIDI,
   loadingAnimation?: Deno.ChildProcess | ChildProcess,
