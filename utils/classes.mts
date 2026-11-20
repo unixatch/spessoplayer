@@ -19,11 +19,12 @@
  * @module classes
  */
 import type { Options } from "./utils.mts"
+import type { effectsListType } from "../types/mainFunctions.mts"
 import type { _optionsObject } from "../types/utils.mts"
 
 type listUsedInReverse = Array<
-  | string   | number    | boolean
-  | object[] | undefined
+  | string          | number    | boolean
+  | effectsListType | undefined
 >;
 type addIndexedPropertiesThat = typeof EffectsOptions & typeof Options
 type anyKnownClasses =
@@ -47,7 +48,7 @@ function addIndexedProperties(
       that,
       (property as string),
       (index as undefined | number),
-      (value as object[] | number | boolean)
+      (value as effectsListType | number | boolean)
     )
     i -= 2;
   }
@@ -92,7 +93,7 @@ function checkValueAndExistence(
   if (property) that!._options[property] ??= [];
 }
 
-type indexedStringValue = string | number | number[] | boolean | object[]
+type indexedStringValue = string | number | number[] | boolean | effectsListType
 export interface MainOptions {
   new (...args: any[]): InstanceType<any>
 }
@@ -148,7 +149,7 @@ export abstract class MainOptions {
       case "effects": case "stdoutEffects": {
         checkValueAndExistence(value, "array", name, this)
 
-        for (const effectObj of value) {
+        for (const effectObj of (value as effectsListType)) {
           if (typeof effectObj.effect !== "string") {
             throw new TypeError("effect property is not a string")
           }
@@ -262,7 +263,11 @@ export abstract class MainOptions {
   static getIndexedValue(
     this: typeof Options, name: string, index: number
   ): any | undefined {
-    if (name === "externalEffects" && Number.isNaN(index)) {
+    if (
+      name === "externalEffects"
+        && this._options[name] !== undefined
+        && Number.isNaN(index)
+    ) {
       index = this._options[name].length-1;
     }
     return this._options?.[name]?.[index];
@@ -297,7 +302,7 @@ export abstract class EffectsOptions {
    * @param {Number} index - index of the file
    * @param {Array} arrayOfObjects - an array of object effects
    */
-  static effects(index: number, arrayOfObjects: object[]): void {
+  static effects(index: number, arrayOfObjects: effectsListType): void {
     const _index = Number.isNaN(index) ? undefined : index;
     addIndexedProperties((this as addIndexedPropertiesThat), [
       "effects", _index, arrayOfObjects,

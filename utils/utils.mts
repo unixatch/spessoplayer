@@ -412,9 +412,9 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    * @param {Boolean} [getter] if logFilePath should return its value
    * @return {String} if it's a getter or fileOutputs' index has been set
    */
-  static manageAuxiliaryFileOptions<T>(
-    name: T, value: T, index?: T, getter?: boolean
-  ): T | void | never {
+  static manageAuxiliaryFileOptions<T extends string, U>(
+    name: T, value: U, index?: number, getter?: boolean
+  ): U | void | never {
     switch (name) {
       case "dryRun":
         this.#dryRun ??= (
@@ -425,10 +425,10 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
         break;
 
       case "logFilePath":
-        if (getter) return (this.#logFilePath as T);
+        if (getter) return (this.#logFilePath as U);
 
         this.#checkValueAndExistence(value, "string")
-        return (this.#logFilePath as T) = value;
+        return (this.#logFilePath as U) = value;
 
       case "fileOutputs":
         if (index) this.#checkValueAndExistence(index, "number")

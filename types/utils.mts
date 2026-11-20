@@ -43,7 +43,8 @@ export type _optionsObject<T = unknown> = Partial<{
   */
   loopFade: boolean,
   loopFadeStart: pSO<T, number>,   loopFadeDuration: pSO<T, number>,
-  loopFadeInterpolation: pSO<T, string | number>
+  loopFadeInterpolation: pSO<T, string | number>,
+  [key: string]: any
 }>;
 
 interface privateProperties {
