@@ -120,7 +120,7 @@ export type basetoStdoutOptionsObject = Omit<
 >
 /** toStdout's object argument */
 export interface toStdoutOptionsObject {
-  index: number, res: ServerResponse,
+  index: number, res?: ServerResponse,
   options: basetoStdoutOptionsObject
 }
 export interface spessasynthLoggingIntfc {
