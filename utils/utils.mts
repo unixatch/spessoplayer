@@ -24,6 +24,7 @@ import Mixin from "./basic_additions.mts"
 import "./colors.mts"
 import type { extLessFiles } from "../types/cli.mts"
 import type {
+  gettingAsyncSetTimeout,
   _optionsObject, perSongOptions, allOptions,
   UnwantedNonZeroErrorExtras, groupsChecked
 } from "../types/utils.mts"
@@ -132,20 +133,20 @@ function log(
   let date = nowInstant?.().toString();
   date ??= new Date().toISOString();
   const logOptions = this?.verboseLevel ? this : Options;
-  const verboseLevel = (
+  const verboseLevel: number | undefined = (
     logOptions === Options
-      ? logOptions.getValue("verboseLevel")
-      : logOptions.verboseLevel
+      ? (logOptions  as typeof Options).getValue("verboseLevel")
+      : (logOptions  as typeof this   )!.verboseLevel
   );
-  const logFilePath = (
+  const logFilePath: string | undefined = (
     logOptions === Options
-      ? logOptions.getValue("logFilePath")
-      : logOptions.logFilePath
+      ? (logOptions  as typeof Options).getValue("logFilePath")
+      : (logOptions  as typeof this   )!.logFilePath
   );
 
   if (Number.isNaN(debugLevelSpesso)
       && verboseLevel === undefined) return;
-  if (debugLevelSpesso < level || verboseLevel < level) return;
+  if (debugLevelSpesso < level || verboseLevel! < level) return;
 
   const message = [
     (this === logOptions ? "\r" : "") +
@@ -311,7 +312,7 @@ function getUsageEstimate(
 const {
   [Symbol.for("nodejs.util.promisify.custom")]
     : asyncSetTimeout
-} = setTimeout;
+} = setTimeout as gettingAsyncSetTimeout;
 
 /**
  * A class that represents options interpreted by cli.mts
@@ -322,7 +323,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    * Last added regular group (no twin/same basenames)
    * @example Options.lastRegularGroupIndex = 2;
    */
-  declare public static lastRegularGroupIndex: number;
+  declare public static lastRegularGroupIndex?: number;
   /**
    * Contains all normal options
    * @type {Object}
@@ -436,8 +437,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
 
         this.#fileOutputs ??= [];
         this.fileOutputsExists ??= true;
-        // @ts-ignore
-        return this.#fileOutputs[index] = value;
+        return this.#fileOutputs[index!] = value as U & string;
 
       default:
         throw new TypeError(name+" doesn't exist")
@@ -520,6 +520,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
     if (oldSize === groups[index].size) return;
     const length = this.#listOfSongs.length;
     this.#listOfSongs.push(index, string, stringWithoutExt)
+    // @ts-ignore stringWithoutExt since it's managed like that
     this.#listOfSongs[stringWithoutExt] = this.#listOfSongs[length];
   }
   /**
@@ -617,12 +618,18 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
           lastIndex = this.lastRegularGroupIndex;
     if (!files || lastIndex === undefined) return false;
 
-    const fullName = files[lastIndex]?.getIndex(0);
+    const fullName: string | undefined = files[lastIndex]?.getIndex(0);
+    if (fullName === undefined) return false;
+
     const indexOfGroup = this.searchAddedFile(
       fullName.substring(0, fullName.lastIndexOf(".")),
       true
     );
     return (
+      // @ts-ignore indexOfGroup being false since
+      //            it doesn't matter in this case anyway,
+      //            it'll just return false
+      //            (undefined > 1 === false)
       files[indexOfGroup]?.size > 1
       && indexOfGroup === lastIndex
     );
@@ -640,6 +647,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
       return (indexOfGroup !== undefined) ? indexOfGroup : false;
     };
     const midiSearch = () => {
+      // @ts-ignore name since it's managed like that
       const indexOfName = this.#listOfSongs[name];
       return (indexOfName !== undefined) ? indexOfName : false;
     };
@@ -664,7 +672,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
   static isAutomaticBasenameGroup(
     extLessFiles: extLessFiles, indexOfGroup: number
   ): boolean | void | never {
-    if (extLessFiles && extLessFiles?.prototype) {
+    if (extLessFiles && extLessFiles["prototype"]) {
       throw new TypeError(
         "extLessFiles must be null prototyped object"
       )
@@ -709,12 +717,15 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    */
   static getOptionsOfSong(index: number): perSongOptions {
     this.#checkValueAndExistence(index, "number")
-    const songOptionsObject = Object.create(null);
+    const songOptionsObject: perSongOptions = Object.create(null);
     const actualIndex = index && index * 3;
     const {
       [actualIndex]: indexOfGroup,
       [actualIndex+1]: songFile
     } = this.#listOfSongs;
+    if (typeof indexOfGroup !== "number" || typeof songFile !== "string") {
+      throw new TypeError("actualIndex failed to get the right offset")
+    }
     const group = this.#files[indexOfGroup];
 
     songOptionsObject["soundfontFile"] = group.getIndex(0);

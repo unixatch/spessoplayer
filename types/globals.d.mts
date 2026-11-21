@@ -28,9 +28,9 @@ export declare global {
   const dimGrayBold: string
 
   interface Set<T> {
-    addLeft<T = any>(valueToAdd: T[]): Set<T>
-    getIndex(index: number): any
-    get<T>(valueToFind: T): T | undefined
+    addLeft<T = any>(valueToAdd: T[] | T): Set<T>
+    getIndex(index: number): T
+    get<T>(valueToFind?: T): T
   }
 }
 

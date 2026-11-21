@@ -5,6 +5,13 @@ type pSO<T = string, V = unknown> = (
   T extends "perSongOptions"
     ? V : V[]
 )
+export type ExtractSetType<T extends Set<any> | Set<any>[]> = (
+  T extends Set<infer Type> | Set<infer Type>[]
+    ? Type : never
+)
+export type gettingAsyncSetTimeout = typeof setTimeout & {
+  [key in symbol]: typeof setTimeout.__promisify__
+}
 
 /** General properties available for all modes inside perSongOptions */
 export type nonSpecificProperties =
