@@ -152,21 +152,27 @@ export interface toFileObject {
    progressBuffers: progressBuffersIntfc,
    FO_CONSTANTS: FO_CONSTANTS
 }
-/** createReadable's object argument */
-export interface createReadableObjectParameters extends Pick<
+/** General properties of createReadable's object parameter */
+type createReadableBaseObjParam = Pick<
   perSongOptions,
   "hardStop" | "loopFade" | "loopFadeDuration" | "loopFadeInterpolation"
-> {
+> & {
    sampleCount: number,
-   index?: number,
    seq: SpessaSynthSequencer, synth: SpessaSynthProcessor,
    getData: typeof getData,
-   isf32le: boolean,
+   isf32le: boolean, startFading?: number,
+   [key: string]: any
+}
+/** File mode version of createReadableBaseObjParam */
+interface createReadableFileModeObjParam extends createReadableBaseObjParam {
+   index?: number,
    /** if it should skip updating the progress */
    doNotRepeat: boolean,
-   startFading?: number,
    progressBuffers: progressBuffersIntfc
 }
+/** General | file mode of createReadable's object parameter */
+export type createReadableObjectParameters =
+  | createReadableBaseObjParam | createReadableFileModeObjParam
 
 /** General properties for preparedDestination's 1st object argument */
 type prepDestBaseObjParam = Pick<
