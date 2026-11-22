@@ -9,7 +9,7 @@ import type {
   FO_CONSTANTS, loadingAnimationCleanupFuncType
 } from "./cli.mts"
 import type {
-  perSongOptions,
+  perSongOptions, dryRunType,
   nonSpecificProperties, fileModeOptionsKeys, serverModeOptionsKeys
 } from "./utils.mts"
 import type {
@@ -36,7 +36,7 @@ type readStreamType<T> = (
 type formatObjectBase<T = unknown> = {
   /** core stream that interacts with spessasynth */
   readStream?: readStreamType<T>, format?: string | true,
-  dryRun?: string,                effects?: effectsListType,
+  dryRun?: dryRunType,            effects?: effectsListType,
   stdoutHeader?: Uint8Array,      promisesOfPrograms: promisesOfProgramsType,
   [key: string]: any
 }

@@ -199,7 +199,7 @@ export abstract class MainOptions {
 
       // Strings
       case "logFilePath": case "dryRun":
-        if (name === "dryRun") value = "";
+        if (name === "dryRun") value = undefined;
         this.manageAuxiliaryFileOptions(name, value)
         return;
 

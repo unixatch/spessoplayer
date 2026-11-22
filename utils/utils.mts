@@ -24,7 +24,7 @@ import Mixin from "./basic_additions.mts"
 import "./colors.mts"
 import type { extLessFiles } from "../types/cli.mts"
 import type {
-  gettingAsyncSetTimeout,
+  gettingAsyncSetTimeout, dryRunType,
   _optionsObject, perSongOptions, allOptions,
   UnwantedNonZeroErrorExtras, groupsChecked
 } from "../types/utils.mts"
@@ -337,7 +337,7 @@ class Options extends Mixin(MainOptions, EffectsOptions) {
    * Essentially the black hole of computing
    * @type {String}
    */
-  static #dryRun?: string;
+  static #dryRun?: dryRunType;
   /**
    * Path that will be written for each log
    * @type {String}

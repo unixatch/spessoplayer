@@ -53,9 +53,10 @@ export type _optionsObject<T = unknown> = Partial<{
   loopFadeInterpolation: pSO<T, string | number>,
   [key: string]: any
 }>;
+export type dryRunType = "\\\\.\\nul" | "/dev/null"
 
 interface privateProperties {
-  logFilePath?: string, dryRun?: string,
+  logFilePath?: string, dryRun?: dryRunType,
   files: Set<string>[]
 }
 /** Options.all return type */
