@@ -53,7 +53,10 @@ extends formatObjectBase, Required<Pick<perSongOptions, "fileOutputs">> {
   FO_CONSTANTS?: FO_CONSTANTS,
   outFile: string | number[]
 }
-/** General & player mode | file mode */
+/**
+  General & player mode | file mode
+  for formatManager's object parameter
+*/
 export type formatObjectParameters<T = unknown> =
   | formatObjectBase<T> | formatObjectServer | formatObjectFileMode
 
@@ -165,21 +168,35 @@ export interface createReadableObjectParameters extends Pick<
    progressBuffers: progressBuffersIntfc
 }
 
-export interface prepareDestinationObjParam extends Pick<
+/** General properties for preparedDestination's 1st object argument */
+type prepDestBaseObjParam = Pick<
   perSongOptions,
   "dryRun" | "sampleRate" | "effects" | "format"
-> {
-  midiFile?: perSongOptions["midiFile"],
-  isVerboseLevelSet?: boolean, isPCM: boolean,
-  res?: ServerResponse, mpv?: ChildProcess, midi?: BasicMIDI,
+> & {
+  isPCM: boolean, midi?: BasicMIDI,
   loadingAnimation?: Deno.ChildProcess | ChildProcess,
   loadingAnimationCleanupFunc?: loadingAnimationCleanupFuncType,
-  length?: number, lengthOfFiles?: number[],
   getWavHeader: typeof getWavHeader | false,
   promisesOfPrograms: promisesOfProgramsType,
-  /** if startPlayer's range header has been used */
-  specificRange?: boolean
+  isVerboseLevelSet?: boolean,
+  [key: string]: any
 }
+/** Server version of prepDestBaseObjParam */
+interface prepDestServerObjParam extends prepDestBaseObjParam {
+  res: ServerResponse, mpv: ChildProcess,
+  /** if startPlayer's range header has been used */
+  specificRange?: boolean, length: number
+}
+/** Stdout version of prepDestBaseObjParam */
+interface prepDestStdoutObjParam extends prepDestBaseObjParam {
+  lengthOfFiles: number[], midiFile?: perSongOptions["midiFile"]
+}
+/**
+  General & player mode | stdout mode
+  for preparedDestination function's 1st object parameter
+*/
+export type prepareDestinationObjParam =
+  | prepDestServerObjParam | prepDestStdoutObjParam
 
 /*
   ——— RETURN VALUES ———
