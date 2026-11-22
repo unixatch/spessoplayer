@@ -439,6 +439,7 @@ for (let i = 0; i < filesListLength; ++i) {
         new Uint8Array(sharedBuffer).set(buffer, 0)
         sharedFilesMap.set(soundfontFile, sharedBuffer)
       })
+      .catch(() => undefined)
   )
 }
 await Promise.all(promisesOfSharedFiles)
@@ -609,8 +610,11 @@ async function fileModeMain() {
     if (index >= amountOfSongs) break;
     const options = perSongOptions[index];
     if (!options) continue;
+    // Might have failed to read the file
+    const sharedSoundBank = sharedFilesMap.get(options.soundfontFile as string);
+    if (!sharedSoundBank) continue;
 
-    options.soundfontFile = sharedFilesMap.get(options.soundfontFile);
+    options.soundfontFile = sharedSoundBank;
     const workerData = {
       progressBuffers, options, FO_CONSTANTS,
       index, filesListLength,
