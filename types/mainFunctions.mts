@@ -75,21 +75,29 @@ export type addEventFunc<T extends NodeJS.Signals | "exit" = NodeJS.Signals> =
   | ((...args: process.ProcessEventMap[T]) => void | never)
   | (() => void | never)
 
-export interface initObjectParameters extends Pick<
+/** Most of initSpessaSynth object properties that can be passed */
+type initObjectBaseParam = Pick<
   perSongOptions,
   "midiFile" | "soundfontFile" | "indexOfGroup"
   | Exclude<nonSpecificProperties, "loopFadeInterpolation">
-> {
+> & {
+  /** song's index */
   index: number,
-  isToFile?: boolean,
   /** if the BasicMIDI class is required to be returned */
   basicMIDIRequired?: boolean,
   /** return the sample count and do nothing */
   onlySampleCount?: boolean,
-  /** return the duration and do nothing */
-  onlyDuration?: boolean,
-  spessasynthLogging: spessasynthLoggingIntfc
+  spessasynthLogging: spessasynthLoggingIntfc,
+  [key: string]: any
 }
+/** toFile specific properties */
+interface initObjFileModeParam extends initObjectBaseParam {
+  /** return the duration and do nothing */
+  onlyDuration?: boolean, isToFile: boolean
+}
+/** Optional properties | toFile specific ones for initSpessaSynth function */
+export type initObjectParameters =
+  | initObjectBaseParam | initObjFileModeParam
 
 export type effectsListType = Array<{effect: string, values?: string[]}>
 export interface effectsObjectParams<T = unknown> {
