@@ -91,7 +91,7 @@ type initObjectBaseParam = Pick<
   [key: string]: any
 }
 /** toFile specific properties */
-interface initObjFileModeParam extends initObjectBaseParam {
+export interface initObjFileModeParam extends initObjectBaseParam {
   /** return the duration and do nothing */
   onlyDuration?: boolean, isToFile: boolean
 }
@@ -142,6 +142,14 @@ export interface progressBuffersIntfc {
   renderedAmount: SharedArrayBuffer,
   percentageDone: SharedArrayBuffer
 }
+
+export interface addEventParamIntfc {
+  eventType: NodeJS.Signals | toFileSignalNames | "stdoutExit",
+  func?: addEventFunc
+}
+export type toFileSignalNames =
+  | "toFileSIGTSTP" | "toFileSIGTERM"
+  | "toFileSIGQUIT" |  "toFileSIGINT"
 /** options property for toFileObject */
 export type toFileOptionsObject = (
   & basetoStdoutOptionsObject

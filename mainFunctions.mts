@@ -475,6 +475,22 @@ function prettyLogSpessaSynthErrors(
   )
   return null;
 }
+/** Complete file mode */
+async function initSpessaSynth(obj: $_.initObjFileModeParam): Promise<
+  $_.initSpessaSynthObj | null
+>
+/** onlyDuration was passed (file mode) */
+async function initSpessaSynth(obj: $_.initObjFileModeParam): Promise<
+  number | null
+>
+/** onlySampleCount &| basicMIDIRequired enabled */
+async function initSpessaSynth(obj: $_.initObjectParameters): Promise<
+  $_.basicMIDIRequiredTuple | number | null
+>
+/** Complete and normal, any other mode than file mode */
+async function initSpessaSynth(obj: $_.initObjectParameters): Promise<
+  $_.initSpessaSynthObj | null
+>
 /**
  * Initializes all the required variables for spessasynth_core usage
  * @return {Promise<object|Array<number | BasicMIDI>|Number|null>} initSpessaSynthObj or an array or the sampleCount or null if it fails
@@ -819,6 +835,18 @@ async function applyExternalEffects<T extends string>(
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
+/** addEvent will throw if there's no func for toFileSignals */
+function addEvent(obj: {
+  eventType: $_.toFileSignalNames, func: undefined
+}): never
+/** Normal case for toFileSignalNames */
+function addEvent(obj: {
+  eventType: $_.toFileSignalNames, func: $_.addEventFunc
+}): boolean
+/** Normal signals are ok */
+function addEvent(obj: {
+  eventType: NodeJS.Signals | "stdoutExit", func?: undefined
+}): boolean | void
 /**
  * Adds events to process
  * @param  {Object}   eventObjectParameters
@@ -828,9 +856,7 @@ async function applyExternalEffects<T extends string>(
  * @example
  * addEvent({ eventType: "SIGINT" })
  */
-function addEvent(
-  { eventType, func }: { eventType: string, func?: $_.addEventFunc }
-): boolean | void {
+function addEvent({ eventType, func }: $_.addEventParamIntfc): boolean | void {
   /**
    * Adds an event,
    * then it checks if it actually has been added
