@@ -915,11 +915,21 @@ function addEvent({ eventType, func }: $_.addEventParamIntfc): boolean | void {
     }
   }
 }
+/** Stdout case scenario */
+function createReadable(
+  Readable: Readable, isStdout: true,
+  obj: $_.createReadableBaseObjParam
+): NodeJS.ReadableStream
+/** file mode case scenario */
+function createReadable(
+  Readable: Readable, isStdout: false,
+  obj: $_.createReadableFileModeObjParam
+): NodeJS.ReadableStream
 /**
  * Creates a Readable stream given the variables needed
  * @param {Readable} Readable         Readable stream function
  * @param {Boolean}  [isStdout=false] if it's for toStdout or not
- * @param {module:typeDefinitions~createReadableObjectParameters} createReadableObjectParameters
+ * @param {object}   createReadableObjectParameters
  * @return {Readable} a Readable
  */
 function createReadable(Readable: Readable, isStdout = false, {

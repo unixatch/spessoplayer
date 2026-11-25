@@ -169,7 +169,7 @@ export interface toFileObject {
    FO_CONSTANTS: FO_CONSTANTS
 }
 /** General properties of createReadable's object parameter */
-type createReadableBaseObjParam = Pick<
+export type createReadableBaseObjParam = Pick<
   perSongOptions,
   "hardStop" | "loopFade" | "loopFadeDuration" | "loopFadeInterpolation"
 > & {
@@ -180,7 +180,7 @@ type createReadableBaseObjParam = Pick<
    [key: string]: any
 }
 /** File mode version of createReadableBaseObjParam */
-interface createReadableFileModeObjParam extends createReadableBaseObjParam {
+export interface createReadableFileModeObjParam extends createReadableBaseObjParam {
    index?: number,
    /** if it should skip updating the progress */
    doNotRepeat: boolean,
