@@ -1338,12 +1338,15 @@ const setEffects = (arg: string, lastIndex?: string): void | never => {
     //   <effect>[values]?
     isIncorrect: new RegExp(`^${regexGroupListGetter.source}[^,](?:${regexListOfEffects}).*$`).test(arg)
   }
+  type SoxEffectNames  = import("./types/mainFunctions.mts").SoxEffectNames
+  type effectsListType = import("./types/mainFunctions.mts").effectsListType
+
   if (regexTests.normalList || !regexTests.isIncorrect) {
-    const list = [
+    const list: effectsListType = [
       ...arg
         .matchAll(regexGroupListGetter)
         .map(i => ({
-          effect: i[1],
+          effect: i[1] as SoxEffectNames,
           values: (i[2])
             ? i[2].split(
               (i[2].includes(",")) ? "," : " "

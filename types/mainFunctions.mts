@@ -99,7 +99,28 @@ export interface initObjFileModeParam extends initObjectBaseParam {
 export type initObjectParameters =
   | initObjectBaseParam | initObjFileModeParam
 
-export type effectsListType = Array<{effect: string, values?: string[]}>
+/** All SoX's available effects */
+export type SoxEffectNames = (
+  | "allpass"  | "band"     | "bandpass"  | "bandreject"
+  | "bass"     | "bend"     | "biquad"    | "chorus"
+  | "channels" | "compand"  | "contrast"  | "dcshift"
+  | "deemph"   | "delay"    | "input"     | "fade"
+  | "earwax"   | "echo"     | "echos"     | "equalizer"
+  | "fir"      | "firfit"   | "flanger"   | "gain"
+  | "highpass" | "hilbert"  | "ladspa"    | "loudness"
+  | "lowpass"  | "mcompand" | "noiseprof" | "noisered"
+  | "norm"     | "oops"     | "output"    | "overdrive"
+  | "pad"      | "phaser"   | "pitch"     | "rate"
+  | "remix"    | "repeat"   | "reverb"    | "reverse"
+  | "riaa"     | "silence"  | "sinc"      | "spectrogram"
+  | "speed"    | "splice"   | "stat"      | "stats"
+  | "stretch"  | "swap"     | "synth"     | "tempo"
+  | "treble"   | "tremolo"  | "trim"      | "upsample"
+  | "vad"      | "vol"
+)
+/** List of structured effects (name + optional values) */
+export type effectsListType = Array<{effect: SoxEffectNames, values?: string[]}>
+
 export interface effectsObjectParams<T = unknown> {
   /** the process to spawn, sox usually */
   program: string,
