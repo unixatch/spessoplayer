@@ -50,7 +50,7 @@ export type _optionsObject<T = unknown> = Partial<{
   */
   loopFade: boolean,
   loopFadeStart: pSO<T, number>,   loopFadeDuration: pSO<T, number>,
-  loopFadeInterpolation: pSO<T, string | number>,
+  loopFadeInterpolation: pSO<T, string | number>, daemon: boolean
   [key: string]: any
 }>;
 export type dryRunType = "\\\\.\\nul" | "/dev/null"
