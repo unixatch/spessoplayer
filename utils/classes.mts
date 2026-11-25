@@ -20,7 +20,9 @@
  */
 import type { Options } from "./utils.mts"
 import type { effectsListType } from "../types/mainFunctions.mts"
-import type { _optionsObject } from "../types/utils.mts"
+import type {
+  _optionsObject, allOptionalOptionsKeys as _optKeys
+} from "../types/utils.mts"
 
 type listUsedInReverse = Array<
   | string          | number    | boolean
@@ -46,7 +48,7 @@ function addIndexedProperties(
 
     MainOptions.addIndexedValue.call(
       that,
-      (property as string),
+      (property as _optKeys),
       (index as undefined | number),
       (value as effectsListType | number | boolean)
     )
@@ -55,14 +57,14 @@ function addIndexedProperties(
 }
 /** Sets a property with value */
 const setValue = function (
-  this: anyKnownClasses, property: string, value: any
+  this: anyKnownClasses, property: _optKeys, value: any
 ): any {
   this._options[property] = value;
 }
 /** Sets a property to an index with a given value */
 const setOrPushValue = function (
   this: anyKnownClasses,
-  property: string, value: any, index?: number
+  property: _optKeys, value: any, index?: number
 ): any | number {
   return (
     Number.isInteger(index)
@@ -83,7 +85,7 @@ const setOrPushValue = function (
  */
 function checkValueAndExistence(
   value: any, requiredType: string,
-  property?: string | undefined, that?: anyKnownClasses
+  property?: _optKeys | undefined, that?: anyKnownClasses
 ): void | never {
   if (requiredType !== "array" || !Array.isArray(value)) {
     if (typeof value !== requiredType) {
@@ -109,7 +111,7 @@ export abstract class MainOptions {
    * @throws {TypeError} if index is not a number or name is not a string
    */
   static addIndexedStringValue(
-    name: string, index: number | typeof NaN | undefined,
+    name: _optKeys, index: number | typeof NaN | undefined,
     value?: indexedStringValue
   ): indexedStringValue | void | never {
     if (Number.isNaN(index)) index = undefined;
@@ -184,7 +186,7 @@ export abstract class MainOptions {
    */
   static addBooleanValue(
     this: typeof Options,
-    name: string, value?: boolean | string
+    name: _optKeys, value?: boolean | string
   ): boolean | string | void | never {
     switch (name) {
       // Boolean
@@ -210,7 +212,7 @@ export abstract class MainOptions {
       // Array of objects
       case "stdoutEffects":
         name = "effects";
-        return setValue.call(this, name, value);
+        return setValue.call(this, name as "effects", value);
 
       default:
         throw new Error(name+" doesn't exist")
@@ -225,7 +227,7 @@ export abstract class MainOptions {
    * @throws {TypeError} if name is not a string
    */
   static addNumberValue(
-    this: typeof Options, name: string, value: number
+    this: typeof Options, name: _optKeys, value: number
   ): number | never {
     switch (name) {
       case "verboseLevel": {
@@ -246,7 +248,7 @@ export abstract class MainOptions {
    * Retrieves a property's value
    * @throws {TypeError} if name is not a string
    */
-  static getValue(this: typeof Options, name: string): any | never {
+  static getValue(this: typeof Options, name: _optKeys): any | never {
     return (
       name === "logFilePath"
         ? this.manageAuxiliaryFileOptions(name, undefined, undefined, true)
@@ -261,7 +263,7 @@ export abstract class MainOptions {
    * @throws {TypeError} if name is not a string
    */
   static getIndexedValue(
-    this: typeof Options, name: string, index: number
+    this: typeof Options, name: _optKeys, index: number
   ): any | undefined {
     if (
       name === "externalEffects"

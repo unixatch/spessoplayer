@@ -29,6 +29,7 @@ export type serverModeOptionsKeys = "daemon"
 
 /** _options public property inside the class Options */
 export type _optionsObject<T = unknown> = Partial<{
+  verboseLevel:  boolean,
   confirmation:  boolean,                 showUsage:     boolean,
   noTable:       boolean,                 toStdout:      boolean,
   format:        string,                  fileOutputs:   string[],
