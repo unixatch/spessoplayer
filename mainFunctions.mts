@@ -835,10 +835,6 @@ async function applyExternalEffects<T extends string>(
   log(INFO_LVL, "Finished setting up SoX")
   return [sox, promisesOfPrograms];
 }
-/** addEvent will throw if there's no func for toFileSignals */
-function addEvent(obj: {
-  eventType: $_.toFileSignalNames, func: undefined
-}): never
 /** Normal case for toFileSignalNames */
 function addEvent(obj: {
   eventType: $_.toFileSignalNames, func: $_.addEventFunc
