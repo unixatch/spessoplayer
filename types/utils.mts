@@ -54,6 +54,10 @@ export type _optionsObject<T = unknown> = Partial<{
   [key: string]: any
 }>;
 export type dryRunType = "\\\\.\\nul" | "/dev/null"
+// Just the keys, no index signatures
+export type allOptionalOptionsKeys = keyof {
+  [K in keyof allOptions as string extends K ? never : K]: allOptions[K]
+} | "stdoutEffects" | "stdoutReverbVolume"
 
 interface privateProperties {
   logFilePath?: string, dryRun?: dryRunType,
