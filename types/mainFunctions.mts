@@ -125,8 +125,14 @@ export interface effectsObjectParams<T = unknown> {
 /*
   ——— OPTIONS OBJECTS ———
 */
+// keyof prioritise index signatures instead of real keys and
+// 'as' makes it possible to get the actual/real keys from K
+// (called key remapping)
+type BetterOmit<T, P extends keyof T> = {
+  [K in keyof T as Exclude<K, P>]: T[K]
+}
 /** options' properties for toStdoutOptionsObject */
-export type basetoStdoutOptionsObject = Omit<
+export type basetoStdoutOptionsObject = BetterOmit<
   perSongOptions, fileModeOptionsKeys | serverModeOptionsKeys
 >
 /** toStdout's object argument */
