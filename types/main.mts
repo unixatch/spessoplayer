@@ -17,7 +17,7 @@ export type listOfOptionsType = Pick<allOptions,
   | "noProgress"   | "maxThreads"
 >
 export interface effectParameterObjectIntfc {
-  readonly program: string,
+  readonly program: "sox",
   readonly promisesOfPrograms: Promise<void>[],
   sendEOF: boolean,
   readonly stdout: (

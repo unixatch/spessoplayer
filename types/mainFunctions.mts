@@ -15,6 +15,7 @@ import type {
 import type {
   BasicMIDI, SpessaSynthSequencer, SpessaSynthProcessor
 } from "spessasynth_core"
+import type { Writable } from "node:stream"
 import type fs from "node:fs"
 
 /*
@@ -123,24 +124,26 @@ export type effectsListType = Array<{effect: SoxEffectNames, values?: string[]}>
 
 export interface effectsObjectParams<T = unknown> {
   /** the process to spawn, sox usually */
-  program: string,
+  program: "sox",
   /** file header */
   stdoutHeader?: Uint8Array, readStream?: readStreamType<T>,
   /** adds the error event handler to sox's stdin */
-  addErrorEventToDest?: Function,
+  addErrorEventToDest?: (
+    ((dest: Writable) => typeof dest)
+  ),
   promisesOfPrograms: promisesOfProgramsType,
   stdout?: (
     | NodeJS.WriteStream
     | ChildProcessWithoutNullStreams["stdin"]
-    | string
+    | "pipe" | "ignore"
   ),
-  destination?: string,
+  destination?: "-" | string,
   effects?: effectsListType,
-  sampleRate?: number,
+  sampleRate?: 48000 | number,
   /** type of raw (pcm) to use */
   rawMode?: string | false,
   /** if it should send EOF after pipe finishes */
-  sendEOF?: boolean
+  sendEOF?: T extends "stdout" ? boolean : undefined
 }
 
 /*

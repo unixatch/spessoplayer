@@ -246,7 +246,7 @@ if (isToStdout) {
       effectParameterObject!.effects = options.effects;
       effectParameterObject!.stdoutHeader &&= i ? undefined : stdoutHeader;
 
-      [effectsProcess] = await applyExternalEffects(effectParameterObject!);
+      [effectsProcess] = await applyExternalEffects<"stdout">(effectParameterObject!);
       destination = effectsProcess.stdin;
     }
 
