@@ -253,6 +253,11 @@ export type prepareDestinationObjParam =
 /*
   ——— RETURN VALUES ———
 */
+export type whereToConnectType = (
+  | NodeJS.WritableStream
+  | ChildProcessWithoutNullStreams["stdin"]
+  | ReturnType<typeof fs.createWriteStream> | typeof process.stdout
+)
 export type pipingFunction = (
   whereToConnect?: NodeJS.WritableStream, end?: boolean, noPipe?: boolean
 ) => NodeJS.ReadableStream | void;

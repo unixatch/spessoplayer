@@ -140,7 +140,7 @@ async function formatManager<T extends string>({
    */
   function addPipingFunction(func?: $_.pipingFunction) {
     return (!func)
-      ? pipingFunction = (whereToConnect, end: boolean, noPipe = false) => {
+      ? pipingFunction = (whereToConnect: $_.whereToConnectType, end: boolean, noPipe = false) => {
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
         );
@@ -214,7 +214,7 @@ async function formatManager<T extends string>({
           outFile as string,
           {fd: dryRun && fs.openSync(outFile as string, "r+")}
         );
-        addPipingFunction((_whereToConnect, end: boolean) => {
+        addPipingFunction((_whereToConnect: $_.whereToConnectType, end: boolean) => {
           output.write(stdoutHeader ?? "")
           addErrorEventToDest(
             readStream
@@ -357,7 +357,7 @@ async function formatManager<T extends string>({
           ? "Done setting up" + ((dryRun) ? " dry run" : "")
           : "Done setting up pcm outFile" + ((dryRun) ? " in dry run mode" : "")
       )
-      addPipingFunction((whereToConnect, end: boolean, noPipe = false) => {
+      addPipingFunction((whereToConnect: $_.whereToConnectType, end: boolean, noPipe = false) => {
         const rawStream: NodeJS.ReadableStream = rawReadStream ?? readStream;
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
@@ -376,7 +376,7 @@ async function formatManager<T extends string>({
       if (isToFile) break;
 
       const doneSettingUpMsg = "Done setting up" + ((dryRun) ? " dry run" : "");
-      addPipingFunction((whereToConnect, end: boolean, noPipe = false) => {
+      addPipingFunction((whereToConnect: $_.whereToConnectType, end: boolean, noPipe = false) => {
         const destination = res ?? whereToConnect;
         if (noPipe) return addErrorEventToDest(
           readStream.once("error", streamErrorHandling)
