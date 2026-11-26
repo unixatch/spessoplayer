@@ -138,7 +138,7 @@ async function formatManager<T extends string>({
    * @param {Function} [func] custom function to set
    * @return {Function} the function that it has been set
    */
-  function addPipingFunction(func?: $_.pipingFunction) {
+  function addPipingFunction(func?: $_.pipingFunction): $_.pipingFunction {
     return (!func)
       ? pipingFunction = (whereToConnect: $_.whereToConnectType, end: boolean, noPipe = false) => {
         if (noPipe) return addErrorEventToDest(
@@ -177,7 +177,7 @@ async function formatManager<T extends string>({
 
   const isStdout = format !== true,
         isToFile = format === true;
-  let pipingFunction: $_.pipingFunction | undefined;
+  let pipingFunction: $_.pipingFunction;
   switch (format) {
     case "wave":
     case /^.*(?:\.wav|\.wave)$/.test(outFile as any): {
@@ -390,7 +390,7 @@ async function formatManager<T extends string>({
       log(INFO_LVL, doneSettingUpMsg)
     }
   }
-  return pipingFunction;
+  return pipingFunction!;
 }
 /**
  * Calculates the sample count to use
