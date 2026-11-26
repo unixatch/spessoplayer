@@ -214,7 +214,7 @@ async function formatManager<T extends string>({
           outFile as string,
           {fd: dryRun && fs.openSync(outFile as string, "r+")}
         );
-        addPipingFunction((whereToConnect, end: boolean) => {
+        addPipingFunction((_whereToConnect, end: boolean) => {
           output.write(stdoutHeader ?? "")
           addErrorEventToDest(
             readStream
