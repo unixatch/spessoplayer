@@ -283,7 +283,7 @@ type cleanupPromiseType = Promise<
   (Awaited<Promise<blackHoleTuple>> | Awaited<promisesOfProgramsType[0]>)[]
 >
 export type toStdoutArray = [
-  pipingFunction: pipingFunction | undefined,
+  pipingFunction: stdoutPipingFunction | undefined,
   cleanupPromiseType
 ];
 export type toFileArray = [
