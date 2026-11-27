@@ -277,8 +277,10 @@ export interface initSpessaSynthObj {
   sampleCount: number, durationInSeconds: number,
   startFading?: number | false
 }
+/** A tuple for removing values from variables */
+export type blackHoleTuple = [] & { [key: string]: void }
 type cleanupPromiseType = Promise<
-  (Awaited<Promise<[]>> | Awaited<promisesOfProgramsType[0]>)[]
+  (Awaited<Promise<blackHoleTuple>> | Awaited<promisesOfProgramsType[0]>)[]
 >
 export type toStdoutArray = [
   pipingFunction: pipingFunction | undefined,

@@ -1151,7 +1151,7 @@ async function toStdout({
   if (initSpessaSynthObj === null) return null;
   let {
     seq, synth, sampleCount, startFading
-  } = initSpessaSynthObj;
+  }: Partial<$_.initSpessaSynthObj> = initSpessaSynthObj;
 
   if (!res && !process.listenerCount("exit")) {
     addEvent({ eventType: "stdoutExit" })
@@ -1164,7 +1164,7 @@ async function toStdout({
   } = stream ??= await import("node:stream");
 
   doneStreaming &&= false;
-  let readStream = createReadable(Readable, true, {
+  let readStream: NodeJS.ReadableStream | undefined = createReadable(Readable, true, {
     sampleCount,
     seq, synth,
     getData, isf32le: format === "f32le",
@@ -1175,7 +1175,7 @@ async function toStdout({
     startFading
   });
 
-  let promisesOfPrograms: $_.promisesOfProgramsType = [];
+  let promisesOfPrograms: $_.promisesOfProgramsType | undefined = [];
   let pipingFunction = await formatManager({
     format, readStream, res,
     ...options,
@@ -1188,14 +1188,14 @@ async function toStdout({
       finished(readStream, { cleanup: true })
         .then(() => {
           doneStreaming = true;
-          synth
+          synth!
             .soundBankManager.soundBankList.splice(0)
-          synth.destroy()
+          synth!.destroy()
           return [
             promisesOfPrograms, pipingFunction,
             sampleCount, readStream,
             seq, synth
-          ] = [];
+          ] = [] as $_.blackHoleTuple;
         }),
       ...promisesOfPrograms // If there are any
     ])
@@ -1235,12 +1235,19 @@ async function toFile({
     hasf32le &&
     !fileOutputs[WAV_INDEX] && foLength === 2
   );
-  let stdoutHeader: Uint8Array,
-      getWavHeader: typeof import("./wavFunctions.mts").getWavHeader,
-      getData, seq: SpessaSynthSequencer, synth: SpessaSynthProcessor,
-      seqFloat: SpessaSynthSequencer, synthFloat: SpessaSynthProcessor,
-      sampleCount, sampleCountFloat,
-      startFading, midi;
+  type tmpVars = Partial<[
+    Uint8Array,           typeof import("./wavFunctions.mts").getWavHeader,
+                          typeof import("./wavFunctions.mts").getData,
+    SpessaSynthSequencer, SpessaSynthProcessor,
+    number,               $_.initSpessaSynthObj["startFading"],
+    BasicMIDI
+  ]>
+  let stdoutHeader: tmpVars[0],
+      getWavHeader: tmpVars[1], getData:          tmpVars[2],
+      seq:          tmpVars[3], synth:            tmpVars[4],
+      seqFloat:     tmpVars[3], synthFloat:       tmpVars[4],
+      sampleCount:  tmpVars[5], sampleCountFloat: tmpVars[5],
+      startFading:  tmpVars[6], midi:             tmpVars[7];
   const initSpessaSynthObjParam = {
     index, ...options,
     spessasynthLogging, isToFile: true
@@ -1283,7 +1290,7 @@ async function toFile({
     log(DEBUG_LVL, "Created header file", "-", " ", stdoutHeader)
   }
 
-  let readStream = (
+  let readStream: false | NodeJS.ReadableStream | undefined = (
     !onlyFloat
     && createReadable(Readable, false, {
       sampleCount,
@@ -1297,7 +1304,7 @@ async function toFile({
       startFading
     })
   );
-  let rawReadStream = (
+  let rawReadStream: false | NodeJS.ReadableStream | undefined = (
     hasf32le
     && createReadable(Readable, false, {
       sampleCount: sampleCountFloat,
@@ -1312,8 +1319,8 @@ async function toFile({
       startFading
     })
   );
-  let promisesOfPrograms: $_.promisesOfProgramsType = [],
-      pipingFunctions: ($_.fileModePipingFunction | undefined)[] = [];
+  let promisesOfPrograms: $_.promisesOfProgramsType | undefined = [],
+      pipingFunctions: ($_.fileModePipingFunction | undefined)[] | undefined = [];
   const addFunction = async (outFile?: string | FO_CONSTANTS): Promise<void> => {
     const isf32le = (outFile as string | undefined)?.endsWith(".f32le");
     pipingFunctions.push(
@@ -1369,7 +1376,7 @@ async function toFile({
             seq, synth,
             seqFloat, synthFloat,
             pipingFunctions, promisesOfPrograms
-          ] = [];
+          ] = [] as $_.blackHoleTuple;
         }),
       ...promisesOfPrograms // if there are any
     ])
