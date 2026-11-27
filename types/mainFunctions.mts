@@ -77,7 +77,7 @@ export type addEventFunc<T extends NodeJS.Signals | "exit" = NodeJS.Signals> =
   | (() => void | never)
 
 /** Most of initSpessaSynth object properties that can be passed */
-type initObjectBaseParam = Pick<
+export type initObjectBaseParam = Pick<
   perSongOptions,
   "midiFile" | "soundfontFile" | "indexOfGroup"
   | Exclude<nonSpecificProperties, "loopFadeInterpolation">

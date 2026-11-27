@@ -482,10 +482,15 @@ async function initSpessaSynth(obj: $_.initObjFileModeParam): Promise<
 async function initSpessaSynth(obj: $_.initObjFileModeParam): Promise<
   number | null
 >
-/** onlySampleCount &| basicMIDIRequired enabled */
-async function initSpessaSynth(obj: $_.initObjectParameters): Promise<
-  $_.basicMIDIRequiredTuple | number | null
->
+/** onlySampleCount & basicMIDIRequired enabled */
+async function initSpessaSynth(
+  obj: $_.initObjectBaseParam & { basicMIDIRequired?: true }
+): Promise<$_.basicMIDIRequiredTuple | null>
+/** onlySampleCount enabled */
+async function initSpessaSynth(
+  obj: $_.initObjectBaseParam & { basicMIDIRequired?: false }
+): Promise<number | null>
+
 /** Complete and normal, any other mode than file mode */
 async function initSpessaSynth(obj: $_.initObjectParameters): Promise<
   $_.initSpessaSynthObj | null
