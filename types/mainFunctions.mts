@@ -283,7 +283,7 @@ export type toStdoutArray = [
 ];
 export type toFileArray = [
   fileOutputs: string[],
-  pipingFunction: (pipingFunction | undefined)[],
+  pipingFunction: (fileModePipingFunction | undefined)[],
   Promise<Array<Promise<Array<undefined | NodeJS.ReadableStream>> | undefined | number>>
 ];
 export type preparedDestination =

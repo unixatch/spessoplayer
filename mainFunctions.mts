@@ -1313,7 +1313,7 @@ async function toFile({
     })
   );
   let promisesOfPrograms: $_.promisesOfProgramsType = [],
-      pipingFunctions: ($_.pipingFunction | undefined)[] = [];
+      pipingFunctions: ($_.fileModePipingFunction | undefined)[] = [];
   const addFunction = async (outFile?: string | FO_CONSTANTS): Promise<void> => {
     const isf32le = (outFile as string | undefined)?.endsWith(".f32le");
     pipingFunctions.push(
