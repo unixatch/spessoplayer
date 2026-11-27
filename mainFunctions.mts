@@ -918,12 +918,12 @@ function addEvent({ eventType, func }: $_.addEventParamIntfc): boolean | void {
 function createReadable(
   Readable: typeof ReadableClass, isStdout: true,
   obj: $_.createReadableBaseObjParam
-): NodeJS.ReadableStream
+): InstanceType<typeof ReadableClass>
 /** file mode case scenario */
 function createReadable(
   Readable: typeof ReadableClass, isStdout: false,
   obj: $_.createReadableFileModeObjParam
-): NodeJS.ReadableStream
+): InstanceType<typeof ReadableClass>
 /**
  * Creates a Readable stream given the variables needed
  * @param {Readable} Readable         Readable stream function
@@ -940,7 +940,7 @@ function createReadable(Readable: typeof ReadableClass, isStdout = false, {
   loopFadeDuration = 4, loopFadeInterpolation,
   startFading,
   progressBuffers
-}: $_.createReadableObjectParameters): NodeJS.ReadableStream | never {
+}: $_.createReadableObjectParameters): InstanceType<typeof ReadableClass> | never {
   if (typeof startFading !== "number" && startFading !== undefined) {
     throw new TypeError(
       "startFading must be a number, " +
