@@ -24,8 +24,7 @@ import type {
   BasicMIDI, BasicSoundBank,
   SpessaSynthProcessor, SpessaSynthSequencer
 } from "spessasynth_core"
-import type { Readable } from "node:stream"
-import type { WriteStream } from "node:fs"
+import type { Readable as ReadableClass } from "node:stream"
 import type {
   spawn as spawnFT, ChildProcess, ChildProcessWithoutNullStreams
 } from "node:child_process"
@@ -917,12 +916,12 @@ function addEvent({ eventType, func }: $_.addEventParamIntfc): boolean | void {
 }
 /** Stdout case scenario */
 function createReadable(
-  Readable: Readable, isStdout: true,
+  Readable: typeof ReadableClass, isStdout: true,
   obj: $_.createReadableBaseObjParam
 ): NodeJS.ReadableStream
 /** file mode case scenario */
 function createReadable(
-  Readable: Readable, isStdout: false,
+  Readable: typeof ReadableClass, isStdout: false,
   obj: $_.createReadableFileModeObjParam
 ): NodeJS.ReadableStream
 /**
@@ -932,7 +931,7 @@ function createReadable(
  * @param {object}   createReadableObjectParameters
  * @return {Readable} a Readable
  */
-function createReadable(Readable: Readable, isStdout = false, {
+function createReadable(Readable: typeof ReadableClass, isStdout = false, {
   sampleCount, index,
   seq, synth,
   getData, isf32le,
@@ -1050,7 +1049,7 @@ function createReadable(Readable: Readable, isStdout = false, {
             : undefined
         );
 
-  const readStream: NodeJS.ReadableStream = new Readable({
+  const readStream = new Readable({
     read() {
       const bufferSize = Math.min(BUFFER_SIZE, sampleCount - filledSamples);
       if (loopFade) loopFadeBlock: {
