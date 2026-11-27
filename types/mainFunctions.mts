@@ -277,14 +277,17 @@ export interface initSpessaSynthObj {
   sampleCount: number, durationInSeconds: number,
   startFading?: number | false
 }
+type cleanupPromiseType = Promise<
+  (Awaited<Promise<[]>> | Awaited<promisesOfProgramsType[0]>)[]
+>
 export type toStdoutArray = [
   pipingFunction: pipingFunction | undefined,
-  Promise<Array<undefined | number>>
+  cleanupPromiseType
 ];
 export type toFileArray = [
-  fileOutputs: string[],
+  fileOutputs: Required<NonNullable<perSongOptions["fileOutputs"]>>,
   pipingFunction: (fileModePipingFunction | undefined)[],
-  Promise<Array<Promise<Array<undefined | NodeJS.ReadableStream>> | undefined | number>>
+  cleanupPromiseType
 ];
 export type preparedDestination =
   | typeof process.stdout | ServerResponse
