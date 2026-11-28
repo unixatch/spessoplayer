@@ -477,7 +477,7 @@ function prettyLogSpessaSynthErrors(
 /** onlyDuration was passed & enabled (file mode) */
 async function initSpessaSynth(obj: $_.initObjFileModeParam & {
   onlyDuration: true
-}): Promise<number | null>
+}): Promise<$_.getSampleCountObj["durationInSeconds"] | null>
 
 /** Complete file mode */
 async function initSpessaSynth(obj: $_.initObjFileModeParam): Promise<
@@ -492,7 +492,7 @@ async function initSpessaSynth(obj: $_.initObjectBaseParam & {
 /** 'onlySampleCount' only enabled */
 async function initSpessaSynth(obj: $_.initObjectBaseParam & {
   basicMIDIRequired: false
-}): Promise<number | null>
+}): Promise<$_.getSampleCountObj["sampleCount"] | null>
 
 /** Complete and normal, any other mode than file mode */
 async function initSpessaSynth(obj: $_.initObjectParameters): Promise<
